@@ -6,7 +6,7 @@
 #   share-menu        the composite's share menu trigger
 #   more-menu         the composite's more actions menu trigger
 #   outcome-chip      the session outcome chip in the meta row
-#   search-trigger    the "search this transcript" button at the end of the tab strip
+#   search-trigger    the "search transcript" button at the end of the tab strip
 #   pull-request-slot the host's pullRequests node under the meta row
 # Every case lists every control exactly once, across present and absent.
 
@@ -92,7 +92,7 @@ interactions:
     kind: trigger-click
   - name: the search trigger's accessible name includes the shortcut
     kind: trigger-name
-    expectedName: search this transcript ⌘F
+    expectedName: search transcript ⌘F
   - name: the more menu no longer offers chat with trace
     kind: more-menu-items
     capabilities: {canEdit: true, canLabel: false, canContribute: false, canChangeVisibility: false, canExport: true}

@@ -782,6 +782,9 @@ function DefaultTranscriptApp({ theme }) {
   }, [search])
   // Tool details start collapsed; the reader opens them on demand.
   const [openTools, setOpenTools] = useState({})
+  // The ledger reading layout: the viewer reports every rail/zen change as one layout
+  // object. The demo has no host sidebar, so `host` is carried but renders nothing here.
+  const [sidebarLayout, setSidebarLayout] = useState({ outline: true, filters: true, host: true })
   // the local app owns the header row: the publish bar (status, one action, more) and its popup.
   const publish = usePublishFlow()
   return (
@@ -794,7 +797,9 @@ function DefaultTranscriptApp({ theme }) {
         showOutcome={false}
         showSearchTrigger
         presentation={ledger ? 'ledger' : undefined}
-        subtitle={ledger ? 'a public transcript from fairtrade, read as a ledger.' : undefined}
+        sidebarLayout={ledger ? sidebarLayout : undefined}
+        onSidebarLayoutChange={ledger ? setSidebarLayout : undefined}
+        onZenChange={ledger ? () => {} : undefined}
         headerActions={publish.bar}
         openTools={openTools}
         onOpenToolsChange={setOpenTools}

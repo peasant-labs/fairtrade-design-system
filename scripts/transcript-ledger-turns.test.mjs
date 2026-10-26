@@ -195,7 +195,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(!!mounted.container.querySelector(`#turn-${row.turn} .txn-systemrow-body code.txn-inlinecode`), `${row.name}: the body must keep the rendered inline code`)
       await mounted.unmount()
     } else if (row.kind === 'turn-rules') {
-      /* the fixture's own role sequence is the expected count: one rule per adjacent role change */
+      /* the body rule separates a change of role; the sidebar cards carry their own rhythm */
       const expectedRules = vm.turns.filter((turn, i) => i > 0 && vm.turns[i - 1].role !== turn.role).length
       if (expectedRules < 1) throw new Error(`${FIXTURE}: the payload must cook at least one role change`)
       const ledgerMount = await mountViewer('ledger')

@@ -144,7 +144,8 @@ cases:
     query: '?transcript=ledger'
     probes:
       - {selector: '.txn-app.txn-ledger', count: 1}
-      - {selector: '.txn-sub', text: 'a public transcript from fairtrade, read as a ledger.'}
+      - {selector: '.txn-rail-left', count: 1}
+      - {selector: '.txn-sub', count: 0}
       - {selector: '.txn-rail-turn', count: 2}
   # the canonical demo session carries no system turn, so a dedicated flag appends one and the
   # ledger's compact system row is rendered by the built app rather than a story alone.

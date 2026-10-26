@@ -103,16 +103,14 @@ export function workCountLabel(summary = {}) {
 /**
  * The panel's trailing meta: "8 calls, 1 failed, 29s". The failure count is omitted when zero and
  * the duration is omitted when nothing was recorded. The leading call count is omitted when the
- * count label already fell back to it (no commands, files or edits); pass `includeCalls` to force
- * either side.
+ * count label already fell back to it (no commands, files or edits).
  * @param {Partial<WorkSummary>} [summary]
- * @param {{ includeCalls?: boolean }} [options]
  * @returns {string}
  */
-export function workMetaLabel(summary = {}, { includeCalls = countedParts(summary).length > 0 } = {}) {
+export function workMetaLabel(summary = {}) {
   /** @type {string[]} */
   const parts = []
-  if (includeCalls) parts.push(plural(summary.calls ?? 0, 'call', 'calls'))
+  if (countedParts(summary).length > 0) parts.push(plural(summary.calls ?? 0, 'call', 'calls'))
   if ((summary.failed ?? 0) > 0) parts.push(plural(summary.failed ?? 0, 'failed', 'failed'))
   const duration = formatDurationMs(summary.durationMs)
   if (duration) parts.push(duration)

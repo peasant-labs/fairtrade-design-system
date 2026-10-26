@@ -18,6 +18,7 @@
 /** @typedef {import('./index.js').ViewerCapabilities} ViewerCapabilities */
 /** @typedef {import('./index.js').ViewerCallbacks} ViewerCallbacks */
 /** @typedef {import('./index.js').TranscriptFilters} TranscriptFilters */
+/** @typedef {import('./index.js').TranscriptSidebarLayout} TranscriptSidebarLayout */
 /** @typedef {import('./index.js').SavedLabel} SavedLabel */
 /** @typedef {import('./index.js').Theme} Theme */
 /** @typedef {import('./index.js').Presentation} Presentation */
@@ -76,6 +77,12 @@ const controlled = {
   onTabChange: (tab) => void tab,
   viewMode: 'list',
   onViewModeChange: (mode) => void mode,
+  sidebarLayout: { outline: true, filters: false, host: false },
+  onSidebarLayoutChange: (layout) => void [layout.outline, layout.filters, layout.host],
+  zen: false,
+  onZenChange: (zen) => void zen,
+  readerWidth: 840,
+  onReaderWidthChange: (width) => void width,
   leftRailOpen: true,
   onLeftRailOpenChange: (open) => void open,
   rightRailOpen: false,
@@ -110,6 +117,23 @@ void controlled
 /** @type {Presentation} */
 const ledgerPresentation = 'ledger'
 void ledgerPresentation
+
+/* ── (5d) POSITIVE + NEGATIVE: the sidebar view model is the closed three-boolean shape ─────
+   The layout the viewer emits and restores is one object; a partial emission or an optional
+   rail must fail the contract, not drift silently. */
+/** @type {TranscriptSidebarLayout} */
+const sidebarLayout = { outline: false, filters: true, host: false }
+const sidebarProps = { sidebarLayout, onSidebarLayoutChange: (/** @type {TranscriptSidebarLayout} */ layout) => void layout }
+void sidebarProps
+
+// @ts-expect-error — every TranscriptSidebarLayout member is required; host is missing
+_acceptViewerProps({ viewModel: vm, capabilities: caps, sidebarLayout: { outline: true, filters: true } })
+
+// @ts-expect-error — zen is the closed boolean toggle, not a mode string
+_acceptViewerProps({ viewModel: vm, capabilities: caps, zen: 'on' })
+
+// @ts-expect-error — readerWidth is a number, not the CSS string a host might persist
+_acceptViewerProps({ viewModel: vm, capabilities: caps, readerWidth: '840px' })
 
 /* the three negative pins use the typed-parameter call idiom (matching
    contract.type-test.js): the bad value is an ARGUMENT, so the `@ts-expect-error`

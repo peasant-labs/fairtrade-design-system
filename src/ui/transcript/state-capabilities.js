@@ -55,6 +55,20 @@
  */
 
 /**
+ * The expanded/collapsed configuration of the viewer's surroundings: the left user-turns
+ * outline, the right filters rail, and the host-owned sidebar (which the viewer never
+ * renders, but which the host hides and restores from this same object). The host may
+ * persist it; the viewer reports every explicit change through `onSidebarLayoutChange`.
+ * Reading width never changes it. Zen collapses it and restores the exact snapshot.
+ * `host` defaults to `true` when neither the prop nor an explicit action supplies it; the
+ * viewer never renders that sidebar, so the value only relays the host's own state.
+ * @typedef {object} TranscriptSidebarLayout
+ * @property {boolean} outline  the left user-turns rail
+ * @property {boolean} filters  the right filters rail
+ * @property {boolean} host     the host-owned sidebar
+ */
+
+/**
  * The cooked filter state the FiltersRail drives. Categories gate turn KINDS;
  * `toolGroups` gate tool-call groups (keyed by the cooked `ToolGroup` ids);
  * `tags` gate semantic friction tags; `views` are display toggles; `checkpoint`
@@ -147,9 +161,15 @@
  * @property {(tab: TranscriptTab) => void} [onTabChange]
  * @property {ViewMode} [viewMode]
  * @property {(mode: ViewMode) => void} [onViewModeChange]
- * @property {boolean} [leftRailOpen]
+ * @property {TranscriptSidebarLayout} [sidebarLayout]                 the single rail + host-sidebar view model; supplied, it is the source of truth for `outline`, `filters` and `host`
+ * @property {(layout: TranscriptSidebarLayout) => void} [onSidebarLayoutChange]  fires the FULL layout object on every explicit rail action and on zen entry and exit
+ * @property {boolean} [zen]                                           ledger only: reading mode collapses both viewer rails to nothing (their strips leave too) and `host` reports false; ignored in classic; defaults false
+ * @property {(zen: boolean) => void} [onZenChange]
+ * @property {number} [readerWidth]                                    ledger only: the reader column width in CSS pixels. A supplied value is normalised at the boundary (clamped to 600..936 and snapped to the nearest of the exported `READER_SNAPS`), so the column and `aria-valuenow` always report a supported width; defaults 840
+ * @property {(width: number) => void} [onReaderWidthChange]
+ * @property {boolean} [leftRailOpen]                                  alias for `sidebarLayout.outline`; when supplied it wins for that rail and still calls `onLeftRailOpenChange`
  * @property {(open: boolean) => void} [onLeftRailOpenChange]
- * @property {boolean} [rightRailOpen]
+ * @property {boolean} [rightRailOpen]                                 alias for `sidebarLayout.filters`; when supplied it wins for that rail and still calls `onRightRailOpenChange`
  * @property {(open: boolean) => void} [onRightRailOpenChange]
  * @property {Record<string, boolean>} [openTools]                     tool id → open?
  * @property {(openTools: Record<string, boolean>) => void} [onOpenToolsChange]
@@ -177,9 +197,10 @@
  * @property {unknown} [streamPrelude]                                 host controls or context rendered at the start of the list-mode transcript scroller; omitted in graph mode
  * @property {boolean} [showTail]                                      default false: hosts opt in with true to retain the legacy share/contribute and more menus after `headerActions`
  * @property {boolean} [showOutcome]                                   default true: render the session outcome chip in the meta row when the session carries an outcome
- * @property {boolean} [showSearchTrigger]                             default false: render a `search this transcript` button at the end of the tab strip that opens search exactly as ⌘F does; independent of `showTail`
+ * @property {boolean} [showSearchTrigger]                             default false: render a `search transcript` button at the end of the session views in the bottom bar that opens search exactly as ⌘F does; independent of `showTail`
+ * @property {{ hints?: boolean, progress?: boolean }} [footer]      default omitted: both stay off. `hints` renders the shortcut line, `progress` the visible-turn position counter, in the bottom bar beside the session views. A host opts in per part, so a reading surface can stay quiet without losing the views. The shortcut hint is keyboard-only, so it leaves a coarse pointer below the phone breakpoint; the counter exists only on the trace view in list mode with a visible turn. The session views themselves live in the bottom bar, after the panel in DOM order, which is why the viewer opens with a `skip to session views` control
  * @property {1|2} [headingLevel]                                      default 2: the transcript's title is an h2 in a host page; 1 when the host mounts the viewer as the whole page, so the title is the page's h1 and the phase and turn headings move up one level
- * @property {Presentation} [presentation]                            chrome presentation; defaults to 'classic'. `ledger` adds a subtitle slot, swaps the pinned header's provider/model + scrubber for the title + visible-turns minimap (the turns currently in view), and renders user-turn task cards in the left rail; it also rebuilds every turn as a role-led line (square role well, the role word, the turn number, the time, and the copy anchor) with prose first and one grouped work panel over the turn's tool calls, marks each change of role with a faint rule, and collapses a system turn to a single compact row. In that head the built-in collapse control, label affordance, model name, error chip, token badge, and saved-label chip are intentionally hidden for now, while a host's own `renderTurnActions` and `renderTurnPanel` keep rendering on every role. Omitting it renders the classic surface unchanged, and an unrecognized runtime value fails closed to classic
+ * @property {Presentation} [presentation]                            chrome presentation; defaults to 'classic'. `ledger` adds a subtitle slot, swaps the pinned header's provider/model + scrubber for the title + visible-turns minimap (the turns currently in view), and renders user-turn task cards in the left rail; it also rebuilds every turn as a role-led line (square role well, the role word, the turn number, the time, and the copy anchor) with prose first and one grouped work panel over the turn's tool calls, collapses a system turn to a single compact row. In that head the built-in collapse control, label affordance, model name, error chip, token badge, and saved-label chip are intentionally hidden for now, while a host's own `renderTurnActions` and `renderTurnPanel` keep rendering on every role. Omitting it renders the classic surface unchanged, and an unrecognized runtime value fails closed to classic
  * @property {import('react').ReactNode} [subtitle]                    optional deck under the session title; rendered in either presentation when supplied
  * @property {unknown} [pullRequests]                                  host-owned node rendered under the meta row (a pull request list and its own "show all" control); omitted renders nothing
  */

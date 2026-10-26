@@ -318,7 +318,7 @@ const DISCLOSURE_STORY = Object.freeze({
   }),
 })
 
-const TRANSCRIPT_SEARCH_TRIGGER = Object.freeze({ name: 'search-trigger', role: Object.freeze({ role: 'button', name: 'search this transcript ⌘F' }), matches: '.txn-search-trigger', count: 1 })
+const TRANSCRIPT_SEARCH_TRIGGER = Object.freeze({ name: 'search-trigger', role: Object.freeze({ role: 'button', name: 'search transcript ⌘F' }), matches: '.txn-search-trigger', count: 1 })
 const TRANSCRIPT_SEARCH_FOCUSED = Object.freeze({ name: 'search-input-focused', selector: '.txn-search-input', focused: true })
 const OFFLINE_RETRY_BUSY = Object.freeze({ name: 'retry-busy', selector: '.cx-offline-retry', attribute: 'aria-busy', value: 'true' })
 const DIGEST_LIST = 'ul[role="listbox"][aria-label="transcripts"]'

@@ -2035,6 +2035,11 @@
   /* a touch screen keeps the 44px reach on a crumb as a block, centred by its line, since an ellipsis
      needs a block box (the shared crumb rule makes a link an inline flex box) */
   @media (pointer: coarse) { .txn-crumb > a { display: block; line-height: var(--target-comfortable); } }
+  /* the derived trail's last stop is the transcript itself, so it is the title: one line,
+     ellipsis-truncated, and never lowercased (the shared crumb rule writes no text-transform; the
+     title keeps its own). Zero min-width lets the title give way before the actions do; a host's
+     own current crumb keeps the shared floor because it names a place, not a headline. */
+  .txn-crumb-derived .cur:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .txn-crumb .cur { font-variant-numeric: tabular-nums; }
   .txn-actions { display: inline-flex; align-items: center; gap: var(--sp-2); flex: none; }
 
@@ -2090,10 +2095,11 @@
 
   /* ---- tab strip ---- */
   .txn-tabs { flex: none; gap: var(--sp-5); padding: 0 var(--sp-4); position: sticky; top: 0; z-index: 10; background: var(--surface); }
-  /* the optional search trigger: the strip and the trigger share one row, the strip's hairline
-     moves to the row so the trigger sits on the same rule as the tabs. */
-  .txn-tabbar { flex: none; display: flex; align-items: stretch; gap: var(--sp-3); padding-right: var(--sp-4); border-bottom: var(--bd); background: var(--surface); }
-  .txn-tabbar > .txn-tabs { flex: 1 1 auto; min-width: 0; border-bottom: 0; }
+  /* the strip shares the bottom bar's single row with the shortcut hint and the counter; the
+     optional search trigger sits beside it (a tablist holds tabs only, never the trigger). */
+  .txn-foot-tabs { display: flex; flex: 1 1 auto; align-items: stretch; gap: var(--sp-3); min-width: 0; }
+  /* the bar owns the inset, so the strip inside it sits flush with the counter's row */
+  .txn-foot-tabs > .txn-tabs { flex: 1 1 auto; min-width: 0; border-bottom: 0; padding-inline: 0; }
   /* the header's search: the header control height, the shortcut as quiet mono text beside the
      glyph (the app sidebar's search hint), not a boxed key squeezed into a small button */
   .txn-search-trigger { align-self: center; flex: none; gap: var(--sp-2); }
@@ -2111,6 +2117,8 @@
      (a re-open button + rotated label); the data-*-rail attrs drive the column track widths so the centre
      transcript reclaims the space. --txn-rail-strip-w is the collapsed strip width (square hit target). */
   .txn-body-grid { --txn-rail-strip-w: var(--sp-7); flex: 1; min-height: 0; display: grid; grid-template-columns: 240px minmax(0, 1fr) 272px; }
+  /* the narrower collapsed strip belongs to the ledger reading layout only; classic keeps 40px. */
+  .txn-ledger .txn-body-grid { --txn-rail-strip-w: var(--sp-6); }
   .txn-body-grid[data-left-rail="closed"] { grid-template-columns: var(--txn-rail-strip-w) minmax(0, 1fr) 272px; }
   .txn-body-grid[data-right-rail="closed"] { grid-template-columns: 240px minmax(0, 1fr) var(--txn-rail-strip-w); }
   .txn-body-grid[data-left-rail="closed"][data-right-rail="closed"] { grid-template-columns: var(--txn-rail-strip-w) minmax(0, 1fr) var(--txn-rail-strip-w); }
@@ -2128,7 +2136,7 @@
      `.iu` wrapper - it never reaches TranscriptViewer when a consuming app (peasant-web, village)
      embeds it WITHOUT that wrapper, which is exactly where the cramped captures came from.
      Neutralise it directly here so every host context gets full-width behaviour. */
-  .txn-center { min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; border-right: var(--bd); max-width: none; margin-inline: 0; padding-inline: 0; }
+  .txn-center { --txn-zen-bottom: var(--sp-8); --txn-zen-size: var(--target-comfortable); position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; border-right: var(--bd); max-width: none; margin-inline: 0; padding-inline: 0; }
 
   /* ---- trace ---- */
   /* position:relative anchors the absolute scrubber header (tier 1) to the trace's
@@ -2581,13 +2589,33 @@
   .txn-search-nav:disabled { color: var(--ink-5); cursor: not-allowed; }
   .txn-search-esc { flex: none; }
 
-  /* ---- progress indicator ---- */
-  .txn-footer { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-2); padding: var(--sp-2) var(--sp-4); border-top: var(--bd); background: var(--surface); }
+  /* ---- bottom bar: one row — the session views, the shortcut hint, the position counter ---- */
+  /* the bottom bar is after the panel in DOM order, so a keyboard reader gets one control at the
+     top of the viewer that jumps straight to the session views; it is invisible until focused. */
+  .txn-skip {
+    position: absolute; z-index: var(--z-dropdown); top: var(--sp-2); left: var(--sp-2);
+    width: var(--stroke-hairline); height: var(--stroke-hairline);
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+    background: var(--surface); border: var(--bd-strong); color: var(--ink);
+    font-family: var(--font-mono); font-size: var(--fs-label); padding: 0;
+  }
+  .txn-skip:focus-visible {
+    width: auto; height: auto; overflow: visible; clip-path: none;
+    padding: var(--sp-2) var(--sp-3);
+    outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset);
+  }
+
+  .txn-footer { flex: none; display: flex; align-items: stretch; gap: var(--sp-3); padding: 0 var(--sp-4); border-top: var(--bd); background: var(--surface); }
+  .txn-foot-meta { display: flex; flex: none; align-items: center; justify-content: flex-end; gap: var(--sp-3); padding: var(--sp-2) 0; }
   .txn-progress { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); background: var(--surface-elev); border: var(--bd-strong); padding: var(--sp-1) var(--sp-3); }
 
-  /* a finger has no keyboard to step with and the counter crowds the reading view: on a touch
-     screen the footer (the key hints, the position counter) is left out */
-  @media (pointer: coarse) { .txn-footer { display: none; } }
+  /* a finger has no keyboard, so the shortcut hint leaves a touch screen or a phone. The position
+     counter is host opt-in through `footer.progress` and stays wherever the host asked for it; the
+     row collapses only when nothing in it is left to show. The views stay reachable at every width. */
+  @media (pointer: coarse), (width < 768px) {
+    .txn-hint { display: none; }
+    .txn-foot-meta:not(:has(.txn-progress)) { display: none; }
+  }
 
   /* ---- hint strip ---- */
   .txn-hint { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-4); }
@@ -2628,6 +2656,12 @@
   .txn-body-grid[data-left-rail="closed"][data-right-rail="none"] { grid-template-columns: 1fr; }
   .txn-rail-left, .txn-rail-right, .txn-rail-strip { display: none; }
   .txn-center { border-right: 0; }
+  /* the rails are gone here, so there is nothing for zen to collapse and only the width handle
+     keeps a lane in the reader's trailing gutter. (The control's own hide rule sits after its
+     base rule, below.) */
+  .txn-center { --txn-zen-size: var(--sp-5); }
+  /* the toggle keeps its stable word and switch at every width, so its reserved gutter keeps the
+     one --txn-zen-size the base rule declares. */
 }
 @media (width < 1024px) {
   /* stacked: drop the shared row grid (there's only one column to align) so each
@@ -2638,9 +2672,12 @@
   .txn-sc-card:last-child { border-bottom: 0; }
 }
 @media (width < 768px) {
-  .txn-header { padding: var(--sp-3); }
+  .txn-header { padding: var(--sp-2) var(--sp-3); }
   .txn-header-top { flex-wrap: wrap; }
+  /* the derived trail now repeats the title, and the title is the header's own first line, so the
+     trail leaves a phone. A host's own trail stays: it carries routes the title cannot. */
   .txn-crumb { flex-basis: 100%; }
+  .txn-crumb-derived { display: none; }
   .txn-actions { flex-wrap: wrap; min-width: 0; max-width: 100%; }
   .txn-app-condensed > .txn-header .txn-header-top { flex-wrap: wrap; }
   .txn-trace-head { flex-wrap: wrap; }
@@ -2648,16 +2685,20 @@
   .iu .btn:not(.btn-sm) { min-height: var(--control-h); height: auto; padding-block: var(--sp-2); line-height: var(--lh-mono); }
   .iu .btn .lucide { flex: none; }
   .txn-title {
-    font-size: var(--fs-lg);
-    margin-top: var(--sp-2);
-    /* Keep the complete primary title readable, even when the header grows. */
-    display: block;
+    font-size: var(--fs-md);
+    margin-top: 0;
+    /* two lines at most: the title orients the reader, it must never take the viewport */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
     overflow-wrap: anywhere;
   }
-  /* the metadata wraps onto as many lines as it needs, so nothing runs off the edge unseen; each
-     figure stays whole on its line */
+  /* the metadata is one sideways-scrolling line: a stacked block of chips cost the reader the
+     header's whole height at 390 */
   .txn-meta {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
     margin-top: var(--sp-2);
   }
   .txn-meta > * { white-space: nowrap; }
@@ -2675,9 +2716,9 @@
   .txn-tabs { gap: var(--sp-4); flex-wrap: nowrap; overflow-x: auto; padding-right: var(--sp-6); mask-image: linear-gradient(to right, var(--ink) calc(100% - var(--sp-6)), transparent); }
   .txn-tabs:focus-within { mask-image: none; }
   .txn-tab { padding: var(--sp-2) 2px; }
-  .txn-tabbar { padding-right: var(--sp-3); }
-  .txn-tabbar > .txn-tabs { flex-wrap: nowrap; }
-  .txn-tabbar .txn-tab { flex: none; }
+  .txn-foot-tabs { padding-right: 0; }
+  .txn-foot-tabs > .txn-tabs { flex-wrap: nowrap; }
+  .txn-foot-tabs .txn-tab { flex: none; }
   .txn-search { position: relative; top: auto; left: auto; transform: none; flex: none; align-self: center; margin-block: var(--sp-2); }
   .tbl-tools { position: relative; flex-wrap: nowrap; align-items: flex-start; padding-top: calc(var(--fs-label) * var(--lh-body) + var(--sp-1)); }
   .tbl-tools > label { position: absolute; top: 0; left: 0; }
@@ -2689,10 +2730,11 @@
   .tbl-footer > * { flex: none; }
   .tbl-footer:has(> button:first-of-type:disabled):has(> button:last-of-type:disabled) > :not([role=status]) { display: none; }
   .tbl-td { padding-block: var(--sp-2); }
-  /* the "N turns / list·graph toggle" bar above the stream — same treatment
-     as .txn-header: less padding buys the scrollable stream more of the
-     viewport without hiding or removing anything. */
-  .txn-trace-head { padding: var(--sp-2) var(--sp-3); }
+  /* the "N turns / list·graph toggle" bar costs a phone a whole row for a view switch the reader
+     does not need there; the stream takes the height instead. In graph mode the bar stays, because
+     it is the only way back to the reading view. */
+  .txn-trace-head { display: none; }
+  .txn-trace-head-graph { display: flex; }
   .txn-sticky-model { display: none; }
   .txn-anno-row { flex-wrap: wrap; }
   .txn-anno-preview { flex-basis: 100%; }
@@ -3687,8 +3729,8 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 .txn-rail-turn {
   display: flex; flex-direction: column; gap: var(--sp-1);
   width: 100%; min-height: var(--target-comfortable);
-  padding: var(--sp-2) var(--sp-1);
-  border: 0; border-bottom: var(--bd);
+  padding: var(--sp-2) var(--sp-4);
+  border: 0;
   background: transparent;
   color: var(--ink-2);
   text-align: left; cursor: pointer;
@@ -3713,14 +3755,22 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
    compact row with its own disclosure. Every rule below is scoped to the ledger classes the
    opt-in presentation adds, so the classic card is untouched. Tokens only, radius 0, both
    themes free. */
-.txn-turnwrap-ledger { max-inline-size: var(--measure-code); margin-inline: auto; }
+.txn-ledger { --txn-reader-width: 840px; }
+.txn-turnwrap-ledger { max-inline-size: var(--txn-reader-width); margin-inline: auto 0; }
 .txn-turn.txn-turn-ledger { background: transparent; border: 0; }
+/* a faint rule marks a change of role between adjacent turns, and never opens the trace. */
+.txn-ledger .txn-turn-rule { border: 0; border-top: var(--bd); opacity: .7; margin: var(--sp-4) 0; }
+
 /* the active marker stays: the leading rail is an inset shadow, so a borderless ledger turn
    still shows which turn is current. */
 .txn-turn.txn-turn-ledger.txn-active { border-color: transparent; box-shadow: inset var(--stroke-emphasis) 0 0 var(--amber); }
 
-/* a faint rule marks a change of role between adjacent turns, and never opens the trace. */
-.txn-ledger .txn-turn-rule { border: 0; border-top: var(--bd); opacity: .7; margin: var(--sp-4) 0; }
+/* the phase heading belongs to the reader column, never the whole stream: its box starts and ends
+   on the turn column, so it cannot stretch into the gutter when the user-turns rail is collapsed.
+   The reader column is right-aligned inside the stream (margin-inline: auto 0, as on the turn
+   column), so the phase takes the same trailing alignment. Sticky behaviour and the vertical
+   rhythm stay. */
+.txn-ledger .txn-phase { max-inline-size: var(--txn-reader-width); margin-inline: auto 0; }
 
 .txn-turnhead-ledger { gap: var(--sp-2); }
 .txn-roleico {
@@ -3734,17 +3784,30 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 .txn-turn.user .txn-roleico { color: var(--teal); }
 .txn-turn.sub .txn-roleico { color: var(--mauve); }
 
-/* one work panel per turn: a top rule, the computed summary line, then the tool rows. */
-.txn-work { margin-top: var(--sp-4); padding-top: var(--sp-1); border-top: var(--bd); }
+/* one work panel per turn: a top rule, the computed summary line, then the tool rows.
+   --txn-work-inline is the panel's ONE shared inline edge: the summary head, every tool
+   row, and the output/diff body all start on it, so the panel reads as one grid.
+   --txn-work-name-offset carries the summary text past the row's leading chevron, its kind
+   icon and their gaps, so the summary starts on the tool-NAME column. */
+.txn-work { --txn-work-inline: var(--sp-3); --txn-work-name-offset: calc(var(--ic-sm) + var(--sp-3) + var(--ic-sm) + var(--sp-2)); margin-top: var(--sp-4); padding-top: var(--sp-1); border-top: var(--bd); }
 .txn-work-head {
   display: flex; align-items: center; gap: var(--sp-2);
   min-height: var(--target-min);
+  padding-inline: var(--txn-work-inline);
   font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-mono);
   color: var(--ink-3);
 }
 .txn-work-count { color: var(--ink-2); font-weight: 700; }
 .txn-work-meta { margin-left: auto; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .txn-work-rows { margin-top: var(--sp-1); }
+/* the summary text sits where a tool NAME sits: past the row's chevron, its kind icon and gaps. */
+.txn-work-head .txn-work-count { padding-inline-start: var(--txn-work-name-offset); }
+/* the offset is arithmetic over the leading chevron and the kind icon, so the chevron takes the
+   icon token instead of its intrinsic SVG size. */
+.txn-work .txn-tc-chev { inline-size: var(--ic-sm); block-size: var(--ic-sm); flex: none; }
+/* the rows and the output/diff bodies start on the shared edge, with no extra indent. */
+.txn-work .txn-tc-head { padding-inline: var(--txn-work-inline); }
+.txn-work .txn-tcbody { padding-inline: var(--txn-work-inline); }
 
 /* a system turn reads as one compact row; its recorded text opens one indent under it. */
 .txn-systemrow { margin-top: var(--sp-3); border-top: var(--bd); }
@@ -3765,3 +3828,95 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 .txn-systemrow-preview { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .txn-systemrow-time { flex: none; color: var(--ink-4); }
 .txn-systemrow-body { margin-top: var(--sp-1); padding-inline-start: var(--sp-5); border-inline-start: var(--bd); }
+
+/* ---- reading layout: width, zen, and the rails -----------------------------------
+   Openness is USER STATE, never a function of the reading width. The handle writes ONLY
+   --txn-reader-width; the reader column follows it and no rail folds because of it. Zen
+   collapses every rail (its strips leave too) and restores the exact snapshot. */
+
+/* the ledger turn column IS the reader column: prose follows the width instead of the
+   58ch running measure, while code and diff blocks keep their own overflow context. */
+.txn-turnwrap-ledger .txn-body > .txn-md-prose,
+.txn-turnwrap-ledger .txn-body > .txn-md-list,
+.txn-turnwrap-ledger .txn-body > .txn-md-heading,
+.txn-turnwrap-ledger .txn-body > .txn-md-blockquote,
+.txn-turnwrap-ledger .txn-body .txn-md-rule { max-inline-size: none; }
+
+/* the trailing-edge reading-width handle: a 24px grab area drawn in the ledger's inline-end
+   gutter, fully outside the measure, so no line ever ends under it. The affordance itself is a
+   slim 2x24 grip, not a box: the hit area stays 24px wide and carries no ground or border. */
+.txn-reader-handle {
+  position: absolute;
+  top: 50%;
+  inset-inline-start: calc(100% - var(--txn-zen-size) - var(--sp-4));
+  transform: translate(0, -50%);
+  z-index: 3;
+  display: inline-flex; align-items: center; justify-content: center;
+  inline-size: var(--sp-5); block-size: var(--sp-8);
+  background: transparent; border: 0;
+  cursor: col-resize; touch-action: none;
+}
+.txn-reader-handle::after {
+  content: "";
+  inline-size: calc(var(--stroke-emphasis) + var(--stroke-hairline));
+  block-size: var(--sp-6);
+  background: var(--ink-4);
+}
+.txn-reader-handle:hover::after { background: var(--ink-2); }
+.txn-reader-handle:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
+
+/* zen: the rails and their strips leave, so the body is the center column alone. The
+   control lives INSIDE the center column, so it sits left of the filters rail (and at the
+   center's right edge when the left rail is closed) and never covers a rail control. */
+.txn-app.txn-ledger.txn-zen .txn-body-grid { grid-template-columns: minmax(0, 1fr); }
+.txn-zen-control {
+  position: absolute;
+  z-index: 4;
+  inset-block-end: var(--txn-zen-bottom);
+  inset-inline-end: var(--sp-4);
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-1);
+  inline-size: var(--txn-zen-size);
+  min-block-size: var(--target-comfortable);
+  padding-inline: 0;
+  background: var(--surface-2); border: var(--bd-strong); color: var(--ink-2);
+  font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-mono);
+  text-transform: lowercase; cursor: pointer;
+}
+.txn-zen-control:hover { color: var(--ink); border-color: var(--amber-dim); }
+.txn-zen-control:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
+.txn-zen-control[aria-pressed="true"] { color: var(--amber-bright); border-color: var(--amber-dim); }
+/* the switch is the only shape that moves: a 28x16 track with a 12px square thumb. Pressed fills
+   the track amber; the stable "zen" word beside it carries the meaning, never colour alone. */
+.txn-zen-switch {
+  position: relative;
+  flex: none;
+  inline-size: var(--chip-h);
+  block-size: var(--sp-4);
+  background: var(--surface); border: var(--bd-strong);
+}
+.txn-zen-switch::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: calc(var(--stroke-emphasis) / 2);
+  inline-size: var(--sp-3);
+  block-size: var(--sp-3);
+  background: var(--ink-4);
+  transform: translateY(-50%);
+}
+.txn-zen-control[aria-pressed="true"] .txn-zen-switch { background: var(--amber); border-color: var(--amber-dim); }
+.txn-zen-control[aria-pressed="true"] .txn-zen-switch::after { inset-inline-start: auto; inset-inline-end: calc(var(--stroke-emphasis) / 2); background: var(--surface-2); }
+/* the reader's inline-end gutter holds the zen control and the width handle, so neither ever
+   sits over prose or a table. The reader column is right-aligned inside what remains. */
+.txn-ledger .txn-stream { padding-inline-end: calc(var(--txn-zen-size) + var(--sp-4)); }
+
+/* the reading-width handle leaves the phone viewport: the reader is viewport-bound there, so
+   there is no column edge to grab. Declared after the ledger block so the base absolute rule
+   cannot win the cascade at equal specificity. */
+/* no rails means no zen: below the two-rail breakpoint the control leaves the surface entirely,
+   declared here so it wins over the base absolute rule. */
+@media (width < 1080px) { .txn-zen-control { display: none; } }
+@media (width < 768px) { .txn-reader-handle { display: none; } }
+/* with the handle gone the ledger stream needs no trailing lane: the reader takes the page inset
+   and the phone stops paying for a control it cannot use. */
+@media (width < 768px) { .txn-ledger .txn-stream { padding-inline-end: var(--sp-4); } }

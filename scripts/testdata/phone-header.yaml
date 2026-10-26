@@ -2,14 +2,16 @@
 # themes on a 390px touch screen (pointer: coarse).
 #   tab-bar  the transcript's search trigger is one square icon control beside the tab strip: the
 #            strip never runs under it, the trigger shows no ⌘F, and the strip scrolls to its last tab.
-#   crumb    the transcript trail keeps the trail's rule (scripts/transcript-trail-rule.mjs): one
-#            line, every crumb whole while it fits, the current crumb gives way first down to its
-#            floor, every cut ends in an ellipsis, nothing below its floor or cut with room to spare.
+#            The strip is the bottom bar's first row at every width, so it stays reachable here.
+#   header   the phone header: the derived trail leaves (its last crumb is the title, so it would
+#            repeat the h1), the title clamps to two lines, and the header stays well under half a
+#            390x844 viewport.
 #   chips    the analytics section chips are one row that scrolls in its own strip: every chip shares
 #            one top, keeps the 44px reach, the first starts on the page's left edge (`inset` from the
 #            demo's view) and the strip scrolls to its last chip.
 viewport: {width: 390, height: 844}
 cases:
   - {name: the search trigger keeps beside the tab strip, kind: tab-bar, query: 'app=transcript'}
-  - {name: the transcript trail is one line, kind: crumb, query: 'app=transcript'}
+  - {name: the derived trail leaves the phone header, kind: header, query: 'app=transcript'}
+  - {name: the ledger phone drops its rails chrome, kind: ledger-chrome, query: 'app=transcript&transcript=ledger'}
   - {name: the analytics sections are one strip, kind: chips, query: 'app=graph&section=analytics', inset: 16}
