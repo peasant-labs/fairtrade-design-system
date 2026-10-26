@@ -3733,7 +3733,6 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 .txn-roleico .lucide, .txn-roleico .brand, .txn-roleico .pv-icon { width: var(--ic-sm); height: var(--ic-sm); }
 .txn-turn.user .txn-roleico { color: var(--teal); }
 .txn-turn.sub .txn-roleico { color: var(--mauve); }
-.txn-turn.system .txn-roleico { color: var(--ink-3); }
 
 /* one work panel per turn: a top rule, the computed summary line, then the tool rows. */
 .txn-work { margin-top: var(--sp-4); padding-top: var(--sp-1); border-top: var(--bd); }
