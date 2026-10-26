@@ -17,6 +17,8 @@ requiredCaseNames:
   - direct publish success also sets published bar
   - update mode keeps no suggestion note on a collective that already reads
   - first publish keeps the picker suggestion note on a reader row
+  - transcript demo stays classic without the ledger flag
+  - transcript demo opts into the ledger presentation
 requiredMutationNames:
   - the typical pair is slashed
   - stale published vocabulary

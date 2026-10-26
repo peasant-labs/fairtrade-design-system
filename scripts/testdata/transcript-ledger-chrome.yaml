@@ -6,47 +6,71 @@
 #   subtitle         the supplied deck under the session title
 #   sticky-bar       the pinned trace header (only exists on the trace tab, after scrolling)
 #   sticky-title     the session title inside the pinned header (ledger only)
-#   minimap          the visible-turns segment strip inside the pinned header (ledger only)
+#   minimap          the visible-turns position slider inside the pinned header (ledger only)
 #   scrubber         the classic position track inside the pinned header (classic only)
+#   sticky-provider  the classic pinned header's provider mark (classic only)
+#   sticky-model     the classic pinned header's active model (classic only)
 #   rail-turns       the left rail's per-task card list (ledger trace only)
 #   rail-waterfall   the left rail's duration waterfall (classic trace only)
 #   rail-outline     a left-rail outline row (the non-trace tabs)
+#   task-boundary    the classic per-task identity chip above a user turn (classic only)
 # Every case lists every control exactly once, across present and absent.
+#
+# `kind` is the semantic family each row exercises. It is pinned by the manifest's
+# requiredCaseKinds map, so re-pointing a case at a cheaper family fails even when names match.
 
 # No presentation prop at all: the classic surface, unchanged.
 defaultsCase:
   name: classic with no props keeps the scrubber and no ledger chrome
-  present: [sticky-bar, scrubber, rail-waterfall]
+  kind: classic
+  present: [sticky-bar, scrubber, sticky-provider, sticky-model, rail-waterfall, task-boundary]
   absent: [ledger-root, subtitle, sticky-title, minimap, rail-turns, rail-outline]
 
 cases:
   - name: classic keeps the scrubber when a subtitle is supplied
+    kind: classic
     props: {subtitle: true}
-    present: [subtitle, sticky-bar, scrubber, rail-waterfall]
+    present: [subtitle, sticky-bar, scrubber, sticky-provider, sticky-model, rail-waterfall, task-boundary]
     absent: [ledger-root, sticky-title, minimap, rail-turns, rail-outline]
+  - name: an explicit classic presentation keeps the classic chrome
+    kind: classic
+    props: {presentation: classic}
+    present: [sticky-bar, scrubber, sticky-provider, sticky-model, rail-waterfall, task-boundary]
+    absent: [ledger-root, subtitle, sticky-title, minimap, rail-turns, rail-outline]
+  # the union is closed in the types, and an unrecognized runtime value fails closed to classic.
+  - name: an unknown presentation value falls back to classic
+    kind: classic
+    props: {presentation: 'ledger-ish'}
+    present: [sticky-bar, scrubber, sticky-provider, sticky-model, rail-waterfall, task-boundary]
+    absent: [ledger-root, subtitle, sticky-title, minimap, rail-turns, rail-outline]
   - name: ledger swaps the scrubber for the title and minimap
+    kind: ledger
     props: {presentation: ledger}
     present: [ledger-root, sticky-bar, sticky-title, minimap, rail-turns]
-    absent: [subtitle, scrubber, rail-waterfall, rail-outline]
+    absent: [subtitle, scrubber, sticky-provider, sticky-model, rail-waterfall, rail-outline, task-boundary]
   - name: ledger renders the supplied subtitle under the title
+    kind: ledger
     props: {presentation: ledger, subtitle: true}
     present: [ledger-root, subtitle, sticky-bar, sticky-title, minimap, rail-turns]
-    absent: [scrubber, rail-waterfall, rail-outline]
+    absent: [scrubber, sticky-provider, sticky-model, rail-waterfall, rail-outline, task-boundary]
   - name: ledger leaves the other tab outlines on the classic rails
+    kind: ledger
     props: {presentation: ledger, activeTab: highlights}
     present: [ledger-root, rail-outline]
-    absent: [subtitle, sticky-bar, sticky-title, minimap, scrubber, rail-turns, rail-waterfall]
+    absent: [subtitle, sticky-bar, sticky-title, minimap, scrubber, sticky-provider, sticky-model, rail-turns, rail-waterfall, task-boundary]
 
 # Behaviour a host relies on, beyond presence.
 interactions:
-  - name: the minimap renders one segment per visible turn
-    kind: minimap-segments
-  - name: each segment carries its turn kind
+  - name: the minimap is one slider over the visible turns
+    kind: minimap-slider
+  - name: each decorative tick carries its turn kind
     kind: minimap-kinds
-  - name: each segment names the turn it jumps to
-    kind: minimap-labels
-  - name: clicking a segment selects its turn
-    kind: minimap-jump
+  - name: the arrow keys step the slider one turn at a time
+    kind: minimap-keys
+  - name: a pointer press selects the turn under the cursor
+    kind: minimap-pointer
+  - name: the minimap follows the visible turns
+    kind: minimap-visible
   - name: the rail renders one card per task with its turn, duration and prompt
     kind: rail-cards
   - name: the card covering the active turn is current
@@ -55,3 +79,16 @@ interactions:
     kind: rail-jump
   - name: the subtitle renders in both presentations
     kind: subtitle-modes
+
+# The rail's rendered expectations, as literals. The gate compares the DOM to these strings
+# instead of re-running the component's own formatter, so a missing or mis-formatted duration
+# fails rather than matching an empty span. Both durations differ, so the cards cannot swap.
+railCases:
+  - name: the first task card
+    turn: '#1'
+    duration: '1m'
+    prompt: prepare the fixture for the check
+  - name: the second task card
+    turn: '#2'
+    duration: '2m'
+    prompt: run it again and show me the result

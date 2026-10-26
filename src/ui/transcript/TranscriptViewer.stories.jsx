@@ -238,12 +238,17 @@ export const Ledger = {
     // the rail lists one card per task, and the classic duration waterfall is gone.
     await expect(canvasElement.querySelectorAll('.txn-rail-turn')).toHaveLength(ledgerViewModel.tasks.length)
     expect(canvasElement.querySelector('.txn-ol-waterfall')).toBeNull()
-    // the pinned header appears once the trace scrolls, with the title and the minimap.
+    // the classic per-task identity chip would repeat the rail card and the turn head.
+    expect(canvasElement.querySelector('.txn-taskboundary')).toBeNull()
+    // the pinned header appears once the trace scrolls, with the title and one position slider.
     const stream = canvasElement.querySelector('.txn-stream')
     stream.scrollTop = stream.scrollHeight
     await fireEvent.scroll(stream)
-    const nav = await canvas.findByRole('navigation', { name: 'transcript timeline' })
-    expect(nav.querySelectorAll('.txn-minimap-seg')).toHaveLength(ledgerTurns.length)
+    const slider = await canvas.findByRole('slider', { name: 'transcript timeline' })
+    expect(slider.querySelectorAll('.txn-minimap-seg')).toHaveLength(ledgerTurns.length)
+    expect(within(slider).queryAllByRole('button')).toHaveLength(0)
+    expect(slider).toHaveAttribute('aria-valuemax', String(ledgerTurns.length - 1))
+    expect(slider.getAttribute('aria-valuetext')).toMatch(new RegExp(`^turn .+ of ${ledgerTurns.length}$`))
     expect(canvasElement.querySelector('.txn-sticky .txn-scrub')).toBeNull()
   },
 }
