@@ -60,7 +60,7 @@ import Tooltip from '../Tooltip.jsx'
 
    PRESENTATION: `classic` (the default) is the report-style surface. `ledger` keeps
    the same state, callbacks and gating but swaps the chrome: a subtitle under the
-   title, a title + whole-transcript minimap in the pinned trace header instead of the
+   title, a title + visible-turns minimap in the pinned trace header instead of the
    provider/model + scrubber, and user-turn task cards in the left rail instead of the
    duration waterfall. Absent the prop nothing changes, so a host that never opts in
    renders exactly what it rendered before.

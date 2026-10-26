@@ -1,13 +1,14 @@
-/* TranscriptMinimap — the whole-transcript position strip in the pinned trace header of the
+/* TranscriptMinimap — the visible-turns position strip in the pinned trace header of the
    ledger presentation. DUMB: it renders one segment per cooked `TurnVM` the reader can currently
    see (the viewer passes its already-filtered `visibleTurns`), marks the active one with
    `aria-current`, and reports a click as a turn index through `onJump`. It parses no wire and
    holds no state.
 
    Segment KIND is a semantic role, not a hue choice: a user turn, a tool-running turn (a system
-   turn, or an assistant turn carrying tool calls), or everything else. The CSS pairs the colour
-   with the accessible name, so colour never carries the meaning alone. Exported as
-   `TranscriptMinimap`. */
+   turn, or an assistant turn carrying tool calls), or everything else. The CSS gives each kind
+   its own bar height as well as its colour, outlines the current segment's cell in ink, and the
+   accessible name restates the role, so neither kind nor position rests on colour alone.
+   Exported as `TranscriptMinimap`. */
 
 /** @typedef {import('./view-model.js').TurnVM} TurnVM */
 

@@ -2,9 +2,10 @@ import { expect, within } from 'storybook/test'
 import TranscriptMinimap from './Minimap.jsx'
 
 /* TranscriptMinimap story (exported as TranscriptMinimap). One segment per visible turn, in turn
-   order: user segments carry the teal role colour, tool turns the faint rule ink, agent turns the
-   amber accent, and the active turn grows its bar. Wrapped in a bar (the minimap is `flex:1` inside
-   the pinned trace header). */
+   order: user segments carry the teal role colour and the tallest bar, agent turns the amber
+   accent and a middle bar, tool turns the faint rule ink and the shortest bar. The turn currently
+   in view is outlined in ink around its cell, so its position never depends on colour. Wrapped in
+   a bar (the minimap is `flex:1` inside the pinned trace header). */
 
 const turns = [
   { index: 0, role: 'user', label: '1', toolCalls: [] },

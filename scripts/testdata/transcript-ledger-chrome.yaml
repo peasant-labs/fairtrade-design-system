@@ -6,7 +6,7 @@
 #   subtitle         the supplied deck under the session title
 #   sticky-bar       the pinned trace header (only exists on the trace tab, after scrolling)
 #   sticky-title     the session title inside the pinned header (ledger only)
-#   minimap          the whole-transcript segment strip inside the pinned header (ledger only)
+#   minimap          the visible-turns segment strip inside the pinned header (ledger only)
 #   scrubber         the classic position track inside the pinned header (classic only)
 #   rail-turns       the left rail's per-task card list (ledger trace only)
 #   rail-waterfall   the left rail's duration waterfall (classic trace only)
