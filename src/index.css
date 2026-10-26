@@ -3673,6 +3673,9 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   width: var(--stroke-emphasis);
   height: var(--sp-3);
   background: var(--ink-strong);
+  /* a hairline ground halo: the cursor crosses the teal and amber fills, so its adjacent colour
+     is the bar's own surface at every point and the marker never sits under the 3:1 floor. */
+  box-shadow: 0 0 0 var(--stroke-hairline) var(--surface);
   transform: translateX(-50%);
   pointer-events: none;
 }

@@ -78,6 +78,9 @@ async function play({ canvasElement }) {
   probe.remove()
   expect(cursor.backgroundColor).toBe(inkStrong)
   expect(cursor.backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
+  // a 1px ground halo, so the cursor's adjacent colour is the bar's surface where it crosses the
+  // teal and amber fills (both themes).
+  expect(cursor.boxShadow).not.toBe('none')
   expect(parseFloat(cursor.height)).toBeGreaterThan(trackHeight)
   // keyboard seek: one turn per arrow, Home/End to the ends.
   await fireEvent.keyDown(slider, { key: 'ArrowRight' })
