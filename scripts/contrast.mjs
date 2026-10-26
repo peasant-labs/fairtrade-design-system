@@ -164,6 +164,12 @@ const PAIRS = [
   { fg: 'olive', bg: 'surface', kind: 'text', note: 'success/add text' },
   { fg: 'clay', bg: 'surface', kind: 'text', note: 'danger/del text' },
   { fg: 'mauve', bg: 'surface', kind: 'text', note: 'system/subagent text' },
+  // the ledger minimap's ticks are functional position marks (1.4.11), not decoration: each kind
+  // clears 3:1 on the pinned header's --surface and on the --surface-2 bar the component ships in.
+  { fg: 'teal', bg: 'surface-2', kind: 'nontext', note: 'minimap user tick on the elevated bar' },
+  { fg: 'ink-2', bg: 'surface-2', kind: 'nontext', note: 'minimap agent tick on the elevated bar' },
+  { fg: 'ink-4', bg: 'surface', kind: 'nontext', note: 'minimap tool tick on the pinned header' },
+  { fg: 'ink-4', bg: 'surface-2', kind: 'nontext', note: 'minimap tool tick on the elevated bar' },
 ]
 
 function minFor(p) {

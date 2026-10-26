@@ -881,8 +881,9 @@ export default function TranscriptViewer({
 
         <TitleHeading className="txn-title" title={title}>{title}</TitleHeading>
         {/* an optional one-line deck under the title (ledger reads it as the transcript's
-            provenance line); render-when-supplied so classic is untouched. */}
-        {subtitle != null && <p className="txn-sub">{subtitle}</p>}
+            provenance line); render-when-supplied so classic is untouched. A div, not a
+            paragraph: the prop takes a node, and a composed deck may hold block content. */}
+        {subtitle != null && <div className="txn-sub">{subtitle}</div>}
 
         <div className="txn-meta chips" tabIndex={0} role="region" aria-label="session metadata">
           {showOutcome && session.outcome && <TranscriptOutcomeChip outcome={session.outcome} />}
@@ -1056,7 +1057,10 @@ export default function TranscriptViewer({
                       return (
                         <div key={t.identity ?? t.index}>
                           {showPhase && <PhaseDivider phase={phase} heading={PhaseHeading} />}
-                          {t.role === 'user' && task && <TaskBoundary task={task} />}
+                          {/* in ledger the rail card carries the task identity and duration and
+                              the turn head carries the per-turn identity, so the classic
+                              boundary would repeat both before the first line of prose. */}
+                          {!ledger && t.role === 'user' && task && <TaskBoundary task={task} />}
                           <TurnCard
                             headingLevel={pageLevel + 2}
                             turn={t}

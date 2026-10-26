@@ -20,6 +20,7 @@
 /** @typedef {import('./index.js').TranscriptFilters} TranscriptFilters */
 /** @typedef {import('./index.js').SavedLabel} SavedLabel */
 /** @typedef {import('./index.js').Theme} Theme */
+/** @typedef {import('./index.js').Presentation} Presentation */
 /** @typedef {import('./index.js').TranscriptTab} TranscriptTab */
 
 /* a stand-in cooked VM: the VM contract is pinned in contract.type-test.js; here we
@@ -98,9 +99,17 @@ const controlled = {
   showTail: false,
   showOutcome: false,
   showSearchTrigger: true,
+  presentation: 'ledger',
+  subtitle: 'a public transcript from fairtrade, read as a ledger.',
   pullRequests: 'host pull request list',
 }
 void controlled
+
+/* the presentation union is re-exported from the barrel, so a host can hold the choice in a
+   variable without repeating the union. */
+/** @type {Presentation} */
+const ledgerPresentation = 'ledger'
+void ledgerPresentation
 
 /* the three negative pins use the typed-parameter call idiom (matching
    contract.type-test.js): the bad value is an ARGUMENT, so the `@ts-expect-error`
@@ -149,6 +158,11 @@ _acceptViewerProps({ viewModel: vm, capabilities: caps, showSearchTrigger: 1 })
 
 // @ts-expect-error — showOutcome is a boolean, not null
 _acceptViewerProps({ viewModel: vm, capabilities: caps, showOutcome: null })
+
+/* ── (5c) NEGATIVE: presentation is a closed union ───────────────────────────────
+   The ledger value is the one a consumer opts into; a typo or a widened string must fail. */
+// @ts-expect-error — presentation is the closed 'classic' | 'ledger' union
+_acceptViewerProps({ viewModel: vm, capabilities: caps, presentation: 'ledger ' })
 
 /* ── (6) POSITIVE: a capability flag is genuinely boolean ─────────────────────────
    A bare read does not bite under strictNullChecks, so dereference through a use. */

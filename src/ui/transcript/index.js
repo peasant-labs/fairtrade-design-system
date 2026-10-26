@@ -138,6 +138,7 @@ export { default as useTranscriptInitialPosition } from './useTranscriptInitialP
 /** @typedef {import('./state-capabilities.js').TranscriptFilters} TranscriptFilters */
 /** @typedef {import('./state-capabilities.js').SavedLabel} SavedLabel */
 /** @typedef {import('./state-capabilities.js').Theme} Theme */
+/** @typedef {import('./state-capabilities.js').Presentation} Presentation */
 /** @typedef {import('./state-capabilities.js').TranscriptTab} TranscriptTab */
 /** @typedef {import('./state-capabilities.js').ViewMode} ViewMode */
 

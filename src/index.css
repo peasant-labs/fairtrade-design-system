@@ -3640,24 +3640,34 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   color: var(--ink-2);
 }
 
-/* one segment per visible turn: a full-height hit target carrying a thin bar, so the strip
-   reads as a position map rather than another control row. A segment kind is encoded twice,
-   by colour AND by bar height (user tallest, agent middle, tool shortest), so the map stays
-   readable without hue. The current segment adds a shape marker: an inset ink outline around
-   its cell, which survives both themes and never depends on the role colour. */
-.txn-minimap { display: flex; align-items: stretch; flex: 1; gap: 2px; min-width: 120px; height: var(--target-min); }
-.txn-minimap-seg {
-  display: flex; align-items: center;
-  flex: 1 1 0; min-width: 0; height: var(--target-min);
-  padding: 0; border: 0; background: transparent; cursor: pointer;
+/* one position control for the whole strip: a single focusable slider over the visible turns,
+   so the tab-stop count and the hit target stay constant as the trace grows. The ticks are
+   decorative (never targets) and a kind is encoded by bar height AND colour (user tallest in
+   the teal role colour, agent middle in ink-2, tool shortest in ink-4, which clears the 3:1
+   floor in both themes). The amber cursor marks the active position for any turn count,
+   independent of a tick's width. */
+.txn-minimap {
+  position: relative;
+  flex: 1;
+  min-width: 120px;
+  height: var(--target-min);
+  cursor: pointer;
 }
-/* the tool bar is the kind default; user and agent raise it by whole tokens. */
-.txn-minimap-seg::before { content: ""; display: block; width: 100%; height: var(--stroke-emphasis); background: var(--ink-5); }
-.txn-minimap-user::before { height: calc(var(--sp-1) + var(--stroke-emphasis)); background: var(--teal); }
-.txn-minimap-agent::before { height: var(--sp-1); background: var(--amber); }
-.txn-minimap-tool::before { background: var(--ink-5); }
-.txn-minimap-seg[aria-current="true"] { outline: var(--stroke-emphasis) solid var(--ink); outline-offset: calc(-1 * var(--stroke-emphasis)); }
-.txn-minimap-seg:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
+.txn-minimap:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
+.txn-minimap-track { position: absolute; inset: 0; display: flex; align-items: center; gap: var(--sp-1); }
+.txn-minimap-seg { flex: 1 1 0; min-width: 0; height: var(--stroke-emphasis); background: var(--ink-4); }
+.txn-minimap-user { height: calc(var(--sp-1) + var(--stroke-emphasis)); background: var(--teal); }
+.txn-minimap-agent { height: var(--sp-1); background: var(--ink-2); }
+.txn-minimap-tool { height: var(--stroke-emphasis); background: var(--ink-4); }
+.txn-minimap-cursor {
+  position: absolute;
+  top: calc((var(--target-min) - var(--sp-4)) / 2);
+  width: var(--stroke-emphasis);
+  height: var(--sp-4);
+  background: var(--amber);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
 
 /* the rail's ledger trace tab: one card per user-turn task. */
 .txn-rail-turns { list-style: none; margin: 0; padding: 0; }
@@ -3683,8 +3693,3 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   color: var(--ink-3);
 }
 .txn-rail-turn[aria-current="true"] .txn-rail-turn-copy { color: var(--ink-2); }
-
-/* the ledger reads at the same measure and padding as the classic stream for now; the rule is
-   declared here so a later ledger-specific measure change lands in this block, not in the
-   classic selector above. */
-.txn-ledger .txn-stream { padding: var(--sp-3) var(--sp-4) var(--sp-7); }

@@ -19,6 +19,7 @@ import { Term } from '../Explainer.jsx'
 
 /** @typedef {import('./view-model.js').TranscriptViewModel} TranscriptViewModel */
 /** @typedef {import('./view-model.js').AnnotationVM} AnnotationVM */
+/** @typedef {import('./state-capabilities.js').Presentation} Presentation */
 
 /* highlight kind → glyph (the cooked HighlightVM carries a semantic `kind`, not a component). */
 const HIGHLIGHT_ICON = { request: Play, phase: Flag, error: AlertTriangle, checkpoint: GitCommitHorizontal, final: Sparkles }
@@ -36,7 +37,7 @@ const ANNOTATION_ORDER = ['error', 'retry', 'revert', 'subagent']
  * @param {object} props
  * @param {TranscriptViewModel} props.viewModel
  * @param {import('./state-capabilities.js').TranscriptTab} props.tab
- * @param {'classic' | 'ledger'} [props.presentation]  chrome mode; defaults to 'classic'
+ * @param {Presentation} [props.presentation]          chrome mode; defaults to 'classic'
  * @param {number} [props.activeTurn]                   the active TURN INDEX, for the ledger cards
  * @param {(turnIndex: number) => void} [props.onJump]
  */
@@ -127,29 +128,32 @@ export default function OutlineRail({ viewModel, tab, onJump = () => {}, present
   }
 
   /* trace in the ledger presentation → one card per task: its #turn, its duration, and the
-     prompt the reader is jumping to. The card covering the active turn is marked current. */
+     prompt the reader is jumping to. The card covering the active turn is marked current. A
+     task with no first turn offers no destination, so it is skipped rather than sent to turn 0. */
   if (tab === 'trace' && presentation === 'ledger') {
     const turns = viewModel?.turns ?? []
     return (
       <ul className="txn-rail-turns">
         {(viewModel?.tasks ?? []).map((task) => {
           const first = task.turnIndices?.[0]
+          if (first == null) return null
           const firstTurn = turns.find((turn) => turn.index === first)
-          const active = first != null && (task.turnIndices ?? []).includes(activeTurn)
+          const active = (task.turnIndices ?? []).includes(activeTurn)
+          const prompt = task.displayPrompt ?? task.prompt
           return (
             <li key={task.id ?? first}>
               <button
                 type="button"
                 className="txn-rail-turn"
                 aria-current={active ? 'true' : undefined}
-                title={task.prompt}
-                onClick={() => onJump(first ?? 0)}
+                title={prompt}
+                onClick={() => onJump(first)}
               >
                 <span className="txn-rail-turn-top">
-                  <b className="tnum">#{firstTurn?.label ?? first}</b>
+                  <b className="tnum">#{firstTurn?.label ?? task.index}</b>
                   <span className="tnum">{formatDuration(task.durationMs)}</span>
                 </span>
-                <span className="txn-rail-turn-copy">{task.prompt}</span>
+                <span className="txn-rail-turn-copy">{prompt}</span>
               </button>
             </li>
           )
