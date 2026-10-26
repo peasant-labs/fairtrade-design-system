@@ -146,3 +146,13 @@ cases:
       - {selector: '.txn-app.txn-ledger', count: 1}
       - {selector: '.txn-sub', text: 'a public transcript from fairtrade, read as a ledger.'}
       - {selector: '.txn-rail-turn', count: 2}
+  # the canonical demo session carries no system turn, so a dedicated flag appends one and the
+  # ledger's compact system row is rendered by the built app rather than a story alone.
+  - name: transcript demo renders the ledger system row
+    module: /src/mockups/inuse/TranscriptApp.jsx
+    component: default
+    query: '?transcript=ledger-system'
+    probes:
+      - {selector: '.txn-app.txn-ledger', count: 1}
+      - {selector: '.txn-systemrow', count: 1}
+      - {selector: '.txn-systemrow-label', text: system}

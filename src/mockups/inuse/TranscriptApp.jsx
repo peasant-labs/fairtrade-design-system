@@ -759,9 +759,27 @@ export function demoTranscriptViewModel() {
 
 function DefaultTranscriptApp({ theme }) {
   const search = new URLSearchParams(window.location.search).get('transcript')
-  const vm = useMemo(() => search === 'pi' ? adaptTranscript(piPayload) : buildMockupVM(), [search])
   // `?transcript=ledger` reads the same demo session through the ledger presentation.
-  const ledger = search === 'ledger'
+  // `?transcript=ledger-system` keeps that canonical session and appends one synthetic system
+  // turn, so the built app renders the compact system row (the canonical demo has none).
+  const ledger = search === 'ledger' || search === 'ledger-system'
+  const vm = useMemo(() => {
+    if (search === 'pi') return adaptTranscript(piPayload)
+    const base = buildMockupVM()
+    if (search !== 'ledger-system') return base
+    const turns = [
+      ...base.turns,
+      {
+        index: base.turns.length,
+        role: 'system',
+        label: String(base.turns.length + 1),
+        time: '1m ago',
+        content: 'session resumed, worktree changed on disk',
+        toolCalls: [],
+      },
+    ]
+    return { ...base, turns, session: { ...base.session, turnCount: turns.length } }
+  }, [search])
   // Tool details start collapsed; the reader opens them on demand.
   const [openTools, setOpenTools] = useState({})
   // the local app owns the header row: the publish bar (status, one action, more) and its popup.
