@@ -1,13 +1,13 @@
 {
-  "sourceCommit": "81b30895c0ef654605606e79c311d8cf8000e3bb",
-  "sourceTree": "f6d712656b21ffe7d336075d822835d4616c1ea3",
+  "sourceCommit": "18ffafd60ecf339fe388ffa79569da026b5a0c20",
+  "sourceTree": "589b2ffe0b0b96bb67046ff43880ca0e6bd2a991",
   "version": "0.0.45",
-  "htmlSha256": "18829fd4ff976499d1b3e35442dd55b1796f3e5c237a1da6c32d030b8f123630",
+  "htmlSha256": "f714362fe2b03905140fba196fa4a9ec84e2c28bf8c5d660b1d18b6aec014777",
   "assets": {
-    "/assets/index-BsAgyOqT.js": "9a3b0888f47acffb8d59bec82955a476abf2569eec77f257541fc98127527d3f",
-    "/assets/index-B1zEM2Hg.css": "2da59db1a8339ac9351eb5431453d1a6f8d66753e1f0229bc81b6fe30d90de96"
+    "/assets/index-BqyYg_Zr.js": "59c9706b2229ec9607f8154b09e6ffd454ae127a7acec527fac71f549c70db6a",
+    "/assets/index-CY_alVQZ.css": "8ca690183d94469a9bd583935b759f0513d27a2c743256e0e10f4b4ed5048396"
   },
   "fixtureData": "synthetic demonstration data only",
-  "verifiedAt": "2026-10-26T15:43:02.720Z",
+  "verifiedAt": "2026-10-26T16:01:04.338Z",
   "verified": true
 }
