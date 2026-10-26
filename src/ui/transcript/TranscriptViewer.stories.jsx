@@ -189,7 +189,7 @@ export const LightTheme = { args: { viewModel, capabilities: fullCaps, theme: 'l
 
 /* ── ledger presentation ──────────────────────────────────────────────────────
    The opt-in reading surface: a subtitle under the title, the pinned header's title +
-   whole-transcript minimap in place of the provider/model + scrubber, and one card per
+   visible-turns minimap in place of the provider/model + scrubber, and one card per
    user-turn task in the left rail (its #turn, duration, prompt) in place of the duration
    waterfall. Two tasks and seven turns here so both cards and both rail states are real. */
 const ledgerTurns = [
@@ -219,7 +219,17 @@ const ledgerArgs = {
   subtitle: 'a public transcript from fairtrade, read as a ledger.',
 }
 
+// The ledger chrome lives in the pinned trace header, so its stories need the viewer to fill a
+// real height and the trace to actually scroll (a story height of `auto` leaves the stream with
+// nothing to scroll, and the pinned header is a scroll state).
+const ledgerFrame = (Story) => (
+  <div style={{ height: '100vh', minHeight: 640, display: 'flex' }}>
+    <Story />
+  </div>
+)
+
 export const Ledger = {
+  decorators: [ledgerFrame],
   args: ledgerArgs,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -230,7 +240,7 @@ export const Ledger = {
     expect(canvasElement.querySelector('.txn-ol-waterfall')).toBeNull()
     // the pinned header appears once the trace scrolls, with the title and the minimap.
     const stream = canvasElement.querySelector('.txn-stream')
-    stream.scrollTop = 240
+    stream.scrollTop = stream.scrollHeight
     await fireEvent.scroll(stream)
     const nav = await canvas.findByRole('navigation', { name: 'transcript timeline' })
     expect(nav.querySelectorAll('.txn-minimap-seg')).toHaveLength(ledgerTurns.length)
@@ -238,7 +248,7 @@ export const Ledger = {
   },
 }
 
-export const LedgerLightTheme = { name: 'ledger light theme', args: { ...ledgerArgs, theme: 'light' } }
+export const LedgerLightTheme = { name: 'ledger light theme', decorators: [ledgerFrame], args: { ...ledgerArgs, theme: 'light' } }
 
 export const ReadingPositionTraceTab = {
   args: { viewModel, capabilities: fullCaps },
