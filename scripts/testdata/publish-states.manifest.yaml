@@ -98,7 +98,7 @@ mutations:
     expectedDiagnostic: "stale recovery uses latest callback: old callback is never invoked"
   - name: published action reverts to manage
     file: src/ui/Publish.jsx
-    find: "'published, private' : 'published', action: 'update'"
+    find: "'published, private' : 'published', action: 'publish'"
     replace: "'published, private' : 'published', action: 'manage'"
     expectedDiagnostic: "published to collectives: the bar's action must be"
   - name: a failed scan leaves publish on
