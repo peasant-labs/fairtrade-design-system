@@ -3827,7 +3827,9 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   .txn-ledger .txn-work-rows .txn-thinking { border-top: 0; margin-top: 0; }
   /* the thinking panel's text lines up with a tool output's text: its own border eats the first
      two pixels, so its inline padding gives them back */
-  .txn-ledger .txn-work-rows .txn-thinking-body { padding-inline-start: calc(var(--sp-4) - var(--stroke-emphasis)); }
+  /* the thinking body sits on the same edge as a tool's output box, and its text on the same
+     edge as that box's first line */
+  .txn-ledger .txn-work-rows .txn-thinking-body { margin-inline-start: var(--sp-4); padding-inline-start: calc(var(--sp-3) - var(--stroke-hairline)); }
   /* the reference rows lead with the kind icon alone: no disclosure chevron on the row or the
      thinking line, and the tool name keeps chrome case */
   .txn-ledger .txn-work-rows .txn-thinking-toggle > svg:first-child { display: none; }

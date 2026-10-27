@@ -124,6 +124,17 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       const rows = workPanels[0]?.querySelectorAll('.txn-work-rows .txn-toolcall') ?? []
       report.check(rows.length === tools.length, `${row.name}: the open panel must hold all ${tools.length} tool rows, received ${rows.length}`)
       report.check(rows[0]?.querySelector('.txn-tc-chev') === null, `${row.name}: a ledger row carries no chevron`)
+      /* a child left open must not keep the panel open: the head closes and reopens it */
+      const firstRowButton = rows[0]?.querySelector('.txn-tc-head')
+      if (firstRowButton) await mounted.act(() => click(window, firstRowButton))
+      await mounted.settle()
+      report.check(!!workPanels[0]?.querySelector('.txn-tcbody'), `${row.name}: opening a child reveals its body`)
+      if (toggle) await mounted.act(() => click(window, toggle))
+      await mounted.settle()
+      report.check((workPanels[0]?.querySelectorAll('.txn-work-rows').length ?? 0) === 0, `${row.name}: the head must close a panel whose child is open`)
+      if (toggle) await mounted.act(() => click(window, toggle))
+      await mounted.settle()
+      report.check((workPanels[0]?.querySelectorAll('.txn-work-rows').length ?? 0) === 1, `${row.name}: the head must reopen it after a close`)
       const article = mounted.container.querySelector('#turn-1.txn-turnwrap-ledger')
       report.check(!!article, `${row.name}: the turn wrapper must carry the ledger turn class`)
       report.check(!!article?.querySelector('.txn-turn.txn-turn-ledger'), `${row.name}: the ledger turn must drop the classic card, keeping the ledger card class`)

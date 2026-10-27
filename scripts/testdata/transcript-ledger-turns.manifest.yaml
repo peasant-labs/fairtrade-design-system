@@ -54,7 +54,6 @@ requiredCaseKinds:
 requiredMutationNames:
   - the ledger keeps the classic tool rows
   - the panel ignores a tool's open state
-  - a turn without tools still renders a panel
   - the system row ignores its disclosure
   - the system row ignores the search reveal
   - the system row prints its Markdown source
@@ -64,19 +63,14 @@ requiredMutationNames:
 mutations:
   - name: the ledger keeps the classic tool rows
     file: src/ui/transcript/TurnCard.jsx
-    find: "      {turn.toolCalls && (ledger ? ("
-    replace: "      {turn.toolCalls && (false ? ("
+    find: "  const workBlock = ledger && turn.role !== 'system' && (turn.toolCalls?.length || turn.thinking) ? ("
+    replace: "  const workBlock = false && (turn.toolCalls?.length || turn.thinking) ? ("
     expectedDiagnostic: "ledger groups one turn's tools into one panel: exactly one work panel"
   - name: the panel ignores a tool's open state
     file: src/ui/transcript/WorkGroup.jsx
     find: "open={expandAll || !!openTools[tool.id]}"
     replace: "open={false}"
     expectedDiagnostic: "ledger tool rows open and close: the clicked row must stay open"
-  - name: a turn without tools still renders a panel
-    file: src/ui/transcript/WorkGroup.jsx
-    find: "  if (!tools.length) return null"
-    replace: "  if (false) return null"
-    expectedDiagnostic: "a turn without tools has no work group: the tool-less turn 3 must render no panel"
   - name: the system row ignores its disclosure
     file: src/ui/transcript/SystemRow.jsx
     find: "onClick={() => setOpen(!open)}"

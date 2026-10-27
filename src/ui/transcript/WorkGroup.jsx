@@ -1,4 +1,4 @@
-import { useId, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import ToolCall from './ToolCall.jsx'
 import Thinking from './Thinking.jsx'
 import { workCountLabel, workMetaLabel, workSummary } from './work-summary.js'
@@ -36,7 +36,20 @@ export default function TranscriptWorkGroup({ tools = [], thinking, openTools = 
   const meta = workMetaLabel(summary)
   /* A bare panel is the ledger's: the turn's work is inline detail lines, not a summary footer
      that has to be opened. Classic keeps the summary because its rows sit flat on the card. */
-  const shown = bare || expandAll || open || tools.some((tool) => !!openTools[tool.id])
+  const anyToolOpen = tools.some((tool) => !!openTools[tool.id])
+  const shown = expandAll || open || anyToolOpen
+  /* a search reveal or a host-opened tool opens the panel; the head closes both again */
+  useEffect(() => {
+    if (anyToolOpen) setOpen(true)
+  }, [anyToolOpen])
+  const togglePanel = () => {
+    if (shown) {
+      setOpen(false)
+      for (const tool of tools) if (openTools[tool.id]) onToggle(tool.id)
+    } else {
+      setOpen(true)
+    }
+  }
   return (
     <div className={'txn-work' + (bare ? ' txn-work-bare' : '')}>
       {!bare && (
@@ -46,7 +59,7 @@ export default function TranscriptWorkGroup({ tools = [], thinking, openTools = 
             className="txn-work-toggle"
             aria-expanded={shown}
             aria-controls={rowsId}
-            onClick={() => setOpen((value) => !value)}
+            onClick={togglePanel}
           >
             <span className="txn-work-count">{count}</span>
             {meta && <span className="txn-work-meta tnum">{meta}</span>}
