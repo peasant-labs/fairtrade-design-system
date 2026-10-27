@@ -125,6 +125,7 @@ export function projectTurn(turn, filters, ctx = {}) {
   return {
     ...turn,
     content: keepText ? turn.content : '',
+    displayContent: keepText ? turn.displayContent : '',
     thinking: keepThinking ? turn.thinking : undefined,
     toolCalls: keptCalls,
   }

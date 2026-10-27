@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useLayoutEffect, useState } from 'react'
 import { Brain } from 'lucide-react'
 import { formatDurationMs } from './time.js'
 import Collapsible from './Collapsible.jsx'
@@ -16,13 +16,14 @@ import Collapsible from './Collapsible.jsx'
  * @param {object} props
  * @param {ThinkingVM} [props.block]   cooked thinking (e.g. `TurnVM.thinking`)
  */
-export default function Thinking({ block }) {
+export default function Thinking({ block, actionRef, revealRequest = 0 }) {
   const [open, setOpen] = useState(false)
+  useLayoutEffect(() => { if (revealRequest) setOpen(true) }, [revealRequest])
   if (!block) return null
   const words = block.words ?? 0
   const duration = formatDurationMs(block.durationMs)
   return (
-    <div className="toolcall txn-thinking">
+    <div className="toolcall txn-thinking" ref={actionRef}>
       <button
         type="button"
         className="tc-head txn-tc-head txn-thinking-toggle"

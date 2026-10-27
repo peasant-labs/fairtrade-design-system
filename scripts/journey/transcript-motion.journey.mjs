@@ -173,7 +173,7 @@ for (const motion of spec.motion) for (const row of spec.cases) {
         : page.locator('.txn-modelactions .txn-tc-head').filter({ has: page.getByText(row.label, { exact: true }) }).first()
       body = trigger.locator('xpath=following-sibling::*[1]')
     }
-    for (const open of [!row.initiallyOpen, row.initiallyOpen]) {
+    const change = async open => {
       if (row.kind === 'header') {
         await page.locator('.txn-stream').evaluate((el, open) => {
           el.scrollTop = open ? 0 : 120
@@ -182,17 +182,53 @@ for (const motion of spec.motion) for (const row of spec.cases) {
       } else {
         await trigger.evaluate(el => el.click())
       }
+    }
+    // Interrupt the actual shared height animation, not merely the rail's CSS width.
+    await change(!row.initiallyOpen)
+    if (motion === 'no-preference') {
+      const midpoint = await body.evaluate(el => {
+        const animation = el.getAnimations().find(a => a.effect.getKeyframes().some(frame => 'height' in frame))
+        if (!animation) return null
+        animation.pause()
+        animation.currentTime = animation.effect.getTiming().duration / 2
+        return { height: el.getBoundingClientRect().height, opacity: Number(getComputedStyle(el).opacity) }
+      })
+      expect(midpoint, 'the interrupted disclosure must have a live height animation').not.toBeNull()
+      await change(row.initiallyOpen)
+      const reversed = await body.evaluate(el => {
+        const animation = el.getAnimations().find(a => a.effect.getKeyframes().some(frame => 'height' in frame))
+        if (!animation) return null
+        animation.pause(); animation.currentTime = 0
+        const start = { height: el.getBoundingClientRect().height, opacity: Number(getComputedStyle(el).opacity) }
+        animation.play()
+        return start
+      })
+      expect(reversed).not.toBeNull()
+      expect(Math.abs(reversed.height - midpoint.height), 'reversal starts at painted height').toBeLessThanOrEqual(1)
+      expect(Math.abs(reversed.opacity - midpoint.opacity), 'reversal starts at painted opacity').toBeLessThanOrEqual(.01)
+      await info.attach('interrupted-height', { body: JSON.stringify({ midpoint, reversed }), contentType: 'application/json' })
+    } else await change(row.initiallyOpen)
+    await expect(body).not.toHaveAttribute('data-animating', 'true')
+    for (const open of [!row.initiallyOpen, row.initiallyOpen]) {
+      await change(open)
       if (motion === 'no-preference') {
-        const sample = await body.evaluate(async el => {
+        const sample = await body.evaluate(async (el, closing) => {
           await new Promise(requestAnimationFrame)
           const animation = el.getAnimations().find(a => a.effect.getKeyframes().some(frame => 'height' in frame))
           if (!animation) return null
           animation.pause()
+          const presence = () => {
+            const focusables = [...el.querySelectorAll('button, a[href], input, select, textarea, [tabindex]')]
+            for (const node of focusables) node.focus({ preventScroll: true })
+            return { hidden: el.hidden, ariaHidden: el.getAttribute('aria-hidden'), inert: el.inert, painted: getComputedStyle(el).display !== 'none', focusInside: el.contains(document.activeElement), focusables: focusables.length }
+          }
+          const firstFrame = closing ? presence() : null
           const duration = animation.effect.getTiming().duration
           animation.currentTime = 0
           const start = el.getBoundingClientRect().height
           animation.currentTime = duration / 2
           const middle = el.getBoundingClientRect().height
+          const middleFrame = closing ? presence() : null
           animation.currentTime = duration * .99
           const end = el.getBoundingClientRect().height
           const easing = animation.effect.getTiming().easing
@@ -205,14 +241,21 @@ for (const motion of spec.motion) for (const row of spec.cases) {
             await new Promise(requestAnimationFrame)
             finishHeights.push(el.getBoundingClientRect().height)
           }
-          return { start, middle, end, easing, expectedEasing, finishHeights }
-        })
+          return { start, middle, end, easing, expectedEasing, finishHeights, firstFrame, middleFrame }
+        }, !open)
         expect(sample, `${row.name} must animate its height while ${open ? 'opening' : 'closing'}`).not.toBeNull()
         await info.attach(`${open ? 'opening' : 'closing'}-heights`, { body: JSON.stringify(sample), contentType: 'application/json' })
         expect(sample.middle).toBeGreaterThan(Math.min(sample.start, sample.end))
         expect(sample.middle).toBeLessThan(Math.max(sample.start, sample.end))
         const curve = value => value.match(/-?\d*\.?\d+/g).map(Number)
         expect(curve(sample.easing)).toEqual(curve(sample.expectedEasing))
+        if (!open) for (const frame of [sample.firstFrame, sample.middleFrame]) {
+          expect(frame.hidden).toBe(false)
+          expect(frame.painted).toBe(true)
+          expect(frame.ariaHidden).toBe('true')
+          expect(frame.inert).toBe(true)
+          expect(frame.focusInside, 'painted exit descendants cannot receive focus').toBe(false)
+        }
         if (open) expect(Math.min(...sample.finishHeights)).toBeGreaterThanOrEqual(sample.end - 1)
         else expect(Math.max(...sample.finishHeights)).toBeLessThanOrEqual(sample.end + 1)
       } else {

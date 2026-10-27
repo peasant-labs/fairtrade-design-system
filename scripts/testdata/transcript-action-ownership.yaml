@@ -1,0 +1,71 @@
+payload:
+  id: action-ownership
+  harness: claude-code
+  startTime: '2026-10-01T10:00:00Z'
+  turns:
+    - {index: 0, role: user, content: First request, depth: 0}
+    - index: 1
+      role: assistant
+      content: First owner prose
+      depth: 0
+      toolCalls:
+        - {id: alpha, name: Bash, arguments: '{"command":"printf alpha-command"}', result: 'alpha-output', durationMs: 1000, isError: true}
+    - index: 2
+      role: assistant
+      content: Later prose destination
+      depth: 0
+      toolCalls:
+        - {id: beta, name: Bash, arguments: '{"command":"printf beta-command"}', result: 'beta-output', durationMs: 1000, isError: true}
+    - index: 3
+      role: assistant
+      content: ''
+      depth: 0
+      toolCalls:
+        - {id: gamma, name: Bash, arguments: '{"command":"printf gamma-command"}', result: 'gamma-output', durationMs: 1000, isError: true}
+    - {index: 4, role: assistant, entryType: thinking, content: 'Distinct amber thinking evidence', depth: 0}
+    - {index: 5, role: user, content: Second request, depth: 0}
+    - index: 6
+      role: assistant
+      content: Second owner prose
+      depth: 0
+      toolCalls:
+        - {id: delta, name: Bash, arguments: '{"command":"printf delta-command"}', result: 'delta-output', durationMs: 1000, isError: true}
+    - index: 7
+      role: assistant
+      content: ''
+      depth: 0
+      toolCalls:
+        - {id: epsilon, name: Bash, arguments: '{"command":"printf epsilon-command"}', result: 'epsilon-output', durationMs: 1000, isError: true}
+    - {index: 8, role: user, content: Third request, depth: 0}
+    - index: 9
+      role: assistant
+      content: ''
+      depth: 0
+      toolCalls:
+        - {id: zeta, name: Bash, arguments: '{"command":"printf zeta-command"}', result: 'zeta-output', durationMs: 1000, isError: true}
+    - index: 10
+      role: assistant
+      content: ''
+      depth: 0
+      toolCalls:
+        - {id: eta, name: Bash, arguments: '{"command":"printf eta-command"}', result: 'eta-output', durationMs: 1000, isError: true}
+groups:
+  - {name: first request owns prose and wordless work, owner: 1, tools: [alpha, beta, gamma], thinking: [Distinct amber thinking evidence]}
+  - {name: second request keeps its own distinct work, owner: 6, tools: [delta, epsilon], thinking: []}
+  - {name: third request anchors its wordless work, owner: 9, tools: [zeta, eta], thinking: []}
+disclosures:
+  - {name: parent hiding retains two tools and Think, mode: parent}
+  - {name: compact hiding retains two tools and Think, mode: compact}
+  - {name: explicit parent hiding wins over expand all, mode: expand-all}
+filters:
+  - {name: hidden prompts retain original action ownership, kind: categories, key: prompts}
+  - {name: hidden responses project work without leaking prose, kind: categories, key: responses}
+  - {name: tag-hidden boundaries retain original action ownership, kind: tags, key: errors}
+navigation:
+  - {name: later prose tool search reaches the rendered tool, turn: 2, where: beta, query: beta-output}
+  - {name: wordless tool search reaches the rendered tool, turn: 3, where: gamma, query: gamma-output}
+  - {name: thinking search reaches the rendered thinking, turn: 4, where: thinking, query: Distinct amber}
+  - {name: ordinary prose search stays at the prose source, turn: 2, where: body, query: Later prose destination}
+initial:
+  - {name: wordless initial position reveals its relocated tool, turn: 3, where: gamma}
+  - {name: wordless initial position reveals its relocated thinking, turn: 4, where: thinking}

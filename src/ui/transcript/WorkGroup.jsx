@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useLayoutEffect, useId, useRef, useState } from 'react'
 import ToolCall from './ToolCall.jsx'
 import Thinking from './Thinking.jsx'
 import Collapsible from './Collapsible.jsx'
@@ -29,6 +29,11 @@ export default function TranscriptWorkGroup({ tools = [], thinking, openTools = 
      A host filter ("expand all tool calls"), a host-opened tool, or a search reveal opens it. */
   const [open, setOpen] = useState(false)
   const rowsId = `txn-work-${useId()}`
+  const previous = useRef({ openTools: {}, expandAll: false })
+  useLayoutEffect(() => {
+    if ((!previous.current.expandAll && expandAll) || tools.some(tool => openTools[tool.id] && !previous.current.openTools[tool.id])) setOpen(true)
+    previous.current = { openTools, expandAll }
+  }, [tools, openTools, expandAll])
   if (!tools.length) return null
   const summary = workSummary(tools)
   const count = workCountLabel(summary)
@@ -37,20 +42,8 @@ export default function TranscriptWorkGroup({ tools = [], thinking, openTools = 
   const meta = workMetaLabel(summary)
   /* A bare panel is the ledger's: the turn's work is inline detail lines, not a summary footer
      that has to be opened. Classic keeps the summary because its rows sit flat on the card. */
-  const anyToolOpen = tools.some((tool) => !!openTools[tool.id])
-  const shown = expandAll || open || anyToolOpen
-  /* a search reveal or a host-opened tool opens the panel; the head closes both again */
-  useEffect(() => {
-    if (anyToolOpen) setOpen(true)
-  }, [anyToolOpen])
-  const togglePanel = () => {
-    if (shown) {
-      setOpen(false)
-      for (const tool of tools) if (openTools[tool.id]) onToggle(tool.id)
-    } else {
-      setOpen(true)
-    }
-  }
+  const shown = open
+  const togglePanel = () => setOpen(value => !value)
   return (
     <div className={'txn-work' + (bare ? ' txn-work-bare' : '')}>
       {!bare && (
@@ -67,7 +60,7 @@ export default function TranscriptWorkGroup({ tools = [], thinking, openTools = 
           </button>
         </div>
       )}
-      <Collapsible open={shown}>
+      <Collapsible open={shown} keepMounted>
         <div className="txn-work-rows" id={rowsId}>
           {tools.map((tool) => (
             <ToolCall
@@ -91,44 +84,34 @@ export default function TranscriptWorkGroup({ tools = [], thinking, openTools = 
     whose header states their work and toggles the rows. Rows start visible with their contents
     closed; compact mode collapses the list. A block with no tools is only thinking,
    so it draws its thinking lines without a header to open. */
-export function ModelActions({ turns = [], openTools = {}, onToggle = () => {}, expandAll = false, compact = false }) {
+export function ModelActions({ turns = [], openTools = {}, onToggle = () => {}, expandAll = false, compact = false, reveal, registerActionRef = () => {} }) {
   const [open, setOpen] = useState(!compact)
-  const previousCompact = useRef(compact)
+  const previous = useRef({ compact, expandAll: false, openTools: {}, reveal: null })
   const tools = turns.flatMap((turn) => turn.toolCalls ?? [])
-  const toolsOpen = tools.some((tool) => !!openTools[tool.id])
-  const shown = open || (!compact && (expandAll || toolsOpen))
-  // A search reveal or host-opened tool remains reachable even in compact mode.
-  useEffect(() => {
-    if (toolsOpen) setOpen(true)
-  }, [toolsOpen])
-  useEffect(() => {
-    if (previousCompact.current === compact) return
-    previousCompact.current = compact
-    setOpen(!compact)
-    if (compact) for (const tool of tools) if (openTools[tool.id]) onToggle(tool.id)
-  }, [compact, tools, openTools, onToggle])
+  const shown = open
+  // Parent visibility is a choice, not a consequence of a stale open child. Only
+  // a new host-open/reveal event reopens it; hiding never writes host-owned tools.
+  useLayoutEffect(() => {
+    const before = previous.current
+    if (before.compact !== compact) setOpen(!compact)
+    else if ((reveal && reveal !== before.reveal) || (!before.expandAll && expandAll) || tools.some(tool => openTools[tool.id] && !before.openTools[tool.id])) setOpen(true)
+    previous.current = { compact, expandAll, openTools, reveal }
+  }, [compact, expandAll, openTools, reveal, tools])
   const label = workActionsLabel(workSummary(tools))
   if (!tools.length) {
     return (
       <div className="txn-modelactions txn-modelactions-bare">
-        {turns.map((turn) => turn.thinking && <Thinking key={turn.identity ?? turn.index} block={turn.thinking} />)}
+        {turns.map((turn) => turn.thinking && <Thinking key={turn.identity ?? turn.index} block={turn.thinking} actionRef={el => registerActionRef(turn.index, 'thinking', el)} revealRequest={reveal?.turn === turn.index ? reveal.sequence : 0} />)}
       </div>
     )
   }
-  const closeAll = () => {
-    if (shown) {
-      setOpen(false)
-      for (const tool of tools) if (openTools[tool.id]) onToggle(tool.id)
-    } else {
-      setOpen(true)
-    }
-  }
+  const closeAll = () => setOpen(value => !value)
   return (
     <div className={'txn-modelactions' + (shown ? ' is-open' : '')}>
       <button type="button" className="txn-modelactions-head" aria-expanded={shown} onClick={closeAll}>
         <span className="txn-modelactions-summary tnum">{label}</span>
       </button>
-      <Collapsible open={shown}>
+      <Collapsible open={shown} keepMounted>
         <div className="txn-modelactions-rows">
           {turns.map((turn) => (
             <div key={turn.identity ?? turn.index} className="txn-modelactions-turn">
@@ -136,12 +119,13 @@ export function ModelActions({ turns = [], openTools = {}, onToggle = () => {}, 
                 <ToolCall
                   key={tool.id}
                   tool={tool}
+                  actionRef={el => registerActionRef(turn.index, tool.id, el)}
                   showChevron={false}
                   open={expandAll || !!openTools[tool.id]}
                   onToggle={() => onToggle(tool.id)}
                 />
               ))}
-              {turn.thinking && <Thinking block={turn.thinking} />}
+              {turn.thinking && <Thinking block={turn.thinking} actionRef={el => registerActionRef(turn.index, 'thinking', el)} revealRequest={reveal?.turn === turn.index && reveal.where === 'thinking' ? reveal.sequence : 0} />}
             </div>
           ))}
         </div>

@@ -1,0 +1,20 @@
+requiredGroupNames:
+  - first request owns prose and wordless work
+  - second request keeps its own distinct work
+  - third request anchors its wordless work
+requiredDisclosureNames:
+  - parent hiding retains two tools and Think
+  - compact hiding retains two tools and Think
+  - explicit parent hiding wins over expand all
+requiredFilterNames:
+  - hidden prompts retain original action ownership
+  - hidden responses project work without leaking prose
+  - tag-hidden boundaries retain original action ownership
+requiredNavigationNames:
+  - later prose tool search reaches the rendered tool
+  - wordless tool search reaches the rendered tool
+  - thinking search reaches the rendered thinking
+  - ordinary prose search stays at the prose source
+requiredInitialNames:
+  - wordless initial position reveals its relocated tool
+  - wordless initial position reveals its relocated thinking

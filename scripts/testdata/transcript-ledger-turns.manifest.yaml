@@ -90,7 +90,26 @@ requiredMutationNames:
   - a user turn does not start a new block
   - the block sits on the group's last turn
   - the block header counts calls
+  - one command is replaced by an equal-kind equal-duration command
+  - hidden source boundaries are lost before grouping
+  - stale open children override explicit parent collapse
+  - relocated search returns to the source article
 mutations:
+  - name: hidden source boundaries are lost before grouping
+    file: src/ui/transcript/action-groups.js
+    find: "for (const source of turns)"
+    replace: "for (const source of visibleTurns)"
+    expectedDiagnostic: "exact distinct action membership"
+  - name: stale open children override explicit parent collapse
+    file: src/ui/transcript/WorkGroup.jsx
+    find: "  const tools = turns.flatMap((turn) => turn.toolCalls ?? [])\n  const shown = open\n"
+    replace: "  const tools = turns.flatMap((turn) => turn.toolCalls ?? [])\n  const shown = open || tools.some(tool => openTools[tool.id])\n"
+    expectedDiagnostic: "the head must close a block whose child is open"
+  - name: relocated search returns to the source article
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "? actionRefs.current.get(`${searchReveal.turn}:${searchReveal.where}`)"
+    replace: "? turnRefs.current[searchReveal.turn]"
+    expectedDiagnostic: "actual rendered row destination"
   - name: rapid keys read a stale selection
     file: src/ui/transcript/TranscriptViewer.jsx
     find: "const cur = ids.indexOf(activeTurnRef.current)"
@@ -142,15 +161,20 @@ mutations:
     replace: "const suppressWork = false"
     expectedDiagnostic: "no ledger turn keeps a work row of its own beside the block"
   - name: a user turn does not start a new block
-    file: src/ui/transcript/TranscriptViewer.jsx
-    find: "if (t.role === 'user') { flush(); continue }"
-    replace: "if (t.role === 'user') continue"
+    file: src/ui/transcript/action-groups.js
+    find: "if (source.role === 'user') { flush(); continue }"
+    replace: "if (source.role === 'user') continue"
     expectedDiagnostic: "a user turn starts a new block"
   - name: the block sits on the group's last turn
-    file: src/ui/transcript/TranscriptViewer.jsx
-    find: "const owner = anchor ?? members[0]"
-    replace: "const owner = members[members.length - 1]"
+    file: src/ui/transcript/action-groups.js
+    find: "const owner = anchor ?? work[0]"
+    replace: "const owner = work[work.length - 1]"
     expectedDiagnostic: "the user turn's block must sit after its first prose turn"
+  - name: one command is replaced by an equal-kind equal-duration command
+    file: src/ui/transcript/WorkGroup.jsx
+    find: "                  tool={tool}"
+    replace: "                  tool={tools[0]}"
+    expectedDiagnostic: "exact distinct action membership"
   - name: the block header counts calls
     file: src/ui/transcript/WorkGroup.jsx
     find: "const label = workActionsLabel(workSummary(tools))"

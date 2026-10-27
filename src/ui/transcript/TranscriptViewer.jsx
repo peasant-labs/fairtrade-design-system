@@ -14,6 +14,7 @@ import ProviderIcon from '../ProviderIcon.jsx'
 import { formatDurationMins, formatDurationMs } from './time.js'
 import { TOOL_GROUPS } from './view-model.js'
 import { categoryCounts, projectTurn } from './filters.js'
+import { actionGroups } from './action-groups.js'
 import { turnAtReadingLine } from './scroll-position.js'
 import TurnCard from './TurnCard.jsx'
 import Collapsible from './Collapsible.jsx'
@@ -410,6 +411,8 @@ export default function TranscriptViewer({
   const turns = vm?.turns ?? []
 
   const turnRefs = useRef({})
+  const actionRefs = useRef(new Map())
+  const revealSequence = useRef(0)
   const scrollRef = useRef(null)
   const headerRef = useRef(null)
   const heroHeightRef = useRef(0)
@@ -459,7 +462,16 @@ export default function TranscriptViewer({
     else delete turnRefs.current[id]
   }, [])
 
-  const toggleTool = (id) => setOpenTools({ ...openTools, [id]: !openTools[id] })
+  const toggleTool = (id) => setOpenTools(previous => ({ ...previous, [id]: !previous[id] }))
+  const registerActionRef = useCallback((turn, where, el) => {
+    const key = `${turn}:${where}`
+    if (el) actionRefs.current.set(key, el)
+    else actionRefs.current.delete(key)
+  }, [])
+  function revealAction(turn, where) {
+    if (where !== 'body' && where !== 'thinking') setOpenTools(previous => ({ ...previous, [where]: true }))
+    setSearchReveal({ turn, where, sequence: ++revealSequence.current })
+  }
 
   /* ── cooked slices off the VM ───────────────────────────────────────────────── */
   const phases = vm?.analytics?.phases ?? []
@@ -498,6 +510,7 @@ export default function TranscriptViewer({
     }
     return turns.map((t) => projectTurn(t, filters, ctx)).filter((t) => t != null)
   }, [turns, filters, commits, vm])
+  const actionLayout = useMemo(() => actionGroups(turns, visibleTurns), [turns, visibleTurns])
 
   const readTraceReadingSnapshot = useCallback(() => {
     const sc = scrollRef.current
@@ -606,10 +619,13 @@ export default function TranscriptViewer({
       return 'applied'
     }
 
-    el.scrollIntoView({ block: 'start', behavior: 'auto' })
+    const projected = visibleTurns.find(turn => turn.index === position.turnIndex)
+    const location = ledger && !String(projected?.displayContent ?? projected?.content ?? '').trim() ? actionLayout.locations.get(position.turnIndex) : null
+    if (location) revealAction(position.turnIndex, location.where)
+    else el.scrollIntoView({ block: 'start', behavior: 'auto' })
     latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()
     return 'applied'
-  }, [readTraceReadingSnapshot, tab, turns, viewMode, visibleTurns])
+  }, [readTraceReadingSnapshot, tab, turns, viewMode, visibleTurns, ledger, actionLayout])
 
   const applyTraceReadingPosition = useCallback((position) => {
     const target = traceReadingPositionRef.current ?? traceReadingPosition
@@ -685,6 +701,7 @@ export default function TranscriptViewer({
     const found = []
     for (const t of turns) {
       if ((t.content || '').toLowerCase().includes(q)) found.push({ turn: t.index, where: 'body' })
+      if ((t.thinking?.text || '').toLowerCase().includes(q)) found.push({ turn: t.index, where: 'thinking' })
       for (const tc of t.toolCalls || []) {
         const out = typeof tc.output === 'string' ? tc.output : tc.output != null ? JSON.stringify(tc.output) : ''
         const hay = [tc.preview, out].filter(Boolean).join(' ').toLowerCase()
@@ -719,6 +736,9 @@ export default function TranscriptViewer({
     }
     setViewMode('list')
     selectTurn(idx)
+    const projected = visibleTurns.find(turn => turn.index === idx)
+    const location = ledger && !String(projected?.displayContent ?? projected?.content ?? '').trim() ? actionLayout.locations.get(idx) : null
+    if (location) { revealAction(idx, location.where); return }
     if (typeof requestAnimationFrame === 'function') {
       requestAnimationFrame(() => {
         if (navigationTargetRef.current !== idx) return
@@ -942,22 +962,38 @@ export default function TranscriptViewer({
   useLayoutEffect(() => {
     if (!searchOpen || matches.length === 0) return
     const m = matches[Math.min(matchIdx, matches.length - 1)]
-    setSearchReveal({ turn: m.turn, sequence: searchNavigation })
+    revealAction(m.turn, m.where)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchNavigation])
 
   /* The matching card opens in its layout effect before this scroll action. */
   useEffect(() => {
     if (!searchReveal) return
-    const el = turnRefs.current[searchReveal.turn]
-    const sc = scrollRef.current
-    if (el && sc) {
+    let cancelled = false
+    const scroll = async () => {
+      // Child layout effects reveal the list/output before measuring its actual row.
+      // Wait for their real disclosure motion so a far-down match ends on screen.
+      const sc = scrollRef.current
+      if (!sc) return
+      const animations = sc.getAnimations?.({ subtree: true }).filter(animation => animation.effect?.target?.classList?.contains('txn-disclosure')) ?? []
+      await Promise.allSettled(animations.map(animation => animation.finished))
+      if (cancelled) return
+      const el = ledger && searchReveal.where !== 'body'
+        ? actionRefs.current.get(`${searchReveal.turn}:${searchReveal.where}`)
+        : turnRefs.current[searchReveal.turn]
+      if (!el || el.closest('[hidden], [inert]')) return
       const reduce = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      sc.scrollTo({ top: turnScrollTop(sc, el), behavior: reduce ? 'auto' : 'smooth' })
-      setActiveTurn(searchReveal.turn)
+      const padding = Number.parseFloat(getComputedStyle(sc).scrollPaddingTop) || 12
+      const top = ledger && searchReveal.where !== 'body'
+        ? sc.scrollTop + el.getBoundingClientRect().top - sc.getBoundingClientRect().top - padding
+        : turnScrollTop(sc, el)
+      sc.scrollTo({ top, behavior: reduce ? 'auto' : 'smooth' })
+      selectTurn(searchReveal.turn)
     }
+    const frame = requestAnimationFrame(scroll)
+    return () => { cancelled = true; cancelAnimationFrame(frame) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchReveal])
+  }, [searchReveal, ledger])
 
   /* files / diffs derived. */
   const sortedFiles = useMemo(() => {
@@ -1311,31 +1347,11 @@ export default function TranscriptViewer({
                          do not split it. The block sits after the group's first prose turn, or on
                          its first turn with work when the group has no prose, and every other
                          turn in the group draws no work of its own, so no action renders twice. */
-                      const actionGroups = new Map()
-                      const foldedWork = new Set()
-                      if (ledger) {
-                        let members = []
-                        let anchor = null
-                        const flush = () => {
-                          const owner = anchor ?? members[0]
-                          if (owner && members.length) {
-                            actionGroups.set(owner.index, members)
-                            for (const m of members) if (m !== owner) foldedWork.add(m.index)
-                          }
-                          members = []
-                          anchor = null
-                        }
-                        for (const t of visibleTurns) {
-                          if (t.role === 'user') { flush(); continue }
-                          if (t.role === 'system') continue
-                          if (!anchor && String(t.displayContent ?? t.content ?? '').trim() !== '') anchor = t
-                          if (t.toolCalls?.length || t.thinking) members.push(t)
-                        }
-                        flush()
-                      }
+                      const groups = ledger ? actionLayout.groups : new Map()
+                      const foldedWork = ledger ? actionLayout.folded : new Set()
                       return visibleTurns.map((t, i) => {
                       const prev = visibleTurns[i - 1]
-                      const actionRun = actionGroups.get(t.index)
+                      const actionRun = groups.get(t.index)
                       const suppressWork = foldedWork.has(t.index)
                       const phase = phases.find((p) => t.index >= p.from && t.index <= p.to)
                       const prevPhase = prev ? phases.find((p) => prev.index >= p.from && prev.index <= p.to) : null
@@ -1369,6 +1385,8 @@ export default function TranscriptViewer({
                             compact={filters.views.compact}
                             expandAll={filters.views.expandAll}
                             modelActions={actionRun}
+                            actionReveal={searchReveal && (ledger ? actionLayout.locations.get(searchReveal.turn)?.owner === t.index : searchReveal.turn === t.index) ? searchReveal : undefined}
+                            registerActionRef={registerActionRef}
                             suppressWork={suppressWork}
                           />
                           {/* host per-turn extension (touched-files panels etc.) —

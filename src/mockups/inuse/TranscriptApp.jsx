@@ -735,6 +735,7 @@ function buildMockupVM() {
 }
 
 import { piPayload } from './pi-fixture.js'
+import { readingPayload } from './reading-fixture.js'
 import { usePublishFlow } from './PublishFlowDemo.jsx'
 import ContextTranscriptDemo from './ContextTranscriptDemo.jsx'
 
@@ -762,8 +763,9 @@ function DefaultTranscriptApp({ theme }) {
   // `?transcript=ledger` reads the same demo session through the ledger presentation.
   // `?transcript=ledger-system` keeps that canonical session and appends one synthetic system
   // turn, so the built app renders the compact system row (the canonical demo has none).
-  const ledger = search === 'ledger' || search === 'ledger-system' || search === 'ledger-actions'
+  const ledger = search === 'ledger' || search === 'ledger-system' || search === 'ledger-actions' || search === 'ledger-reading'
   const vm = useMemo(() => {
+    if (search === 'ledger-reading') return adaptTranscript(readingPayload())
     if (search === 'pi') return adaptTranscript(piPayload)
     const base = buildMockupVM()
     if (search === 'ledger-actions') {
@@ -837,6 +839,7 @@ function DefaultTranscriptApp({ theme }) {
         showOutcome={false}
         showSearchTrigger
         presentation={ledger ? 'ledger' : undefined}
+        initialPosition={search === 'ledger-reading' && /^\d+$/.test(new URLSearchParams(window.location.search).get('turn') ?? '') ? { kind: 'turn', turnIndex: Number(new URLSearchParams(window.location.search).get('turn')) } : undefined}
         sidebarLayout={ledger ? sidebarLayout : undefined}
         onSidebarLayoutChange={ledger ? setSidebarLayout : undefined}
         onZenChange={ledger ? () => {} : undefined}

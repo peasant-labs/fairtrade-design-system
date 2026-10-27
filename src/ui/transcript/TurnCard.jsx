@@ -85,6 +85,8 @@ export default function TurnCard({
   revealRequest = 0,
   headingLevel = 4,
   modelActions,
+  actionReveal,
+  registerActionRef,
   suppressWork = false,
   presentation = 'classic',
 }) {
@@ -217,7 +219,7 @@ export default function TurnCard({
         </div>
       )}
       <Markdown text={turn.displayContent ?? turn.content} />
-      {!ledger && turn.thinking && <Thinking block={turn.thinking} />}
+      {!ledger && turn.thinking && <Thinking block={turn.thinking} revealRequest={actionReveal?.where === 'thinking' ? actionReveal.sequence : 0} />}
       <UsageDisclosure usage={turn.usage} />
       {turn.toolCalls && !ledger && (
         turn.toolCalls.map((t) => (
@@ -238,7 +240,7 @@ export default function TurnCard({
   const workBlock = ledger && turn.role !== 'system' && !suppressWork && (hasWork || modelActions?.length) ? (
     <div className="txn-turnwork">
       {modelActions?.length ? (
-        <ModelActions turns={modelActions} openTools={openTools} onToggle={toggleTool} expandAll={expandAll} compact={compact} />
+        <ModelActions turns={modelActions} openTools={openTools} onToggle={toggleTool} expandAll={expandAll} compact={compact} reveal={actionReveal} registerActionRef={registerActionRef} />
       ) : turn.toolCalls?.length ? (
         <TranscriptWorkGroup
           tools={turn.toolCalls}

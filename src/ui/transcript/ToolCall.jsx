@@ -44,7 +44,7 @@ const fmtDuration = formatDurationMs
  * @param {boolean} [props.open]
  * @param {() => void} [props.onToggle]
  */
-export default function ToolCall({ tool, open = false, onToggle, showChevron = true }) {
+export default function ToolCall({ tool, open = false, onToggle, showChevron = true, actionRef }) {
   if (!tool) return null
   // a write keeps the new-file glyph even though it cooks to the `edits` group (like the mockup).
   const isWrite = tool.group === 'edits' && /^write$/i.test(tool.name)
@@ -52,7 +52,7 @@ export default function ToolCall({ tool, open = false, onToggle, showChevron = t
   const failed = tool.isError || (tool.group === 'bash' && tool.exitCode != null && tool.exitCode !== 0)
   const duration = fmtDuration(tool.durationMs)
   return (
-    <div className="toolcall txn-toolcall">
+    <div className="toolcall txn-toolcall" ref={actionRef}>
       <button type="button" className="tc-head txn-tc-head" aria-expanded={open} onClick={onToggle}>
         {showChevron && (open ? (
           <ChevronDown size={14} aria-hidden="true" className="txn-tc-chev" />
