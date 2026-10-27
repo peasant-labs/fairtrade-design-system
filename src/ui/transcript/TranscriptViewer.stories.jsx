@@ -243,9 +243,11 @@ export const Ledger = {
     // the classic per-task identity chip would repeat the rail card and the turn head.
     expect(canvasElement.querySelector('.txn-taskboundary')).toBeNull()
     // the pinned header appears once the trace scrolls, with the title and one position slider.
-    // each turn with tools carries one work panel; the turn with two tools summarizes both.
-    await expect(canvasElement.querySelectorAll('.txn-work')).toHaveLength(4)
-    await expect(canvas.getByText('1 file, 1 edit')).toBeVisible()
+    // each user turn's actions share one block after its first prose turn; no turn keeps its own.
+    await expect(canvasElement.querySelectorAll('.txn-modelactions')).toHaveLength(2)
+    expect(canvasElement.querySelector('.txn-work')).toBeNull()
+    await expect(canvas.getByText('4 actions: 1 command, 1 file, 1 edit, 4.1s')).toBeVisible()
+    await expect(canvas.getByText('1 action: 1 file')).toBeVisible()
     // a system turn is a compact row, and its recorded text opens on request.
     const systemHead = canvasElement.querySelector('.txn-systemrow-head')
     await expect(systemHead).toHaveAttribute('aria-expanded', 'false')
@@ -288,10 +290,10 @@ function textLeft(element) {
 /** the rendered geometry the stylesheet rows can only describe: a strip's computed width and
     the work summary's left edge against the first tool name's. */
 async function assertReadingGeometry(canvasElement) {
-  const work = canvasElement.querySelector('.txn-work')
-  expect(work).not.toBeNull()
-  // the work block is its own row after the card, on the same reading edge as the prose.
-  const summary = work.querySelector('.txn-work-head .txn-work-count')
+  const block = canvasElement.querySelector('.txn-modelactions')
+  expect(block).not.toBeNull()
+  // the action block is its own row after the card, its counts on the same reading edge as the prose.
+  const summary = block.querySelector('.txn-modelactions-summary')
   expect(summary).not.toBeNull()
   const prose = canvasElement.querySelector('.txn-turnwrap-ledger .txn-body > .txn-md-prose')
   expect(prose).not.toBeNull()

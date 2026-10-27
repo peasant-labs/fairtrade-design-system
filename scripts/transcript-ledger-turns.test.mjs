@@ -12,7 +12,7 @@
    mutations: node scripts/parts-mutations.mjs scripts/transcript-ledger-turns.test.mjs
    scripts/testdata/transcript-ledger-turns.manifest.yaml */
 import { loadFixturePair, assertExactNames, assertFields, withMountedSource, click, createReport } from './mounted-parts.mjs'
-import { workSummary, workCountLabel, workMetaLabel } from '../src/ui/transcript/work-summary.js'
+import { workSummary, workCountLabel, workMetaLabel, workActionsLabel } from '../src/ui/transcript/work-summary.js'
 
 const FIXTURE = 'scripts/testdata/transcript-ledger-turns.yaml'
 const MANIFEST = 'scripts/testdata/transcript-ledger-turns.manifest.yaml'
@@ -32,11 +32,11 @@ assertExactNames(
 /* every summary row lists every expected field, so a new count cannot slip in unasserted. */
 const SUMMARY_FIELDS = ['calls', 'commands', 'files', 'edits', 'failed', 'durationMs']
 for (const row of fixture.summaryCases) {
-  assertFields(row, ['name', 'tools', 'expected', 'countLabel', 'metaLabel'], `${FIXTURE} ${row.name}`)
+  assertFields(row, ['name', 'tools', 'expected', 'countLabel', 'metaLabel', 'actionsLabel'], `${FIXTURE} ${row.name}`)
   assertExactNames(Object.keys(row.expected), SUMMARY_FIELDS, `${FIXTURE} ${row.name} expected`)
 }
 for (const row of fixture.cases) assertFields(row, ['name', 'kind'], `${FIXTURE} ${row.name}`, ['headingLevel', 'turn', 'preview', 'revealedTurn', 'closedTurn'])
-assertExactNames(Object.keys(fixture.mountedSummary), ['countLabel', 'metaLabel'], `${FIXTURE} mountedSummary`)
+assertExactNames(Object.keys(fixture.mountedSummary), ['panel', 'grouped', 'afterUser'], `${FIXTURE} mountedSummary`)
 if (typeof fixture.revealQuery !== 'string' || fixture.revealQuery.length === 0) throw new Error(`${FIXTURE}: revealQuery must be a non-empty string`)
 
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
@@ -55,6 +55,8 @@ for (const row of fixture.summaryCases) {
   report.check(countLabel === row.countLabel, `${row.name}: count must read ${JSON.stringify(row.countLabel)}, received ${JSON.stringify(countLabel)}`)
   const metaLabel = workMetaLabel(summary)
   report.check(metaLabel === row.metaLabel, `${row.name}: meta must read ${JSON.stringify(row.metaLabel)}, received ${JSON.stringify(metaLabel)}`)
+  const actionsLabel = workActionsLabel(summary)
+  report.check(actionsLabel === row.actionsLabel, `${row.name}: the action block header must read ${JSON.stringify(row.actionsLabel)}, received ${JSON.stringify(actionsLabel)}`)
 }
 
 /* canLabel on, so the classic head's built-in label affordance exists to prove the ledger head drops it */
@@ -113,7 +115,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(workPanels.length === 1, `${row.name}: the turn with tools must carry one model-actions block, received ${workPanels.length}`)
       const head = workPanels[0]?.querySelector('.txn-modelactions-head')
       report.check(!!head, `${row.name}: the block names the work in one line`)
-      report.check(text(head?.querySelector('.txn-modelactions-summary')).startsWith(fixture.mountedSummary.countLabel), `${row.name}: the summary must read ${JSON.stringify(fixture.mountedSummary.countLabel)}`)
+      const headText = text(head?.querySelector('.txn-modelactions-summary'))
+      report.check(headText === fixture.mountedSummary.panel, `${row.name}: the block header must read ${JSON.stringify(fixture.mountedSummary.panel)}, received ${JSON.stringify(headText)}`)
       report.check(head?.querySelector('.txn-tc-chev') === null, `${row.name}: the summary line carries no chevron`)
       const toggle = workPanels[0]?.querySelector('.txn-modelactions-head')
       report.check(toggle?.getAttribute('aria-expanded') === 'false', `${row.name}: the block starts closed`)
@@ -297,58 +300,84 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(!!article, `${row.name}: the tool turn must still mount`)
       report.check(article?.querySelector('.txn-turnhead-ledger') === null, `${row.name}: a turn with no words must draw no card head`)
       report.check(article?.querySelector('.txn-roleico') === null, `${row.name}: a turn with no words must draw no role well`)
-      const block = article?.querySelector('.txn-modelactions')
-      report.check(!!block, `${row.name}: its work must render as one model-actions block`)
+      /* its work folds into the block after the user turn's first prose turn, turn 3 */
+      report.check(article?.querySelector('.txn-modelactions, .txn-work') === null, `${row.name}: a wordless turn before the first prose turn draws no work of its own`)
+      const block = mounted.container.querySelector('#turn-3 .txn-modelactions')
+      report.check(!!block, `${row.name}: its work must render in the block after the first prose turn`)
       report.check(!!block?.querySelector('.txn-modelactions-head'), `${row.name}: the block names the run`)
       report.check(block?.querySelector('.txn-modelactions-rows') === null, `${row.name}: the block starts closed`)
       const heading = byId(mounted.container, article?.getAttribute('aria-labelledby'))
       report.check(!!heading && heading.classList.contains('txn-turn-heading'), `${row.name}: the article keeps its heading for assistive tech`)
       await mounted.unmount()
     } else if (row.kind === 'model-actions') {
-      /* a run of wordless turns shares one quiet block, carried after the run */
-      /* a prose turn's own work continues into the wordless turns after it */
-      const tool = vm.turns.find((t) => t.toolCalls?.length)?.toolCalls[0]
+      /* One user turn: prose with tools (1), a system row (2), a second prose turn with a command
+         of its own (3) and a thinking-only turn (4). Then a second user turn (5) whose model turns
+         have no prose (7, 8), so its block sits on the first of them. */
+      const tool = toolsTurn.toolCalls[0]
+      const wordlessTool = (t, index) => ({ ...t, index, identity: `grouped-turn-${index}`, label: String(index), content: '', displayContent: '', thinking: undefined, toolCalls: [{ ...tool, id: `grouped-${index}` }] })
       const grouped = {
         ...vm,
-        turns: vm.turns.map((t) => {
-          if (t.index === 3) return { ...t, toolCalls: tool ? [{ ...tool, id: 'grouped-3' }] : [] }
-          if (t.index === 4) return { ...t, content: '', displayContent: '', toolCalls: [] }
-          if (t.index === 5) return { ...t, content: '', displayContent: '', toolCalls: tool ? [{ ...tool, id: 'grouped-5' }] : [] }
-          return t
-        }),
+        turns: [
+          ...vm.turns.map((t) => {
+            if (t.index === 3) return { ...t, toolCalls: [{ ...tool, id: 'grouped-3' }] }
+            if (t.index === 5) return { ...t, role: 'user' }
+            return t
+          }),
+          wordlessTool(toolsTurn, 7),
+          wordlessTool(toolsTurn, 8),
+        ],
       }
+      const totalTools = grouped.turns.reduce((sum, t) => sum + (t.toolCalls?.length ?? 0), 0)
       const mounted = await mountViewer('ledger', { viewModel: grouped })
-      const block = mounted.container.querySelector('#turn-5 .txn-modelactions')
-      report.check(!!block, `${row.name}: the run must fold into one block after its last turn`)
-      report.check(mounted.container.querySelector('#turn-3 .txn-modelactions') === null, `${row.name}: the run starts at the prose turn, not on it`)
-      report.check(mounted.container.querySelector('#turn-4 .txn-modelactions') === null, `${row.name}: only the run's last turn carries the block`)
+      const container = mounted.container
+      report.check(container.querySelectorAll('.txn-work').length === 0, `${row.name}: no ledger turn keeps a work row of its own beside the block`)
+      const block = container.querySelector('#turn-1 .txn-modelactions')
+      report.check(!!block, `${row.name}: the user turn's block must sit after its first prose turn`)
+      for (const index of [3, 4]) {
+        report.check(container.querySelector(`#turn-${index} .txn-modelactions`) === null, `${row.name}: turn ${index} folds its work into the first prose turn's block`)
+      }
+      report.check(!!container.querySelector('#turn-3 .txn-turnhead-ledger'), `${row.name}: the second prose turn keeps its card`)
+      const header = text(block?.querySelector('.txn-modelactions-summary'))
+      report.check(header === fixture.mountedSummary.grouped, `${row.name}: the block header must read ${JSON.stringify(fixture.mountedSummary.grouped)}, received ${JSON.stringify(header)}`)
       report.check(block?.querySelector('.txn-modelactions-rows') === null, `${row.name}: the block starts closed`)
       if (block) await mounted.act(() => click(window, block.querySelector('.txn-modelactions-head')))
       await mounted.settle()
       const rows = block?.querySelectorAll('.txn-modelactions-rows .txn-toolcall') ?? []
-      report.check(rows.length === 2, `${row.name}: the run folds every tool from its turns, received ${rows.length}`)
+      report.check(rows.length === 6, `${row.name}: the block folds every tool from the user turn, received ${rows.length}`)
       const think = block?.querySelector('.txn-thinking-toggle')
-      report.check(!!think, `${row.name}: the run's thinking comes with it`)
+      report.check(!!think, `${row.name}: the user turn's thinking comes with it`)
       if (think) await mounted.act(() => click(window, think))
       await mounted.settle()
-      report.check(/check the fixture/.test(text(block?.querySelector('.txn-thinking-body'))), `${row.name}: the thinking text is the run's own`)
+      report.check(/check the fixture/.test(text(block?.querySelector('.txn-thinking-body'))), `${row.name}: the thinking text is the user turn's own`)
+      /* the next user turn starts a new block */
+      const next = container.querySelector('#turn-7 .txn-modelactions')
+      report.check(!!next, `${row.name}: a user turn starts a new block, on its first turn with work when it has no prose`)
+      report.check(container.querySelector('#turn-8 .txn-modelactions') === null, `${row.name}: the later wordless turn folds into that block`)
+      const nextHeader = text(next?.querySelector('.txn-modelactions-summary'))
+      report.check(nextHeader === fixture.mountedSummary.afterUser, `${row.name}: the second block header must read ${JSON.stringify(fixture.mountedSummary.afterUser)}, received ${JSON.stringify(nextHeader)}`)
+      if (next) await mounted.act(() => click(window, next.querySelector('.txn-modelactions-head')))
+      await mounted.settle()
+      const shown = container.querySelectorAll('.txn-toolcall').length
+      report.check(shown === totalTools, `${row.name}: every tool renders once, expected ${totalTools}, received ${shown}`)
       await mounted.unmount()
     } else if (row.kind === 'thinking') {
       const mounted = await mountViewer('ledger')
-      const blockToggle = mounted.container.querySelector('#turn-4 .txn-modelactions-head')
+      /* turn 4's thinking is part of its user turn's block, after turn 1 */
+      report.check(mounted.container.querySelector('#turn-4 .txn-thinking-toggle') === null, `${row.name}: the thinking turn draws no thinking line of its own`)
+      const blockToggle = mounted.container.querySelector('#turn-1 .txn-modelactions-head')
       if (blockToggle) await mounted.act(() => click(window, blockToggle))
       await mounted.settle()
-      const toggle = mounted.container.querySelector('#turn-4 .txn-thinking-toggle')
+      const toggle = mounted.container.querySelector('#turn-1 .txn-thinking-toggle')
       report.check(!!toggle, `${row.name}: a turn with thinking must keep its thinking disclosure`)
       if (toggle) await mounted.act(() => click(window, toggle))
       await mounted.settle()
-      const body = mounted.container.querySelector('#turn-4 .txn-thinking-body')
+      const body = mounted.container.querySelector('#turn-1 .txn-thinking-body')
       report.check(/check the fixture/.test(text(body)), `${row.name}: opening the disclosure must reveal the thinking text, received ${JSON.stringify(text(body))}`)
       await mounted.unmount()
     } else if (row.kind === 'no-tools') {
       const mounted = await mountViewer('ledger')
       const total = mounted.container.querySelectorAll('.txn-modelactions').length
-      report.check(total === 2, `${row.name}: the tool turn and the thinking turn carry a block, received ${total}`)
+      report.check(total === 1, `${row.name}: the payload's one user turn carries one block, received ${total}`)
       for (const index of toolLessTurns) {
         report.check(mounted.container.querySelector(`#turn-${index} .txn-modelactions`) === null, `${row.name}: the tool-less turn ${index} must render no block`)
       }

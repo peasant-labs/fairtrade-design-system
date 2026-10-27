@@ -1214,30 +1214,37 @@ export default function TranscriptViewer({
                       <div className="empty"><div className="ring"><FilterIcon size={20} aria-hidden="true" /></div><EmptyHeading>no turns to display</EmptyHeading><p>every turn is filtered out. clear a filter to bring them back.</p></div>
                     )}
                     {(() => {
-                      /* a run of wordless turns shares one "model actions" block, carried by the
-                         last turn of the run so it sits after the group. */
-                      const actionRuns = new Map()
+                      /* In the ledger every action the model takes for one user turn shares one
+                         block. A user turn closes the group; system rows stay where they are and
+                         do not split it. The block sits after the group's first prose turn, or on
+                         its first turn with work when the group has no prose, and every other
+                         turn in the group draws no work of its own, so no action renders twice. */
+                      const actionGroups = new Map()
+                      const foldedWork = new Set()
                       if (ledger) {
-                        /* Every sequential action folds into one block: a prose turn's own work
-                           continues into the wordless turns after it, and only a turn with prose
-                           starts a new block. The block renders after the run's last turn. */
-                        let run = []
-                        const flush = () => { if (run.length) { actionRuns.set(run[run.length - 1].index, run); run = [] } }
+                        let members = []
+                        let anchor = null
+                        const flush = () => {
+                          const owner = anchor ?? members[0]
+                          if (owner && members.length) {
+                            actionGroups.set(owner.index, members)
+                            for (const m of members) if (m !== owner) foldedWork.add(m.index)
+                          }
+                          members = []
+                          anchor = null
+                        }
                         for (const t of visibleTurns) {
-                          const work = !!((t.toolCalls?.length) || t.thinking)
-                          const wordless = t.role !== 'system' && String(t.displayContent ?? t.content ?? '').trim() === ''
-                          if (!work) { flush(); continue }
-                          if (wordless) { run.push(t); continue }
-                          flush()
-                          run = [t]
+                          if (t.role === 'user') { flush(); continue }
+                          if (t.role === 'system') continue
+                          if (!anchor && String(t.displayContent ?? t.content ?? '').trim() !== '') anchor = t
+                          if (t.toolCalls?.length || t.thinking) members.push(t)
                         }
                         flush()
                       }
                       return visibleTurns.map((t, i) => {
                       const prev = visibleTurns[i - 1]
-                      const actionRun = actionRuns.get(t.index)
-                      const wordless = ledger && t.role !== 'system' && String(t.displayContent ?? t.content ?? '').trim() === ''
-                      const suppressWork = wordless && !actionRun
+                      const actionRun = actionGroups.get(t.index)
+                      const suppressWork = foldedWork.has(t.index)
                       const phase = phases.find((p) => t.index >= p.from && t.index <= p.to)
                       const prevPhase = prev ? phases.find((p) => prev.index >= p.from && prev.index <= p.to) : null
                       const showPhase = filters.views.hidden && phase && (!prevPhase || prevPhase.id !== phase.id)

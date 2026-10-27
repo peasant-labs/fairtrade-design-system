@@ -3811,14 +3811,13 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   /* a turn's own row (the host's per-turn panel, a commit marker) belongs to the reading
      column, not the scrolled stream, or it lands at the stream's far-left edge. */
   .txn-ledger .txn-turnrow { max-inline-size: var(--txn-reader-width); margin-inline: auto; }
-  /* a run of wordless turns reads as one quiet model-actions block */
+  /* one user turn's actions read as one quiet block whose counts start on the prose edge */
   .txn-modelactions { border: 0; background: transparent; }
-  .txn-modelactions-head { display: flex; align-items: center; gap: var(--sp-2); width: 100%; padding: var(--sp-2) var(--sp-3); border: 0; background: transparent; color: var(--ink-3); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; text-align: start; cursor: pointer; }
+  .txn-modelactions-head { display: flex; align-items: center; gap: var(--sp-2); width: 100%; padding: var(--sp-2) 0; border: 0; background: transparent; color: var(--ink-3); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; text-align: start; cursor: pointer; }
   .txn-modelactions-head:hover { color: var(--ink); }
   .txn-modelactions-head:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
-  .txn-modelactions-label { color: var(--ink-2); font-weight: 700; }
-  .txn-modelactions-summary { margin-inline-start: auto; font-variant-numeric: tabular-nums; }
-  .txn-modelactions-rows { padding: 0 var(--sp-3) var(--sp-2); }
+  .txn-modelactions-summary { font-variant-numeric: tabular-nums; }
+  .txn-modelactions-rows { padding: 0 0 var(--sp-2); }
   .txn-modelactions-rows .txn-toolcall { margin-top: 0; border: 0; background: transparent; }
   .txn-modelactions-rows .txn-tc-head { background: transparent; border: 0; padding-inline: 0; padding-block: var(--sp-1); }
   .txn-modelactions-rows .txn-tc-head:hover { background: transparent; color: var(--ink); }

@@ -32,7 +32,7 @@ requiredCaseNames:
   - the ledger head carries only the role line and its controls
   - host turn actions survive on every role
   - a role change draws one rule and the first turn draws none
-  - consecutive wordless turns share one action block
+  - a user turn's actions share one block after its first prose turn
   - a turn with no words is inline detail, not a card
   - the system turn's heading follows the page level
 requiredCaseKinds:
@@ -48,7 +48,7 @@ requiredCaseKinds:
   the ledger head carries only the role line and its controls: ledger-head
   host turn actions survive on every role: host-actions
   a role change draws one rule and the first turn draws none: turn-rules
-  consecutive wordless turns share one action block: model-actions
+  a user turn's actions share one block after its first prose turn: model-actions
   a turn with no words is inline detail, not a card: detail-turns
   the system turn's heading follows the page level: heading-level
 
@@ -62,7 +62,31 @@ requiredMutationNames:
   - the ledger draws no role rule
   - the ledger head regains a collapse control
   - a wordless turn gets a card again
+  - a folded turn keeps its own work beside the block
+  - a user turn does not start a new block
+  - the block sits on the group's last turn
+  - the block header counts calls
 mutations:
+  - name: a folded turn keeps its own work beside the block
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "const suppressWork = foldedWork.has(t.index)"
+    replace: "const suppressWork = false"
+    expectedDiagnostic: "no ledger turn keeps a work row of its own beside the block"
+  - name: a user turn does not start a new block
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "if (t.role === 'user') { flush(); continue }"
+    replace: "if (t.role === 'user') continue"
+    expectedDiagnostic: "a user turn starts a new block"
+  - name: the block sits on the group's last turn
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "const owner = anchor ?? members[0]"
+    replace: "const owner = members[members.length - 1]"
+    expectedDiagnostic: "the user turn's block must sit after its first prose turn"
+  - name: the block header counts calls
+    file: src/ui/transcript/WorkGroup.jsx
+    find: "const label = workActionsLabel(workSummary(tools))"
+    replace: "const label = [workCountLabel(workSummary(tools)), workMetaLabel(workSummary(tools))].filter(Boolean).join(', ')"
+    expectedDiagnostic: "the block header must read"
   - name: the ledger keeps the classic tool rows
     file: src/ui/transcript/TurnCard.jsx
     find: "  const workBlock = ledger && turn.role !== 'system' && !suppressWork && (hasWork || modelActions?.length) ? ("

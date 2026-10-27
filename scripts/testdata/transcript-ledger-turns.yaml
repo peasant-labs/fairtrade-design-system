@@ -24,6 +24,7 @@ summaryCases:
     expected: {calls: 4, commands: 2, files: 1, edits: 1, failed: 1, durationMs: 12800}
     countLabel: 2 commands, 1 file, 1 edit
     metaLabel: 4 calls, 1 failed, 13s
+    actionsLabel: '4 actions: 2 commands, 1 file, 1 edit, 13s'
   - name: singular counts read as one
     tools:
       - {id: s1, name: Bash, group: bash, exitCode: 0}
@@ -31,12 +32,14 @@ summaryCases:
     expected: {calls: 2, commands: 1, files: 0, edits: 1, failed: 0, durationMs: 0}
     countLabel: 1 command, 1 edit
     metaLabel: 2 calls
+    actionsLabel: '2 actions: 1 command, 1 edit'
   - name: a turn without counting tools falls back to its call count
     tools:
       - {id: s1, name: Read, group: read}
     expected: {calls: 1, commands: 0, files: 0, edits: 0, failed: 0, durationMs: 0}
     countLabel: 1 call
     metaLabel: ''
+    actionsLabel: '1 action'
   - name: one file touched twice counts once
     tools:
       - {id: s1, name: Read, group: read, filePath: src/a.ts}
@@ -44,24 +47,28 @@ summaryCases:
     expected: {calls: 2, commands: 0, files: 1, edits: 1, failed: 0, durationMs: 0}
     countLabel: 1 file, 1 edit
     metaLabel: 2 calls
+    actionsLabel: '2 actions: 1 file, 1 edit'
   - name: a search scope contributes no files
     tools:
       - {id: s1, name: Grep, group: search, filePath: web/src}
     expected: {calls: 1, commands: 0, files: 0, edits: 0, failed: 0, durationMs: 0}
     countLabel: 1 call
     metaLabel: ''
+    actionsLabel: '1 action'
   - name: a fetch scope contributes no files
     tools:
       - {id: s1, name: WebFetch, group: fetch, filePath: https://example.test/reference}
     expected: {calls: 1, commands: 0, files: 0, edits: 0, failed: 0, durationMs: 0}
     countLabel: 1 call
     metaLabel: ''
+    actionsLabel: '1 action'
   - name: a task scope contributes no files
     tools:
       - {id: s1, name: Task, group: tasks, filePath: src/a.ts}
     expected: {calls: 1, commands: 0, files: 0, edits: 0, failed: 0, durationMs: 0}
     countLabel: 1 call
     metaLabel: ''
+    actionsLabel: '1 action'
   - name: a read and a search of the same path count one file
     tools:
       - {id: s1, name: Read, group: read, filePath: src/a.ts}
@@ -69,12 +76,14 @@ summaryCases:
     expected: {calls: 2, commands: 0, files: 1, edits: 0, failed: 0, durationMs: 0}
     countLabel: 1 file
     metaLabel: 2 calls
+    actionsLabel: '2 actions: 1 file'
   - name: a read with a path keeps its call count in the meta
     tools:
       - {id: s1, name: Read, group: read, filePath: src/a.ts}
     expected: {calls: 1, commands: 0, files: 1, edits: 0, failed: 0, durationMs: 0}
     countLabel: 1 file
     metaLabel: 1 call
+    actionsLabel: '1 action: 1 file'
   - name: a non-zero bash exit counts as a failure
     tools:
       - {id: s1, name: Bash, group: bash, exitCode: 0}
@@ -82,12 +91,14 @@ summaryCases:
     expected: {calls: 2, commands: 2, files: 0, edits: 0, failed: 1, durationMs: 0}
     countLabel: 2 commands
     metaLabel: 2 calls, 1 failed
+    actionsLabel: '2 actions: 2 commands'
   - name: an errored read counts as a failure
     tools:
       - {id: s1, name: Read, group: read, filePath: src/a.ts, isError: true}
     expected: {calls: 1, commands: 0, files: 1, edits: 0, failed: 1, durationMs: 0}
     countLabel: 1 file
     metaLabel: 1 call, 1 failed
+    actionsLabel: '1 action: 1 file'
   - name: two failed tools count two failures
     tools:
       - {id: s1, name: Grep, group: search, isError: true}
@@ -95,12 +106,14 @@ summaryCases:
     expected: {calls: 2, commands: 0, files: 0, edits: 0, failed: 2, durationMs: 0}
     countLabel: 2 calls
     metaLabel: 2 failed
+    actionsLabel: '2 actions'
   - name: a bash error at exit zero counts one failure
     tools:
       - {id: s1, name: Bash, group: bash, exitCode: 0, isError: true}
     expected: {calls: 1, commands: 1, files: 0, edits: 0, failed: 1, durationMs: 0}
     countLabel: 1 command
     metaLabel: 1 call, 1 failed
+    actionsLabel: '1 action: 1 command'
   - name: blank paths and unknown durations are left out
     tools:
       - {id: s1, name: Read, group: read, filePath: ''}
@@ -109,15 +122,22 @@ summaryCases:
     expected: {calls: 3, commands: 1, files: 1, edits: 0, failed: 0, durationMs: 0}
     countLabel: 1 command, 1 file
     metaLabel: 3 calls
+    actionsLabel: '3 actions: 1 command, 1 file'
   - name: an empty tool list summarizes to nothing
     tools: []
     expected: {calls: 0, commands: 0, files: 0, edits: 0, failed: 0, durationMs: 0}
     countLabel: 0 calls
     metaLabel: ''
+    actionsLabel: '0 actions'
 
+# the literal headers the mounted action blocks print. `panel` is the payload's one user turn
+# (turn 1's five tools plus turn 4's thinking); `grouped` is the model-actions case's first user
+# turn after a second prose turn's command folds into it; `afterUser` is the block the second user
+# turn starts on its first turn with work, since it has no prose.
 mountedSummary:
-  countLabel: 2 commands, 1 file, 1 edit
-  metaLabel: 5 calls, 1 failed, 13s
+  panel: '5 actions: 2 commands, 1 file, 1 edit, 13s'
+  grouped: '6 actions: 3 commands, 1 file, 1 edit, 21s'
+  afterUser: '2 actions: 2 commands, 16s'
 
 # the query that matches only the system turn's recorded text, used to drive the real
 # search-to-match path and prove the row opens on the reveal.
@@ -220,7 +240,7 @@ cases:
     kind: host-actions
   - name: a role change draws one rule and the first turn draws none
     kind: turn-rules
-  - name: consecutive wordless turns share one action block
+  - name: a user turn's actions share one block after its first prose turn
     kind: model-actions
   - name: a turn with no words is inline detail, not a card
     kind: detail-turns

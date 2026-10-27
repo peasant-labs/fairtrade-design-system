@@ -1,7 +1,7 @@
 import { useEffect, useId, useState } from 'react'
 import ToolCall from './ToolCall.jsx'
 import Thinking from './Thinking.jsx'
-import { workCountLabel, workMetaLabel, workSummary } from './work-summary.js'
+import { workActionsLabel, workCountLabel, workMetaLabel, workSummary } from './work-summary.js'
 
 /* TranscriptWorkGroup — one turn's tool activity as a single panel. In the ledger presentation
    a turn shows its prose first and then this panel: the computed summary over its tool calls
@@ -85,16 +85,23 @@ export default function TranscriptWorkGroup({ tools = [], thinking, openTools = 
   )
 }
 
-/* ModelActions — a run of wordless turns (thinking and tool work with no prose of its own)
-   collapsed into one quiet block. The ledger never prints a summary row per call; consecutive
-   action turns share this block, whose header states the run's work and opens the rows. */
+/* ModelActions — every action the model took for one user turn, collapsed into one quiet block.
+   The ledger never prints a summary row per call; the turns of one user turn share this block,
+   whose header states their work and opens the rows. A block with no tools is only thinking,
+   so it draws its thinking lines without a header to open. */
 export function ModelActions({ turns = [], openTools = {}, onToggle = () => {}, expandAll = false }) {
   const [open, setOpen] = useState(false)
   const tools = turns.flatMap((turn) => turn.toolCalls ?? [])
   const toolsOpen = tools.some((tool) => !!openTools[tool.id])
   const shown = expandAll || open || toolsOpen
-  const summary = workSummary(tools)
-  const label = [workCountLabel(summary), workMetaLabel(summary)].filter(Boolean).join(' · ')
+  const label = workActionsLabel(workSummary(tools))
+  if (!tools.length) {
+    return (
+      <div className="txn-modelactions txn-modelactions-bare">
+        {turns.map((turn) => turn.thinking && <Thinking key={turn.identity ?? turn.index} block={turn.thinking} />)}
+      </div>
+    )
+  }
   const closeAll = () => {
     if (shown) {
       setOpen(false)
