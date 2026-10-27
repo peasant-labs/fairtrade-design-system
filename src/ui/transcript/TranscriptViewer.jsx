@@ -95,50 +95,48 @@ function useControllable(value, onChange, defaultValue) {
 const STICKY_SCROLL_THRESHOLD = 56
 const HERO_RELEASE_SLACK = 24
 
-/* the reading column's snaps, narrowest first: two fixed widths and `full`, the whole content
-   width of the stream (up to the lane that holds the zen control and the handle). `full` is
-   measured, so it follows a window resize or a rail opening and closing. The drag handle clamps
-   to 600..full and snaps to the nearest snap on release, so the reader only rests at these.
-   Exported so a host offering its own width menu reuses the same closed set. */
+/* the reading column's width: any width from 600 to `full`, the whole content width of the
+   stream (up to the lane that holds the zen control and the handle). There are no snaps: a drag
+   rests wherever it is released, and the keyboard moves in READER_STEP increments. `full` is
+   measured, so it follows a window resize or a rail opening and closing; a width dragged to the
+   end is stored as `full` so it keeps following, while a narrower width stays the pixels chosen
+   and renders at the space it has when that space shrinks below it. */
 export const READER_FULL = 'full'
-export const READER_SNAPS = Object.freeze([600, 840, READER_FULL])
 const READER_MIN = 600
+const READER_STEP = 40
 const DEFAULT_READER_WIDTH = 840
 const DEFAULT_SIDEBAR_LAYOUT = Object.freeze({ outline: true, filters: true, host: true })
 
-/** the pixel width a snap renders at; `full` is null until the stream has been measured. A fixed
-    snap wider than the measured space renders at the space it has, so the separator never reports
-    a width the column cannot draw. */
-function readerSnapPx(snap, fullPx) {
-  if (snap === READER_FULL) return fullPx
-  return fullPx == null ? snap : Math.min(snap, Math.max(READER_MIN, fullPx))
-}
-
-/** the widest width a drag may reach: the measured full width, or the default before layout. */
+/** the widest the column can be: the measured full width, or the default before layout. */
 function readerMaxPx(fullPx) {
   return Math.max(READER_MIN, fullPx ?? DEFAULT_READER_WIDTH)
 }
 
-/** clamp a pixel width to the reader's supported range. */
+/** clamp a pixel width to 600..full. Before layout only the minimum applies. */
 function clampReaderPx(px, fullPx) {
   if (!Number.isFinite(px)) return DEFAULT_READER_WIDTH
-  return Math.max(READER_MIN, Math.min(readerMaxPx(fullPx), px))
+  return Math.max(READER_MIN, fullPx == null ? px : Math.min(readerMaxPx(fullPx), px))
 }
 
-/** the snap a pixel width rests at: the nearest of 600, 840 and the measured full width. Before
-    layout, `full` has no width yet, so anything past 840 rests at full. */
-function nearestReaderSnap(px, fullPx) {
-  if (!Number.isFinite(px)) return DEFAULT_READER_WIDTH
-  if (fullPx == null) return px > DEFAULT_READER_WIDTH ? READER_FULL : Math.abs(px - READER_MIN) < Math.abs(px - DEFAULT_READER_WIDTH) ? READER_MIN : DEFAULT_READER_WIDTH
+/** the pixel width a stored width renders at: `full` is the measured width (null before
+    layout); a number is clamped to the space it has. */
+function readerPxOf(width, fullPx) {
+  if (width === READER_FULL) return fullPx
+  return clampReaderPx(width, fullPx)
+}
+
+/** the width to store once a drag or a key lands: the end of the range is `full`, so it keeps
+    following the space; anything narrower is the pixels themselves. */
+function restingReaderWidth(px, fullPx) {
   const clamped = clampReaderPx(px, fullPx)
-  return READER_SNAPS.reduce((best, snap) => (Math.abs(readerSnapPx(snap, fullPx) - clamped) < Math.abs(readerSnapPx(best, fullPx) - clamped) ? snap : best), READER_SNAPS[0])
+  return fullPx != null && clamped >= readerMaxPx(fullPx) ? READER_FULL : clamped
 }
 
-/** the snap a host-supplied readerWidth renders at: `full` stays full, a number snaps, and a
-    non-finite value falls back to the default. */
-function normaliseReaderWidth(width, fullPx) {
+/** a host-supplied readerWidth: `full` stays full, a number is used as given (clamped when it
+    renders), and a non-finite value falls back to the default. */
+function normaliseReaderWidth(width) {
   if (width === READER_FULL) return READER_FULL
-  return nearestReaderSnap(width, fullPx)
+  return Number.isFinite(width) ? width : DEFAULT_READER_WIDTH
 }
 
 /** the stream's content width: its inner width less the inline padding that reserves the
@@ -310,13 +308,13 @@ export default function TranscriptViewer({
   const zenActive = ledger && zen
   const [rawReaderWidth, setReaderWidth] = useControllable(readerWidthProp, onReaderWidthChange, DEFAULT_READER_WIDTH)
   /* the width the column and the separator actually report. A supplied readerWidth is
-     normalised ONCE at this boundary (snapped to 600, 840 or full), never rendered raw; a live
-     drag keeps its own continuous, unsnapped pixel preview so the column follows the pointer.
+     normalised ONCE at this boundary and clamped to 600..full when it renders, never drawn
+     raw; a live drag keeps its own pixel preview so the column follows the pointer.
      `readerFullPx` is the measured full width; `readerPx` is what the column renders at. */
   const [readerDragWidth, setReaderDragWidth] = useState(null)
   const [readerFullPx, setReaderFullPx] = useState(null)
-  const readerSnap = normaliseReaderWidth(rawReaderWidth, readerFullPx)
-  const readerPx = readerDragWidth ?? readerSnapPx(readerSnap, readerFullPx)
+  const readerStored = normaliseReaderWidth(rawReaderWidth)
+  const readerPx = readerDragWidth ?? readerPxOf(readerStored, readerFullPx)
   const [openTools, setOpenTools] = useControllable(openToolsProp, onOpenToolsChange, {})
   const [earlierHistoryOpen, setEarlierHistoryOpen] = useControllable(earlierHistoryOpenProp, onEarlierHistoryOpenChange, {})
   const [activeTurn, setActiveTurn] = useControllable(activeTurnProp, onActiveTurnChange, vm?.turns?.[0]?.index ?? 0)
@@ -798,18 +796,19 @@ export default function TranscriptViewer({
   /* ── reading width: the drag handle changes ONLY --txn-reader-width ───────────
      The column is centred, so the trailing edge moves half as far as the width: two
      pixels of pointer travel per pixel of width. A drag adjusts live (clamped to the
-     measured full width) and snaps to 600, 840 or full on release; the keyboard moves
-     snap to snap. No handler here reads or writes the sidebar layout. A press can end
-     without a pointerup (capture loss, the pointer leaving the handle, a window blur), so
-     every end path clears the drag and lands on a snap; a mouse move with no button held
-     never resizes. Each press re-measures, so a drag never clamps to a stale width. */
+     measured full width) and rests wherever it is released; the keyboard moves in
+     READER_STEP increments, Home to the minimum and End to full. No handler here reads or
+     writes the sidebar layout. A press can end without a pointerup (capture loss, the
+     pointer leaving the handle, a window blur), so every end path clears the drag and
+     keeps the width it reached; a mouse move with no button held never resizes. Each
+     press re-measures, so a drag never clamps to a stale width. */
   function endReaderDrag(clientX) {
     const drag = readerDragRef.current
     if (!drag) return
     readerDragRef.current = null
     setReaderDragWidth(null)
     const released = typeof clientX === 'number' && clientX > 0 ? drag.startWidth + (clientX - drag.startX) * 2 : (readerPx ?? drag.startWidth)
-    setReaderWidth(nearestReaderSnap(released, drag.fullPx))
+    setReaderWidth(restingReaderWidth(released, drag.fullPx))
   }
   function remeasureReaderFull() {
     const full = measureReaderFull(scrollRef.current) ?? readerFullPx
@@ -819,7 +818,7 @@ export default function TranscriptViewer({
   function onReaderPointerDown(e) {
     if (e.button !== 0 && e.pointerType !== 'touch') return
     const fullPx = remeasureReaderFull()
-    readerDragRef.current = { startX: e.clientX, startWidth: readerSnapPx(readerSnap, fullPx) ?? readerMaxPx(fullPx), fullPx }
+    readerDragRef.current = { startX: e.clientX, startWidth: readerPxOf(readerStored, fullPx) ?? readerMaxPx(fullPx), fullPx }
     if (typeof e.currentTarget.setPointerCapture === 'function') {
       try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* synthetic pointer ids cannot be captured */ }
     }
@@ -849,13 +848,13 @@ export default function TranscriptViewer({
     endReaderDrag()
   }
   function onReaderKeyDown(e) {
-    remeasureReaderFull()
-    const index = READER_SNAPS.indexOf(readerSnap)
+    const fullPx = remeasureReaderFull()
+    const current = readerPxOf(readerStored, fullPx) ?? readerMaxPx(fullPx)
     let next
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') next = READER_SNAPS[Math.max(0, index - 1)]
-    else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') next = READER_SNAPS[Math.min(READER_SNAPS.length - 1, index + 1)]
-    else if (e.key === 'Home') next = READER_SNAPS[0]
-    else if (e.key === 'End') next = READER_SNAPS[READER_SNAPS.length - 1]
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') next = restingReaderWidth(current - READER_STEP, fullPx)
+    else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') next = restingReaderWidth(current + READER_STEP, fullPx)
+    else if (e.key === 'Home') next = READER_MIN
+    else if (e.key === 'End') next = READER_FULL
     else return
     e.preventDefault()
     setReaderWidth(next)
@@ -1359,7 +1358,7 @@ export default function TranscriptViewer({
                   aria-valuemin={READER_MIN}
                   aria-valuemax={readerMaxPx(readerFullPx)}
                   aria-valuenow={readerPx ?? readerMaxPx(readerFullPx)}
-                  aria-valuetext={readerDragWidth == null && readerSnap === READER_FULL ? 'full width' : `${readerPx} pixels wide`}
+                  aria-valuetext={readerDragWidth == null && readerStored === READER_FULL ? 'full width' : `${readerPx} pixels wide`}
                   tabIndex={0}
                   onPointerDown={onReaderPointerDown}
                   onPointerMove={onReaderPointerMove}

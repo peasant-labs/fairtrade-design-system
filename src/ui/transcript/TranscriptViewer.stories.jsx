@@ -311,23 +311,26 @@ async function readingLayoutPlay({ canvasElement }) {
   const streamStyle = getComputedStyle(stream)
   const fullWidth = Math.floor(stream.clientWidth - parseFloat(streamStyle.paddingLeft) - parseFloat(streamStyle.paddingRight))
   await waitFor(() => expect(handle).toHaveAttribute('aria-valuemax', String(Math.max(600, fullWidth))))
-  expect(handle).toHaveAttribute('aria-valuenow', '840')
+  // the default 840 renders at the space it has when the stream is narrower than that.
+  expect(handle).toHaveAttribute('aria-valuenow', String(Math.max(600, Math.min(840, fullWidth))))
   expect(handle).toHaveAttribute('aria-orientation', 'vertical')
   expect(handle).toHaveAttribute('tabindex', '0')
   await assertReadingGeometry(canvasElement)
-  // the keyboard rests on the snaps, and the ends are reachable.
+  // there are no snaps: the arrows step by 40px, Home reaches the minimum and End reaches full.
   handle.focus()
+  await userEvent.keyboard('{Home}')
+  expect(handle).toHaveAttribute('aria-valuenow', '600')
   await userEvent.keyboard('{ArrowRight}')
+  expect(handle).toHaveAttribute('aria-valuenow', '640')
+  await userEvent.keyboard('{End}')
   expect(handle).toHaveAttribute('aria-valuetext', 'full width')
   expect(handle).toHaveAttribute('aria-valuenow', handle.getAttribute('aria-valuemax'))
   // at full the column runs to the stream's content edge, up to the zen lane.
   const row = canvasElement.querySelector('.txn-ledger .txn-turnrow')
   const contentRight = stream.getBoundingClientRect().right - parseFloat(streamStyle.paddingRight) - (stream.offsetWidth - stream.clientWidth)
   expect(Math.abs(row.getBoundingClientRect().right - contentRight)).toBeLessThanOrEqual(2)
-  await userEvent.keyboard('{ArrowLeft}{ArrowLeft}')
-  expect(handle).toHaveAttribute('aria-valuenow', '600')
-  await userEvent.keyboard('{End}')
-  expect(handle).toHaveAttribute('aria-valuetext', 'full width')
+  await userEvent.keyboard('{ArrowLeft}')
+  expect(handle).toHaveAttribute('aria-valuenow', String(Number(handle.getAttribute('aria-valuemax')) - 40))
   await userEvent.keyboard('{Home}')
   expect(handle).toHaveAttribute('aria-valuenow', '600')
   // collapse the outline, then change the width both ways: the strip must stay closed.

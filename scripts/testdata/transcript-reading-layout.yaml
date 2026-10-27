@@ -52,9 +52,9 @@ interactions:
     kind: zen-strips
   - name: the zen control sits inside the reader column
     kind: zen-placement
-  - name: dragging the handle changes the width and snaps on release
+  - name: dragging the handle rests the width where it is released
     kind: width-drag
-  - name: the keyboard moves the width between its snaps
+  - name: the keyboard steps the width and reaches both ends
     kind: width-keys
   - name: a width change never reopens a closed rail
     kind: width-rails
@@ -76,7 +76,7 @@ interactions:
     kind: classic-zen
   - name: an interrupted pointer drag does not resize later
     kind: width-drag-lifecycle
-  - name: a controlled reader width above the range renders the widest snap
+  - name: a controlled reader width above the range renders the full width
     kind: width-controlled
     readerWidth: 1600
     expected: full
@@ -86,10 +86,14 @@ interactions:
     expected: full
   - name: a reader at full follows the stream when it resizes
     kind: width-full-follows
-  - name: a controlled reader width below the range renders the nearest snap
+  - name: a controlled reader width below the range renders the minimum
+    kind: width-controlled
+    readerWidth: 500
+    expected: 600
+  - name: a controlled reader width inside the range renders as given
     kind: width-controlled
     readerWidth: 700
-    expected: 600
+    expected: 700
   - name: a non-numeric controlled reader width falls back to the default width
     kind: width-controlled
     readerWidth: .nan
@@ -103,11 +107,12 @@ interactions:
   - name: the phone header keeps the title to two lines
     kind: mobile-header
 
-# The widths the handle must rest on, narrowest first. `full` is the stream's measured content
-# width: jsdom lays nothing out, so the gate gives the stream `streamWidth`, then
-# `resizedStreamWidth` to prove full follows a resize. The gate compares the mounted
-# aria-valuenow and the root's inline custom property to these literals.
-snaps: [600, 840, full]
+# The width range: any width from `minWidth` to full, with no snaps; the keyboard moves by
+# `step`. `full` is the stream's measured content width: jsdom lays nothing out, so the gate
+# gives the stream `streamWidth`, then `resizedStreamWidth` to prove full follows a resize. The
+# gate compares the mounted aria-valuenow and the root's inline custom property to these.
+minWidth: 600
+step: 40
 defaultWidth: 840
 streamWidth: 1120
 resizedStreamWidth: 980
