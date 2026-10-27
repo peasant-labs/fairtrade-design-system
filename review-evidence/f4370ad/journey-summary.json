@@ -1,0 +1,808 @@
+{
+  "stats": {
+    "startTime": "2026-10-27T21:40:50.901Z",
+    "duration": 292166.18399999995,
+    "expected": 300,
+    "skipped": 56,
+    "unexpected": 0,
+    "flaky": 2
+  },
+  "skipped": [
+    {
+      "title": "accessibility code map 320 light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 31,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility code map 390 light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 31,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility code map 1440 light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 31,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility analytics 320 light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 31,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility analytics 390 light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 31,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility analytics 1440 light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 31,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility transcript 320 light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 31,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility transcript 390 light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 31,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility transcript 1440 light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 31,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility settings 320 light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 31,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility settings 390 light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 31,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility settings 1440 light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 31,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility minimum targets 320 light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 178,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility minimum targets 390 light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 178,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility minimum targets 1440 light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 178,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility mutations fail for their declared reason light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 192,
+            "column": 8
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility code map 320 dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 31,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility code map 390 dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 31,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility code map 1440 dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 31,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility analytics 320 dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 31,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility analytics 390 dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 31,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility analytics 1440 dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 31,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility transcript 320 dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 31,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility transcript 390 dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 31,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility transcript 1440 dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 31,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility settings 320 dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 31,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility settings 390 dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 31,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility settings 1440 dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 31,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility minimum targets 320 dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 178,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility minimum targets 390 dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 178,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility minimum targets 1440 dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 178,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "accessibility mutations fail for their declared reason dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/accessibility.journey.mjs",
+            "line": 192,
+            "column": 8
+          }
+        }
+      ]
+    },
+    {
+      "title": "demo truth local village observations light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/demo-truth.journey.mjs",
+            "line": 13,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "demo truth offline home light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/demo-truth.journey.mjs",
+            "line": 13,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "demo truth folder settings light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/demo-truth.journey.mjs",
+            "line": 13,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "demo truth project analytics light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/demo-truth.journey.mjs",
+            "line": 13,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "demo truth changes legend light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/demo-truth.journey.mjs",
+            "line": 13,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "demo truth local transcript light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/demo-truth.journey.mjs",
+            "line": 13,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "demo truth village transcript light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/demo-truth.journey.mjs",
+            "line": 13,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "demo truth village account light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/demo-truth.journey.mjs",
+            "line": 13,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "demo truth published pull request digest light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/demo-truth.journey.mjs",
+            "line": 13,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "demo truth published completion light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/demo-truth.journey.mjs",
+            "line": 13,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "demo truth returned provider light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/demo-truth.journey.mjs",
+            "line": 13,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "demo truth village calendar dates light",
+      "project": "dark",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/demo-truth.journey.mjs",
+            "line": 13,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "demo truth local village observations dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/demo-truth.journey.mjs",
+            "line": 13,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "demo truth offline home dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/demo-truth.journey.mjs",
+            "line": 13,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "demo truth folder settings dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/demo-truth.journey.mjs",
+            "line": 13,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "demo truth project analytics dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/demo-truth.journey.mjs",
+            "line": 13,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "demo truth changes legend dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/demo-truth.journey.mjs",
+            "line": 13,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "demo truth local transcript dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/demo-truth.journey.mjs",
+            "line": 13,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "demo truth village transcript dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/demo-truth.journey.mjs",
+            "line": 13,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "demo truth village account dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/demo-truth.journey.mjs",
+            "line": 13,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "demo truth published pull request digest dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/demo-truth.journey.mjs",
+            "line": 13,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "demo truth published completion dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/demo-truth.journey.mjs",
+            "line": 13,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "demo truth returned provider dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/demo-truth.journey.mjs",
+            "line": 13,
+            "column": 10
+          }
+        }
+      ]
+    },
+    {
+      "title": "demo truth village calendar dates dark",
+      "project": "light",
+      "annotations": [
+        {
+          "type": "skip",
+          "location": {
+            "file": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/scripts/journey/demo-truth.journey.mjs",
+            "line": 13,
+            "column": 10
+          }
+        }
+      ]
+    }
+  ],
+  "other": [
+    {
+      "title": "app sidebar phone drawer opens to the current item and closes motion-allowed",
+      "project": "light",
+      "status": "flaky"
+    },
+    {
+      "title": "app sidebar phone drawer opens to the current item and closes reduced",
+      "project": "light",
+      "status": "flaky"
+    }
+  ]
+}
