@@ -41,7 +41,7 @@ const TOOL_GROUP_META = {
  * @param {import('./state-capabilities.js').TranscriptTab} props.tab
  * @param {TranscriptFilters} props.filters
  * @param {(next: TranscriptFilters) => void} [props.onFiltersChange]
- * @param {{ categories: { prompts: number, responses: number, thinking: number, toolcalls: number }, toolGroups: Partial<Record<ToolGroup, number>> }} [props.counts]
+ * @param {{ categories: { prompts: number, responses: number, thinking: number, toolcalls: number, system?: number }, toolGroups: Partial<Record<ToolGroup, number>> }} [props.counts]
  * @param {CommitVM[]} [props.checkpoints]    cooked session commits → the checkpoint selector (render-when-present)
  * @param {number} [props.filtersActive]
  * @param {Function} [props.onClear]
@@ -51,7 +51,7 @@ const TOOL_GROUP_META = {
 /* a self-sufficient default so the rail renders standalone (the composite always passes a
    cooked TranscriptFilters; this is the unmanaged fallback). */
 const DEFAULT_FILTERS = {
-  categories: { prompts: true, responses: true, thinking: true, toolcalls: true },
+  categories: { prompts: true, responses: true, thinking: true, toolcalls: true, system: true },
   toolGroups: {},
   tags: { errors: false, retries: false, revert: false },
   views: { hidden: true, expandAll: false, compact: false },
@@ -146,6 +146,7 @@ export default function FiltersRail({
             </div>
           )}
         </div>
+        <CheckRow checked={categories.system !== false} onChange={() => patchCategories({ system: categories.system === false })} count={counts.categories.system ?? 0}>system</CheckRow>
       </div>
 
       <div className="txn-filter-divider" />

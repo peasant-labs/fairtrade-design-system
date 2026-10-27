@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import ToolCall from './ToolCall.jsx'
 import Thinking from './Thinking.jsx'
 import { workActionsLabel, workCountLabel, workMetaLabel, workSummary } from './work-summary.js'
@@ -85,15 +85,27 @@ export default function TranscriptWorkGroup({ tools = [], thinking, openTools = 
   )
 }
 
-/* ModelActions — every action the model took for one user turn, collapsed into one quiet block.
+/* ModelActions — every action the model took for one user turn, grouped into one quiet block.
    The ledger never prints a summary row per call; the turns of one user turn share this block,
-   whose header states their work and opens the rows. A block with no tools is only thinking,
+    whose header states their work and toggles the rows. Rows start visible with their contents
+    closed; compact mode collapses the list. A block with no tools is only thinking,
    so it draws its thinking lines without a header to open. */
-export function ModelActions({ turns = [], openTools = {}, onToggle = () => {}, expandAll = false }) {
-  const [open, setOpen] = useState(false)
+export function ModelActions({ turns = [], openTools = {}, onToggle = () => {}, expandAll = false, compact = false }) {
+  const [open, setOpen] = useState(!compact)
+  const previousCompact = useRef(compact)
   const tools = turns.flatMap((turn) => turn.toolCalls ?? [])
   const toolsOpen = tools.some((tool) => !!openTools[tool.id])
-  const shown = expandAll || open || toolsOpen
+  const shown = open || (!compact && (expandAll || toolsOpen))
+  // A search reveal or host-opened tool remains reachable even in compact mode.
+  useEffect(() => {
+    if (toolsOpen) setOpen(true)
+  }, [toolsOpen])
+  useEffect(() => {
+    if (previousCompact.current === compact) return
+    previousCompact.current = compact
+    setOpen(!compact)
+    if (compact) for (const tool of tools) if (openTools[tool.id]) onToggle(tool.id)
+  }, [compact, tools, openTools, onToggle])
   const label = workActionsLabel(workSummary(tools))
   if (!tools.length) {
     return (

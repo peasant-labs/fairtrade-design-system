@@ -39,7 +39,7 @@ export default function Thinking({ block }) {
       </button>
       {open && (
         <div className="txn-thinking-body">
-          <em>{block.text}</em>
+          <div className="txn-thinking-box"><em>{block.text}</em></div>
         </div>
       )}
     </div>

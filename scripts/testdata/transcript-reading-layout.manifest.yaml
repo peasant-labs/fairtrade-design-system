@@ -77,6 +77,7 @@ requiredInteractionKinds:
 # mutations the mounted harness applies; the five stylesheet rows are applied to the gate's
 # own stylesheet read, which mirrors the harness transform for a file read from disk.
 requiredMutationNames:
+  - an open block row draws a rule again
   - the handle snaps on release again
   - the full width stops following the stream
   - the full width is capped at the old widest snap
@@ -99,6 +100,11 @@ requiredMutationNames:
   - graph mode never marks the bar
   - the sidebar cards lose their inset
 mutations:
+  - name: an open block row draws a rule again
+    file: src/index.css
+    find: "  .txn-modelactions-rows .txn-tcbody { border-top: 0; }"
+    replace: "  .txn-modelactions-rows .txn-tcbody { border-top: var(--bd); }"
+    expectedDiagnostic: "an open tool row in a block must draw no rule under its head"
   - name: the handle snaps on release again
     file: src/ui/transcript/TranscriptViewer.jsx
     find: "    setReaderWidth(restingReaderWidth(released, drag.fullPx))"

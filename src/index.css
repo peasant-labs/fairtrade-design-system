@@ -2268,7 +2268,10 @@
   /* thinking is a row in the tool-call shape (kind, word count, time), so it shares .toolcall
      and .tc-head and only states its own spacing and its open body. */
   .txn-thinking { margin-top: var(--sp-2); }
-  .txn-thinking-body { margin-top: var(--sp-2); padding: var(--sp-3); border: var(--bd); border-left: var(--stroke-emphasis) solid var(--mauve); background: color-mix(in srgb, var(--mauve) 5%, var(--surface)); }
+  /* an open thinking row opens like an open tool row: the body is the inset, and the thinking
+     text sits in the same box a tool's output sits in */
+  .txn-thinking-body { padding: var(--sp-3); }
+  .txn-thinking-box { background: var(--canvas); border: var(--bd); padding: var(--sp-2) var(--sp-3); }
   .txn-thinking-body em { display: block; font-style: italic; font-weight: 400; color: var(--ink-2); line-height: 1.5; white-space: pre-wrap; }
 
   /* ---- tool calls + per-tool renderers ---- */
@@ -3761,6 +3764,9 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 .txn-ledger { --txn-reader-width: 840px; }
 .txn-turnwrap-ledger { max-inline-size: var(--txn-reader-width); margin-inline: auto; }
 .txn-turn.txn-turn-ledger { background: transparent; border: 0; }
+@media (hover: hover) and (pointer: fine) {
+  .txn-turn.txn-turn-ledger:hover { background: var(--surface-hover); }
+}
 /* a faint rule marks a change of role between adjacent turns, and never opens the trace. */
 /* the rule belongs to the reader column, not the scrolled stream: without the cap it runs out
    to the stream's left edge while the turns sit right-aligned inside the reading width. */
@@ -3823,8 +3829,8 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   .txn-modelactions-rows .txn-tc-head { background: transparent; border: 0; padding-inline: 0; padding-block: var(--sp-1); min-block-size: var(--sp-6); }
   .txn-modelactions-rows .txn-tc-head:hover { background: transparent; color: var(--ink); }
   .txn-modelactions-rows .txn-tc-chev { display: none; }
-  /* an open thinking row opens like an open tool row: flush under its head, on the reading edge */
-  .txn-modelactions-rows .txn-thinking-body { margin: 0; padding: var(--sp-3); border: 0; border-top: var(--bd); background: transparent; }
+  /* an open row draws no rule under its head: the body follows the row directly */
+  .txn-modelactions-rows .txn-tcbody { border-top: 0; }
 
   .txn-ledger .txn-turnwork { margin-top: var(--sp-3); padding-inline: var(--sp-4); }
   .txn-ledger .txn-turnwork .txn-work { margin-top: 0; }
@@ -3846,7 +3852,6 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
      two pixels, so its inline padding gives them back */
   /* the thinking body sits on the same edge as a tool's output box, and its text on the same
      edge as that box's first line */
-  .txn-ledger .txn-work-rows .txn-thinking-body { margin-inline-start: var(--sp-4); padding-inline-start: calc(var(--sp-3) - var(--stroke-hairline)); }
   /* the reference rows lead with the kind icon alone: no disclosure chevron on the row or the
      thinking line, and the tool name keeps chrome case */
   .txn-ledger .txn-work-rows .txn-tc-head .kind { text-transform: lowercase; }

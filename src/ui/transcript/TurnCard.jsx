@@ -45,6 +45,7 @@ function turnTimeLabel(ts) {
  * @param {object} props
  * @param {TurnVM} [props.turn]
  * @param {boolean} [props.active]
+ * @param {(turnIndex: number) => void} [props.onSelect] select the prose card without scrolling
  * @param {Record<string, boolean>} [props.openTools]   tool id → open?
  * @param {(id: string) => void} [props.toggleTool]
  * @param {(turnIndex: number) => void} [props.onCopyAnchor]
@@ -70,6 +71,7 @@ function turnTimeLabel(ts) {
 export default function TurnCard({
   turn,
   active = false,
+  onSelect,
   openTools = {},
   toggleTool = () => {},
   onCopyAnchor = () => {},
@@ -236,7 +238,7 @@ export default function TurnCard({
   const workBlock = ledger && turn.role !== 'system' && !suppressWork && (hasWork || modelActions?.length) ? (
     <div className="txn-turnwork">
       {modelActions?.length ? (
-        <ModelActions turns={modelActions} openTools={openTools} onToggle={toggleTool} expandAll={expandAll} />
+        <ModelActions turns={modelActions} openTools={openTools} onToggle={toggleTool} expandAll={expandAll} compact={compact} />
       ) : turn.toolCalls?.length ? (
         <TranscriptWorkGroup
           tools={turn.toolCalls}
@@ -316,7 +318,10 @@ export default function TurnCard({
             </>
           ) : (
             <>
-              <div className={cardClass}>
+              <div className={cardClass}
+                onClick={ledger && onSelect ? () => onSelect(turn.index) : undefined}
+                onFocus={ledger && onSelect ? () => onSelect(turn.index) : undefined}
+              >
                 {head}
                 <div id={bodyId} hidden={!expanded}>{body}</div>
               </div>

@@ -167,7 +167,7 @@ const ANNOTATION_META = {
 
 /* the canonical default view-state (so the viewer "just works" unmanaged). */
 const DEFAULT_FILTERS = Object.freeze({
-  categories: { prompts: true, responses: true, thinking: true, toolcalls: true },
+  categories: { prompts: true, responses: true, thinking: true, toolcalls: true, system: true },
   toolGroups: Object.fromEntries(TOOL_GROUPS.map((id) => [id, true])),
   tags: { errors: false, retries: false, revert: false },
   views: { hidden: true, expandAll: false, compact: false },
@@ -658,6 +658,7 @@ export default function TranscriptViewer({
     (filters.categories.responses ? 0 : 1) +
     (filters.categories.thinking ? 0 : 1) +
     (filters.categories.toolcalls ? 0 : 1) +
+    (filters.categories.system === false ? 1 : 0) +
     (filters.tags.errors ? 1 : 0) +
     (filters.tags.retries ? 1 : 0) +
     (filters.tags.revert ? 1 : 0) +
@@ -1321,6 +1322,7 @@ export default function TranscriptViewer({
                             presentation={presentation}
                             turn={t}
                             active={activeTurn === t.index}
+                            onSelect={ledger ? setActiveTurn : undefined}
                             revealRequest={searchReveal?.turn === t.index ? searchReveal.sequence : 0}
                             openTools={openTools}
                             toggleTool={toggleTool}

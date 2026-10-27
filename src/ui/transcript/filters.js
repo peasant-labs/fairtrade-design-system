@@ -20,8 +20,8 @@
    Claude Code shape, where nearly every assistant turn is text plus tool calls:
    `tool calls` off would either delete the text too or do nothing.
 
-   System turns are deliberately unfiltered: the rail offers no control for them,
-   and silently dropping them would hide session-level notices with no way back. */
+   System turns have their own category, enabled unless explicitly unchecked, including
+   when a host restores filter state saved before the category existed. */
 
 import { TOOL_GROUPS } from './view-model.js'
 
@@ -32,11 +32,11 @@ const TAG_KIND = { errors: 'error', retries: 'retry', revert: 'revert' }
 /** @typedef {import('./view-model.js').ToolGroup} ToolGroup */
 /** @typedef {import('./state-capabilities.js').TranscriptFilters} TranscriptFilters */
 
-/** @typedef {'prompts' | 'responses' | 'thinking' | 'toolcalls'} Category */
+/** @typedef {'prompts' | 'responses' | 'thinking' | 'toolcalls' | 'system'} Category */
 
 /**
  * Every part kind a cooked turn carries, in rail order. Empty for turns no
- * category governs (system notices). A turn with text and tool calls reports
+ * category governs. A turn with text and tool calls reports
  * both; the rail badges count turns per kind from this.
  *
  * @param {TurnVM} turn
@@ -44,6 +44,7 @@ const TAG_KIND = { errors: 'error', retries: 'retry', revert: 'revert' }
  */
 export function kindsOf(turn) {
   if (turn.role === 'user') return ['prompts']
+  if (turn.role === 'system') return ['system']
   if (turn.role !== 'assistant') return []
   /** @type {Category[]} */
   const kinds = []
@@ -82,8 +83,8 @@ export function passesTags(turn, tags, annotationsByTurn) {
  * The per-turn projection: the turn with every hidden part removed, or `null`
  * when nothing would be left to render. Tags narrow at the turn level, the
  * checkpoint anchor scopes to a prefix, and then each part is kept or dropped
- * by its own category (tool calls also by their group). System turns carry no
- * governed parts and pass the category stage untouched.
+ * by its own category (tool calls also by their group). System turns are governed
+ * by their own category, enabled unless explicitly false.
  *
  * The returned object keeps `index`, `role`, labels and annotations, so
  * anchors, jumps and the outline resolve against it exactly as against the
@@ -104,6 +105,7 @@ export function projectTurn(turn, filters, ctx = {}) {
   if (!passesTags(turn, tags, annotationsByTurn)) return null
 
   if (turn.role === 'user') return categories.prompts ? turn : null
+  if (turn.role === 'system') return categories.system === false ? null : turn
   if (turn.role !== 'assistant') return turn
 
   const hasText = (turn.content ?? '').trim() !== ''
@@ -154,7 +156,7 @@ export function matchesFilters(turn, filters, ctx = {}) {
  * @returns {Record<Category, number>}
  */
 export function categoryCounts(turns) {
-  const counts = { prompts: 0, responses: 0, thinking: 0, toolcalls: 0 }
+  const counts = { prompts: 0, responses: 0, thinking: 0, toolcalls: 0, system: 0 }
   for (const turn of turns) {
     for (const kind of kindsOf(turn)) counts[kind] += 1
   }

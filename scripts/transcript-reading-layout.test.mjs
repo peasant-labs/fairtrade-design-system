@@ -153,6 +153,14 @@ const css = stylesheet('src/index.css')
   }
   const ledgerCount = ruleAt(css, '.txn-ledger .txn-work-head .txn-work-count {')
   report.check(!!ledgerCount && ledgerCount.includes('padding-inline-start: 0;'), 'the work summary starts at the reading edge: the ledger drops the tool-name offset')
+  /* an open row in an action block draws no rule under its head, tool or thinking alike */
+  const toolBody = ruleAt(css, '.txn-modelactions-rows .txn-tcbody {')
+  report.check(!!toolBody && toolBody.includes('border-top: 0;'), 'the work summary and the tool rows share one inline edge: an open tool row in a block must draw no rule under its head')
+  /* an open thinking row is an inset with no border of its own; its text sits in an output box */
+  const thinkingBody = ruleAt(css, '.txn-thinking-body {')
+  report.check(!!thinkingBody && !thinkingBody.includes('border'), 'the work summary and the tool rows share one inline edge: an open thinking row must draw no rule under its head')
+  const thinkingBox = ruleAt(css, '.txn-thinking-box {')
+  report.check(!!thinkingBox && thinkingBox.includes('border: var(--bd);') && thinkingBox.includes('background: var(--canvas);'), 'the work summary and the tool rows share one inline edge: the thinking text must sit in the same box as tool output')
 }
 
 /* ── mounted behaviour ────────────────────────────────────────────────────────── */
@@ -409,9 +417,6 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       const panel = container.querySelector('.txn-modelactions')
       report.check(!!panel, `${row.name}: the turn with tools must render the model-actions block`)
       report.check(!!panel?.querySelector('.txn-modelactions-head'), `${row.name}: the block names the work on one line`)
-      const panelToggle = panel?.querySelector('.txn-modelactions-head')
-      if (panelToggle) await mounted.act(() => click(window, panelToggle))
-      await mounted.settle()
       const rows = [...(panel?.querySelectorAll('.txn-modelactions-rows .txn-tc-head') ?? [])]
       report.check(rows.length === tools.length, `${row.name}: the panel must hold all ${tools.length} tool rows, received ${rows.length}`)
       for (const rowButton of rows) await mounted.act(() => click(window, rowButton))

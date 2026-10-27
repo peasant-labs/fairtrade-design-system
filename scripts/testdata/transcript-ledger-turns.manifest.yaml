@@ -30,6 +30,9 @@ requiredCaseNames:
   - classic keeps the turn's tools flat
   - ledger groups one turn's tools into one panel
   - ledger tool rows open and close
+  - the system category hides and restores only system turns
+  - compact mode collapses action lists without opening their contents
+  - clicking prose selects that turn without making its action list a turn
   - ledger renders a system turn as a row
   - the system row disclosure is controllable by the host
   - a search hit opens the system row
@@ -46,6 +49,9 @@ requiredCaseKinds:
   classic keeps the turn's tools flat: classic
   ledger groups one turn's tools into one panel: ledger-panel
   ledger tool rows open and close: ledger-disclosure
+  the system category hides and restores only system turns: system-filter
+  compact mode collapses action lists without opening their contents: compact-actions
+  clicking prose selects that turn without making its action list a turn: turn-selection
   ledger renders a system turn as a row: system
   the system row disclosure is controllable by the host: system-controlled
   a search hit opens the system row: system-reveal
@@ -61,6 +67,11 @@ requiredCaseKinds:
 
 # Production mutations the gate must kill (scripts/parts-mutations.mjs).
 requiredMutationNames:
+  - clicking a turn no longer selects it
+  - action lists start collapsed again
+  - compact mode stops reaching action lists
+  - the system category ignores its checkbox
+  - Bash input regains its icon
   - the thinking time ignores the previous turn's tools
   - the thinking row loses its time
   - the ledger keeps the classic tool rows
@@ -76,6 +87,31 @@ requiredMutationNames:
   - the block sits on the group's last turn
   - the block header counts calls
 mutations:
+  - name: clicking a turn no longer selects it
+    file: src/ui/transcript/TurnCard.jsx
+    find: "onClick={ledger && onSelect ? () => onSelect(turn.index) : undefined}"
+    replace: "onClick={undefined}"
+    expectedDiagnostic: "clicking the prose must select its own turn"
+  - name: action lists start collapsed again
+    file: src/ui/transcript/WorkGroup.jsx
+    find: "  const [open, setOpen] = useState(!compact)"
+    replace: "  const [open, setOpen] = useState(false)"
+    expectedDiagnostic: "the action list starts expanded"
+  - name: compact mode stops reaching action lists
+    file: src/ui/transcript/TurnCard.jsx
+    find: "expandAll={expandAll} compact={compact}"
+    replace: "expandAll={expandAll} compact={false}"
+    expectedDiagnostic: "compact mode must collapse the action list"
+  - name: the system category ignores its checkbox
+    file: src/ui/transcript/filters.js
+    find: "  if (turn.role === 'system') return categories.system === false ? null : turn"
+    replace: "  if (turn.role === 'system') return turn"
+    expectedDiagnostic: "the unchecked system category must hide every system row"
+  - name: Bash input regains its icon
+    file: src/ui/transcript/ToolBody.jsx
+    find: '<div className="txn-term">'
+    replace: '<div className="txn-term"><svg aria-hidden="true" />'
+    expectedDiagnostic: "Bash input must contain no icon"
   - name: the thinking time ignores the previous turn's tools
     file: src/ui/transcript/adapter.js
     find: "  const ms = Date.parse(turn.timestamp) - (Date.parse(previous.timestamp) + tools)"

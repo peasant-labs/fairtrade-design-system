@@ -321,7 +321,7 @@ async function readingLayoutPlay({ canvasElement }) {
   await userEvent.keyboard('{Home}')
   expect(handle).toHaveAttribute('aria-valuenow', '600')
   await userEvent.keyboard('{ArrowRight}')
-  expect(handle).toHaveAttribute('aria-valuenow', '640')
+  expect(handle).toHaveAttribute('aria-valuenow', String(Math.min(640, Number(handle.getAttribute('aria-valuemax')))))
   await userEvent.keyboard('{End}')
   expect(handle).toHaveAttribute('aria-valuetext', 'full width')
   expect(handle).toHaveAttribute('aria-valuenow', handle.getAttribute('aria-valuemax'))
@@ -330,7 +330,7 @@ async function readingLayoutPlay({ canvasElement }) {
   const contentRight = stream.getBoundingClientRect().right - parseFloat(streamStyle.paddingRight) - (stream.offsetWidth - stream.clientWidth)
   expect(Math.abs(row.getBoundingClientRect().right - contentRight)).toBeLessThanOrEqual(2)
   await userEvent.keyboard('{ArrowLeft}')
-  expect(handle).toHaveAttribute('aria-valuenow', String(Number(handle.getAttribute('aria-valuemax')) - 40))
+  expect(handle).toHaveAttribute('aria-valuenow', String(Math.max(600, Number(handle.getAttribute('aria-valuemax')) - 40)))
   await userEvent.keyboard('{Home}')
   expect(handle).toHaveAttribute('aria-valuenow', '600')
   // collapse the outline, then change the width both ways: the strip must stay closed.

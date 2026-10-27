@@ -250,6 +250,14 @@ cases:
     kind: ledger-panel
   - name: ledger tool rows open and close
     kind: ledger-disclosure
+    input: pnpm -r typecheck
+  - name: the system category hides and restores only system turns
+    kind: system-filter
+  - name: compact mode collapses action lists without opening their contents
+    kind: compact-actions
+  - name: clicking prose selects that turn without making its action list a turn
+    kind: turn-selection
+    turn: 3
   - name: ledger renders a system turn as a row
     kind: system
   - name: the system row disclosure is controllable by the host

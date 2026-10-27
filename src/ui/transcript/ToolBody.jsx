@@ -1,4 +1,4 @@
-import { Terminal, Clock, Globe } from 'lucide-react'
+import { Clock, Globe } from 'lucide-react'
 import { DiffHunks } from './DiffEntryCard.jsx'
 import TaskBody from './TaskBody.jsx'
 import { formatDurationMs } from './time.js'
@@ -84,10 +84,9 @@ function BashBody({ tool }) {
   return (
     <div className="txn-tcbody">
       {description && <div className="txn-tc-desc">{description}</div>}
+      <div className="txn-out-eyebrow"><span>input</span></div>
       <div className="txn-term">
-        <span className="txn-term-prompt">
-          <Terminal size={14} aria-hidden="true" /> $
-        </span>
+        <span className="txn-term-prompt" aria-hidden="true">$</span>
         <span className="mono">{command}</span>
       </div>
       <div className="txn-out-eyebrow">
