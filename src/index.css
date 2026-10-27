@@ -3790,6 +3790,9 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
    --txn-work-name-offset carries the summary text past the row's leading chevron, its kind
    icon and their gaps, so the summary starts on the tool-NAME column. */
 .txn-work { --txn-work-inline: var(--sp-3); --txn-work-name-offset: calc(var(--ic-sm) + var(--sp-3) + var(--ic-sm) + var(--sp-2)); margin-top: var(--sp-4); padding-top: var(--sp-1); border-top: var(--bd); }
+  .txn-work-toggle { display: flex; align-items: baseline; gap: var(--sp-2); width: 100%; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: start; cursor: pointer; }
+  .txn-work-toggle:hover { color: var(--ink); }
+  .txn-work-toggle:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
 .txn-work-head {
   display: flex; align-items: center; gap: var(--sp-2);
   min-height: var(--target-min);

@@ -1,3 +1,5 @@
+import { useId, useState } from 'react'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 import ToolCall from './ToolCall.jsx'
 import { workCountLabel, workMetaLabel, workSummary } from './work-summary.js'
 
@@ -22,28 +24,44 @@ import { workCountLabel, workMetaLabel, workSummary } from './work-summary.js'
  * @param {boolean} [props.expandAll]
  */
 export default function TranscriptWorkGroup({ tools = [], openTools = {}, onToggle = () => {}, expandAll = false }) {
+  /* One line per turn: the computed summary is the panel, and the tool rows open on request.
+     A host filter ("expand all tool calls"), a host-opened tool, or a search reveal opens it. */
+  const [open, setOpen] = useState(false)
+  const rowsId = `txn-work-${useId()}`
   if (!tools.length) return null
   const summary = workSummary(tools)
   const count = workCountLabel(summary)
   /* the helper drops the leading call count when the count label already fell back to it, so
      the same number is never printed twice; the meta span renders only when it has text. */
   const meta = workMetaLabel(summary)
+  const shown = expandAll || open || tools.some((tool) => !!openTools[tool.id])
   return (
     <div className="txn-work">
       <div className="txn-work-head">
-        <span className="txn-work-count">{count}</span>
-        {meta && <span className="txn-work-meta tnum">{meta}</span>}
+        <button
+          type="button"
+          className="txn-work-toggle"
+          aria-expanded={shown}
+          aria-controls={rowsId}
+          onClick={() => setOpen((value) => !value)}
+        >
+          {shown ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}
+          <span className="txn-work-count">{count}</span>
+          {meta && <span className="txn-work-meta tnum">{meta}</span>}
+        </button>
       </div>
-      <div className="txn-work-rows">
-        {tools.map((tool) => (
-          <ToolCall
-            key={tool.id}
-            tool={tool}
-            open={expandAll || !!openTools[tool.id]}
-            onToggle={() => onToggle(tool.id)}
-          />
-        ))}
-      </div>
+      {shown && (
+        <div className="txn-work-rows" id={rowsId}>
+          {tools.map((tool) => (
+            <ToolCall
+              key={tool.id}
+              tool={tool}
+              open={expandAll || !!openTools[tool.id]}
+              onToggle={() => onToggle(tool.id)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

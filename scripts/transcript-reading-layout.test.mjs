@@ -393,6 +393,9 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       const panel = container.querySelector('.txn-work')
       report.check(!!panel, `${row.name}: the turn with tools must render the work panel`)
       report.check(!!panel?.querySelector('.txn-work-head'), `${row.name}: the panel must render its summary head`)
+      const panelToggle = panel?.querySelector('.txn-work-toggle')
+      if (panelToggle) await mounted.act(() => click(window, panelToggle))
+      await mounted.settle()
       const rows = [...(panel?.querySelectorAll('.txn-work-rows .txn-tc-head') ?? [])]
       report.check(rows.length === tools.length, `${row.name}: the panel must hold all ${tools.length} tool rows, received ${rows.length}`)
       for (const rowButton of rows) await mounted.act(() => click(window, rowButton))

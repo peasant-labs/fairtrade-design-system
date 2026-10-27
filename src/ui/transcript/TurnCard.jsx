@@ -95,6 +95,10 @@ export default function TurnCard({
   if (!turn) return null
   const isUser = turn.role === 'user'
   const isEarlier = !!turn.partition && turn.partition !== 'main'
+  /* Only a turn with words earns a card. An agent turn that is only thinking or tool work is
+     inline detail: no role line, no number, no time, just its lines under the previous turn. */
+  const hasProse = String(turn.displayContent ?? turn.content ?? '').trim().length > 0
+  const ledgerDetail = ledger && !isUser && !hasProse
   const timeLabel = turn.time || turnTimeLabel(turn.timestamp)
   const isSub = !!turn.depth && turn.depth > 0
   // The assistant is the agent, so a present canonical provider selects its
@@ -292,7 +296,9 @@ export default function TurnCard({
             </div>
           ) : (
             <div className={cardClass}>
-              {head}
+              {ledgerDetail ? (
+                <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}</TurnHeading>
+              ) : head}
               <div id={bodyId} hidden={!expanded}>{body}</div>
             </div>
           )}

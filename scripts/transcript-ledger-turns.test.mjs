@@ -116,8 +116,13 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       const meta = workPanels[0]?.querySelector('.txn-work-meta')
       report.check(text(meta) === fixture.mountedSummary.metaLabel, `${row.name}: the meta must read ${JSON.stringify(fixture.mountedSummary.metaLabel)}, received ${JSON.stringify(text(meta))}`)
       report.check(meta?.classList.contains('tnum'), `${row.name}: the meta figures must be tabular`)
+      const toggle = workPanels[0]?.querySelector('.txn-work-toggle')
+      report.check(toggle?.getAttribute('aria-expanded') === 'false', `${row.name}: the panel must start as one summary line`)
+      report.check((workPanels[0]?.querySelectorAll('.txn-work-rows').length ?? 0) === 0, `${row.name}: the collapsed panel must not draw tool rows`)
+      if (toggle) await mounted.act(() => click(window, toggle))
+      await mounted.settle()
       const rows = workPanels[0]?.querySelectorAll('.txn-work-rows .txn-toolcall') ?? []
-      report.check(rows.length === tools.length, `${row.name}: the panel must hold all ${tools.length} tool rows, received ${rows.length}`)
+      report.check(rows.length === tools.length, `${row.name}: the open panel must hold all ${tools.length} tool rows, received ${rows.length}`)
       const article = mounted.container.querySelector('#turn-1.txn-turnwrap-ledger')
       report.check(!!article, `${row.name}: the turn wrapper must carry the ledger turn class`)
       report.check(!!article?.querySelector('.txn-turn.txn-turn-ledger'), `${row.name}: the ledger turn must drop the classic card, keeping the ledger card class`)
@@ -211,6 +216,9 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     } else if (row.kind === 'ledger-disclosure') {
       const mounted = await mountViewer('ledger')
       const panel = mounted.container.querySelector('#turn-1 .txn-work')
+      const panelToggle = panel?.querySelector('.txn-work-toggle')
+      if (panelToggle) await mounted.act(() => click(window, panelToggle))
+      await mounted.settle()
       const rowButton = panel?.querySelector('.txn-toolcall .txn-tc-head')
       report.check(!!rowButton, `${row.name}: the panel must draw a tool row`)
       report.check(rowButton?.getAttribute('aria-expanded') === 'false', `${row.name}: a tool row must start collapsed`)
@@ -266,6 +274,22 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(!!heading, `${row.name}: the article's aria-labelledby must resolve`)
       report.check(heading?.tagName === 'H' + turnHeadingLevel, `${row.name}: the turn heading must sit two levels under the page, expected H${turnHeadingLevel}, received ${heading?.tagName}`)
       report.check(text(heading) === `system turn ${systemTurn.label}`, `${row.name}: the heading must keep the role and turn`)
+      await mounted.unmount()
+    } else if (row.kind === 'detail-turns') {
+      /* only a turn with words gets a card; a tool-only or thinking-only turn is inline detail */
+      const bare = {
+        ...vm,
+        turns: vm.turns.map((t) => (t.index === toolsTurn.index ? { ...t, content: '', displayContent: '' } : t)),
+      }
+      const mounted = await mountViewer('ledger', { viewModel: bare })
+      const article = mounted.container.querySelector(`#turn-${toolsTurn.index}.txn-turnwrap-ledger`)
+      report.check(!!article, `${row.name}: the tool turn must still mount`)
+      report.check(article?.querySelector('.txn-turnhead-ledger') === null, `${row.name}: a turn with no words must draw no card head`)
+      report.check(article?.querySelector('.txn-roleico') === null, `${row.name}: a turn with no words must draw no role well`)
+      report.check(!!article?.querySelector('.txn-work'), `${row.name}: its tool work must render as inline detail`)
+      report.check(article?.querySelector('.txn-work-toggle')?.getAttribute('aria-expanded') === 'false', `${row.name}: the detail starts as one summary line`)
+      const heading = byId(mounted.container, article?.getAttribute('aria-labelledby'))
+      report.check(!!heading && heading.classList.contains('txn-turn-heading'), `${row.name}: the article keeps its heading for assistive tech`)
       await mounted.unmount()
     } else if (row.kind === 'thinking') {
       const mounted = await mountViewer('ledger')

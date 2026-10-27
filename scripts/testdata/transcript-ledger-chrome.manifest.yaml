@@ -52,6 +52,7 @@ requiredMutationNames:
   - the minimap does not jump
   - the minimap ignores the visible turn set
   - the minimap mis-kinds a system turn
+  - the minimap demotes a tool-calling agent turn
 mutations:
   - name: the ledger header ignores the presentation
     file: src/ui/transcript/TranscriptViewer.jsx
@@ -90,6 +91,11 @@ mutations:
     expectedDiagnostic: "the minimap follows the visible turns: tick count expected 3 visible turns"
   - name: the minimap mis-kinds a system turn
     file: src/ui/transcript/Minimap.jsx
-    find: "  if (turn.role === 'system' || (turn.toolCalls?.length ?? 0) > 0) return 'tool'"
+    find: "  if (turn.role === 'system') return 'tool'"
     replace: "  if ((turn.toolCalls?.length ?? 0) > 0) return 'tool'"
     expectedDiagnostic: "each decorative tick carries its turn kind: tick 4 must carry txn-minimap-tool"
+  - name: the minimap demotes a tool-calling agent turn
+    file: src/ui/transcript/Minimap.jsx
+    find: "  if (turn.role === 'system') return 'tool'"
+    replace: "  if (turn.role === 'system' || (turn.toolCalls?.length ?? 0) > 0) return 'tool'"
+    expectedDiagnostic: "each decorative tick carries its turn kind"
