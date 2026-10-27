@@ -77,6 +77,7 @@ requiredInteractionKinds:
 # mutations the mounted harness applies; the five stylesheet rows are applied to the gate's
 # own stylesheet read, which mirrors the harness transform for a file read from disk.
 requiredMutationNames:
+  - the turn hover stops fading
   - an open block row draws a rule again
   - the handle snaps on release again
   - the full width stops following the stream
@@ -100,6 +101,11 @@ requiredMutationNames:
   - graph mode never marks the bar
   - the sidebar cards lose their inset
 mutations:
+  - name: the turn hover stops fading
+    file: src/index.css
+    find: "  .txn-turn.txn-turn-ledger { transition: background var(--dur-1); }"
+    replace: "  .txn-turn.txn-turn-ledger { transition: none; }"
+    expectedDiagnostic: "the turn hover must fade in and out"
   - name: an open block row draws a rule again
     file: src/index.css
     find: "  .txn-modelactions-rows .txn-tcbody { border-top: 0; }"

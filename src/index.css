@@ -3764,6 +3764,10 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 .txn-ledger { --txn-reader-width: 840px; }
 .txn-turnwrap-ledger { max-inline-size: var(--txn-reader-width); margin-inline: auto; }
 .txn-turn.txn-turn-ledger { background: transparent; border: 0; }
+/* Match the reference's 120ms background fade on both pointer entry and exit. */
+@media (prefers-reduced-motion: no-preference) {
+  .txn-turn.txn-turn-ledger { transition: background var(--dur-1); }
+}
 @media (hover: hover) and (pointer: fine) {
   .txn-turn.txn-turn-ledger:hover { background: var(--surface-hover); }
 }
