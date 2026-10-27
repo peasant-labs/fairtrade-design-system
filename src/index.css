@@ -2265,11 +2265,9 @@
   .txn-cp-stat { color: var(--ink-4); }
 
   /* ---- thinking block ---- */
-  .txn-thinking { margin-top: var(--sp-3); }
-  .txn-thinking-toggle { display: inline-flex; align-items: center; gap: var(--sp-2); background: transparent; border: 0; cursor: pointer; font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); padding: 0; }
-  .txn-thinking-toggle:hover { color: var(--ink-2); }
-  .txn-thinking-toggle i { font-style: italic; font-weight: 400; color: var(--ink-3); }
-  .txn-thinking-wc { color: var(--ink-4); }
+  /* thinking is a row in the tool-call shape (kind, word count, time), so it shares .toolcall
+     and .tc-head and only states its own spacing and its open body. */
+  .txn-thinking { margin-top: var(--sp-2); }
   .txn-thinking-body { margin-top: var(--sp-2); padding: var(--sp-3); border: var(--bd); border-left: var(--stroke-emphasis) solid var(--mauve); background: color-mix(in srgb, var(--mauve) 5%, var(--surface)); }
   .txn-thinking-body em { display: block; font-style: italic; font-weight: 400; color: var(--ink-2); line-height: 1.5; white-space: pre-wrap; }
 
@@ -3820,16 +3818,14 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   .txn-modelactions-head:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
   .txn-modelactions-summary { font-variant-numeric: tabular-nums; }
   .txn-modelactions-rows { padding: 0 0 var(--sp-2); }
-  .txn-modelactions-rows .txn-toolcall { margin-top: 0; border: 0; background: transparent; }
-  .txn-modelactions-rows .txn-tc-head { background: transparent; border: 0; padding-inline: 0; padding-block: var(--sp-1); }
+  .txn-modelactions-rows .txn-toolcall, .txn-modelactions-rows .txn-thinking { margin-top: 0; border: 0; background: transparent; }
+  /* every row in a block is one height, so a failure pill never makes its row taller than the rest */
+  .txn-modelactions-rows .txn-tc-head { background: transparent; border: 0; padding-inline: 0; padding-block: var(--sp-1); min-block-size: var(--sp-6); }
   .txn-modelactions-rows .txn-tc-head:hover { background: transparent; color: var(--ink); }
   .txn-modelactions-rows .txn-tc-chev { display: none; }
-  .txn-modelactions-rows .txn-thinking { border-top: 0; margin-top: 0; }
-  .txn-modelactions-rows .txn-thinking-toggle { padding-block: var(--sp-1); }
-  .txn-modelactions-rows .txn-thinking-toggle > svg:first-child { display: none; }
-  .txn-modelactions-rows .txn-thinking-body { margin-inline-start: var(--sp-4); padding-inline-start: calc(var(--sp-3) - var(--stroke-hairline)); }
+  /* an open thinking row opens like an open tool row: flush under its head, on the reading edge */
+  .txn-modelactions-rows .txn-thinking-body { margin: 0; padding: var(--sp-3); border: 0; border-top: var(--bd); background: transparent; }
 
-  .txn-modelactions-turn + .txn-modelactions-turn { margin-top: var(--sp-2); }
   .txn-ledger .txn-turnwork { margin-top: var(--sp-3); padding-inline: var(--sp-4); }
   .txn-ledger .txn-turnwork .txn-work { margin-top: 0; }
   /* the ledger draws a turn's work as branch lines under the prose: no card per call */
@@ -3842,11 +3838,10 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   /* no leader line runs down the work list; the rows sit on the reading edge and each row's
      own icon names it */
   .txn-ledger .txn-work-rows { margin-inline-start: 0; padding-inline-start: 0; border-inline-start: 0; }
-  .txn-ledger .txn-work-rows .txn-toolcall { margin-top: 0; border: 0; background: transparent; }
+  .txn-ledger .txn-work-rows .txn-toolcall, .txn-ledger .txn-work-rows .txn-thinking { margin-top: 0; border: 0; background: transparent; }
   .txn-ledger .txn-work-rows .txn-tc-head { background: transparent; border: 0; padding-inline: 0; padding-block: var(--sp-1); }
   .txn-ledger .txn-work-rows .txn-tc-head:hover { background: transparent; color: var(--ink); }
   .txn-ledger .txn-work-rows .txn-tcbody { border-top: 0; padding-inline-start: var(--sp-4); }
-  .txn-ledger .txn-work-rows .txn-thinking { border-top: 0; margin-top: 0; }
   /* the thinking panel's text lines up with a tool output's text: its own border eats the first
      two pixels, so its inline padding gives them back */
   /* the thinking body sits on the same edge as a tool's output box, and its text on the same
@@ -3854,9 +3849,7 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   .txn-ledger .txn-work-rows .txn-thinking-body { margin-inline-start: var(--sp-4); padding-inline-start: calc(var(--sp-3) - var(--stroke-hairline)); }
   /* the reference rows lead with the kind icon alone: no disclosure chevron on the row or the
      thinking line, and the tool name keeps chrome case */
-  .txn-ledger .txn-work-rows .txn-thinking-toggle > svg:first-child { display: none; }
   .txn-ledger .txn-work-rows .txn-tc-head .kind { text-transform: lowercase; }
-  .txn-ledger .txn-work-rows .txn-thinking-toggle { padding-block: var(--sp-1); }
 .txn-work-rows { margin-top: var(--sp-1); }
 /* the summary text sits where a tool NAME sits: past the row's chevron, its kind icon and gaps. */
 .txn-work-head .txn-work-count { padding-inline-start: var(--txn-work-name-offset); }

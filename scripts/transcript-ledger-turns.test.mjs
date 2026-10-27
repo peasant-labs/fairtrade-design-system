@@ -18,6 +18,7 @@ const FIXTURE = 'scripts/testdata/transcript-ledger-turns.yaml'
 const MANIFEST = 'scripts/testdata/transcript-ledger-turns.manifest.yaml'
 const { fixture, manifest } = loadFixturePair(FIXTURE, MANIFEST, {
   summaryCases: 'requiredSummaryNames',
+  thinkingDurationCases: 'requiredThinkingDurationNames',
   cases: 'requiredCaseNames',
 })
 
@@ -59,12 +60,20 @@ for (const row of fixture.summaryCases) {
   report.check(actionsLabel === row.actionsLabel, `${row.name}: the action block header must read ${JSON.stringify(row.actionsLabel)}, received ${JSON.stringify(actionsLabel)}`)
 }
 
+assertExactNames(Object.keys(fixture.mountedThinking), ['kind', 'words', 'duration'], `${FIXTURE} mountedThinking`)
+for (const row of fixture.thinkingDurationCases) assertFields(row, ['name', 'turn', 'expected'], `${FIXTURE} ${row.name}`, ['previous'])
+
 /* canLabel on, so the classic head's built-in label affordance exists to prove the ledger head drops it */
 const CAPABILITIES = { canEdit: false, canLabel: true, canContribute: false, canChangeVisibility: false, canExport: false }
 const HOST_ACTION = 'host action'
 
 await withMountedSource(async ({ load, mount, window, React }) => {
-  const { adaptTranscript } = await load('/src/ui/transcript/adapter.js')
+  const { adaptTranscript, thinkingDurationMs } = await load('/src/ui/transcript/adapter.js')
+  /* the thinking-time rule, through the loaded adapter so a mutation of it is the one under test */
+  for (const row of fixture.thinkingDurationCases) {
+    const actual = thinkingDurationMs(row.previous, row.turn) ?? null
+    report.check(actual === row.expected, `${row.name}: the thinking time must be ${JSON.stringify(row.expected)}, received ${JSON.stringify(actual)}`)
+  }
   const { default: TranscriptViewer } = await load('/src/ui/transcript/TranscriptViewer.jsx')
   const vm = adaptTranscript(fixture.payload)
   const toolsTurn = vm.turns.find((turn) => turn.index === 1)
@@ -369,6 +378,12 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       await mounted.settle()
       const toggle = mounted.container.querySelector('#turn-1 .txn-thinking-toggle')
       report.check(!!toggle, `${row.name}: a turn with thinking must keep its thinking disclosure`)
+      /* the thinking row has the tool-call shape: kind, word count, time */
+      report.check(toggle?.classList.contains('tc-head') && toggle?.closest('.txn-toolcall') === null, `${row.name}: thinking must use the tool-row head without counting as a tool call`)
+      report.check(text(toggle?.querySelector('.kind')) === fixture.mountedThinking.kind, `${row.name}: the row must name its kind ${JSON.stringify(fixture.mountedThinking.kind)}, received ${JSON.stringify(text(toggle?.querySelector('.kind')))}`)
+      report.check(!!toggle?.querySelector('.kind svg'), `${row.name}: the row must lead with its kind icon`)
+      report.check(text(toggle?.querySelector('.path')) === fixture.mountedThinking.words, `${row.name}: the row must list ${JSON.stringify(fixture.mountedThinking.words)}, received ${JSON.stringify(text(toggle?.querySelector('.path')))}`)
+      report.check(text(toggle?.querySelector('.right .txn-tc-dur')) === fixture.mountedThinking.duration, `${row.name}: the row must show the time spent ${JSON.stringify(fixture.mountedThinking.duration)}, received ${JSON.stringify(text(toggle?.querySelector('.right .txn-tc-dur')))}`)
       if (toggle) await mounted.act(() => click(window, toggle))
       await mounted.settle()
       const body = mounted.container.querySelector('#turn-1 .txn-thinking-body')

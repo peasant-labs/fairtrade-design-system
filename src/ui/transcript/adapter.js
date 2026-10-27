@@ -81,6 +81,27 @@ function wordCount(s) {
   return m ? m.length : 0
 }
 
+/**
+ * The time a standalone thinking entry took. A harness records a thinking entry when the thinking
+ * ends, so it is the gap from the end of the event before it: the previous turn at the same depth,
+ * plus the tools that turn ran, whose results come back after it. The wire records each tool's
+ * duration but not when it started, so the tools' durations are summed: when they ran in parallel
+ * this undercounts the thinking or leaves it out, and never reports more time than it took.
+ * Undefined when either time is unknown or the gap is not positive.
+ * @param {TurnDetail | undefined} previous
+ * @param {TurnDetail} turn
+ * @returns {number | undefined}
+ */
+export function thinkingDurationMs(previous, turn) {
+  if (!previous || !isKnownTime(previous.timestamp) || !isKnownTime(turn.timestamp)) return undefined
+  const tools = (previous.toolCalls ?? []).reduce((sum, call) => {
+    const ms = call?.durationMs
+    return sum + (typeof ms === 'number' && Number.isFinite(ms) && ms > 0 ? ms : 0)
+  }, 0)
+  const ms = Date.parse(turn.timestamp) - (Date.parse(previous.timestamp) + tools)
+  return ms > 0 ? ms : undefined
+}
+
 /** Compact token count, e.g. 1700 → "1.7k". @param {number} n @returns {string} */
 function formatTokens(n) {
   if (!n || n <= 0) return '0'
@@ -921,6 +942,9 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
   const toolCallsById = new Map()
   /** @type {TurnVM[]} */
   const turnVMs = []
+  /* every turn's place among all known turns, including any a host hid, so a thinking entry's
+     time is measured from the event that really came before it */
+  const positionOf = new Map(filteredTurns.map((turn, i) => [turn, i]))
   for (let p = 0; p < turns.length; p++) {
     const t = turns[p]
     const toolCalls = (t.toolCalls ?? []).map(buildToolCallVM)
@@ -939,6 +963,11 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
       // STANDALONE thinking entry: the whole turn IS the thinking. This path is LIVE on the real wire —
       // peasant emits a standalone entryType=thinking turn — so a real consumer renders it today.
       thinking = { text: content, words: wordCount(content) }
+      const at = positionOf.get(t) ?? -1
+      let previous
+      for (let q = at - 1; q >= 0 && !previous; q--) if ((filteredTurns[q].depth ?? 0) === (t.depth ?? 0)) previous = filteredTurns[q]
+      const durationMs = thinkingDurationMs(previous, t)
+      if (durationMs !== undefined) thinking.durationMs = durationMs
       content = ''
     } else if (!protectedTurn(t)) {
       // TOOL-SIBLING (inline) thinking, folded into the parent turn's content as a leading

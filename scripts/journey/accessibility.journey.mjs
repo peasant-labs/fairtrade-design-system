@@ -125,7 +125,8 @@ for (const surface of spec.surfaces) for (const width of spec.widths) for (const
       await expect(disclosure).toHaveAttribute('aria-expanded','true')
       await expect(page.locator('article.txn-turnwrap .txn-turn-heading').first()).toBeAttached()
       // Open real tool content and Tab into its horizontal scroller.
-      const tool = page.locator('.txn-tc-head').first()
+      // a thinking row shares the tool-row head, so select a real tool call's head
+      const tool = page.locator('.txn-toolcall .txn-tc-head').first()
       await tool.press('Enter')
       const code = page.locator('pre.txn-code').first()
       await expect(code).toBeVisible()

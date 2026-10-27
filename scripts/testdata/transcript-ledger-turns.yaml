@@ -134,6 +134,40 @@ summaryCases:
 # (turn 1's five tools plus turn 4's thinking); `grouped` is the model-actions case's first user
 # turn after a second prose turn's command folds into it; `afterUser` is the block the second user
 # turn starts on its first turn with work, since it has no prose.
+# thinkingDurationCases feed the adapter's thinking-time rule directly: the gap from the end of the
+# previous same-depth turn (its timestamp plus the summed durations of the tools it ran) to the
+# thinking entry's timestamp. `expected: null` means the time is left out, never guessed.
+thinkingDurationCases:
+  - name: thinking after a prompt takes the whole gap
+    previous: {timestamp: '2026-09-20T10:00:00Z'}
+    turn: {timestamp: '2026-09-20T10:00:05.500Z'}
+    expected: 5500
+  - name: the previous turn's tools run before the thinking starts
+    previous: {timestamp: '2026-09-20T10:00:00Z', toolCalls: [{durationMs: 3000}, {durationMs: 2000}]}
+    turn: {timestamp: '2026-09-20T10:00:08Z'}
+    expected: 3000
+  - name: tools that outlast the gap leave the time out
+    previous: {timestamp: '2026-09-20T10:00:00Z', toolCalls: [{durationMs: 6000}, {durationMs: 6000}]}
+    turn: {timestamp: '2026-09-20T10:00:08Z'}
+    expected: null
+  - name: an unrecorded tool duration adds nothing
+    previous: {timestamp: '2026-09-20T10:00:00Z', toolCalls: [{durationMs: n/a}, {durationMs: 1000}]}
+    turn: {timestamp: '2026-09-20T10:00:04Z'}
+    expected: 3000
+  - name: an unknown previous time leaves the time out
+    previous: {}
+    turn: {timestamp: '2026-09-20T10:00:04Z'}
+    expected: null
+  - name: a thinking entry with nothing before it has no time
+    turn: {timestamp: '2026-09-20T10:00:04Z'}
+    expected: null
+
+# the mounted thinking row: turn 4 thinks for the minute after turn 3
+mountedThinking:
+  kind: Think
+  words: 10 words
+  duration: 1m
+
 mountedSummary:
   panel: '5 actions: 2 commands, 1 file, 1 edit, 13s'
   grouped: '6 actions: 3 commands, 1 file, 1 edit, 21s'

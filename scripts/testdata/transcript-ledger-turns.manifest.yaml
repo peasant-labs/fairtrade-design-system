@@ -19,6 +19,13 @@ requiredSummaryNames:
   - a bash error at exit zero counts one failure
   - blank paths and unknown durations are left out
   - an empty tool list summarizes to nothing
+requiredThinkingDurationNames:
+  - thinking after a prompt takes the whole gap
+  - the previous turn's tools run before the thinking starts
+  - tools that outlast the gap leave the time out
+  - an unrecorded tool duration adds nothing
+  - an unknown previous time leaves the time out
+  - a thinking entry with nothing before it has no time
 requiredCaseNames:
   - classic keeps the turn's tools flat
   - ledger groups one turn's tools into one panel
@@ -54,6 +61,8 @@ requiredCaseKinds:
 
 # Production mutations the gate must kill (scripts/parts-mutations.mjs).
 requiredMutationNames:
+  - the thinking time ignores the previous turn's tools
+  - the thinking row loses its time
   - the ledger keeps the classic tool rows
   - the panel ignores a tool's open state
   - the system row ignores its disclosure
@@ -67,6 +76,16 @@ requiredMutationNames:
   - the block sits on the group's last turn
   - the block header counts calls
 mutations:
+  - name: the thinking time ignores the previous turn's tools
+    file: src/ui/transcript/adapter.js
+    find: "  const ms = Date.parse(turn.timestamp) - (Date.parse(previous.timestamp) + tools)"
+    replace: "  const ms = Date.parse(turn.timestamp) - Date.parse(previous.timestamp)"
+    expectedDiagnostic: "the previous turn's tools run before the thinking starts: the thinking time must be 3000"
+  - name: the thinking row loses its time
+    file: src/ui/transcript/Thinking.jsx
+    find: "          {duration && <span className=\"tnum txn-tc-dur\">{duration}</span>}"
+    replace: "          {null}"
+    expectedDiagnostic: "the row must show the time spent"
   - name: a folded turn keeps its own work beside the block
     file: src/ui/transcript/TranscriptViewer.jsx
     find: "const suppressWork = foldedWork.has(t.index)"

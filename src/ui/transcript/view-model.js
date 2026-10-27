@@ -174,6 +174,8 @@ export const TOOL_GROUPS = Object.freeze([
  * @typedef {object} ThinkingVM
  * @property {string} text
  * @property {number} [words]               precomputed word count for the toggle badge
+ * @property {number} [durationMs]          time spent thinking, derived from the turn timestamps
+ *                                          (absent when it cannot be derived)
  */
 
 /**
