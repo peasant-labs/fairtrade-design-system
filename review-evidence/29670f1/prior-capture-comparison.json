@@ -1,0 +1,74 @@
+[
+  {
+    "name": "dark-desktop-bash.png",
+    "identical": true
+  },
+  {
+    "name": "dark-desktop-reading.png",
+    "identical": true
+  },
+  {
+    "name": "dark-desktop-search.png",
+    "identical": true
+  },
+  {
+    "name": "dark-desktop-sidebar.png",
+    "identical": true
+  },
+  {
+    "name": "dark-desktop-thinking.png",
+    "identical": true
+  },
+  {
+    "name": "dark-phone-bash.png",
+    "identical": true
+  },
+  {
+    "name": "dark-phone-reading.png",
+    "identical": true
+  },
+  {
+    "name": "dark-phone-search.png",
+    "identical": true
+  },
+  {
+    "name": "dark-phone-thinking.png",
+    "identical": true
+  },
+  {
+    "name": "light-desktop-bash.png",
+    "identical": true
+  },
+  {
+    "name": "light-desktop-reading.png",
+    "identical": true
+  },
+  {
+    "name": "light-desktop-search.png",
+    "identical": true
+  },
+  {
+    "name": "light-desktop-sidebar.png",
+    "identical": true
+  },
+  {
+    "name": "light-desktop-thinking.png",
+    "identical": true
+  },
+  {
+    "name": "light-phone-bash.png",
+    "identical": true
+  },
+  {
+    "name": "light-phone-reading.png",
+    "identical": true
+  },
+  {
+    "name": "light-phone-search.png",
+    "identical": true
+  },
+  {
+    "name": "light-phone-thinking.png",
+    "identical": true
+  }
+]
