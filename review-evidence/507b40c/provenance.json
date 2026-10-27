@@ -1,0 +1,472 @@
+{
+  "sha": "507b40c35117506061810e091e98e688df28962a",
+  "root": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation",
+  "base": "http://127.0.0.1:15349",
+  "buildDir": "/home/minttea/dev/peasant-labs/fairtrade-design-system/fairtrade-201--fix--release-validation/dist",
+  "capturedAt": "2026-10-27T22:59:24.721Z",
+  "browser": "153.0.8010.12",
+  "assets": [
+    {
+      "asset": "/assets/index-4ll5sbKQ.js",
+      "sha256": "5c724474d52077029bb66ca7dd2c5e80b665c7ee9b1fd8be606832b2ec2bb124"
+    },
+    {
+      "asset": "/assets/index-CS6ELrNR.css",
+      "sha256": "9569a899655f6337777f38843420b5fb1e1918366a216f49bc5f430e2d42ab22"
+    }
+  ],
+  "captures": [
+    {
+      "path": "/tmp/opencode/txn-ledger/worker-round2/captures/dark-desktop-reading.png",
+      "theme": "dark",
+      "device": "desktop",
+      "state": "reading",
+      "url": "http://127.0.0.1:15349/?app=transcript&transcript=ledger-actions&fb=off&theme=dark#inuse",
+      "metrics": {
+        "theme": "dark",
+        "width": 1376,
+        "body": {
+          "x": 272,
+          "y": 261.953125,
+          "width": 863,
+          "height": 692,
+          "top": 261.953125,
+          "right": 1135,
+          "bottom": 953.953125,
+          "left": 272
+        },
+        "font": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "background": "rgb(11, 11, 10)",
+        "grid": "240px 864px 272px",
+        "thinkingOpen": "false"
+      }
+    },
+    {
+      "path": "/tmp/opencode/txn-ledger/worker-round2/captures/dark-desktop-thinking.png",
+      "theme": "dark",
+      "device": "desktop",
+      "state": "thinking",
+      "url": "http://127.0.0.1:15349/?app=transcript&transcript=ledger-actions&fb=off&theme=dark#inuse",
+      "metrics": {
+        "theme": "dark",
+        "width": 1376,
+        "body": {
+          "x": 272,
+          "y": 220.953125,
+          "width": 863,
+          "height": 733,
+          "top": 220.953125,
+          "right": 1135,
+          "bottom": 953.953125,
+          "left": 272
+        },
+        "font": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "background": "rgb(11, 11, 10)",
+        "grid": "240px 864px 272px",
+        "thinkingOpen": "true"
+      }
+    },
+    {
+      "path": "/tmp/opencode/txn-ledger/worker-round2/captures/dark-desktop-bash.png",
+      "theme": "dark",
+      "device": "desktop",
+      "state": "bash",
+      "url": "http://127.0.0.1:15349/?app=transcript&transcript=ledger-actions&fb=off&theme=dark#inuse",
+      "metrics": {
+        "theme": "dark",
+        "width": 1376,
+        "body": {
+          "x": 272,
+          "y": 204.953125,
+          "width": 863,
+          "height": 749,
+          "top": 204.953125,
+          "right": 1135,
+          "bottom": 953.953125,
+          "left": 272
+        },
+        "font": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "background": "rgb(11, 11, 10)",
+        "grid": "240px 864px 272px",
+        "thinkingOpen": "true"
+      }
+    },
+    {
+      "path": "/tmp/opencode/txn-ledger/worker-round2/captures/dark-desktop-sidebar.png",
+      "theme": "dark",
+      "device": "desktop",
+      "state": "sidebar",
+      "url": "http://127.0.0.1:15349/?app=transcript&transcript=ledger-actions&fb=off&theme=dark#inuse",
+      "metrics": {
+        "theme": "dark",
+        "width": 1376,
+        "body": {
+          "x": 64,
+          "y": 204.953125,
+          "width": 1311,
+          "height": 749,
+          "top": 204.953125,
+          "right": 1375,
+          "bottom": 953.953125,
+          "left": 64
+        },
+        "font": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "background": "rgb(11, 11, 10)",
+        "grid": "32px 1312px 32px",
+        "thinkingOpen": "true"
+      }
+    },
+    {
+      "path": "/tmp/opencode/txn-ledger/worker-round2/captures/dark-desktop-search.png",
+      "theme": "dark",
+      "device": "desktop",
+      "state": "search",
+      "url": "http://127.0.0.1:15349/?app=transcript&transcript=ledger-reading&fb=off&theme=dark#inuse",
+      "metrics": {
+        "theme": "dark",
+        "width": 1376,
+        "body": {
+          "x": 272,
+          "y": 204.953125,
+          "width": 863,
+          "height": 749,
+          "top": 204.953125,
+          "right": 1135,
+          "bottom": 953.953125,
+          "left": 272
+        },
+        "font": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "background": "rgb(11, 11, 10)",
+        "grid": "240px 864px 272px",
+        "thinkingOpen": "false"
+      }
+    },
+    {
+      "path": "/tmp/opencode/txn-ledger/worker-round2/captures/dark-phone-reading.png",
+      "theme": "dark",
+      "device": "phone",
+      "state": "reading",
+      "url": "http://127.0.0.1:15349/?app=transcript&transcript=ledger-actions&fb=off&theme=dark#inuse",
+      "metrics": {
+        "theme": "dark",
+        "width": 366,
+        "body": {
+          "x": 12,
+          "y": 204.484375,
+          "width": 366,
+          "height": 595,
+          "top": 204.484375,
+          "right": 378,
+          "bottom": 799.484375,
+          "left": 12
+        },
+        "font": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "background": "rgb(11, 11, 10)",
+        "grid": "0px 366px 0px",
+        "thinkingOpen": "false"
+      }
+    },
+    {
+      "path": "/tmp/opencode/txn-ledger/worker-round2/captures/dark-phone-thinking.png",
+      "theme": "dark",
+      "device": "phone",
+      "state": "thinking",
+      "url": "http://127.0.0.1:15349/?app=transcript&transcript=ledger-actions&fb=off&theme=dark#inuse",
+      "metrics": {
+        "theme": "dark",
+        "width": 366,
+        "body": {
+          "x": 12,
+          "y": 166.484375,
+          "width": 366,
+          "height": 633,
+          "top": 166.484375,
+          "right": 378,
+          "bottom": 799.484375,
+          "left": 12
+        },
+        "font": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "background": "rgb(11, 11, 10)",
+        "grid": "0px 366px 0px",
+        "thinkingOpen": "true"
+      }
+    },
+    {
+      "path": "/tmp/opencode/txn-ledger/worker-round2/captures/dark-phone-bash.png",
+      "theme": "dark",
+      "device": "phone",
+      "state": "bash",
+      "url": "http://127.0.0.1:15349/?app=transcript&transcript=ledger-actions&fb=off&theme=dark#inuse",
+      "metrics": {
+        "theme": "dark",
+        "width": 366,
+        "body": {
+          "x": 12,
+          "y": 166.484375,
+          "width": 366,
+          "height": 633,
+          "top": 166.484375,
+          "right": 378,
+          "bottom": 799.484375,
+          "left": 12
+        },
+        "font": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "background": "rgb(11, 11, 10)",
+        "grid": "0px 366px 0px",
+        "thinkingOpen": "true"
+      }
+    },
+    {
+      "path": "/tmp/opencode/txn-ledger/worker-round2/captures/dark-phone-search.png",
+      "theme": "dark",
+      "device": "phone",
+      "state": "search",
+      "url": "http://127.0.0.1:15349/?app=transcript&transcript=ledger-reading&fb=off&theme=dark#inuse",
+      "metrics": {
+        "theme": "dark",
+        "width": 366,
+        "body": {
+          "x": 12,
+          "y": 226.484375,
+          "width": 366,
+          "height": 573,
+          "top": 226.484375,
+          "right": 378,
+          "bottom": 799.484375,
+          "left": 12
+        },
+        "font": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "background": "rgb(11, 11, 10)",
+        "grid": "0px 366px 0px",
+        "thinkingOpen": "false"
+      }
+    },
+    {
+      "path": "/tmp/opencode/txn-ledger/worker-round2/captures/light-desktop-reading.png",
+      "theme": "light",
+      "device": "desktop",
+      "state": "reading",
+      "url": "http://127.0.0.1:15349/?app=transcript&transcript=ledger-actions&fb=off&theme=light#inuse",
+      "metrics": {
+        "theme": "light",
+        "width": 1376,
+        "body": {
+          "x": 272,
+          "y": 261.953125,
+          "width": 863,
+          "height": 692,
+          "top": 261.953125,
+          "right": 1135,
+          "bottom": 953.953125,
+          "left": 272
+        },
+        "font": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "background": "rgb(251, 250, 247)",
+        "grid": "240px 864px 272px",
+        "thinkingOpen": "false"
+      }
+    },
+    {
+      "path": "/tmp/opencode/txn-ledger/worker-round2/captures/light-desktop-thinking.png",
+      "theme": "light",
+      "device": "desktop",
+      "state": "thinking",
+      "url": "http://127.0.0.1:15349/?app=transcript&transcript=ledger-actions&fb=off&theme=light#inuse",
+      "metrics": {
+        "theme": "light",
+        "width": 1376,
+        "body": {
+          "x": 272,
+          "y": 220.953125,
+          "width": 863,
+          "height": 733,
+          "top": 220.953125,
+          "right": 1135,
+          "bottom": 953.953125,
+          "left": 272
+        },
+        "font": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "background": "rgb(251, 250, 247)",
+        "grid": "240px 864px 272px",
+        "thinkingOpen": "true"
+      }
+    },
+    {
+      "path": "/tmp/opencode/txn-ledger/worker-round2/captures/light-desktop-bash.png",
+      "theme": "light",
+      "device": "desktop",
+      "state": "bash",
+      "url": "http://127.0.0.1:15349/?app=transcript&transcript=ledger-actions&fb=off&theme=light#inuse",
+      "metrics": {
+        "theme": "light",
+        "width": 1376,
+        "body": {
+          "x": 272,
+          "y": 204.953125,
+          "width": 863,
+          "height": 749,
+          "top": 204.953125,
+          "right": 1135,
+          "bottom": 953.953125,
+          "left": 272
+        },
+        "font": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "background": "rgb(251, 250, 247)",
+        "grid": "240px 864px 272px",
+        "thinkingOpen": "true"
+      }
+    },
+    {
+      "path": "/tmp/opencode/txn-ledger/worker-round2/captures/light-desktop-sidebar.png",
+      "theme": "light",
+      "device": "desktop",
+      "state": "sidebar",
+      "url": "http://127.0.0.1:15349/?app=transcript&transcript=ledger-actions&fb=off&theme=light#inuse",
+      "metrics": {
+        "theme": "light",
+        "width": 1376,
+        "body": {
+          "x": 64,
+          "y": 204.953125,
+          "width": 1311,
+          "height": 749,
+          "top": 204.953125,
+          "right": 1375,
+          "bottom": 953.953125,
+          "left": 64
+        },
+        "font": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "background": "rgb(251, 250, 247)",
+        "grid": "32px 1312px 32px",
+        "thinkingOpen": "true"
+      }
+    },
+    {
+      "path": "/tmp/opencode/txn-ledger/worker-round2/captures/light-desktop-search.png",
+      "theme": "light",
+      "device": "desktop",
+      "state": "search",
+      "url": "http://127.0.0.1:15349/?app=transcript&transcript=ledger-reading&fb=off&theme=light#inuse",
+      "metrics": {
+        "theme": "light",
+        "width": 1376,
+        "body": {
+          "x": 272,
+          "y": 204.953125,
+          "width": 863,
+          "height": 749,
+          "top": 204.953125,
+          "right": 1135,
+          "bottom": 953.953125,
+          "left": 272
+        },
+        "font": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "background": "rgb(251, 250, 247)",
+        "grid": "240px 864px 272px",
+        "thinkingOpen": "false"
+      }
+    },
+    {
+      "path": "/tmp/opencode/txn-ledger/worker-round2/captures/light-phone-reading.png",
+      "theme": "light",
+      "device": "phone",
+      "state": "reading",
+      "url": "http://127.0.0.1:15349/?app=transcript&transcript=ledger-actions&fb=off&theme=light#inuse",
+      "metrics": {
+        "theme": "light",
+        "width": 366,
+        "body": {
+          "x": 12,
+          "y": 204.484375,
+          "width": 366,
+          "height": 595,
+          "top": 204.484375,
+          "right": 378,
+          "bottom": 799.484375,
+          "left": 12
+        },
+        "font": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "background": "rgb(251, 250, 247)",
+        "grid": "0px 366px 0px",
+        "thinkingOpen": "false"
+      }
+    },
+    {
+      "path": "/tmp/opencode/txn-ledger/worker-round2/captures/light-phone-thinking.png",
+      "theme": "light",
+      "device": "phone",
+      "state": "thinking",
+      "url": "http://127.0.0.1:15349/?app=transcript&transcript=ledger-actions&fb=off&theme=light#inuse",
+      "metrics": {
+        "theme": "light",
+        "width": 366,
+        "body": {
+          "x": 12,
+          "y": 166.484375,
+          "width": 366,
+          "height": 633,
+          "top": 166.484375,
+          "right": 378,
+          "bottom": 799.484375,
+          "left": 12
+        },
+        "font": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "background": "rgb(251, 250, 247)",
+        "grid": "0px 366px 0px",
+        "thinkingOpen": "true"
+      }
+    },
+    {
+      "path": "/tmp/opencode/txn-ledger/worker-round2/captures/light-phone-bash.png",
+      "theme": "light",
+      "device": "phone",
+      "state": "bash",
+      "url": "http://127.0.0.1:15349/?app=transcript&transcript=ledger-actions&fb=off&theme=light#inuse",
+      "metrics": {
+        "theme": "light",
+        "width": 366,
+        "body": {
+          "x": 12,
+          "y": 166.484375,
+          "width": 366,
+          "height": 633,
+          "top": 166.484375,
+          "right": 378,
+          "bottom": 799.484375,
+          "left": 12
+        },
+        "font": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "background": "rgb(251, 250, 247)",
+        "grid": "0px 366px 0px",
+        "thinkingOpen": "true"
+      }
+    },
+    {
+      "path": "/tmp/opencode/txn-ledger/worker-round2/captures/light-phone-search.png",
+      "theme": "light",
+      "device": "phone",
+      "state": "search",
+      "url": "http://127.0.0.1:15349/?app=transcript&transcript=ledger-reading&fb=off&theme=light#inuse",
+      "metrics": {
+        "theme": "light",
+        "width": 366,
+        "body": {
+          "x": 12,
+          "y": 226.484375,
+          "width": 366,
+          "height": 573,
+          "top": 226.484375,
+          "right": 378,
+          "bottom": 799.484375,
+          "left": 12
+        },
+        "font": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "background": "rgb(251, 250, 247)",
+        "grid": "0px 366px 0px",
+        "thinkingOpen": "false"
+      }
+    }
+  ],
+  "errors": [],
+  "htmlSha256": "80468efa238613c795b49965c039a1cf49b3843146cb3558fe4809c65747a903"
+}

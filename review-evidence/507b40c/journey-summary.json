@@ -1,0 +1,237 @@
+{
+  "stats": {
+    "startTime": "2026-10-27T22:51:41.056Z",
+    "duration": 311861.445,
+    "expected": 316,
+    "skipped": 56,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "skipped": [
+    {
+      "title": "accessibility code map 320 light",
+      "project": "dark"
+    },
+    {
+      "title": "accessibility code map 390 light",
+      "project": "dark"
+    },
+    {
+      "title": "accessibility code map 1440 light",
+      "project": "dark"
+    },
+    {
+      "title": "accessibility analytics 320 light",
+      "project": "dark"
+    },
+    {
+      "title": "accessibility analytics 390 light",
+      "project": "dark"
+    },
+    {
+      "title": "accessibility analytics 1440 light",
+      "project": "dark"
+    },
+    {
+      "title": "accessibility transcript 320 light",
+      "project": "dark"
+    },
+    {
+      "title": "accessibility transcript 390 light",
+      "project": "dark"
+    },
+    {
+      "title": "accessibility transcript 1440 light",
+      "project": "dark"
+    },
+    {
+      "title": "accessibility settings 320 light",
+      "project": "dark"
+    },
+    {
+      "title": "accessibility settings 390 light",
+      "project": "dark"
+    },
+    {
+      "title": "accessibility settings 1440 light",
+      "project": "dark"
+    },
+    {
+      "title": "accessibility minimum targets 320 light",
+      "project": "dark"
+    },
+    {
+      "title": "accessibility minimum targets 390 light",
+      "project": "dark"
+    },
+    {
+      "title": "accessibility minimum targets 1440 light",
+      "project": "dark"
+    },
+    {
+      "title": "accessibility mutations fail for their declared reason light",
+      "project": "dark"
+    },
+    {
+      "title": "accessibility code map 320 dark",
+      "project": "light"
+    },
+    {
+      "title": "accessibility code map 390 dark",
+      "project": "light"
+    },
+    {
+      "title": "accessibility code map 1440 dark",
+      "project": "light"
+    },
+    {
+      "title": "accessibility analytics 320 dark",
+      "project": "light"
+    },
+    {
+      "title": "accessibility analytics 390 dark",
+      "project": "light"
+    },
+    {
+      "title": "accessibility analytics 1440 dark",
+      "project": "light"
+    },
+    {
+      "title": "accessibility transcript 320 dark",
+      "project": "light"
+    },
+    {
+      "title": "accessibility transcript 390 dark",
+      "project": "light"
+    },
+    {
+      "title": "accessibility transcript 1440 dark",
+      "project": "light"
+    },
+    {
+      "title": "accessibility settings 320 dark",
+      "project": "light"
+    },
+    {
+      "title": "accessibility settings 390 dark",
+      "project": "light"
+    },
+    {
+      "title": "accessibility settings 1440 dark",
+      "project": "light"
+    },
+    {
+      "title": "accessibility minimum targets 320 dark",
+      "project": "light"
+    },
+    {
+      "title": "accessibility minimum targets 390 dark",
+      "project": "light"
+    },
+    {
+      "title": "accessibility minimum targets 1440 dark",
+      "project": "light"
+    },
+    {
+      "title": "accessibility mutations fail for their declared reason dark",
+      "project": "light"
+    },
+    {
+      "title": "demo truth local village observations light",
+      "project": "dark"
+    },
+    {
+      "title": "demo truth offline home light",
+      "project": "dark"
+    },
+    {
+      "title": "demo truth folder settings light",
+      "project": "dark"
+    },
+    {
+      "title": "demo truth project analytics light",
+      "project": "dark"
+    },
+    {
+      "title": "demo truth changes legend light",
+      "project": "dark"
+    },
+    {
+      "title": "demo truth local transcript light",
+      "project": "dark"
+    },
+    {
+      "title": "demo truth village transcript light",
+      "project": "dark"
+    },
+    {
+      "title": "demo truth village account light",
+      "project": "dark"
+    },
+    {
+      "title": "demo truth published pull request digest light",
+      "project": "dark"
+    },
+    {
+      "title": "demo truth published completion light",
+      "project": "dark"
+    },
+    {
+      "title": "demo truth returned provider light",
+      "project": "dark"
+    },
+    {
+      "title": "demo truth village calendar dates light",
+      "project": "dark"
+    },
+    {
+      "title": "demo truth local village observations dark",
+      "project": "light"
+    },
+    {
+      "title": "demo truth offline home dark",
+      "project": "light"
+    },
+    {
+      "title": "demo truth folder settings dark",
+      "project": "light"
+    },
+    {
+      "title": "demo truth project analytics dark",
+      "project": "light"
+    },
+    {
+      "title": "demo truth changes legend dark",
+      "project": "light"
+    },
+    {
+      "title": "demo truth local transcript dark",
+      "project": "light"
+    },
+    {
+      "title": "demo truth village transcript dark",
+      "project": "light"
+    },
+    {
+      "title": "demo truth village account dark",
+      "project": "light"
+    },
+    {
+      "title": "demo truth published pull request digest dark",
+      "project": "light"
+    },
+    {
+      "title": "demo truth published completion dark",
+      "project": "light"
+    },
+    {
+      "title": "demo truth returned provider dark",
+      "project": "light"
+    },
+    {
+      "title": "demo truth village calendar dates dark",
+      "project": "light"
+    }
+  ],
+  "flaky": []
+}
