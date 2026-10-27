@@ -1214,7 +1214,7 @@ export default function TranscriptViewer({
                       const task = taskByFirstTurn.get(t.index)
                       const turnCommits = anchoredCommits.filter((c) => c.turn === t.index)
                       return (
-                        <div key={t.identity ?? t.index}>
+                        <div key={t.identity ?? t.index} className={ledger ? 'txn-turnrow' : undefined}>
                           {showPhase && <PhaseDivider phase={phase} heading={PhaseHeading} />}
                           {/* in ledger a faint rule marks where the role changes; classic gains none */}
                           {ledger && prev && prev.role !== t.role && <hr className="txn-turn-rule" aria-hidden="true" />}

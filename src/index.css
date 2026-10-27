@@ -3808,6 +3808,9 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 .txn-work-count { color: var(--ink-2); font-weight: 700; }
 .txn-work-meta { margin-left: auto; color: var(--ink-3); font-variant-numeric: tabular-nums; }
   /* the work block is its own row after the turn card, on the same reading edge as the prose */
+  /* a turn's own row (the host's per-turn panel, a commit marker) belongs to the reading
+     column, not the scrolled stream, or it lands at the stream's far-left edge. */
+  .txn-ledger .txn-turnrow { max-inline-size: var(--txn-reader-width); margin-inline: auto; }
   .txn-ledger .txn-turnwork { margin-top: var(--sp-3); padding-inline: var(--sp-4); }
   .txn-ledger .txn-turnwork .txn-work { margin-top: 0; }
   /* the ledger draws a turn's work as branch lines under the prose: no card per call */
