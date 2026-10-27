@@ -5,7 +5,7 @@
 #   ledger-root      the root carries the `txn-ledger` class
 #   subtitle         the supplied deck under the session title
 #   sticky-bar       the pinned trace header (only exists on the trace tab, after scrolling)
-#   sticky-title     the session title inside the pinned header (ledger only)
+#   sticky-title     the session title inside the pinned header (classic only; the ledger pins the timeline alone)
 #   minimap          the visible-turns position slider inside the pinned header (ledger only)
 #   scrubber         the classic position track inside the pinned header (classic only)
 #   sticky-provider  the classic pinned header's provider mark (classic only)
@@ -46,13 +46,13 @@ cases:
   - name: ledger swaps the scrubber for the title and minimap
     kind: ledger
     props: {presentation: ledger}
-    present: [ledger-root, sticky-bar, sticky-title, minimap, rail-turns]
-    absent: [subtitle, scrubber, sticky-provider, sticky-model, rail-waterfall, rail-outline, task-boundary]
+    present: [ledger-root, sticky-bar, minimap, rail-turns]
+    absent: [sticky-title, subtitle, scrubber, sticky-provider, sticky-model, rail-waterfall, rail-outline, task-boundary]
   - name: ledger renders the supplied subtitle under the title
     kind: ledger
     props: {presentation: ledger, subtitle: true}
-    present: [ledger-root, subtitle, sticky-bar, sticky-title, minimap, rail-turns]
-    absent: [scrubber, sticky-provider, sticky-model, rail-waterfall, rail-outline, task-boundary]
+    present: [ledger-root, subtitle, sticky-bar, minimap, rail-turns]
+    absent: [sticky-title, scrubber, sticky-provider, sticky-model, rail-waterfall, rail-outline, task-boundary]
   - name: ledger leaves the other tab outlines on the classic rails
     kind: ledger
     props: {presentation: ledger, activeTab: highlights}

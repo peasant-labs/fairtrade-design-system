@@ -1150,14 +1150,13 @@ export default function TranscriptViewer({
               {sticky && viewMode === 'list' && (
                 <div className="txn-sticky">
                   {ledger ? (
-                    <>
-                      <span className="txn-sticky-title" title={title}>{title}</span>
-                      <TranscriptMinimap
-                        turns={visibleTurns}
-                        activeTurn={activeTurn}
-                        onJump={(idx) => jumpTo(idx, { switchTab: false })}
-                      />
-                    </>
+                    /* the pinned bar is the timeline alone: the title already sits in the
+                       breadcrumb and the page header above the trace. */
+                    <TranscriptMinimap
+                      turns={visibleTurns}
+                      activeTurn={activeTurn}
+                      onJump={(idx) => jumpTo(idx, { switchTab: false })}
+                    />
                   ) : (
                     <>
                       {session.harness && <ProviderIcon harness={session.harness} accent />}
