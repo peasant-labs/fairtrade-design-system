@@ -14,6 +14,7 @@ import {
 import ToolBody from './ToolBody.jsx'
 import UsageDisclosure from './UsageDisclosure.jsx'
 import { formatDurationMs } from './time.js'
+import Collapsible from './Collapsible.jsx'
 
 /* ToolCall — the collapsible tool-call disclosure row, lifted verbatim from the canonical
    mockup (src/mockups/inuse/TranscriptApp.jsx:514). Controlled: `open` / `onToggle` are owned
@@ -76,7 +77,7 @@ export default function ToolCall({ tool, open = false, onToggle, showChevron = t
           )}
         </span>
       </button>
-      {open && <><ToolBody tool={tool} /><UsageDisclosure usage={tool.usage} /></>}
+      <Collapsible open={open}><ToolBody tool={tool} /><UsageDisclosure usage={tool.usage} /></Collapsible>
     </div>
   )
 }

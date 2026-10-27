@@ -36,7 +36,7 @@ for (const row of fixture.summaryCases) {
   assertFields(row, ['name', 'tools', 'expected', 'countLabel', 'metaLabel', 'actionsLabel'], `${FIXTURE} ${row.name}`)
   assertExactNames(Object.keys(row.expected), SUMMARY_FIELDS, `${FIXTURE} ${row.name} expected`)
 }
-for (const row of fixture.cases) assertFields(row, ['name', 'kind'], `${FIXTURE} ${row.name}`, ['headingLevel', 'turn', 'preview', 'revealedTurn', 'closedTurn', 'input'])
+for (const row of fixture.cases) assertFields(row, ['name', 'kind'], `${FIXTURE} ${row.name}`, ['headingLevel', 'turn', 'preview', 'revealedTurn', 'closedTurn', 'input', 'keyboardSteps', 'manualScrollExpected'])
 assertExactNames(Object.keys(fixture.mountedSummary), ['panel', 'grouped', 'afterUser'], `${FIXTURE} mountedSummary`)
 if (typeof fixture.revealQuery !== 'string' || fixture.revealQuery.length === 0) throw new Error(`${FIXTURE}: revealQuery must be a non-empty string`)
 
@@ -254,6 +254,36 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       await mounted.settle()
       const closed = panel?.querySelector('.txn-toolcall .txn-tc-head')
       report.check(closed?.getAttribute('aria-expanded') === 'false', `${row.name}: clicking the open row must collapse it`)
+      await mounted.unmount()
+    } else if (row.kind === 'turn-keys') {
+      const selections = []
+      const mounted = await mountViewer('ledger', { onActiveTurnChange: index => selections.push(index) })
+      const container = mounted.container
+      const stream = container.querySelector('.txn-stream')
+      // A short scroller cannot align its last cards with the reading line. Its clamped
+      // scroll feedback must not replace the turn the reader explicitly requested.
+      Object.defineProperty(stream, 'clientHeight', { configurable: true, value: 300 })
+      Object.defineProperty(stream, 'scrollHeight', { configurable: true, value: 450 })
+      for (const el of container.querySelectorAll('.txn-stream [data-turn]')) {
+        Object.defineProperty(el, 'offsetTop', { configurable: true, value: Number(el.getAttribute('data-turn')) * 100 })
+      }
+      stream.scrollTo = ({ top }) => {
+        stream.scrollTop = Math.max(0, Math.min(150, top))
+        stream.dispatchEvent(new window.Event('scroll'))
+      }
+      for (const step of row.keyboardSteps) {
+        await mounted.act(() => {
+          for (const key of step.keys) window.dispatchEvent(new window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }))
+        })
+        await mounted.settle(20)
+        report.check(selections.at(-1) === step.expected, `${row.name}: the burst must select ${step.expected}, received ${selections.at(-1)}`)
+      }
+      await mounted.act(() => {
+        stream.dispatchEvent(new window.WheelEvent('wheel', { bubbles: true }))
+        stream.scrollTop = 0
+        stream.dispatchEvent(new window.Event('scroll'))
+      })
+      report.check(selections.at(-1) === row.manualScrollExpected, `${row.name}: manual scrolling must restore reading-line selection`)
       await mounted.unmount()
     } else if (row.kind === 'turn-selection') {
       const selections = []

@@ -16,6 +16,7 @@ import { TOOL_GROUPS } from './view-model.js'
 import { categoryCounts, projectTurn } from './filters.js'
 import { turnAtReadingLine } from './scroll-position.js'
 import TurnCard from './TurnCard.jsx'
+import Collapsible from './Collapsible.jsx'
 import TranscriptContext from './TranscriptContext.jsx'
 import { UsageScopes } from './UsageDisclosure.jsx'
 import DiffEntryCard from './DiffEntryCard.jsx'
@@ -415,6 +416,10 @@ export default function TranscriptViewer({
   const searchInputRef = useRef(null)
   const draggingRef = useRef(false)
   const readerDragRef = useRef(null)
+  const activeTurnRef = useRef(activeTurn)
+  const navigationTargetRef = useRef(null)
+  useLayoutEffect(() => { activeTurnRef.current = activeTurn }, [activeTurn])
+  useLayoutEffect(() => { navigationTargetRef.current = null }, [session.id])
   /* keep the `full` snap's width current: the stream's content width changes with the window
      and with every rail opening or closing, and a reader resting at full must follow it. */
   useEffect(() => {
@@ -690,15 +695,24 @@ export default function TranscriptViewer({
   const footerProgress = footer?.progress === true && tab === 'trace' && viewMode === 'list' && visibleTurns.length > 0
 
   /* ── navigation + interactions (effects/handlers only; safe under static render) ── */
+  function selectTurn(idx) {
+    activeTurnRef.current = idx
+    navigationTargetRef.current = idx
+    setActiveTurn(idx)
+  }
+  function releaseTurnNavigation() {
+    navigationTargetRef.current = null
+  }
   function jumpTo(idx, { switchTab = true } = {}) {
     if (switchTab && tab !== 'trace') {
       skipTraceRestoreRef.current = true
       setTab('trace')
     }
     setViewMode('list')
-    setActiveTurn(idx)
+    selectTurn(idx)
     if (typeof requestAnimationFrame === 'function') {
       requestAnimationFrame(() => {
+        if (navigationTargetRef.current !== idx) return
         const el = turnRefs.current[idx]
         const sc = scrollRef.current
         if (el && sc) {
@@ -710,9 +724,9 @@ export default function TranscriptViewer({
   }
   function stepTurn(dir) {
     const ids = (cardTurns.length ? cardTurns : visibleTurns).map((t) => t.index)
-    const cur = ids.indexOf(activeTurn)
+    const cur = ids.indexOf(activeTurnRef.current)
     const next = Math.max(0, Math.min(ids.length - 1, cur + dir))
-    if (ids[next] != null) jumpTo(ids[next], { switchTab: false })
+    if (ids[next] != null && ids[next] !== activeTurnRef.current) jumpTo(ids[next], { switchTab: false })
   }
   function copyAnchor(idx) {
     setCopiedTurn(idx)
@@ -753,7 +767,8 @@ export default function TranscriptViewer({
     // release guard mid-flight. Using the full expanded height is deliberately
     // conservative (only the title + chips actually leave), which can never
     // reintroduce the clamp-flicker.
-    if (header && header.offsetHeight > 0 && !header.closest('.txn-app-condensed')) {
+    const headerMoving = header?.getAnimations?.({ subtree: true }).some(animation => animation.playState === 'running')
+    if (header && header.offsetHeight > 0 && !header.closest('.txn-app-condensed') && !headerMoving) {
       heroHeightRef.current = header.offsetHeight
     }
     const overflowAfterRelease = sc.scrollHeight - sc.clientHeight - heroHeightRef.current
@@ -772,6 +787,10 @@ export default function TranscriptViewer({
     if (!sc) return
     latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()
     syncScrollChrome(sc)
+    // A requested turn may never reach the reading line at a scroll boundary. Keep that
+    // selection through the smooth scroll; a real wheel, touch or scrollbar gesture releases it.
+    if (navigationTargetRef.current != null && visibleTurns.some(t => t.index === navigationTargetRef.current)) return
+    navigationTargetRef.current = null
     setActiveTurn(turnAtReadingLine(cardTurns,
       index => turnRefs.current[index]?.offsetTop ?? Infinity,
       sc.scrollTop + sc.clientHeight * 0.4))
@@ -891,6 +910,7 @@ export default function TranscriptViewer({
   /* cmd/ctrl+F search + j/k step (browser only; no-op under static render). */
   useEffect(() => {
     function onKey(e) {
+      if (e.defaultPrevented) return
       const mod = e.metaKey || e.ctrlKey
       if (mod && (e.key === 'f' || e.key === 'F')) {
         e.preventDefault(); openSearch(); return
@@ -899,6 +919,7 @@ export default function TranscriptViewer({
       const typing = ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName ?? '')
       if (searchOpen || typing || e.metaKey || e.ctrlKey || e.altKey) return
       if (tab !== 'trace' || viewMode !== 'list') return
+      if (['PageUp', 'PageDown', 'Home', 'End', ' '].includes(e.key)) releaseTurnNavigation()
       if (e.key === 'j' || e.key === 'ArrowDown') { e.preventDefault(); stepTurn(1) }
       else if (e.key === 'k' || e.key === 'ArrowUp') { e.preventDefault(); stepTurn(-1) }
     }
@@ -1116,6 +1137,7 @@ export default function TranscriptViewer({
           </div>
         </div>
 
+        <Collapsible open={!heroCondensed} keepMounted className="txn-header-details">
         <TitleHeading className="txn-title" title={title}>{title}</TitleHeading>
         {/* an optional one-line deck under the title (ledger reads it as the transcript's
             provenance line); render-when-supplied so classic is untouched. A div, not a
@@ -1149,6 +1171,7 @@ export default function TranscriptViewer({
         {/* host-owned pull request list: the host supplies the rows and any "show all" control;
             the composite only gives it a place under the meta row. */}
         {pullRequests != null && <div className="txn-prs">{pullRequests}</div>}
+        </Collapsible>
         <UsageScopes scopes={vm.usageScopes} />
       </header>
 
@@ -1251,7 +1274,9 @@ export default function TranscriptViewer({
                 </div>
               ) : (
                 <div className="txn-streamwrap">
-                  <div className="txn-stream" ref={scrollRef} role="region" aria-label="full trace turns" onFocusCapture={() => {
+                  <div className="txn-stream" ref={scrollRef} role="region" aria-label="full trace turns"
+                    onWheel={releaseTurnNavigation} onTouchStart={releaseTurnNavigation} onPointerDown={releaseTurnNavigation}
+                    onFocusCapture={() => {
                     const snapshot = readTraceReadingSnapshot()
                     if (snapshot) latestTraceReadingSnapshotRef.current = snapshot
                   }} onScroll={onScroll} tabIndex={0}>
@@ -1322,7 +1347,7 @@ export default function TranscriptViewer({
                             presentation={presentation}
                             turn={t}
                             active={activeTurn === t.index}
-                            onSelect={ledger ? setActiveTurn : undefined}
+                            onSelect={ledger ? selectTurn : undefined}
                             revealRequest={searchReveal?.turn === t.index ? searchReveal.sequence : 0}
                             openTools={openTools}
                             toggleTool={toggleTool}

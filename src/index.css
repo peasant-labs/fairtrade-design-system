@@ -2009,8 +2009,9 @@
      .txn-app-condensed from the stream's own scroll position and restores the full header at
      the top of the trace. (user-ratified: the row stays; a full hide was rejected.) */
   .txn-app-condensed > .txn-header { padding-block: var(--sp-2); }
-  .txn-app-condensed > .txn-header .txn-title,
-  .txn-app-condensed > .txn-header .txn-meta { display: none; }
+  @media (prefers-reduced-motion: no-preference) {
+    .txn-header { transition: padding-block var(--dur-3) var(--ease-in-out); }
+  }
   /* the condensed row must stay ONE line even on a phone: unwrapped, the breadcrumb and
      the actions stack to ~3 rows at 390px and give back almost all of the reclaimed
      space. the trail shortens its crumbs in the order the trail rule below gives (min-width:0
@@ -2106,7 +2107,6 @@
   .txn-search-key { font-family: var(--font-mono); font-size: var(--fs-label); letter-spacing: 0; color: var(--ink-4); background: none; border: 0; padding: 0; }
   /* the host's pull request list sits under the meta row and leaves with it on condense. */
   .txn-prs { margin-top: var(--sp-3); min-width: 0; }
-  .txn-app-condensed > .txn-header .txn-prs { display: none; }
   /* a tab, a segment and a turn chip keep their label on one line; a narrow strip scrolls instead */
   .txn-tab { padding: var(--sp-3) 2px; white-space: nowrap; }
   .txn-tab .cnt { font-variant-numeric: tabular-nums; }
@@ -2265,6 +2265,9 @@
   .txn-cp-stat { color: var(--ink-4); }
 
   /* ---- thinking block ---- */
+  .txn-disclosure { display: flow-root; }
+  .txn-disclosure[hidden] { display: none; }
+  .txn-disclosure[data-animating="true"] { overflow: hidden; }
   /* thinking is a row in the tool-call shape (kind, word count, time), so it shares .toolcall
      and .tc-head and only states its own spacing and its open body. */
   .txn-thinking { margin-top: var(--sp-2); }
@@ -2706,10 +2709,7 @@
     margin-top: var(--sp-2);
   }
   .txn-meta > * { white-space: nowrap; }
-  /* The narrow title above re-declares display, so the
-     condensed hide must restate itself inside this media block or the phone keeps the
-     title while condensed. */
-  .txn-app-condensed > .txn-header .txn-title, .txn-app-condensed > .txn-header .txn-meta { display: none; }
+  /* The shared header disclosure collapses title and metadata together at every width. */
   .txn-meta > * { flex: none; }
   /* one figure style across the row: icon, a tabular number in the ink, the word in ink-3. a figure
      with a definition (the author, the token split) opens it on focus or tap, without the dotted
@@ -3670,8 +3670,7 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   line-height: var(--lh-body);
   color: var(--ink-2);
 }
-/* the condensed session header keeps ONE row (trail + actions); the deck leaves with the title. */
-.txn-app-condensed > .txn-header .txn-sub { display: none; }
+/* The deck leaves with the title through the shared header disclosure. */
 
 .txn-sticky-title {
   flex: 0 1 auto;

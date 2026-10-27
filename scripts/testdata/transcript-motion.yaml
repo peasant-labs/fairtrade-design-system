@@ -1,0 +1,7 @@
+motion: [no-preference, reduce]
+cases:
+  - {name: session title, kind: header, initiallyOpen: true}
+  - {name: session title on phone, kind: header, initiallyOpen: true, width: 390, height: 844}
+  - {name: action list, kind: list, initiallyOpen: true}
+  - {name: command output, kind: output, label: Bash, initiallyOpen: false}
+  - {name: thinking output, kind: output, label: Think, initiallyOpen: false}

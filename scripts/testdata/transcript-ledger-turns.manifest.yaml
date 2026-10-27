@@ -33,6 +33,7 @@ requiredCaseNames:
   - the system category hides and restores only system turns
   - compact mode collapses action lists without opening their contents
   - clicking prose selects that turn without making its action list a turn
+  - rapid turn keys recover from both scroll limits
   - ledger renders a system turn as a row
   - the system row disclosure is controllable by the host
   - a search hit opens the system row
@@ -52,6 +53,7 @@ requiredCaseKinds:
   the system category hides and restores only system turns: system-filter
   compact mode collapses action lists without opening their contents: compact-actions
   clicking prose selects that turn without making its action list a turn: turn-selection
+  rapid turn keys recover from both scroll limits: turn-keys
   ledger renders a system turn as a row: system
   the system row disclosure is controllable by the host: system-controlled
   a search hit opens the system row: system-reveal
@@ -67,6 +69,8 @@ requiredCaseKinds:
 
 # Production mutations the gate must kill (scripts/parts-mutations.mjs).
 requiredMutationNames:
+  - rapid keys read a stale selection
+  - scroll feedback overrides requested turns
   - clicking a turn no longer selects it
   - action lists start collapsed again
   - compact mode stops reaching action lists
@@ -87,6 +91,16 @@ requiredMutationNames:
   - the block sits on the group's last turn
   - the block header counts calls
 mutations:
+  - name: rapid keys read a stale selection
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "const cur = ids.indexOf(activeTurnRef.current)"
+    replace: "const cur = ids.indexOf(activeTurn)"
+    expectedDiagnostic: "rapid turn keys recover from both scroll limits: the burst must select"
+  - name: scroll feedback overrides requested turns
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "if (navigationTargetRef.current != null && visibleTurns.some(t => t.index === navigationTargetRef.current)) return"
+    replace: "if (false) return"
+    expectedDiagnostic: "rapid turn keys recover from both scroll limits: the burst must select"
   - name: clicking a turn no longer selects it
     file: src/ui/transcript/TurnCard.jsx
     find: "onClick={ledger && onSelect ? () => onSelect(turn.index) : undefined}"

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Brain } from 'lucide-react'
 import { formatDurationMs } from './time.js'
+import Collapsible from './Collapsible.jsx'
 
 /* Thinking — a turn's thinking as one row in the same shape as a tool call: the kind icon and
    "Think" where a tool shows its name, the word count where a tool shows its argument, and the
@@ -37,11 +38,11 @@ export default function Thinking({ block }) {
           {duration && <span className="tnum txn-tc-dur">{duration}</span>}
         </span>
       </button>
-      {open && (
+      <Collapsible open={open}>
         <div className="txn-thinking-body">
           <div className="txn-thinking-box"><em>{block.text}</em></div>
         </div>
-      )}
+      </Collapsible>
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import ToolCall from './ToolCall.jsx'
 import Thinking from './Thinking.jsx'
+import Collapsible from './Collapsible.jsx'
 import { workActionsLabel, workCountLabel, workMetaLabel, workSummary } from './work-summary.js'
 
 /* TranscriptWorkGroup — one turn's tool activity as a single panel. In the ledger presentation
@@ -66,7 +67,7 @@ export default function TranscriptWorkGroup({ tools = [], thinking, openTools = 
           </button>
         </div>
       )}
-      {shown && (
+      <Collapsible open={shown}>
         <div className="txn-work-rows" id={rowsId}>
           {tools.map((tool) => (
             <ToolCall
@@ -80,7 +81,7 @@ export default function TranscriptWorkGroup({ tools = [], thinking, openTools = 
           {/* the turn's thinking closes the same branch list, one line like a tool call */}
           {thinking && <Thinking block={thinking} />}
         </div>
-      )}
+      </Collapsible>
     </div>
   )
 }
@@ -127,7 +128,7 @@ export function ModelActions({ turns = [], openTools = {}, onToggle = () => {}, 
       <button type="button" className="txn-modelactions-head" aria-expanded={shown} onClick={closeAll}>
         <span className="txn-modelactions-summary tnum">{label}</span>
       </button>
-      {shown && (
+      <Collapsible open={shown}>
         <div className="txn-modelactions-rows">
           {turns.map((turn) => (
             <div key={turn.identity ?? turn.index} className="txn-modelactions-turn">
@@ -144,7 +145,7 @@ export function ModelActions({ turns = [], openTools = {}, onToggle = () => {}, 
             </div>
           ))}
         </div>
-      )}
+      </Collapsible>
     </div>
   )
 }
