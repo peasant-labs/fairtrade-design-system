@@ -3759,7 +3759,9 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 .txn-turnwrap-ledger { max-inline-size: var(--txn-reader-width); margin-inline: auto 0; }
 .txn-turn.txn-turn-ledger { background: transparent; border: 0; }
 /* a faint rule marks a change of role between adjacent turns, and never opens the trace. */
-.txn-ledger .txn-turn-rule { border: 0; border-top: var(--bd); opacity: .7; margin: var(--sp-4) 0; }
+/* the rule belongs to the reader column, not the scrolled stream: without the cap it runs out
+   to the stream's left edge while the turns sit right-aligned inside the reading width. */
+.txn-ledger .txn-turn-rule { border: 0; border-top: var(--bd); opacity: .7; margin-block: var(--sp-4); margin-inline: auto 0; max-inline-size: var(--txn-reader-width); }
 
 /* the active marker stays: the leading rail is an inset shadow, so a borderless ledger turn
    still shows which turn is current. */
