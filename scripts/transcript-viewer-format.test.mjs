@@ -75,7 +75,7 @@ await withMountedSource(async ({ load, mount, React }) => {
     } else if (row.kind === 'filters-rail') {
       for (const [tab, want] of Object.entries(row.tabs)) {
         const mounted = await mount(viewer({ activeTab: tab }))
-        const rail = mounted.container.querySelector('aside.txn-rail-right')
+        const rail = mounted.container.querySelector('aside.txn-rail-right:not([hidden])')
         const grid = mounted.container.querySelector('.txn-body-grid')?.getAttribute('data-right-rail') ?? null
         report.check(!!rail === want.rail, `${name}: ${tab} must ${want.rail ? 'show' : 'leave out'} the filters rail`)
         report.check(grid === want.grid, `${name}: ${tab} grid must be data-right-rail=${JSON.stringify(want.grid)}, received ${JSON.stringify(grid)}`)

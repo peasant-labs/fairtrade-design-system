@@ -4,6 +4,40 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.48 - 2026-10-27
+
+### Added
+
+- A system-turn category in the transcript filters. Older saved filter state keeps
+  system turns enabled until the reader explicitly hides them.
+
+### Changed
+
+- Model actions are grouped once per user turn, after its first model prose card.
+  Lists start expanded with individual outputs closed; compact mode collapses the
+  lists. Summaries omit the redundant call count.
+- Thinking uses a `Think` action row with its word count, available duration, and
+  boxed output. Bash input keeps its input label and prompt without a second icon.
+- Action lists, tool outputs, thinking, session-header details, and transcript
+  sidebars share reversible ease-in/out motion with an immediate reduced-motion
+  path. Closing content stays painted until its exit finishes and becomes inert
+  immediately.
+- The reader-width handle rests where released without snapping and reaches the
+  middle column's available width. User-turn rail cards run to the rail edges,
+  and the rail follows the turn being read without moving the main scroller.
+
+### Fixed
+
+- Host panels and commit markers align with the reading column rather than the
+  far edge of the transcript stream. The width handle hugs the reader's edge and
+  drags in both directions.
+- Clicking prose selects its amber marker; hover fades match the reading
+  reference. Rapid turn navigation no longer gets stuck at either scroll limit.
+- The title and pinned timeline exchange their occupied space together, avoiding
+  the extra downward jump before the header collapses.
+- Disclosure and sidebar contents no longer flash at the animation-to-hidden
+  handoff. Sidebar exit painting does not depend on CSS display transitions.
+
 ## 0.0.47 - 2026-10-27
 
 ### Changed

@@ -184,10 +184,10 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   const baseProps = { viewModel: vm, capabilities: CAPABILITIES, presentation: 'ledger' }
   const mountViewer = (props = {}) => mount(React.createElement(TranscriptViewer, { ...baseProps, ...props }))
   const railState = (container) => ({
-    outline: !!container.querySelector('.txn-rail-left'),
-    filters: !!container.querySelector('.txn-rail-right'),
-    outlineStrip: !!container.querySelector('.txn-rail-strip-left'),
-    filtersStrip: !!container.querySelector('.txn-rail-strip-right'),
+    outline: !!container.querySelector('.txn-rail-left:not([hidden])'),
+    filters: !!container.querySelector('.txn-rail-right:not([hidden])'),
+    outlineStrip: !!container.querySelector('.txn-rail-strip-left:not([hidden])'),
+    filtersStrip: !!container.querySelector('.txn-rail-strip-right:not([hidden])'),
   })
   /** mount a host-controlled viewer so every emitted layout is both observable and applied. */
   const mountControlled = ({ layout, zen = false, onLayout, onZen, props = {} }) => {
@@ -212,6 +212,9 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       const open = row.open.includes(rail)
       report.check(state[key] === open, `${row.name}: the ${rail} rail must be ${open ? 'open' : 'collapsed'}, received ${JSON.stringify(state)}`)
       report.check(state[rail === 'outline' ? 'outlineStrip' : 'filtersStrip'] === !open, `${row.name}: the ${rail} rail must render ${open ? 'no strip' : 'its strip'}`)
+    }
+    for (const pane of container.querySelectorAll('.txn-rail, .txn-rail-strip')) {
+      report.check(pane.getAttribute('aria-hidden') === String(pane.hidden) && pane.hasAttribute('inert') === pane.hidden, `${row.name}: a hidden rail pane must be inert and absent from the accessibility tree`)
     }
     report.check(container.querySelector('.txn-rail-left .txn-host-sidebar, .txn-host-sidebar') === null, `${row.name}: the viewer must never render the host-owned sidebar`)
   }
@@ -253,7 +256,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       }
       await mounted.act(() => click(window, container.querySelector('.txn-rail-left .txn-rail-collapse')))
       expectEmit(layoutOf(false, true, true), 'the outline collapse')
-      report.check(!!container.querySelector('.txn-rail-strip-left') && !container.querySelector('.txn-rail-left'), `${row.name}: the outline collapse must render its strip`)
+      report.check(!!container.querySelector('.txn-rail-strip-left:not([hidden])') && !container.querySelector('.txn-rail-left:not([hidden])'), `${row.name}: the outline collapse must render its strip`)
+      report.check(container.querySelector('.txn-rail-strip-left .txn-rail-reopen') === window.document.activeElement, `${row.name}: focus must follow the outline collapse control`)
       await mounted.act(() => click(window, container.querySelector('.txn-rail-strip-left .txn-rail-reopen')))
       expectEmit(layoutOf(true, true, true), 'the outline reopen strip')
       await mounted.act(() => click(window, container.querySelector('.txn-rail-right .txn-rail-collapse')))
@@ -277,7 +281,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       await mounted.settle()
       report.check(zenValues.length === 1 && zenValues[0] === true, `${row.name}: entering zen must emit onZenChange(true), received ${JSON.stringify(zenValues)}`)
       report.check(same(layouts[0], layoutOf(false, false, false)), `${row.name}: entering zen must collapse every rail, received ${JSON.stringify(layouts[0])}`)
-      report.check(container.querySelectorAll('.txn-rail').length === 0 && container.querySelectorAll('.txn-rail-strip').length === 0, `${row.name}: zen must leave no rail and no strip`)
+      report.check(container.querySelectorAll('.txn-rail:not([hidden]), .txn-rail-strip:not([hidden])').length === 0, `${row.name}: zen must leave no visible rail and no strip`)
+      for (const pane of container.querySelectorAll('.txn-rail, .txn-rail-strip')) report.check(pane.hasAttribute('inert') && pane.getAttribute('aria-hidden') === 'true', `${row.name}: zen must remove all rail controls from keyboard and assistive technology`)
       report.check(container.querySelector('.txn-body-grid')?.getAttribute('data-zen') === 'true', `${row.name}: the body grid must report zen state`)
       report.check(container.querySelector('.txn-app')?.classList.contains('txn-zen'), `${row.name}: the root must carry txn-zen so the collapsed grid applies`)
       report.check(container.querySelector('.txn-zen-control')?.getAttribute('aria-pressed') === 'true', `${row.name}: the control must report pressed state`)
@@ -324,8 +329,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(container.querySelectorAll('.txn-rail-strip').length === 2, `${row.name}: the fixture must start with both strips mounted`)
       await mounted.act(() => click(window, container.querySelector('.txn-zen-control')))
       await mounted.settle()
-      report.check(container.querySelectorAll('.txn-rail-strip').length === 0, `${row.name}: zen must hide both reopen strips`)
-      report.check(container.querySelector('.txn-rail-strip-left') === null && container.querySelector('.txn-rail-strip-right') === null, `${row.name}: neither strip may survive zen`)
+      report.check(container.querySelectorAll('.txn-rail-strip:not([hidden])').length === 0, `${row.name}: zen must hide both reopen strips`)
+      report.check(container.querySelector('.txn-rail-strip-left').hidden && container.querySelector('.txn-rail-strip-right').hidden, `${row.name}: neither strip may remain visible in zen`)
       await mounted.unmount()
     } else if (row.kind === 'zen-placement') {
       /* where the control LIVES, not where it is painted: jsdom lays nothing out, so the

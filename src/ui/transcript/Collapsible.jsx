@@ -2,8 +2,9 @@ import { useLayoutEffect, useRef, useState } from 'react'
 
 /* Shared transcript disclosure motion. Closed output stays unmounted until first opened;
    on close it remains only for the exit animation, immediately inert and aria-hidden. A
-   reversal starts at the currently painted height rather than jumping to either endpoint. */
-export default function Collapsible({ open, children, className = '', id, keepMounted = false }) {
+   reversal starts at the currently painted height rather than jumping to either endpoint.
+   Sidebars use opacity only: their parent grid already owns the width transition. */
+export default function Collapsible({ open, children, className = '', id, keepMounted = false, animateSize = true, as: Tag = 'div', 'aria-label': ariaLabel }) {
   const nodeRef = useRef(null)
   const animationRef = useRef(null)
   const previousOpen = useRef(open)
@@ -15,7 +16,7 @@ export default function Collapsible({ open, children, className = '', id, keepMo
     previousOpen.current = open
     const node = nodeRef.current
     const current = animationRef.current
-    const height = current ? node.getBoundingClientRect().height : open ? 0 : node.scrollHeight
+    const height = animateSize ? current ? node.getBoundingClientRect().height : open ? 0 : node.scrollHeight : 0
     const opacity = current ? getComputedStyle(node).opacity : open ? 0 : 1
     current?.cancel()
     animationRef.current = null
@@ -31,8 +32,8 @@ export default function Collapsible({ open, children, className = '', id, keepMo
     setPresent(true)
     setAnimating(true)
     const animation = node.animate([
-      { height: `${height}px`, opacity },
-      { height: open ? `${node.scrollHeight}px` : '0px', opacity: open ? 1 : 0 },
+      { ...(animateSize ? { height: `${height}px` } : {}), opacity },
+      { ...(animateSize ? { height: open ? `${node.scrollHeight}px` : '0px' } : {}), opacity: open ? 1 : 0 },
     ], { duration, easing: style.getPropertyValue('--ease-in-out').trim(), fill: 'both' })
     animationRef.current = animation
     animation.finished.then(() => {
@@ -40,7 +41,7 @@ export default function Collapsible({ open, children, className = '', id, keepMo
       setAnimating(false)
       setPresent(open)
     }).catch(() => { /* a reversal or unmount cancels the preceding animation */ })
-  }, [open])
+  }, [open, animateSize])
 
   // Hold the final frame until React has committed the hidden/unmounted contents. Releasing
   // it in the promise callback would paint one frame at natural height before that commit.
@@ -58,10 +59,10 @@ export default function Collapsible({ open, children, className = '', id, keepMo
   }, [])
 
   return (
-    <div ref={nodeRef} id={id} className={`txn-disclosure ${className}`.trim()}
+    <Tag ref={nodeRef} id={id} aria-label={ariaLabel} className={`txn-disclosure ${className}`.trim()}
       hidden={!open && !present} aria-hidden={!open} inert={!open}
       data-animating={animating ? 'true' : undefined}>
       {(keepMounted || open || present) ? children : null}
-    </div>
+    </Tag>
   )
 }

@@ -2057,21 +2057,18 @@
   .txn-pill { min-height: var(--target-min); height: auto; padding: 0 var(--sp-2); font-size: var(--fs-label); gap: var(--sp-1); }
   .txn-pill .lucide { width: var(--ic-sm); height: var(--ic-sm); }
 
-  /* ---- sticky condensed scrubber header (revealed on scroll) ----
-     TIER 1 of the pinned stack: it overlays the TOP STRIP of .txn-trace, ABOVE the
-     turns bar (.txn-trace-head, tier 2), which reserves space beneath it via
-     .txn-trace-pinned. --txn-sticky-h (declared on .txn-trace) is the header's
-     DETERMINISTIC height (forced via box-sizing so it never drifts with content;
-     clears the 22px scrubber row). because the scrubber sits ABOVE the scroller (not
-     over it), the phase stickies (tier 3) need no offset — the scroller already
-     starts below tiers 1+2, so phases pin at the scroller's own top. */
+  /* ---- condensed scrubber header (revealed on scroll) ----
+     The timeline occupies its own space above the turns bar. Its disclosure grows with
+     the same timing as the session details shrink: inserting a full-height spacer first
+     would push the stream down before pulling it back up. Both rows sit outside the
+     scroller, so phase stickies need no offset for them. */
   .txn-streamwrap { position: relative; flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
   /* graph-view sibling of .txn-streamwrap: both are the view-mode branches that fill the flex-column
      .txn-trace, so the graph slot needs the same flex:1/min-height:0. Without it a fill-parent graph
      engine (e.g. @xyflow, height:100%) resolves against a 0-height parent and collapses to 0px. */
   .txn-graphslot { flex: 1; min-height: 0; }
+  .txn-sticky-disclosure { flex: none; }
   .txn-sticky {
-    position: absolute; top: 0; left: 0; right: 0; z-index: var(--z-sticky);
     box-sizing: border-box; height: var(--txn-sticky-h);
     display: flex; align-items: center; gap: var(--sp-3);
     padding: var(--sp-2) var(--sp-4); background: var(--surface);
@@ -2080,8 +2077,6 @@
   /* opaque by default; the translucent blurred bar is an opt-in where transparency is welcome
      (a browser that cannot report the preference keeps the opaque bar). */
   @media (prefers-reduced-transparency: no-preference) { .txn-sticky { background: var(--nav-bg); backdrop-filter: blur(8px); } }
-  @media (prefers-reduced-motion: no-preference) { .txn-sticky { animation: txn-slidedown var(--dur-2) var(--ease-out) both; } }
-  @keyframes txn-slidedown { from { transform: translateY(-100%); } to { transform: none; } }
   .txn-sticky-model { font-size: var(--fs-label); color: var(--ink-3); }
 
   /* the horizontal scrubber: ticks + draggable viewport bracket */
@@ -2116,15 +2111,31 @@
   /* split layout: outline (user turns) | transcript | filters. each side rail collapses to a thin strip
      (a re-open button + rotated label); the data-*-rail attrs drive the column track widths so the centre
      transcript reclaims the space. --txn-rail-strip-w is the collapsed strip width (square hit target). */
-  .txn-body-grid { --txn-rail-strip-w: var(--sp-7); flex: 1; min-height: 0; display: grid; grid-template-columns: 240px minmax(0, 1fr) 272px; }
+  .txn-body-grid {
+    --txn-rail-strip-w: var(--sp-7);
+    --txn-outline-w: calc(var(--sp-8) * 4 + var(--sp-4));
+    --txn-filters-w: calc(var(--sp-8) * 4 + var(--sp-6) + var(--sp-4));
+    flex: 1; min-height: 0; display: grid; transition-property: none;
+    grid-template-columns: var(--txn-outline-w) minmax(0, 1fr) var(--txn-filters-w);
+  }
   /* the narrower collapsed strip belongs to the ledger reading layout only; classic keeps 40px. */
   .txn-ledger .txn-body-grid { --txn-rail-strip-w: var(--sp-6); }
-  .txn-body-grid[data-left-rail="closed"] { grid-template-columns: var(--txn-rail-strip-w) minmax(0, 1fr) 272px; }
-  .txn-body-grid[data-right-rail="closed"] { grid-template-columns: 240px minmax(0, 1fr) var(--txn-rail-strip-w); }
+  .txn-body-grid[data-left-rail="closed"] { grid-template-columns: var(--txn-rail-strip-w) minmax(0, 1fr) var(--txn-filters-w); }
+  .txn-body-grid[data-right-rail="closed"] { grid-template-columns: var(--txn-outline-w) minmax(0, 1fr) var(--txn-rail-strip-w); }
   .txn-body-grid[data-left-rail="closed"][data-right-rail="closed"] { grid-template-columns: var(--txn-rail-strip-w) minmax(0, 1fr) var(--txn-rail-strip-w); }
   /* a tab without filters has no right rail at all, so the centre takes its room */
-  .txn-body-grid[data-right-rail="none"] { grid-template-columns: 240px minmax(0, 1fr); }
-  .txn-body-grid[data-left-rail="closed"][data-right-rail="none"] { grid-template-columns: var(--txn-rail-strip-w) minmax(0, 1fr); }
+  .txn-body-grid[data-right-rail="none"] { grid-template-columns: var(--txn-outline-w) minmax(0, 1fr) 0; }
+  .txn-body-grid[data-left-rail="closed"][data-right-rail="none"] { grid-template-columns: var(--txn-rail-strip-w) minmax(0, 1fr) 0; }
+  /* Keep three tracks, including zero-width hidden rails, so width and content move once.
+     Expanded and collapsed controls share a cell and crossfade without replacing the DOM. */
+  .txn-center { grid-column: 2; grid-row: 1; }
+  .txn-rail-left, .txn-rail-strip-left { grid-column: 1; grid-row: 1; --txn-rail-open-w: var(--txn-outline-w); }
+  .txn-rail-right, .txn-rail-strip-right { grid-column: 3; grid-row: 1; --txn-rail-open-w: var(--txn-filters-w); }
+  .txn-rail[hidden], .txn-rail-strip[hidden] { display: none; }
+  .txn-rail, .txn-rail-strip { transition-property: none; }
+  @media (prefers-reduced-motion: no-preference) and (width >= 1080px) {
+    .txn-body-grid { transition: grid-template-columns var(--dur-3) var(--ease-in-out); }
+  }
   /* .txn-center is a real <section>, so it inherits the presentation page's global
      `section { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }` reset. As a
      grid item in .txn-body-grid's `minmax(0, 1fr)` centre track, an auto horizontal margin wins
@@ -2139,14 +2150,10 @@
   .txn-center { --txn-zen-bottom: var(--sp-8); --txn-zen-size: var(--target-comfortable); position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; border-right: var(--bd); max-width: none; margin-inline: 0; padding-inline: 0; }
 
   /* ---- trace ---- */
-  /* position:relative anchors the absolute scrubber header (tier 1) to the trace's
-     top strip; --txn-sticky-h is shared by that header and the turns-bar reservation. */
+  /* The timeline and turns bar are normal-flow rows above the flexible stream. */
   .txn-trace { --txn-sticky-h: calc(var(--control-h) + var(--sp-1)); position: relative; display: flex; flex-direction: column; min-height: 0; flex: 1; }
   .txn-trace-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); border-bottom: var(--bd); background: var(--surface-2); }
   .txn-trace-actions { display: inline-flex; align-items: center; justify-content: flex-end; gap: var(--sp-3); flex-wrap: wrap; }
-  /* when the scrubber header is revealed, drop the turns bar (tier 2) by the header
-     height so it sits flush BENEATH the scrubber instead of being covered by it. */
-  .txn-trace-pinned .txn-trace-head { margin-top: var(--txn-sticky-h); }
   .txn-trace-count { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
   .txn-viewtoggle .bs-seg-opt { height: var(--control-h-sm); }
 
@@ -2346,13 +2353,16 @@
   .txn-leg-tool { background: transparent; border: 1px solid var(--rule-strong); }
 
   /* ---- right rail ---- */
-  .txn-rail { display: flex; flex-direction: column; min-height: 0; background: var(--surface); }
+  .txn-rail { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: clip; background: var(--surface); }
+  .txn-rail > .txn-rail-body { box-sizing: border-box; width: calc(var(--txn-rail-open-w) - var(--stroke-hairline)); }
+  .txn-rail-right > .txn-rail-body { margin-inline-start: calc(100% - var(--txn-rail-open-w) + var(--stroke-hairline)); }
   .txn-rail-left { border-right: var(--bd); }
   /* per-panel header (split layout): an icon + lowercase title, count badge on filters */
   /* rail content inset is --sp-4, matching every other in-use rail/panel (the graph project rail,
      the commons facet rail, all cards) so the side panels read at one consistent inset. */
   .txn-rail-head { flex: none; display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-4); border-bottom: var(--bd); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); }
   .txn-rail-head .lucide { width: var(--ic-sm); height: var(--ic-sm); flex: none; color: var(--ink-3); }
+  .txn-rail-title { min-width: 0; overflow: hidden; white-space: nowrap; }
   .txn-rail-tabs { flex: none; gap: var(--sp-4); padding: 0 var(--sp-4); }
   .txn-rail-tab { padding: var(--sp-3) 2px; gap: var(--sp-2); }
   .txn-rail-tab .lucide { width: var(--ic-sm); height: var(--ic-sm); }
@@ -2370,7 +2380,9 @@
   .txn-rail-collapse:hover { color: var(--ink-strong); border-color: var(--rule-strong); }
   .txn-rail-collapse:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
   /* the collapsed strip: a thin full-height column with a single vertical re-open control. */
-  .txn-rail-strip { display: flex; flex-direction: column; min-height: 0; background: var(--surface); }
+  .txn-rail-strip { display: flex; flex-direction: column; min-width: 0; min-height: 0; width: var(--txn-rail-strip-w); overflow: clip; background: var(--surface); }
+  .txn-rail-strip-left { justify-self: start; }
+  .txn-rail-strip-right { justify-self: end; }
   .txn-rail-strip-left { border-right: var(--bd); }
   .txn-rail-strip-right { border-left: var(--bd); }
   /* the re-open button fills the strip; its icon + rotated label read vertically (writing-mode), so the
@@ -2660,7 +2672,7 @@
   .txn-body-grid[data-right-rail="closed"],
   .txn-body-grid[data-left-rail="closed"][data-right-rail="closed"],
   .txn-body-grid[data-right-rail="none"],
-  .txn-body-grid[data-left-rail="closed"][data-right-rail="none"] { grid-template-columns: 1fr; }
+  .txn-body-grid[data-left-rail="closed"][data-right-rail="none"] { grid-template-columns: 0 minmax(0, 1fr) 0; }
   .txn-rail-left, .txn-rail-right, .txn-rail-strip { display: none; }
   .txn-center { border-right: 0; }
   /* the rails are gone here, so there is nothing for zen to collapse and only the width handle
@@ -3929,7 +3941,7 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 /* zen: the rails and their strips leave, so the body is the center column alone. The
    control lives INSIDE the center column, so it sits left of the filters rail (and at the
    center's right edge when the left rail is closed) and never covers a rail control. */
-.txn-app.txn-ledger.txn-zen .txn-body-grid { grid-template-columns: minmax(0, 1fr); }
+.txn-app.txn-ledger.txn-zen .txn-body-grid { grid-template-columns: 0 minmax(0, 1fr) 0; }
 .txn-zen-control {
   position: absolute;
   z-index: 4;

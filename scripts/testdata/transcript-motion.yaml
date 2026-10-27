@@ -1,4 +1,10 @@
 motion: [no-preference, reduce]
+railCases:
+  - {name: user turns sidebar, side: left, label: user turns outline, collapsedWidth: 32}
+  - {name: filters sidebar, side: right, label: filters, collapsedWidth: 32}
+shellCases:
+  - {name: coordinated title and timeline on desktop, width: 1440, height: 1000}
+  - {name: coordinated title and timeline on phone, width: 390, height: 844}
 cases:
   - {name: session title, kind: header, initiallyOpen: true}
   - {name: session title on phone, kind: header, initiallyOpen: true, width: 390, height: 844}

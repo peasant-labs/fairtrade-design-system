@@ -416,6 +416,15 @@ export default function TranscriptViewer({
   const searchInputRef = useRef(null)
   const draggingRef = useRef(false)
   const readerDragRef = useRef(null)
+  const bodyGridRef = useRef(null)
+  const railFocusRef = useRef(null)
+  useLayoutEffect(() => {
+    const side = railFocusRef.current
+    if (!side) return
+    railFocusRef.current = null
+    const rail = bodyGridRef.current?.querySelector(`.txn-rail-${side}[aria-hidden="false"], .txn-rail-strip-${side}[aria-hidden="false"]`)
+    rail?.querySelector('.txn-rail-collapse, .txn-rail-reopen')?.focus({ preventScroll: true })
+  }, [leftRailOpen, rightRailOpen, zenActive])
   const activeTurnRef = useRef(activeTurn)
   const navigationTargetRef = useRef(null)
   useLayoutEffect(() => { activeTurnRef.current = activeTurn }, [activeTurn])
@@ -1205,37 +1214,37 @@ export default function TranscriptViewer({
           alone and the zen control is the one way back out. */}
       <div
         className="txn-body-grid"
+        ref={bodyGridRef}
         data-left-rail={zenActive ? 'none' : leftRailOpen ? 'open' : 'closed'}
         data-right-rail={zenActive ? 'none' : !tabHasFilters ? 'none' : rightRailOpen ? 'open' : 'closed'}
         data-zen={ledger ? (zenActive ? 'true' : 'false') : undefined}
       >
         {/* LEFT: outline */}
-        {!zenActive && (leftRailOpen ? (
-          <aside className="txn-rail txn-rail-left" aria-label="user turns outline">
+          <Collapsible as="aside" className="txn-rail txn-rail-left" aria-label="user turns outline"
+            open={!zenActive && leftRailOpen} keepMounted animateSize={false}>
             <div className="txn-rail-head">
-              <LayoutList size={14} aria-hidden="true" /> user turns
-              <button type="button" className="txn-rail-collapse" aria-label="collapse user turns outline" title="collapse" onClick={() => commitSidebarLayout({ outline: false })}>
+              <LayoutList size={14} aria-hidden="true" /> <span className="txn-rail-title">user turns</span>
+              <button type="button" className="txn-rail-collapse" aria-label="collapse user turns outline" title="collapse" onClick={() => { railFocusRef.current = 'left'; commitSidebarLayout({ outline: false }) }}>
                 <PanelLeftClose size={14} aria-hidden="true" />
               </button>
             </div>
             <div className="txn-rail-body" id="txn-rail-left-body">
               <OutlineRail viewModel={vm} tab={tab} presentation={presentation} activeTurn={activeTurn} onJump={(idx) => jumpTo(idx, { switchTab: false })} />
             </div>
-          </aside>
-        ) : (
-          <div className="txn-rail-strip txn-rail-strip-left">
-            <button type="button" className="txn-rail-reopen" aria-label="expand user turns outline" title="expand user turns" onClick={() => commitSidebarLayout({ outline: true })}>
+          </Collapsible>
+          <Collapsible className="txn-rail-strip txn-rail-strip-left"
+            open={!zenActive && !leftRailOpen} keepMounted animateSize={false}>
+            <button type="button" className="txn-rail-reopen" aria-label="expand user turns outline" title="expand user turns" onClick={() => { railFocusRef.current = 'left'; commitSidebarLayout({ outline: true }) }}>
               <PanelLeftOpen size={14} aria-hidden="true" />
               <span className="txn-rail-strip-label">user turns</span>
             </button>
-          </div>
-        ))}
+          </Collapsible>
 
         {/* CENTER */}
         <section className="txn-center" role="tabpanel" id={`${tabsId}-panel`} aria-labelledby={`${tabsId}-${tab}`}>
           {tab === 'trace' && (
             <div className={'txn-trace' + (sticky && viewMode === 'list' ? ' txn-trace-pinned' : '')}>
-              {sticky && viewMode === 'list' && (
+              <Collapsible open={sticky && viewMode === 'list'} className="txn-sticky-disclosure">
                 <div className="txn-sticky">
                   {ledger ? (
                     /* the pinned bar is the timeline alone: the title already sits in the
@@ -1253,7 +1262,7 @@ export default function TranscriptViewer({
                     </>
                   )}
                 </div>
-              )}
+              </Collapsible>
               <div className={"txn-trace-head" + (viewMode === 'graph' ? ' txn-trace-head-graph' : '')}>
                 <span className="txn-trace-count tnum">
                   {visibleTurns.length === turns.length ? `${turns.length} turns` : `${visibleTurns.length} of ${turns.length} turns`}
@@ -1548,12 +1557,12 @@ export default function TranscriptViewer({
         </section>
 
         {/* RIGHT: filters */}
-        {zenActive ? null : !tabHasFilters ? null : rightRailOpen ? (
-          <aside className="txn-rail txn-rail-right" aria-label="filters">
+          <Collapsible as="aside" className="txn-rail txn-rail-right" aria-label="filters"
+            open={!zenActive && tabHasFilters && rightRailOpen} keepMounted animateSize={false}>
             <div className="txn-rail-head">
-              <SlidersHorizontal size={14} aria-hidden="true" /> filters
+              <SlidersHorizontal size={14} aria-hidden="true" /> <span className="txn-rail-title">filters</span>
               {filtersActive > 0 && <span className="chipx-count unread tnum">{filtersActive}</span>}
-              <button type="button" className="txn-rail-collapse" aria-label="collapse filters" title="collapse" onClick={() => commitSidebarLayout({ filters: false })}>
+              <button type="button" className="txn-rail-collapse" aria-label="collapse filters" title="collapse" onClick={() => { railFocusRef.current = 'right'; commitSidebarLayout({ filters: false }) }}>
                 <PanelRightClose size={14} aria-hidden="true" />
               </button>
             </div>
@@ -1570,15 +1579,14 @@ export default function TranscriptViewer({
                 onJumpLatest={() => jumpTo(visibleTurns[visibleTurns.length - 1]?.index ?? 0, { switchTab: false })}
               />
             </div>
-          </aside>
-        ) : (
-          <div className="txn-rail-strip txn-rail-strip-right">
-            <button type="button" className="txn-rail-reopen" aria-label="expand filters" title="expand filters" onClick={() => commitSidebarLayout({ filters: true })}>
+          </Collapsible>
+          <Collapsible className="txn-rail-strip txn-rail-strip-right"
+            open={!zenActive && tabHasFilters && !rightRailOpen} keepMounted animateSize={false}>
+            <button type="button" className="txn-rail-reopen" aria-label="expand filters" title="expand filters" onClick={() => { railFocusRef.current = 'right'; commitSidebarLayout({ filters: true }) }}>
               <PanelRightOpen size={14} aria-hidden="true" />
               <span className="txn-rail-strip-label">filters{filtersActive > 0 ? <span className="chipx-count unread tnum">{filtersActive}</span> : null}</span>
             </button>
-          </div>
-        )}
+          </Collapsible>
       </div>
 
       {/* ===================== OVERLAYS ===================== */}
