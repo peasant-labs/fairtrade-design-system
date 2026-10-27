@@ -67,5 +67,32 @@ navigation:
   - {name: thinking search reaches the rendered thinking, turn: 4, where: thinking, query: Distinct amber}
   - {name: ordinary prose search stays at the prose source, turn: 2, where: body, query: Later prose destination}
 initial:
-  - {name: wordless initial position reveals its relocated tool, turn: 3, where: gamma}
-  - {name: wordless initial position reveals its relocated thinking, turn: 4, where: thinking}
+  - {name: wordless initial position reveals its relocated tool, turn: 3, where: gamma, activeTurn: 0, expectedCallbacks: [], expectedHistory: [], scrollBehavior: auto}
+  - {name: wordless initial position reveals its relocated thinking, turn: 4, where: thinking, activeTurn: 0, expectedCallbacks: [], expectedHistory: [], scrollBehavior: auto}
+  - {name: prose initial position preserves independent selection, turn: 2, where: body, activeTurn: 0, expectedCallbacks: [], expectedHistory: [], scrollBehavior: auto}
+keyboard:
+  - name: wordless tool search steps forward and reverses at the last card
+    query: epsilon-output
+    source: 7
+    steps: [{key: j, expected: 8}, {key: j, expected: 8}, {key: k, expected: 6}, {key: k, expected: 5}, {key: j, expected: 6}]
+  - name: wordless tool search steps backward and reverses
+    query: epsilon-output
+    source: 7
+    steps: [{key: k, expected: 6}, {key: j, expected: 8}, {key: k, expected: 6}]
+  - name: first group wordless tool steps to the next request
+    query: gamma-output
+    source: 3
+    steps: [{key: ArrowDown, expected: 5}, {key: ArrowUp, expected: 2}, {key: ArrowDown, expected: 5}]
+  - name: Think search steps backward through the first card and reverses
+    query: Distinct amber
+    source: 4
+    steps: [{key: ArrowUp, expected: 2}, {key: k, expected: 1}, {key: k, expected: 0}, {key: k, expected: 0}, {key: j, expected: 1}]
+  - name: Think search steps forward to the next request
+    query: Distinct amber
+    source: 4
+    steps: [{key: j, expected: 5}, {key: k, expected: 2}]
+  - name: filtered prompts remain excluded from action search stepping
+    query: epsilon-output
+    source: 7
+    hidePrompts: true
+    steps: [{key: ArrowUp, expected: 6}, {key: ArrowUp, expected: 2}, {key: ArrowDown, expected: 6}, {key: ArrowDown, expected: 6}]

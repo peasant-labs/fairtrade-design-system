@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { loadFixturePair, withMountedSource, click } from './mounted-parts.mjs'
 
 const { fixture } = loadFixturePair('scripts/testdata/transcript-action-ownership.yaml', 'scripts/testdata/transcript-action-ownership.manifest.yaml', {
-  groups: 'requiredGroupNames', disclosures: 'requiredDisclosureNames', filters: 'requiredFilterNames', navigation: 'requiredNavigationNames', initial: 'requiredInitialNames',
+  groups: 'requiredGroupNames', disclosures: 'requiredDisclosureNames', filters: 'requiredFilterNames', navigation: 'requiredNavigationNames', initial: 'requiredInitialNames', keyboard: 'requiredKeyboardNames',
 })
 const caps = { canEdit: false, canLabel: false, canContribute: false, canChangeVisibility: false, canExport: false }
 await withMountedSource(async ({ load, mount, window, React }) => {
@@ -90,11 +90,54 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     await m.unmount()
   }
   for (const row of fixture.initial) {
-    const m = await mount(render({ initialPosition: { kind: 'turn', turnIndex: row.turn }, filters: { categories: { prompts: true, responses: true, thinking: true, toolcalls: true }, toolGroups: {}, tags: {}, views: { compact: true, hidden: false }, checkpoint: 'all' } }))
-    await m.settle(25)
-    const target = row.where === 'thinking' ? m.container.querySelector('.txn-thinking') : tool(m.container, row.where)
-    assert.equal(target.querySelector('button').getAttribute('aria-expanded'), 'true', `${row.name}: relocated output revealed`)
-    assert.equal(target.closest('.txn-modelactions').querySelector('button').getAttribute('aria-expanded'), 'true', `${row.name}: relocated list revealed`)
+    const callbacks = [], history = [], scrolls = []
+    const prototype = window.HTMLElement.prototype
+    const previous = { scrollTo: prototype.scrollTo, scrollIntoView: prototype.scrollIntoView, pushState: window.history.pushState, replaceState: window.history.replaceState }
+    prototype.scrollTo = function (options) { scrolls.push(options) }
+    prototype.scrollIntoView = function (options) { scrolls.push(options) }
+    window.history.pushState = () => history.push('push')
+    window.history.replaceState = () => history.push('replace')
+    try {
+      const m = await mount(render({ initialPosition: { kind: 'turn', turnIndex: row.turn }, activeTurn: row.activeTurn, onActiveTurnChange: index => callbacks.push(index), filters: { categories: { prompts: true, responses: true, thinking: true, toolcalls: true }, toolGroups: {}, tags: {}, views: { compact: true, hidden: false }, checkpoint: 'all' } }))
+      await m.settle(80)
+      if (row.where !== 'body') {
+        const target = row.where === 'thinking' ? m.container.querySelector('.txn-thinking') : tool(m.container, row.where)
+        assert.equal(target.querySelector('button').getAttribute('aria-expanded'), 'true', `${row.name}: relocated output revealed`)
+        assert.equal(target.closest('.txn-modelactions').querySelector('button').getAttribute('aria-expanded'), 'true', `${row.name}: relocated list revealed`)
+      }
+      assert.deepEqual(callbacks, row.expectedCallbacks, `${row.name}: positioning must not select`)
+      assert.deepEqual(history, row.expectedHistory, `${row.name}: positioning must not write history`)
+      assert.equal(scrolls.at(-1)?.behavior, row.scrollBehavior, `${row.name}: positioning retains automatic scrolling`)
+      assert.ok(m.container.querySelector(`#turn-${row.activeTurn} .txn-active`), `${row.name}: controlled selection remains independent`)
+      await m.unmount()
+    } finally {
+      prototype.scrollTo = previous.scrollTo
+      prototype.scrollIntoView = previous.scrollIntoView
+      window.history.pushState = previous.pushState
+      window.history.replaceState = previous.replaceState
+    }
+  }
+  for (const row of fixture.keyboard) {
+    const selected = []
+    const m = await mount(render({ search: row.query, onActiveTurnChange: index => selected.push(index) }))
+    if (row.hidePrompts) {
+      const input = [...m.container.querySelectorAll('.txn-checkrow')].find(el => el.querySelector('.txn-cr-label')?.textContent.trim() === 'prompts')?.querySelector('input')
+      await press(m, input)
+    }
+    const key = value => window.dispatchEvent(new window.KeyboardEvent('keydown', { ...value, bubbles: true, cancelable: true }))
+    await m.act(() => key({ key: 'f', ctrlKey: true }))
+    await m.settle(80)
+    assert.deepEqual(selected, [row.source], `${row.name}: search selects its original action source`)
+    await m.act(() => key({ key: 'Escape' }))
+    assert.equal(m.container.querySelector('.txn-search'), null, `${row.name}: search closes before stepping`)
+    const stream = m.container.querySelector('.txn-stream')
+    await m.act(() => stream.focus())
+    for (const step of row.steps) {
+      await m.act(() => key({ key: step.key }))
+      await m.settle(20)
+      assert.equal(selected.at(-1), step.expected, `${row.name}: ${step.key} selects directional eligible neighbor`)
+      assert.ok(m.container.querySelector(`#turn-${step.expected} .txn-active`), `${row.name}: selection stays on an eligible card`)
+    }
     await m.unmount()
   }
 })

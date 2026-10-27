@@ -468,9 +468,9 @@ export default function TranscriptViewer({
     if (el) actionRefs.current.set(key, el)
     else actionRefs.current.delete(key)
   }, [])
-  function revealAction(turn, where) {
+  function revealAction(turn, where, { select = true } = {}) {
     if (where !== 'body' && where !== 'thinking') setOpenTools(previous => ({ ...previous, [where]: true }))
-    setSearchReveal({ turn, where, sequence: ++revealSequence.current })
+    setSearchReveal({ turn, where, select, sequence: ++revealSequence.current })
   }
 
   /* ── cooked slices off the VM ───────────────────────────────────────────────── */
@@ -621,7 +621,7 @@ export default function TranscriptViewer({
 
     const projected = visibleTurns.find(turn => turn.index === position.turnIndex)
     const location = ledger && !String(projected?.displayContent ?? projected?.content ?? '').trim() ? actionLayout.locations.get(position.turnIndex) : null
-    if (location) revealAction(position.turnIndex, location.where)
+    if (location) revealAction(position.turnIndex, location.where, { select: false })
     else el.scrollIntoView({ block: 'start', behavior: 'auto' })
     latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()
     return 'applied'
@@ -754,6 +754,16 @@ export default function TranscriptViewer({
   function stepTurn(dir) {
     const ids = (cardTurns.length ? cardTurns : visibleTurns).map((t) => t.index)
     const cur = ids.indexOf(activeTurnRef.current)
+    if (cur < 0) {
+      // Search may select a wordless source whose actions render in another card.
+      // Step around that source in transcript order, never around its group owner.
+      const source = turns.findIndex(turn => turn.index === activeTurnRef.current)
+      const eligible = new Set(ids)
+      const candidates = dir > 0 ? turns.slice(source + 1) : turns.slice(0, source).reverse()
+      const next = candidates.find(turn => eligible.has(turn.index))?.index ?? ids[dir > 0 ? ids.length - 1 : 0]
+      if (next != null && next !== activeTurnRef.current) jumpTo(next, { switchTab: false })
+      return
+    }
     const next = Math.max(0, Math.min(ids.length - 1, cur + dir))
     if (ids[next] != null && ids[next] !== activeTurnRef.current) jumpTo(ids[next], { switchTab: false })
   }
@@ -987,8 +997,8 @@ export default function TranscriptViewer({
       const top = ledger && searchReveal.where !== 'body'
         ? sc.scrollTop + el.getBoundingClientRect().top - sc.getBoundingClientRect().top - padding
         : turnScrollTop(sc, el)
-      sc.scrollTo({ top, behavior: reduce ? 'auto' : 'smooth' })
-      selectTurn(searchReveal.turn)
+      sc.scrollTo({ top, behavior: !searchReveal.select || reduce ? 'auto' : 'smooth' })
+      if (searchReveal.select) selectTurn(searchReveal.turn)
     }
     const frame = requestAnimationFrame(scroll)
     return () => { cancelled = true; cancelAnimationFrame(frame) }

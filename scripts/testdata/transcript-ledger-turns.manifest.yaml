@@ -94,7 +94,19 @@ requiredMutationNames:
   - hidden source boundaries are lost before grouping
   - stale open children override explicit parent collapse
   - relocated search returns to the source article
+  - positioning-only action reveal selects its source
+  - keyboard action sources lose their insertion position
 mutations:
+  - name: positioning-only action reveal selects its source
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "if (searchReveal.select) selectTurn(searchReveal.turn)"
+    replace: "selectTurn(searchReveal.turn)"
+    expectedDiagnostic: "positioning must not select"
+  - name: keyboard action sources lose their insertion position
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "    if (cur < 0) {"
+    replace: "    if (false) {"
+    expectedDiagnostic: "selects directional eligible neighbor"
   - name: hidden source boundaries are lost before grouping
     file: src/ui/transcript/action-groups.js
     find: "for (const source of turns)"

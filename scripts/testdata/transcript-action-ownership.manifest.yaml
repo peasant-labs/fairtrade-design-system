@@ -18,3 +18,11 @@ requiredNavigationNames:
 requiredInitialNames:
   - wordless initial position reveals its relocated tool
   - wordless initial position reveals its relocated thinking
+  - prose initial position preserves independent selection
+requiredKeyboardNames:
+  - wordless tool search steps forward and reverses at the last card
+  - wordless tool search steps backward and reverses
+  - first group wordless tool steps to the next request
+  - Think search steps backward through the first card and reverses
+  - Think search steps forward to the next request
+  - filtered prompts remain excluded from action search stepping
