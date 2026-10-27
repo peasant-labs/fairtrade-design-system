@@ -762,10 +762,37 @@ function DefaultTranscriptApp({ theme }) {
   // `?transcript=ledger` reads the same demo session through the ledger presentation.
   // `?transcript=ledger-system` keeps that canonical session and appends one synthetic system
   // turn, so the built app renders the compact system row (the canonical demo has none).
-  const ledger = search === 'ledger' || search === 'ledger-system'
+  const ledger = search === 'ledger' || search === 'ledger-system' || search === 'ledger-actions'
   const vm = useMemo(() => {
     if (search === 'pi') return adaptTranscript(piPayload)
     const base = buildMockupVM()
+    if (search === 'ledger-actions') {
+      // two wordless agent turns in a row, so the built app shows the one model-actions block
+      // a run of thinking and tool work collapses into.
+      const n = base.turns.length
+      const tool = base.turns.flatMap((turn) => turn.toolCalls ?? []).find(Boolean)
+      const turns = [
+        ...base.turns,
+        {
+          index: n,
+          role: 'assistant',
+          label: String(n + 1),
+          time: '1m ago',
+          content: '',
+          thinking: { text: 'The before GIF needs the fix absent, so record it from the worktree on main.\nKeep the same script and the same frame range.', words: 28 },
+          toolCalls: [],
+        },
+        {
+          index: n + 1,
+          role: 'assistant',
+          label: String(n + 2),
+          time: '30s ago',
+          content: '',
+          toolCalls: tool ? [{ ...tool, id: `${tool.id}-demo-actions` }] : [],
+        },
+      ]
+      return { ...base, turns, session: { ...base.session, turnCount: turns.length } }
+    }
     if (search !== 'ledger-system') return base
     const turns = [
       ...base.turns,

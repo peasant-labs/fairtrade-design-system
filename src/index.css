@@ -3819,6 +3819,15 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   .txn-modelactions-label { color: var(--ink-2); font-weight: 700; }
   .txn-modelactions-summary { margin-inline-start: auto; font-variant-numeric: tabular-nums; }
   .txn-modelactions-rows { padding: 0 var(--sp-3) var(--sp-2); }
+  .txn-modelactions-rows .txn-toolcall { margin-top: 0; border: 0; background: transparent; }
+  .txn-modelactions-rows .txn-tc-head { background: transparent; border: 0; padding-inline: 0; padding-block: var(--sp-1); }
+  .txn-modelactions-rows .txn-tc-head:hover { background: transparent; color: var(--ink); }
+  .txn-modelactions-rows .txn-tc-chev { display: none; }
+  .txn-modelactions-rows .txn-thinking { border-top: 0; margin-top: 0; }
+  .txn-modelactions-rows .txn-thinking-toggle { padding-block: var(--sp-1); }
+  .txn-modelactions-rows .txn-thinking-toggle > svg:first-child { display: none; }
+  .txn-modelactions-rows .txn-thinking-body { margin-inline-start: var(--sp-4); padding-inline-start: calc(var(--sp-3) - var(--stroke-hairline)); }
+
   .txn-modelactions-turn + .txn-modelactions-turn { margin-top: var(--sp-2); }
   .txn-ledger .txn-turnwork { margin-top: var(--sp-3); padding-inline: var(--sp-4); }
   .txn-ledger .txn-turnwork .txn-work { margin-top: 0; }
