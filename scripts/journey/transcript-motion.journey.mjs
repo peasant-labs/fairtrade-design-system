@@ -13,6 +13,22 @@ assertExactNames(spec.shellCases.map(row => row.name), manifest.requiredShellNam
 assertExactNames(spec.railCases.map(row => row.name), manifest.requiredRailNames, 'transcript sidebar motion cases')
 const origin = `http://localhost:${process.env.JOURNEY_APP_PORT || 5180}`
 
+test('transcript demo follows the page theme without resetting the reader', async ({ page }, info) => {
+  await page.goto(`${origin}/?app=transcript&transcript=ledger-actions&fb=off&theme=${info.project.name}#inuse`)
+  const viewer = page.locator('.txn-app')
+  await expect(viewer).toHaveAttribute('data-theme', info.project.name)
+  await page.locator('.txn-thinking-toggle').first().click()
+  await expect(page.locator('.txn-thinking-toggle').first()).toHaveAttribute('aria-expanded', 'true')
+  const position = await page.locator('.txn-stream').evaluate(el => el.scrollTop)
+  // Invoke the real page control, whose delegated click updates the root theme.
+  await page.locator('.theme-btn').evaluate(button => button.click())
+  const next = info.project.name === 'light' ? 'dark' : 'light'
+  await expect(page.locator('html')).toHaveAttribute('data-theme', next)
+  await expect(viewer).toHaveAttribute('data-theme', next)
+  await expect(page.locator('.txn-thinking-toggle').first()).toHaveAttribute('aria-expanded', 'true')
+  expect(await page.locator('.txn-stream').evaluate(el => el.scrollTop)).toBe(position)
+})
+
 /* CSS owns sidebar geometry; the shared disclosure owns painted presence. Check the first
    frame before seeking, then interrupt halfway to verify a reversal keeps painted width. */
 for (const motion of spec.motion) for (const row of spec.railCases) {
@@ -20,6 +36,7 @@ for (const motion of spec.motion) for (const row of spec.railCases) {
     await page.setViewportSize({ width: 1440, height: 1000 })
     await page.emulateMedia({ reducedMotion: motion })
     await page.goto(`${origin}/?app=transcript&transcript=ledger-actions&fb=off&theme=${info.project.name}#inuse`)
+    await expect(page.locator('.txn-app')).toHaveAttribute('data-theme', info.project.name)
     // Exit content must survive even without browser support for discrete display transitions.
     await page.addStyleTag({ content: '.txn-rail, .txn-rail-strip { transition-behavior: normal !important; }' })
     await page.evaluate(async () => {

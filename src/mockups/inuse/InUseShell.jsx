@@ -1,4 +1,6 @@
 import { ScrollText, Users, Waypoints } from 'lucide-react'
+import { useSyncExternalStore } from 'react'
+import { onThemeChange } from '../../effects.jsx'
 import Shell from '../../ui/inuse/InUseShell.jsx'
 import TranscriptApp from './TranscriptApp.jsx'
 import CommonsApp from './CommonsApp.jsx'
@@ -16,7 +18,14 @@ const APPS = [
   { id: 'graph', mark: 'peasant', icon: Waypoints },
 ]
 
-export default function InUseShell({ theme }) {
+const readTheme = () => document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark'
+const serverTheme = () => 'dark'
+
+export default function InUseShell({ theme: suppliedTheme }) {
+  // The presentation tree is memoized; subscribe here so its mounted apps still
+  // follow the page theme without rerendering the entire documentation site.
+  const pageTheme = useSyncExternalStore(onThemeChange, readTheme, serverTheme)
+  const theme = suppliedTheme ?? pageTheme
   const initialApp = new URLSearchParams(window.location.search).get('app')
   return (
     <Shell

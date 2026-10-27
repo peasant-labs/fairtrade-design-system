@@ -37,6 +37,8 @@ package is pre-1.0, so minor/patch semantics are best-effort.
   the extra downward jump before the header collapses.
 - Disclosure and sidebar contents no longer flash at the animation-to-hidden
   handoff. Sidebar exit painting does not depend on CSS display transitions.
+- The mounted transcript demo follows the page's initial theme and theme changes
+  without resetting the reader's open output or scroll position.
 
 ## 0.0.47 - 2026-10-27
 
