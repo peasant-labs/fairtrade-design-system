@@ -21,15 +21,15 @@ summaryCases:
       - {id: s2, name: Bash, group: bash, exitCode: 1, isError: true, durationMs: 4100}
       - {id: s3, name: Read, group: read, filePath: scripts/testdata/fixture.yaml, durationMs: 200}
       - {id: s4, name: Edit, group: edits, filePath: src/lib/tasks.ts, durationMs: 300}
-    expected: {calls: 4, commands: 2, files: 2, edits: 1, failed: 1, durationMs: 12800}
-    countLabel: 2 commands, 2 files, 1 edit
+    expected: {calls: 4, commands: 2, files: 1, edits: 1, failed: 1, durationMs: 12800}
+    countLabel: 2 commands, 1 file, 1 edit
     metaLabel: 4 calls, 1 failed, 13s
   - name: singular counts read as one
     tools:
       - {id: s1, name: Bash, group: bash, exitCode: 0}
       - {id: s2, name: Edit, group: edits, filePath: src/a.ts}
-    expected: {calls: 2, commands: 1, files: 1, edits: 1, failed: 0, durationMs: 0}
-    countLabel: 1 command, 1 file, 1 edit
+    expected: {calls: 2, commands: 1, files: 0, edits: 1, failed: 0, durationMs: 0}
+    countLabel: 1 command, 1 edit
     metaLabel: 2 calls
   - name: a turn without counting tools falls back to its call count
     tools:
@@ -116,7 +116,7 @@ summaryCases:
     metaLabel: ''
 
 mountedSummary:
-  countLabel: 2 commands, 2 files, 1 edit
+  countLabel: 2 commands, 1 file, 1 edit
   metaLabel: 5 calls, 1 failed, 13s
 
 # the query that matches only the system turn's recorded text, used to drive the real
@@ -220,6 +220,8 @@ cases:
     kind: host-actions
   - name: a role change draws one rule and the first turn draws none
     kind: turn-rules
+  - name: a turn with no words is inline detail, not a card
+    kind: detail-turns
   - name: the system turn's heading follows the page level
     kind: heading-level
     # the viewer's page level; its turn headings sit two levels below it (1 -> h3, 2 -> h4)

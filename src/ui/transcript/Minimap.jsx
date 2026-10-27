@@ -18,10 +18,12 @@ import { useRef } from 'react'
 
 /** @typedef {import('./view-model.js').TurnVM} TurnVM */
 
-/** the tick kind of a cooked turn: user prompt, tool work, or agent prose. */
+/** the tick kind of a cooked turn: the role decides it. A user prompt fills the bar, an agent
+   turn is the amber band, and a system notice is the short neutral mark. Tool calls ride on the
+   agent turn that made them, so they never turn a run of agent turns into neutral marks. */
 function segmentKind(turn) {
   if (turn.role === 'user') return 'user'
-  if (turn.role === 'system' || (turn.toolCalls?.length ?? 0) > 0) return 'tool'
+  if (turn.role === 'system') return 'tool'
   return 'agent'
 }
 

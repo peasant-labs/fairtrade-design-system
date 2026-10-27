@@ -95,6 +95,10 @@ export default function TurnCard({
   if (!turn) return null
   const isUser = turn.role === 'user'
   const isEarlier = !!turn.partition && turn.partition !== 'main'
+  /* Only a turn with words earns a card. An agent turn that is only thinking or tool work is
+     inline detail: no role line, no number, no time, just its lines under the previous turn. */
+  const hasProse = String(turn.displayContent ?? turn.content ?? '').trim().length > 0
+  const ledgerDetail = ledger && !isUser && !hasProse
   const timeLabel = turn.time || turnTimeLabel(turn.timestamp)
   const isSub = !!turn.depth && turn.depth > 0
   // The assistant is the agent, so a present canonical provider selects its
@@ -209,17 +213,9 @@ export default function TurnCard({
         </div>
       )}
       <Markdown text={turn.displayContent ?? turn.content} />
-      {turn.thinking && <Thinking block={turn.thinking} />}
+      {!ledger && turn.thinking && <Thinking block={turn.thinking} />}
       <UsageDisclosure usage={turn.usage} />
-      {turn.toolCalls && (ledger ? (
-        /* one grouped panel per turn: the computed summary above the same tool rows */
-        <TranscriptWorkGroup
-          tools={turn.toolCalls}
-          openTools={openTools}
-          onToggle={toggleTool}
-          expandAll={expandAll}
-        />
-      ) : (
+      {turn.toolCalls && !ledger && (
         turn.toolCalls.map((t) => (
           <ToolCall
             key={t.id}
@@ -228,9 +224,27 @@ export default function TurnCard({
             onToggle={() => toggleTool(t.id)}
           />
         ))
-      ))}
+      )}
     </>
   )
+
+  /* A ledger turn's work is its own block after the card: the prose ends the turn, and the tool
+     and thinking lines follow as a separate group rather than a footer inside it. */
+  const workBlock = ledger && turn.role !== 'system' && (turn.toolCalls?.length || turn.thinking) ? (
+    <div className="txn-turnwork">
+      {turn.toolCalls?.length ? (
+        <TranscriptWorkGroup
+          tools={turn.toolCalls}
+          thinking={turn.thinking}
+          openTools={openTools}
+          onToggle={toggleTool}
+          expandAll={expandAll}
+        />
+      ) : (
+        <Thinking block={turn.thinking} />
+      )}
+    </div>
+  ) : null
 
   const cardClass =
     'turn txn-turn ' +
@@ -275,7 +289,7 @@ export default function TurnCard({
               model changed: {modelName(turn.modelChangedFrom)} <span aria-hidden="true">→</span><span className="txn-sr"> to</span> {modelName(turn.effectiveModel)}
             </div>
           )}
-          {isSub ? (
+          {isSub && !ledger ? (
             <div className="subtask txn-subtask">
               <div className="subtask-head">
                 <CornerDownRight size={14} aria-hidden="true" /> <span className="who">{turn.agentName}</span> subagent
@@ -290,11 +304,19 @@ export default function TurnCard({
                 </span>
               </div>
             </div>
+          ) : ledgerDetail ? (
+            <>
+              <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}</TurnHeading>
+              {workBlock}
+            </>
           ) : (
-            <div className={cardClass}>
-              {head}
-              <div id={bodyId} hidden={!expanded}>{body}</div>
-            </div>
+            <>
+              <div className={cardClass}>
+                {head}
+                <div id={bodyId} hidden={!expanded}>{body}</div>
+              </div>
+              {workBlock}
+            </>
           )}
         </>
       )}

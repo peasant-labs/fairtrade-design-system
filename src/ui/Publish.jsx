@@ -58,9 +58,9 @@ const STATE_META = {
   publishing: { icon: Loader, text: ({ collectives }) => (collectives ? `publishing to ${plural(collectives, 'collective', 'collectives')}` : 'publishing'), action: 'publish' },
   /* up to date is the default, so it goes unsaid. "public" and "private" come only from the host's
      `visibility`, never from a missing count: a transcript no collective reads can still be public. */
-  published: { icon: CircleCheck, text: ({ collectives, visibility }) => visibilityWord(visibility) === 'public' ? 'published, public' : collectives ? `published to ${plural(collectives, 'collective', 'collectives')}` : visibilityWord(visibility) === 'private' ? 'published, private' : 'published', action: 'update' },
-  'new-turns': { icon: CircleFadingArrowUp, text: () => 'needs update', action: 'update' },
-  'auto-publish': { icon: Repeat, text: ({ collective }) => (collective ? `auto-publish on, ${collective}` : 'auto-publish on'), action: 'update' },
+  published: { icon: CircleCheck, text: ({ collectives, visibility }) => visibilityWord(visibility) === 'public' ? 'published, public' : collectives ? `published to ${plural(collectives, 'collective', 'collectives')}` : visibilityWord(visibility) === 'private' ? 'published, private' : 'published', action: 'publish' },
+  'new-turns': { icon: CircleFadingArrowUp, text: () => 'needs update', action: 'publish' },
+  'auto-publish': { icon: Repeat, text: ({ collective }) => (collective ? `auto-publish on, ${collective}` : 'auto-publish on'), action: 'publish' },
   'outside-lists': { icon: ListX, text: () => 'not published, outside your saved lists', action: 'publish' },
 }
 

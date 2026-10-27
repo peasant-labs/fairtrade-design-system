@@ -118,7 +118,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   const PINNED_TURN = turns[3].index
 
   /** the tick kind the minimap must show for a cooked turn. */
-  const kindOf = (turn) => (turn.role === 'user' ? 'user' : turn.role === 'system' || (turn.toolCalls?.length ?? 0) > 0 ? 'tool' : 'agent')
+  /* the role decides the tick kind: a tool call never demotes an agent turn to a neutral mark. */
+  const kindOf = (turn) => (turn.role === 'user' ? 'user' : turn.role === 'system' ? 'tool' : 'agent')
 
   /** mount the viewer, then scroll the trace so the pinned header (the ledger chrome) renders. */
   async function pinHeader(mounted) {

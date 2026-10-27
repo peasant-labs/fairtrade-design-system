@@ -117,7 +117,7 @@ mutations:
     expectedDiagnostic: "the ledger prose fills the reader width: the ledger reader must clear the measured prose cap with max-inline-size: none"
   - name: the zen gutter is removed
     file: src/index.css
-    find: ".txn-ledger .txn-stream { padding-inline-end: calc(var(--txn-zen-size) + var(--sp-4)); }"
+    find: ".txn-ledger .txn-stream { padding-inline: calc(var(--txn-zen-size) + var(--sp-4)); }"
     replace: ".txn-ledger .txn-stream { padding-inline-end: var(--sp-4); }"
     expectedDiagnostic: "the zen control never covers the reader: the ledger stream must reserve the control's inline-end gutter"
   - name: the width handle straddles the text edge

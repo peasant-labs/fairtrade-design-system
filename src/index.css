@@ -2256,6 +2256,9 @@
   .txn-subtask .txn-turn { margin-top: 0; border: 0; }
 
   /* checkpoint marker */
+  /* the ledger marks a commit with the chip alone: the whiskers read as stray rules */
+  .txn-ledger .txn-checkpoint { justify-content: center; border-bottom: 0; }
+  .txn-ledger .txn-checkpoint .r { display: none; }
   .txn-checkpoint .mkc { gap: var(--sp-2); flex-wrap: wrap; }
   .txn-checkpoint .mkc .lucide { color: var(--olive); }
   .txn-cp-msg { color: var(--ink-2); }
@@ -3756,10 +3759,12 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
    opt-in presentation adds, so the classic card is untouched. Tokens only, radius 0, both
    themes free. */
 .txn-ledger { --txn-reader-width: 840px; }
-.txn-turnwrap-ledger { max-inline-size: var(--txn-reader-width); margin-inline: auto 0; }
+.txn-turnwrap-ledger { max-inline-size: var(--txn-reader-width); margin-inline: auto; }
 .txn-turn.txn-turn-ledger { background: transparent; border: 0; }
 /* a faint rule marks a change of role between adjacent turns, and never opens the trace. */
-.txn-ledger .txn-turn-rule { border: 0; border-top: var(--bd); opacity: .7; margin: var(--sp-4) 0; }
+/* the rule belongs to the reader column, not the scrolled stream: without the cap it runs out
+   to the stream's left edge while the turns sit right-aligned inside the reading width. */
+.txn-ledger .txn-turn-rule { border: 0; border-top: var(--bd); opacity: .7; margin-block: var(--sp-4); margin-inline: auto; max-inline-size: var(--txn-reader-width); }
 
 /* the active marker stays: the leading rail is an inset shadow, so a borderless ledger turn
    still shows which turn is current. */
@@ -3770,7 +3775,7 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
    The reader column is right-aligned inside the stream (margin-inline: auto 0, as on the turn
    column), so the phase takes the same trailing alignment. Sticky behaviour and the vertical
    rhythm stay. */
-.txn-ledger .txn-phase { max-inline-size: var(--txn-reader-width); margin-inline: auto 0; }
+.txn-ledger .txn-phase { max-inline-size: var(--txn-reader-width); margin-inline: auto; }
 
 .txn-turnhead-ledger { gap: var(--sp-2); }
 .txn-roleico {
@@ -3790,6 +3795,9 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
    --txn-work-name-offset carries the summary text past the row's leading chevron, its kind
    icon and their gaps, so the summary starts on the tool-NAME column. */
 .txn-work { --txn-work-inline: var(--sp-3); --txn-work-name-offset: calc(var(--ic-sm) + var(--sp-3) + var(--ic-sm) + var(--sp-2)); margin-top: var(--sp-4); padding-top: var(--sp-1); border-top: var(--bd); }
+  .txn-work-toggle { display: flex; align-items: baseline; gap: var(--sp-2); width: 100%; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: start; cursor: pointer; }
+  .txn-work-toggle:hover { color: var(--ink); }
+  .txn-work-toggle:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
 .txn-work-head {
   display: flex; align-items: center; gap: var(--sp-2);
   min-height: var(--target-min);
@@ -3799,6 +3807,34 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 }
 .txn-work-count { color: var(--ink-2); font-weight: 700; }
 .txn-work-meta { margin-left: auto; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  /* the work block is its own row after the turn card, on the same reading edge as the prose */
+  .txn-ledger .txn-turnwork { margin-top: var(--sp-3); padding-inline: var(--sp-4); }
+  .txn-ledger .txn-turnwork .txn-work { margin-top: 0; }
+  /* the ledger draws a turn's work as branch lines under the prose: no card per call */
+  /* the reference has no rule between the prose and the work, no chevron on a row, and the
+     summary line itself is the click target that opens the rows */
+  .txn-ledger .txn-work { border-top: 0; padding-top: 0; }
+  .txn-ledger .txn-work-head { padding-inline: 0; }
+  .txn-ledger .txn-work-head .txn-work-count { padding-inline-start: 0; }
+  .txn-ledger .txn-work-rows .txn-tc-chev { display: none; }
+  /* no leader line runs down the work list; the rows sit on the reading edge and each row's
+     own icon names it */
+  .txn-ledger .txn-work-rows { margin-inline-start: 0; padding-inline-start: 0; border-inline-start: 0; }
+  .txn-ledger .txn-work-rows .txn-toolcall { margin-top: 0; border: 0; background: transparent; }
+  .txn-ledger .txn-work-rows .txn-tc-head { background: transparent; border: 0; padding-inline: 0; padding-block: var(--sp-1); }
+  .txn-ledger .txn-work-rows .txn-tc-head:hover { background: transparent; color: var(--ink); }
+  .txn-ledger .txn-work-rows .txn-tcbody { border-top: 0; padding-inline-start: var(--sp-4); }
+  .txn-ledger .txn-work-rows .txn-thinking { border-top: 0; margin-top: 0; }
+  /* the thinking panel's text lines up with a tool output's text: its own border eats the first
+     two pixels, so its inline padding gives them back */
+  /* the thinking body sits on the same edge as a tool's output box, and its text on the same
+     edge as that box's first line */
+  .txn-ledger .txn-work-rows .txn-thinking-body { margin-inline-start: var(--sp-4); padding-inline-start: calc(var(--sp-3) - var(--stroke-hairline)); }
+  /* the reference rows lead with the kind icon alone: no disclosure chevron on the row or the
+     thinking line, and the tool name keeps chrome case */
+  .txn-ledger .txn-work-rows .txn-thinking-toggle > svg:first-child { display: none; }
+  .txn-ledger .txn-work-rows .txn-tc-head .kind { text-transform: lowercase; }
+  .txn-ledger .txn-work-rows .txn-thinking-toggle { padding-block: var(--sp-1); }
 .txn-work-rows { margin-top: var(--sp-1); }
 /* the summary text sits where a tool NAME sits: past the row's chevron, its kind icon and gaps. */
 .txn-work-head .txn-work-count { padding-inline-start: var(--txn-work-name-offset); }
@@ -3908,7 +3944,9 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 .txn-zen-control[aria-pressed="true"] .txn-zen-switch::after { inset-inline-start: auto; inset-inline-end: calc(var(--stroke-emphasis) / 2); background: var(--surface-2); }
 /* the reader's inline-end gutter holds the zen control and the width handle, so neither ever
    sits over prose or a table. The reader column is right-aligned inside what remains. */
-.txn-ledger .txn-stream { padding-inline-end: calc(var(--txn-zen-size) + var(--sp-4)); }
+/* the reader centres in the space it actually has, so the reserved control lane is mirrored on
+   the leading side; otherwise the column sits left of centre by half the lane. */
+.txn-ledger .txn-stream { padding-inline: calc(var(--txn-zen-size) + var(--sp-4)); }
 
 /* the reading-width handle leaves the phone viewport: the reader is viewport-bound there, so
    there is no column edge to grab. Declared after the ledger block so the base absolute rule
@@ -3919,4 +3957,4 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 @media (width < 768px) { .txn-reader-handle { display: none; } }
 /* with the handle gone the ledger stream needs no trailing lane: the reader takes the page inset
    and the phone stops paying for a control it cannot use. */
-@media (width < 768px) { .txn-ledger .txn-stream { padding-inline-end: var(--sp-4); } }
+@media (width < 768px) { .txn-ledger .txn-stream { padding-inline: var(--sp-4); } }

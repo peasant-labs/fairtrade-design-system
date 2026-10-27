@@ -5,7 +5,7 @@ import TranscriptMinimap from './Minimap.jsx'
 /* TranscriptMinimap story (exported as TranscriptMinimap). One focusable slider over the visible
    turns, in turn order: the decorative ticks form one filled 6px bar on a three-step shape
    ladder — a user turn fills the 6px bar (teal), an agent turn is a 4px centred band (amber), and
-   a tool turn is a 2px centred band (ink-4) — with an ink-strong cursor marking the active
+   a system notice is a 2px centred band (ink-4) — with an ink-strong cursor marking the active
    position however narrow the ticks get. Wrapped in a bar (the minimap is `flex:1` inside the
    pinned trace header). The play function runs in a real browser, so it reads the computed
    geometry and the token paint, which jsdom cannot. */
@@ -17,6 +17,7 @@ const turns = [
   { index: 3, role: 'user', label: '2', toolCalls: [] },
   { index: 4, role: 'assistant', label: '2a', toolCalls: [] },
   { index: 5, role: 'assistant', label: '2b', toolCalls: [] },
+  { index: 6, role: 'system', label: '3', toolCalls: [] },
 ]
 
 function Bar({ active, theme, onJump }) {

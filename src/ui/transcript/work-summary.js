@@ -6,8 +6,9 @@
 
    The rule the labels follow:
      • a command is a `bash` tool, an edit is an `edits` tool;
-     • a file is one distinct non-empty `filePath` on a tool that actually touches a file
-       (`read` and `edits`; a write cooks to `edits`). The adapter also fills `filePath` from a
+     • a file is one distinct non-empty `filePath` on a tool that reads one; an edit already
+       counts as an edit, so it never adds a second "file" for the same change. The adapter
+       also fills `filePath` from a
        search tool's `path` scope, which is a directory or a glob rather than a file the turn
        touched, so `search`, `fetch`, `tasks`, `bash` and `other` contribute no file;
      • a failure is a tool flagged `isError`, or a `bash` call whose recorded exit code is
@@ -47,7 +48,7 @@ const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`
  * scope (a directory or glob), and a bash/task call has no file, so neither counts.
  * @type {ReadonlyArray<import('./view-model.js').ToolGroup>}
  */
-const FILE_GROUPS = ['read', 'edits']
+const FILE_GROUPS = ['read']
 
 /**
  * The counted parts of the leading label: commands, files and edits, in that order, with zero

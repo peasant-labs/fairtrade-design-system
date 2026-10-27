@@ -102,9 +102,9 @@ const css = stylesheet('src/index.css')
 }
 {
   const gutter = ruleAt(css, '.txn-ledger .txn-stream {')
-  report.check(!!gutter && gutter.includes('padding-inline-end: calc(var(--txn-zen-size) + var(--sp-4));'), 'the zen control never covers the reader: the ledger stream must reserve the control\'s inline-end gutter')
+  report.check(!!gutter && gutter.includes('padding-inline: calc(var(--txn-zen-size) + var(--sp-4));'), 'the zen control never covers the reader: the ledger stream must reserve the control\'s inline-end gutter')
   const column = ruleAt(css, '.txn-turnwrap-ledger {')
-  report.check(!!column && column.includes('margin-inline: auto 0;'), 'the zen control never covers the reader: the reader column must be right-aligned inside the remaining space')
+  report.check(!!column && column.includes('margin-inline: auto;'), 'the zen control never covers the reader: the reader column must be right-aligned inside the remaining space')
   const handle = ruleAt(css, '.txn-reader-handle {\n  position: absolute;')
   report.check(!!handle && handle.includes('transform: translate(0, -50%);'), 'the width handle never covers the text edge: the handle must be drawn fully outside the measure')
   report.check(css.includes('.txn-reader-handle { display: none; }'), 'the width handle never covers the text edge: the handle must leave the narrow viewport')
@@ -118,12 +118,14 @@ const css = stylesheet('src/index.css')
   report.check(!!railCard && railCard.includes('padding: var(--sp-2) var(--sp-4);'), 'the sidebar user-turn cards breathe: they must take a token inset')
   report.check(!!railCard && !/border-bottom/.test(railCard), 'the sidebar cards carry no rule: the turn head separates them')
   report.check(/\.txn-trace-head-graph \{ display: flex; \}/.test(css), 'graph keeps its way back: the phone must restore the turns bar in graph mode')
+  const turnRule = ruleAt(css, '.txn-ledger .txn-turn-rule {')
+  report.check(!!turnRule && turnRule.includes('max-inline-size: var(--txn-reader-width);') && turnRule.includes('margin-inline: auto;'), 'the turn rule belongs to the reader column: it must not run out to the stream edge')
   const rootRule = ruleAt(css, '.txn-app {')
   report.check(!!rootRule && !rootRule.includes('--txn-reader-width'), 'the reader width is ledger only: the classic root must declare no reader width')
   const ledgerRoot = ruleAt(css, '.txn-ledger {')
   report.check(!!ledgerRoot && ledgerRoot.includes('--txn-reader-width: 840px;'), 'the reader width is ledger only: the ledger root carries the default width')
   const phase = ruleAt(css, '.txn-ledger .txn-phase {')
-  report.check(!!phase && phase.includes('max-inline-size: var(--txn-reader-width);') && phase.includes('margin-inline: auto 0;'), 'the phase heading belongs to the reader column: it must take the reader width on the reader column\'s trailing edge')
+  report.check(!!phase && phase.includes('max-inline-size: var(--txn-reader-width);') && phase.includes('margin-inline: auto;'), 'the phase heading belongs to the reader column: it must take the reader width on the reader column\'s trailing edge')
 }
 {
   const column = ruleAt(css, '.txn-turnwrap-ledger {')
@@ -144,8 +146,8 @@ const css = stylesheet('src/index.css')
     const block = ruleAt(css, anchor)
     report.check(!!block && block.includes('padding-inline: var(--txn-work-inline);'), `the work summary and the tool rows share one inline edge: ${anchor.slice(0, -2)} must pad by var(--txn-work-inline)`)
   }
-  const count = ruleAt(css, '.txn-work-head .txn-work-count {')
-  report.check(!!count && count.includes('padding-inline-start: var(--txn-work-name-offset);'), 'the work summary and the tool rows share one inline edge: the summary text must take the tool-name column offset')
+  const ledgerCount = ruleAt(css, '.txn-ledger .txn-work-head .txn-work-count {')
+  report.check(!!ledgerCount && ledgerCount.includes('padding-inline-start: 0;'), 'the work summary starts at the reading edge: the ledger drops the tool-name offset')
 }
 
 /* ── mounted behaviour ────────────────────────────────────────────────────────── */
@@ -392,7 +394,10 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       const container = mounted.container
       const panel = container.querySelector('.txn-work')
       report.check(!!panel, `${row.name}: the turn with tools must render the work panel`)
-      report.check(!!panel?.querySelector('.txn-work-head'), `${row.name}: the panel must render its summary head`)
+      report.check(!!panel?.querySelector('.txn-work-head'), `${row.name}: the panel names the work on one line`)
+      const panelToggle = panel?.querySelector('.txn-work-toggle')
+      if (panelToggle) await mounted.act(() => click(window, panelToggle))
+      await mounted.settle()
       const rows = [...(panel?.querySelectorAll('.txn-work-rows .txn-tc-head') ?? [])]
       report.check(rows.length === tools.length, `${row.name}: the panel must hold all ${tools.length} tool rows, received ${rows.length}`)
       for (const rowButton of rows) await mounted.act(() => click(window, rowButton))

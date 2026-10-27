@@ -52,9 +52,10 @@ export const Default = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     // the summary counts commands, distinct files and edits; meta keeps calls, failures, duration.
-    await expect(canvas.getByText('2 commands, 2 files, 1 edit')).toBeVisible()
+    await expect(canvas.getByText('2 commands, 1 file, 1 edit')).toBeVisible()
     await expect(canvas.getByText('4 calls, 1 failed, 13s')).toBeVisible()
-    // one panel holds every tool row, and each row opens on its own.
+    // the summary line opens the rows; each row then opens on its own.
+    await userEvent.click(canvasElement.querySelector('.txn-work-toggle'))
     const rows = canvasElement.querySelectorAll('.txn-work .txn-tc-head')
     await expect(rows).toHaveLength(tools.length)
     await expect(rows[0]).toHaveAttribute('aria-expanded', 'false')

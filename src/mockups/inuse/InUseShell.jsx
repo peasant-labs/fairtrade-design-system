@@ -11,8 +11,8 @@ import GraphApp from './GraphApp.jsx'
    internal navigation so every feature stays reachable. */
 
 const APPS = [
-  { id: 'transcript', mark: 'peasant transcript', icon: ScrollText },
-  { id: 'commons', mark: 'peasant online', icon: Users },
+  { id: 'transcript', mark: 'transcript', icon: ScrollText },
+  { id: 'commons', mark: 'village', icon: Users },
   { id: 'graph', mark: 'peasant', icon: Waypoints },
 ]
 

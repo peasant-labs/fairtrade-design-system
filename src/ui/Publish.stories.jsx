@@ -76,7 +76,8 @@ export const BarStates = {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('needs update')).toBeVisible()
     await expect(canvas.getByText('published to 2 collectives')).toBeVisible()
-    await expect(canvas.getAllByRole('button', { name: 'update' })).toHaveLength(3)
+    // every state with an action publishes; only `publishing` is busy but still carries the label
+    await expect(canvas.getAllByRole('button', { name: 'publish' })).toHaveLength(PUBLISH_STATES.length)
     await expect(canvas.queryByRole('button', { name: 'manage' })).toBeNull()
   },
 }

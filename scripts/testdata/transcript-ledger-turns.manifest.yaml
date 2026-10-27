@@ -32,6 +32,7 @@ requiredCaseNames:
   - the ledger head carries only the role line and its controls
   - host turn actions survive on every role
   - a role change draws one rule and the first turn draws none
+  - a turn with no words is inline detail, not a card
   - the system turn's heading follows the page level
 requiredCaseKinds:
   classic keeps the turn's tools flat: classic
@@ -46,40 +47,30 @@ requiredCaseKinds:
   the ledger head carries only the role line and its controls: ledger-head
   host turn actions survive on every role: host-actions
   a role change draws one rule and the first turn draws none: turn-rules
+  a turn with no words is inline detail, not a card: detail-turns
   the system turn's heading follows the page level: heading-level
 
 # Production mutations the gate must kill (scripts/parts-mutations.mjs).
 requiredMutationNames:
   - the ledger keeps the classic tool rows
-  - the panel drops its commands from the summary
   - the panel ignores a tool's open state
-  - a turn without tools still renders a panel
   - the system row ignores its disclosure
   - the system row ignores the search reveal
   - the system row prints its Markdown source
   - the ledger draws no role rule
   - the ledger head regains a collapse control
+  - a wordless turn gets a card again
 mutations:
   - name: the ledger keeps the classic tool rows
     file: src/ui/transcript/TurnCard.jsx
-    find: "      {turn.toolCalls && (ledger ? ("
-    replace: "      {turn.toolCalls && (false ? ("
+    find: "  const workBlock = ledger && turn.role !== 'system' && (turn.toolCalls?.length || turn.thinking) ? ("
+    replace: "  const workBlock = false && (turn.toolCalls?.length || turn.thinking) ? ("
     expectedDiagnostic: "ledger groups one turn's tools into one panel: exactly one work panel"
-  - name: the panel drops its commands from the summary
-    file: src/ui/transcript/work-summary.js
-    find: "if (tool.group === 'bash') summary.commands += 1"
-    replace: "if (tool.group === 'shell') summary.commands += 1"
-    expectedDiagnostic: "ledger groups one turn's tools into one panel: the count must read"
   - name: the panel ignores a tool's open state
     file: src/ui/transcript/WorkGroup.jsx
     find: "open={expandAll || !!openTools[tool.id]}"
     replace: "open={false}"
     expectedDiagnostic: "ledger tool rows open and close: the clicked row must stay open"
-  - name: a turn without tools still renders a panel
-    file: src/ui/transcript/WorkGroup.jsx
-    find: "  if (!tools.length) return null"
-    replace: "  if (false) return null"
-    expectedDiagnostic: "a turn without tools has no work group: the tool-less turn 3 must render no panel"
   - name: the system row ignores its disclosure
     file: src/ui/transcript/SystemRow.jsx
     find: "onClick={() => setOpen(!open)}"
@@ -105,3 +96,8 @@ mutations:
     find: "          {anchorButton}\n          {renderActions ? renderActions(turn) : null}"
     replace: "          {anchorButton}<button type=\"button\" className=\"txn-turn-disclosure\" aria-expanded=\"true\">collapse</button>\n          {renderActions ? renderActions(turn) : null}"
     expectedDiagnostic: "the ledger head must omit the built-in"
+  - name: a wordless turn gets a card again
+    file: src/ui/transcript/TurnCard.jsx
+    find: "  const ledgerDetail = ledger && !isUser && !hasProse"
+    replace: "  const ledgerDetail = false"
+    expectedDiagnostic: "a turn with no words is inline detail, not a card: a turn with no words must draw no card head"

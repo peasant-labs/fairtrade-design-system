@@ -1,4 +1,6 @@
+import { useEffect, useId, useState } from 'react'
 import ToolCall from './ToolCall.jsx'
+import Thinking from './Thinking.jsx'
 import { workCountLabel, workMetaLabel, workSummary } from './work-summary.js'
 
 /* TranscriptWorkGroup — one turn's tool activity as a single panel. In the ledger presentation
@@ -21,29 +23,64 @@ import { workCountLabel, workMetaLabel, workSummary } from './work-summary.js'
  * @param {(id: string) => void} [props.onToggle]
  * @param {boolean} [props.expandAll]
  */
-export default function TranscriptWorkGroup({ tools = [], openTools = {}, onToggle = () => {}, expandAll = false }) {
+export default function TranscriptWorkGroup({ tools = [], thinking, openTools = {}, onToggle = () => {}, expandAll = false, bare = false }) {
+  /* One line per turn: the computed summary is the panel, and the tool rows open on request.
+     A host filter ("expand all tool calls"), a host-opened tool, or a search reveal opens it. */
+  const [open, setOpen] = useState(false)
+  const rowsId = `txn-work-${useId()}`
   if (!tools.length) return null
   const summary = workSummary(tools)
   const count = workCountLabel(summary)
   /* the helper drops the leading call count when the count label already fell back to it, so
      the same number is never printed twice; the meta span renders only when it has text. */
   const meta = workMetaLabel(summary)
+  /* A bare panel is the ledger's: the turn's work is inline detail lines, not a summary footer
+     that has to be opened. Classic keeps the summary because its rows sit flat on the card. */
+  const anyToolOpen = tools.some((tool) => !!openTools[tool.id])
+  const shown = expandAll || open || anyToolOpen
+  /* a search reveal or a host-opened tool opens the panel; the head closes both again */
+  useEffect(() => {
+    if (anyToolOpen) setOpen(true)
+  }, [anyToolOpen])
+  const togglePanel = () => {
+    if (shown) {
+      setOpen(false)
+      for (const tool of tools) if (openTools[tool.id]) onToggle(tool.id)
+    } else {
+      setOpen(true)
+    }
+  }
   return (
-    <div className="txn-work">
-      <div className="txn-work-head">
-        <span className="txn-work-count">{count}</span>
-        {meta && <span className="txn-work-meta tnum">{meta}</span>}
-      </div>
-      <div className="txn-work-rows">
-        {tools.map((tool) => (
-          <ToolCall
-            key={tool.id}
-            tool={tool}
-            open={expandAll || !!openTools[tool.id]}
-            onToggle={() => onToggle(tool.id)}
-          />
-        ))}
-      </div>
+    <div className={'txn-work' + (bare ? ' txn-work-bare' : '')}>
+      {!bare && (
+        <div className="txn-work-head">
+          <button
+            type="button"
+            className="txn-work-toggle"
+            aria-expanded={shown}
+            aria-controls={rowsId}
+            onClick={togglePanel}
+          >
+            <span className="txn-work-count">{count}</span>
+            {meta && <span className="txn-work-meta tnum">{meta}</span>}
+          </button>
+        </div>
+      )}
+      {shown && (
+        <div className="txn-work-rows" id={rowsId}>
+          {tools.map((tool) => (
+            <ToolCall
+              key={tool.id}
+              tool={tool}
+              showChevron={false}
+              open={expandAll || !!openTools[tool.id]}
+              onToggle={() => onToggle(tool.id)}
+            />
+          ))}
+          {/* the turn's thinking closes the same branch list, one line like a tool call */}
+          {thinking && <Thinking block={thinking} />}
+        </div>
+      )}
     </div>
   )
 }

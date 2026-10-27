@@ -63,4 +63,4 @@ cases:
     target: {name: close, selector: '.dlg-head button', count: 1}
     after:
       - {name: popup closed, selector: '.pub-dialog[role="dialog"]', count: 0}
-      - {name: opener focus restored, selector: .pub-bar-action, focused: true, text: update}
+      - {name: opener focus restored, selector: .pub-bar-action, focused: true, text: publish}
