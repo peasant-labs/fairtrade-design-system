@@ -3727,7 +3727,9 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   pointer-events: none;
 }
 
-/* the rail's ledger trace tab: one card per user-turn task. */
+/* the rail's ledger trace tab: one card per user-turn task. The cards run to the rail's edges, so
+   the current card's amber rail sits on the rail border; each card keeps its own inset. */
+.txn-ledger .txn-rail-left .txn-rail-body:has(> .txn-rail-turns) { padding: 0; }
 .txn-rail-turns { list-style: none; margin: 0; padding: 0; }
 .txn-rail-turn {
   display: flex; flex-direction: column; gap: var(--sp-1);
