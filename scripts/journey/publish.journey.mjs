@@ -156,7 +156,7 @@ for (const row of spec.cases) {
     await done.press('Escape')
     await expect(dialog).toHaveCount(0)
     await expect(opener).toBeFocused()
-    await expect(opener).toHaveText('update')
+    await expect(opener).toHaveText('publish')
 
     // Hold only the menu's scheduled focus frame. Discrete React key events still
     // commit normally, so Escape is tested before the real handoff can run.

@@ -245,7 +245,7 @@ export const Ledger = {
     // the pinned header appears once the trace scrolls, with the title and one position slider.
     // each turn with tools carries one work panel; the turn with two tools summarizes both.
     await expect(canvasElement.querySelectorAll('.txn-work')).toHaveLength(4)
-    await expect(canvas.getByText('2 files, 1 edit')).toBeVisible()
+    await expect(canvas.getByText('1 file, 1 edit')).toBeVisible()
     // a system turn is a compact row, and its recorded text opens on request.
     const systemHead = canvasElement.querySelector('.txn-systemrow-head')
     await expect(systemHead).toHaveAttribute('aria-expanded', 'false')
@@ -290,14 +290,13 @@ function textLeft(element) {
 async function assertReadingGeometry(canvasElement) {
   const work = canvasElement.querySelector('.txn-work')
   expect(work).not.toBeNull()
+  // the work block is its own row after the card, on the same reading edge as the prose.
   const summary = work.querySelector('.txn-work-head .txn-work-count')
-  const toolName = work.querySelector('.txn-tc-head .kind > span:last-child')
   expect(summary).not.toBeNull()
-  expect(toolName).not.toBeNull()
-  expect(Math.abs(textLeft(summary) - textLeft(toolName))).toBeLessThanOrEqual(2)
-  // the ledger prose follows the reader width instead of a fixed ch cap.
   const prose = canvasElement.querySelector('.txn-turnwrap-ledger .txn-body > .txn-md-prose')
   expect(prose).not.toBeNull()
+  expect(Math.abs(textLeft(summary) - textLeft(prose))).toBeLessThanOrEqual(2)
+  // the ledger prose follows the reader width instead of a fixed ch cap.
   expect(getComputedStyle(prose).maxInlineSize).toBe('none')
 }
 
