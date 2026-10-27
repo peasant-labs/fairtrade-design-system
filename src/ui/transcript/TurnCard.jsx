@@ -213,18 +213,9 @@ export default function TurnCard({
         </div>
       )}
       <Markdown text={turn.displayContent ?? turn.content} />
-      {turn.thinking && !turn.toolCalls?.length && <Thinking block={turn.thinking} />}
+      {!ledger && turn.thinking && !turn.toolCalls?.length && <Thinking block={turn.thinking} />}
       <UsageDisclosure usage={turn.usage} />
-      {turn.toolCalls && (ledger ? (
-        /* one grouped panel per turn: the computed summary above the same tool rows */
-        <TranscriptWorkGroup
-          tools={turn.toolCalls}
-          thinking={turn.thinking}
-          openTools={openTools}
-          onToggle={toggleTool}
-          expandAll={expandAll}
-        />
-      ) : (
+      {turn.toolCalls && !ledger && (
         turn.toolCalls.map((t) => (
           <ToolCall
             key={t.id}
@@ -233,9 +224,27 @@ export default function TurnCard({
             onToggle={() => toggleTool(t.id)}
           />
         ))
-      ))}
+      )}
     </>
   )
+
+  /* A ledger turn's work is its own block after the card: the prose ends the turn, and the tool
+     and thinking lines follow as a separate group rather than a footer inside it. */
+  const workBlock = ledger && turn.role !== 'system' && (turn.toolCalls?.length || turn.thinking) ? (
+    <div className="txn-turnwork">
+      {turn.toolCalls?.length ? (
+        <TranscriptWorkGroup
+          tools={turn.toolCalls}
+          thinking={turn.thinking}
+          openTools={openTools}
+          onToggle={toggleTool}
+          expandAll={expandAll}
+        />
+      ) : (
+        <Thinking block={turn.thinking} />
+      )}
+    </div>
+  ) : null
 
   const cardClass =
     'turn txn-turn ' +
@@ -295,13 +304,19 @@ export default function TurnCard({
                 </span>
               </div>
             </div>
+          ) : ledgerDetail ? (
+            <>
+              <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}</TurnHeading>
+              {workBlock}
+            </>
           ) : (
-            <div className={cardClass}>
-              {ledgerDetail ? (
-                <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}</TurnHeading>
-              ) : head}
-              <div id={bodyId} hidden={!expanded}>{body}</div>
-            </div>
+            <>
+              <div className={cardClass}>
+                {head}
+                <div id={bodyId} hidden={!expanded}>{body}</div>
+              </div>
+              {workBlock}
+            </>
           )}
         </>
       )}
