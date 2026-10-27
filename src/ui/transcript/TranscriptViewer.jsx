@@ -1211,13 +1211,20 @@ export default function TranscriptViewer({
                          last turn of the run so it sits after the group. */
                       const actionRuns = new Map()
                       if (ledger) {
+                        /* Every sequential action folds into one block: a prose turn's own work
+                           continues into the wordless turns after it, and only a turn with prose
+                           starts a new block. The block renders after the run's last turn. */
                         let run = []
+                        const flush = () => { if (run.length) { actionRuns.set(run[run.length - 1].index, run); run = [] } }
                         for (const t of visibleTurns) {
+                          const work = !!((t.toolCalls?.length) || t.thinking)
                           const wordless = t.role !== 'system' && String(t.displayContent ?? t.content ?? '').trim() === ''
+                          if (!work) { flush(); continue }
                           if (wordless) { run.push(t); continue }
-                          if (run.length) { actionRuns.set(run[run.length - 1].index, run); run = [] }
+                          flush()
+                          run = [t]
                         }
-                        if (run.length) actionRuns.set(run[run.length - 1].index, run)
+                        flush()
                       }
                       return visibleTurns.map((t, i) => {
                       const prev = visibleTurns[i - 1]

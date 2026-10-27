@@ -3812,7 +3812,7 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
      column, not the scrolled stream, or it lands at the stream's far-left edge. */
   .txn-ledger .txn-turnrow { max-inline-size: var(--txn-reader-width); margin-inline: auto; }
   /* a run of wordless turns reads as one quiet model-actions block */
-  .txn-modelactions { border: var(--bd); background: var(--surface-2); }
+  .txn-modelactions { border: 0; background: transparent; }
   .txn-modelactions-head { display: flex; align-items: center; gap: var(--sp-2); width: 100%; padding: var(--sp-2) var(--sp-3); border: 0; background: transparent; color: var(--ink-3); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; text-align: start; cursor: pointer; }
   .txn-modelactions-head:hover { color: var(--ink); }
   .txn-modelactions-head:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }

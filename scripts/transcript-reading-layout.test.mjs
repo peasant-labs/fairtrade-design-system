@@ -392,13 +392,13 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     } else if (row.kind === 'work-grid') {
       const mounted = await mountViewer()
       const container = mounted.container
-      const panel = container.querySelector('.txn-work')
-      report.check(!!panel, `${row.name}: the turn with tools must render the work panel`)
-      report.check(!!panel?.querySelector('.txn-work-head'), `${row.name}: the panel names the work on one line`)
-      const panelToggle = panel?.querySelector('.txn-work-toggle')
+      const panel = container.querySelector('.txn-modelactions')
+      report.check(!!panel, `${row.name}: the turn with tools must render the model-actions block`)
+      report.check(!!panel?.querySelector('.txn-modelactions-head'), `${row.name}: the block names the work on one line`)
+      const panelToggle = panel?.querySelector('.txn-modelactions-head')
       if (panelToggle) await mounted.act(() => click(window, panelToggle))
       await mounted.settle()
-      const rows = [...(panel?.querySelectorAll('.txn-work-rows .txn-tc-head') ?? [])]
+      const rows = [...(panel?.querySelectorAll('.txn-modelactions-rows .txn-tc-head') ?? [])]
       report.check(rows.length === tools.length, `${row.name}: the panel must hold all ${tools.length} tool rows, received ${rows.length}`)
       for (const rowButton of rows) await mounted.act(() => click(window, rowButton))
       await mounted.settle()
@@ -406,7 +406,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(bodies.length === 2, `${row.name}: opening both rows must reveal both bodies, received ${bodies.length}`)
       report.check(bodies.some((body) => body.querySelector('.txn-term')), `${row.name}: the bash body must render its output`)
       report.check(bodies.some((body) => body.querySelector('.txn-diff')), `${row.name}: the edit body must render its diff`)
-      report.check(!!container.querySelector('.txn-work .txn-tc-head') && !!container.querySelector('.txn-work .txn-tcbody'), `${row.name}: both the rows and their bodies must sit inside the work panel`)
+      report.check(!!panel.querySelector('.txn-tc-head') && !!panel.querySelector('.txn-tcbody'), `${row.name}: both the rows and their bodies must sit inside the block`)
       await mounted.unmount()
     } else if (row.kind === 'strip-width') {
       const mounted = await mountControlled({ layout: layoutOf(false, false, true) })
