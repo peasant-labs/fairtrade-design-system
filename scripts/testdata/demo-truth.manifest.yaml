@@ -108,7 +108,7 @@ mutations:
     expectedDiagnostic: changes legend is literal
   - name: archived app title
     file: src/mockups/inuse/InUseShell.jsx
-    find: "mark: 'peasant transcript'"
+    find: "mark: 'transcript'"
     replace: "mark: 'transcript-browser'"
     expectedDiagnostic: local transcript replaces archived app name
   - name: false village title
