@@ -220,6 +220,7 @@ export default function TurnCard({
         <TranscriptWorkGroup
           tools={turn.toolCalls}
           thinking={turn.thinking}
+          bare
           openTools={openTools}
           onToggle={toggleTool}
           expandAll={expandAll}
@@ -280,7 +281,7 @@ export default function TurnCard({
               model changed: {modelName(turn.modelChangedFrom)} <span aria-hidden="true">→</span><span className="txn-sr"> to</span> {modelName(turn.effectiveModel)}
             </div>
           )}
-          {isSub ? (
+          {isSub && !ledger ? (
             <div className="subtask txn-subtask">
               <div className="subtask-head">
                 <CornerDownRight size={14} aria-hidden="true" /> <span className="who">{turn.agentName}</span> subagent

@@ -2256,6 +2256,9 @@
   .txn-subtask .txn-turn { margin-top: 0; border: 0; }
 
   /* checkpoint marker */
+  /* the ledger marks a commit with the chip alone: the whiskers read as stray rules */
+  .txn-ledger .txn-checkpoint { justify-content: center; border-bottom: 0; }
+  .txn-ledger .txn-checkpoint .r { display: none; }
   .txn-checkpoint .mkc { gap: var(--sp-2); flex-wrap: wrap; }
   .txn-checkpoint .mkc .lucide { color: var(--olive); }
   .txn-cp-msg { color: var(--ink-2); }
@@ -3921,7 +3924,9 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 .txn-zen-control[aria-pressed="true"] .txn-zen-switch::after { inset-inline-start: auto; inset-inline-end: calc(var(--stroke-emphasis) / 2); background: var(--surface-2); }
 /* the reader's inline-end gutter holds the zen control and the width handle, so neither ever
    sits over prose or a table. The reader column is right-aligned inside what remains. */
-.txn-ledger .txn-stream { padding-inline-end: calc(var(--txn-zen-size) + var(--sp-4)); }
+/* the reader centres in the space it actually has, so the reserved control lane is mirrored on
+   the leading side; otherwise the column sits left of centre by half the lane. */
+.txn-ledger .txn-stream { padding-inline: calc(var(--txn-zen-size) + var(--sp-4)); }
 
 /* the reading-width handle leaves the phone viewport: the reader is viewport-bound there, so
    there is no column edge to grab. Declared after the ledger block so the base absolute rule
@@ -3932,4 +3937,4 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 @media (width < 768px) { .txn-reader-handle { display: none; } }
 /* with the handle gone the ledger stream needs no trailing lane: the reader takes the page inset
    and the phone stops paying for a control it cannot use. */
-@media (width < 768px) { .txn-ledger .txn-stream { padding-inline-end: var(--sp-4); } }
+@media (width < 768px) { .txn-ledger .txn-stream { padding-inline: var(--sp-4); } }

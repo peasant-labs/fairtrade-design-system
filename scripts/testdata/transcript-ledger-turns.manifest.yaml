@@ -53,7 +53,6 @@ requiredCaseKinds:
 # Production mutations the gate must kill (scripts/parts-mutations.mjs).
 requiredMutationNames:
   - the ledger keeps the classic tool rows
-  - the panel drops its commands from the summary
   - the panel ignores a tool's open state
   - a turn without tools still renders a panel
   - the system row ignores its disclosure
@@ -68,11 +67,6 @@ mutations:
     find: "      {turn.toolCalls && (ledger ? ("
     replace: "      {turn.toolCalls && (false ? ("
     expectedDiagnostic: "ledger groups one turn's tools into one panel: exactly one work panel"
-  - name: the panel drops its commands from the summary
-    file: src/ui/transcript/work-summary.js
-    find: "if (tool.group === 'bash') summary.commands += 1"
-    replace: "if (tool.group === 'shell') summary.commands += 1"
-    expectedDiagnostic: "ledger groups one turn's tools into one panel: the count must read"
   - name: the panel ignores a tool's open state
     file: src/ui/transcript/WorkGroup.jsx
     find: "open={expandAll || !!openTools[tool.id]}"

@@ -24,7 +24,7 @@ import { workCountLabel, workMetaLabel, workSummary } from './work-summary.js'
  * @param {(id: string) => void} [props.onToggle]
  * @param {boolean} [props.expandAll]
  */
-export default function TranscriptWorkGroup({ tools = [], thinking, openTools = {}, onToggle = () => {}, expandAll = false }) {
+export default function TranscriptWorkGroup({ tools = [], thinking, openTools = {}, onToggle = () => {}, expandAll = false, bare = false }) {
   /* One line per turn: the computed summary is the panel, and the tool rows open on request.
      A host filter ("expand all tool calls"), a host-opened tool, or a search reveal opens it. */
   const [open, setOpen] = useState(false)
@@ -35,22 +35,26 @@ export default function TranscriptWorkGroup({ tools = [], thinking, openTools = 
   /* the helper drops the leading call count when the count label already fell back to it, so
      the same number is never printed twice; the meta span renders only when it has text. */
   const meta = workMetaLabel(summary)
-  const shown = expandAll || open || tools.some((tool) => !!openTools[tool.id])
+  /* A bare panel is the ledger's: the turn's work is inline detail lines, not a summary footer
+     that has to be opened. Classic keeps the summary because its rows sit flat on the card. */
+  const shown = bare || expandAll || open || tools.some((tool) => !!openTools[tool.id])
   return (
-    <div className="txn-work">
-      <div className="txn-work-head">
-        <button
-          type="button"
-          className="txn-work-toggle"
-          aria-expanded={shown}
-          aria-controls={rowsId}
-          onClick={() => setOpen((value) => !value)}
-        >
-          {shown ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}
-          <span className="txn-work-count">{count}</span>
-          {meta && <span className="txn-work-meta tnum">{meta}</span>}
-        </button>
-      </div>
+    <div className={'txn-work' + (bare ? ' txn-work-bare' : '')}>
+      {!bare && (
+        <div className="txn-work-head">
+          <button
+            type="button"
+            className="txn-work-toggle"
+            aria-expanded={shown}
+            aria-controls={rowsId}
+            onClick={() => setOpen((value) => !value)}
+          >
+            {shown ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}
+            <span className="txn-work-count">{count}</span>
+            {meta && <span className="txn-work-meta tnum">{meta}</span>}
+          </button>
+        </div>
+      )}
       {shown && (
         <div className="txn-work-rows" id={rowsId}>
           {tools.map((tool) => (

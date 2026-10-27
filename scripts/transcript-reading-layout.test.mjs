@@ -102,7 +102,7 @@ const css = stylesheet('src/index.css')
 }
 {
   const gutter = ruleAt(css, '.txn-ledger .txn-stream {')
-  report.check(!!gutter && gutter.includes('padding-inline-end: calc(var(--txn-zen-size) + var(--sp-4));'), 'the zen control never covers the reader: the ledger stream must reserve the control\'s inline-end gutter')
+  report.check(!!gutter && gutter.includes('padding-inline: calc(var(--txn-zen-size) + var(--sp-4));'), 'the zen control never covers the reader: the ledger stream must reserve the control\'s inline-end gutter')
   const column = ruleAt(css, '.txn-turnwrap-ledger {')
   report.check(!!column && column.includes('margin-inline: auto;'), 'the zen control never covers the reader: the reader column must be right-aligned inside the remaining space')
   const handle = ruleAt(css, '.txn-reader-handle {\n  position: absolute;')
@@ -394,10 +394,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       const container = mounted.container
       const panel = container.querySelector('.txn-work')
       report.check(!!panel, `${row.name}: the turn with tools must render the work panel`)
-      report.check(!!panel?.querySelector('.txn-work-head'), `${row.name}: the panel must render its summary head`)
-      const panelToggle = panel?.querySelector('.txn-work-toggle')
-      if (panelToggle) await mounted.act(() => click(window, panelToggle))
-      await mounted.settle()
+      report.check(panel?.querySelector('.txn-work-head') === null, `${row.name}: the ledger panel draws no summary head`)
       const rows = [...(panel?.querySelectorAll('.txn-work-rows .txn-tc-head') ?? [])]
       report.check(rows.length === tools.length, `${row.name}: the panel must hold all ${tools.length} tool rows, received ${rows.length}`)
       for (const rowButton of rows) await mounted.act(() => click(window, rowButton))
