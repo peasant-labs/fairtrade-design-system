@@ -15,6 +15,13 @@ exceptions:
       the two rails (240px + 272px) leave a ~448px reading column across the tablet token widths
       (1024-1079), so the transcript drops its rails below 1080px rather than at the 1024px token;
       the accepted build suppressed them below 1080 as well, so this restores that behaviour.
+  - name: transcript rail motion complements the rail layout boundary
+    file: src/index.css
+    condition: '@media (prefers-reduced-motion: no-preference) and (width >= 1080px)'
+    reason: >-
+      rail grid motion belongs only to the visible-rail band, complementary to the existing
+      width < 1080px layout exception; using 1024px would animate hidden rails at 1024-1079px.
+      the motion preference keeps reduced-motion readers on the static path.
 
 # Preludes fed through lintViewportQuery (the same code the build runs), or the @import media
 # condition when `statement` is present (the extracted condition must equal `media`). `expect` lists
