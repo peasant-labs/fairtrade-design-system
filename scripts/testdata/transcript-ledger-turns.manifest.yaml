@@ -32,6 +32,7 @@ requiredCaseNames:
   - the ledger head carries only the role line and its controls
   - host turn actions survive on every role
   - a role change draws one rule and the first turn draws none
+  - consecutive wordless turns share one model actions block
   - a turn with no words is inline detail, not a card
   - the system turn's heading follows the page level
 requiredCaseKinds:
@@ -47,6 +48,7 @@ requiredCaseKinds:
   the ledger head carries only the role line and its controls: ledger-head
   host turn actions survive on every role: host-actions
   a role change draws one rule and the first turn draws none: turn-rules
+  consecutive wordless turns share one model actions block: model-actions
   a turn with no words is inline detail, not a card: detail-turns
   the system turn's heading follows the page level: heading-level
 

@@ -84,3 +84,49 @@ export default function TranscriptWorkGroup({ tools = [], thinking, openTools = 
     </div>
   )
 }
+
+/* ModelActions — a run of wordless turns (thinking and tool work with no prose of its own)
+   collapsed into one quiet block. The ledger never prints a summary row per call; consecutive
+   action turns share this block, whose header states the run's work and opens the rows. */
+export function ModelActions({ turns = [], openTools = {}, onToggle = () => {}, expandAll = false }) {
+  const [open, setOpen] = useState(false)
+  const tools = turns.flatMap((turn) => turn.toolCalls ?? [])
+  const toolsOpen = tools.some((tool) => !!openTools[tool.id])
+  const shown = expandAll || open || toolsOpen
+  const summary = workSummary(tools)
+  const label = [workCountLabel(summary), workMetaLabel(summary)].filter(Boolean).join(' · ')
+  const closeAll = () => {
+    if (shown) {
+      setOpen(false)
+      for (const tool of tools) if (openTools[tool.id]) onToggle(tool.id)
+    } else {
+      setOpen(true)
+    }
+  }
+  return (
+    <div className={'txn-modelactions' + (shown ? ' is-open' : '')}>
+      <button type="button" className="txn-modelactions-head" aria-expanded={shown} onClick={closeAll}>
+        <span className="txn-modelactions-label">model actions</span>
+        <span className="txn-modelactions-summary tnum">{label}</span>
+      </button>
+      {shown && (
+        <div className="txn-modelactions-rows">
+          {turns.map((turn) => (
+            <div key={turn.identity ?? turn.index} className="txn-modelactions-turn">
+              {(turn.toolCalls ?? []).map((tool) => (
+                <ToolCall
+                  key={tool.id}
+                  tool={tool}
+                  showChevron={false}
+                  open={expandAll || !!openTools[tool.id]}
+                  onToggle={() => onToggle(tool.id)}
+                />
+              ))}
+              {turn.thinking && <Thinking block={turn.thinking} />}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}

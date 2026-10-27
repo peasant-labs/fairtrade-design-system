@@ -298,14 +298,41 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(!!article, `${row.name}: the tool turn must still mount`)
       report.check(article?.querySelector('.txn-turnhead-ledger') === null, `${row.name}: a turn with no words must draw no card head`)
       report.check(article?.querySelector('.txn-roleico') === null, `${row.name}: a turn with no words must draw no role well`)
-      report.check(!!article?.querySelector('.txn-work'), `${row.name}: its tool work must render as inline detail`)
-      report.check(!!article?.querySelector('.txn-work-head'), `${row.name}: the detail keeps its summary line`)
-      report.check(article?.querySelector('.txn-work-rows') === null, `${row.name}: the detail starts closed`)
+      const block = article?.querySelector('.txn-modelactions')
+      report.check(!!block, `${row.name}: its work must render as one model-actions block`)
+      report.check(!!block?.querySelector('.txn-modelactions-head'), `${row.name}: the block names the run`)
+      report.check(block?.querySelector('.txn-modelactions-rows') === null, `${row.name}: the block starts closed`)
       const heading = byId(mounted.container, article?.getAttribute('aria-labelledby'))
       report.check(!!heading && heading.classList.contains('txn-turn-heading'), `${row.name}: the article keeps its heading for assistive tech`)
       await mounted.unmount()
+    } else if (row.kind === 'model-actions') {
+      /* a run of wordless turns shares one quiet block, carried after the run */
+      const grouped = {
+        ...vm,
+        turns: vm.turns.map((t) => (t.index === 4 || t.index === 5 ? { ...t, content: '', displayContent: '' } : t)),
+      }
+      const mounted = await mountViewer('ledger', { viewModel: grouped })
+      const blocks = mounted.container.querySelectorAll('.txn-modelactions')
+      report.check(blocks.length === 1, `${row.name}: the run must share one block, received ${blocks.length}`)
+      const block = blocks[0]
+      report.check(block?.closest('#turn-5') !== null, `${row.name}: the block must sit after the run, on its last turn`)
+      report.check(text(block?.querySelector('.txn-modelactions-label')) === 'model actions', `${row.name}: the block must name the run`)
+      report.check(block?.querySelector('.txn-modelactions-rows') === null, `${row.name}: the block starts closed`)
+      await mounted.act(() => click(window, block.querySelector('.txn-modelactions-head')))
+      await mounted.settle()
+      const rows = block.querySelectorAll('.txn-modelactions-rows .txn-toolcall')
+      report.check(rows.length === 0, `${row.name}: a run with no tools draws no tool rows, received ${rows.length}`)
+      const think = block.querySelector('.txn-thinking-toggle')
+      report.check(!!think, `${row.name}: the run's thinking comes with it`)
+      if (think) await mounted.act(() => click(window, think))
+      await mounted.settle()
+      report.check(/check the fixture/.test(text(block.querySelector('.txn-thinking-body'))), `${row.name}: the thinking text is the run's own`)
+      await mounted.unmount()
     } else if (row.kind === 'thinking') {
       const mounted = await mountViewer('ledger')
+      const blockToggle = mounted.container.querySelector('#turn-4 .txn-modelactions-head')
+      if (blockToggle) await mounted.act(() => click(window, blockToggle))
+      await mounted.settle()
       const toggle = mounted.container.querySelector('#turn-4 .txn-thinking-toggle')
       report.check(!!toggle, `${row.name}: a turn with thinking must keep its thinking disclosure`)
       if (toggle) await mounted.act(() => click(window, toggle))

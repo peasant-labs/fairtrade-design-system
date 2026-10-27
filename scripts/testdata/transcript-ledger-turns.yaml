@@ -220,6 +220,8 @@ cases:
     kind: host-actions
   - name: a role change draws one rule and the first turn draws none
     kind: turn-rules
+  - name: consecutive wordless turns share one model actions block
+    kind: model-actions
   - name: a turn with no words is inline detail, not a card
     kind: detail-turns
   - name: the system turn's heading follows the page level

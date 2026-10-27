@@ -7,7 +7,7 @@ import Markdown from './Markdown.jsx'
 import Thinking from './Thinking.jsx'
 import ToolCall from './ToolCall.jsx'
 import TranscriptSystemRow from './SystemRow.jsx'
-import TranscriptWorkGroup from './WorkGroup.jsx'
+import TranscriptWorkGroup, { ModelActions } from './WorkGroup.jsx'
 import UsageDisclosure from './UsageDisclosure.jsx'
 import { Term } from '../Explainer.jsx'
 import { formatRelative as formatRelativeTime, isKnownTime } from './time.js'
@@ -82,6 +82,8 @@ export default function TurnCard({
   expandAll = false,
   revealRequest = 0,
   headingLevel = 4,
+  modelActions,
+  suppressWork = false,
   presentation = 'classic',
 }) {
   const TurnHeading = `h${Math.min(6, Math.max(1, headingLevel))}`
@@ -230,9 +232,12 @@ export default function TurnCard({
 
   /* A ledger turn's work is its own block after the card: the prose ends the turn, and the tool
      and thinking lines follow as a separate group rather than a footer inside it. */
-  const workBlock = ledger && turn.role !== 'system' && (turn.toolCalls?.length || turn.thinking) ? (
+  const hasWork = !!(turn.toolCalls?.length || turn.thinking)
+  const workBlock = ledger && turn.role !== 'system' && !suppressWork && (hasWork || modelActions?.length) ? (
     <div className="txn-turnwork">
-      {turn.toolCalls?.length ? (
+      {modelActions?.length ? (
+        <ModelActions turns={modelActions} openTools={openTools} onToggle={toggleTool} expandAll={expandAll} />
+      ) : turn.toolCalls?.length ? (
         <TranscriptWorkGroup
           tools={turn.toolCalls}
           thinking={turn.thinking}

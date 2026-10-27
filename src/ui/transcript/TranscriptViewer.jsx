@@ -1206,8 +1206,24 @@ export default function TranscriptViewer({
                     {visibleTurns.length === 0 && (
                       <div className="empty"><div className="ring"><FilterIcon size={20} aria-hidden="true" /></div><EmptyHeading>no turns to display</EmptyHeading><p>every turn is filtered out. clear a filter to bring them back.</p></div>
                     )}
-                    {visibleTurns.map((t, i) => {
+                    {(() => {
+                      /* a run of wordless turns shares one "model actions" block, carried by the
+                         last turn of the run so it sits after the group. */
+                      const actionRuns = new Map()
+                      if (ledger) {
+                        let run = []
+                        for (const t of visibleTurns) {
+                          const wordless = t.role !== 'system' && String(t.displayContent ?? t.content ?? '').trim() === ''
+                          if (wordless) { run.push(t); continue }
+                          if (run.length) { actionRuns.set(run[run.length - 1].index, run); run = [] }
+                        }
+                        if (run.length) actionRuns.set(run[run.length - 1].index, run)
+                      }
+                      return visibleTurns.map((t, i) => {
                       const prev = visibleTurns[i - 1]
+                      const actionRun = actionRuns.get(t.index)
+                      const wordless = ledger && t.role !== 'system' && String(t.displayContent ?? t.content ?? '').trim() === ''
+                      const suppressWork = wordless && !actionRun
                       const phase = phases.find((p) => t.index >= p.from && t.index <= p.to)
                       const prevPhase = prev ? phases.find((p) => prev.index >= p.from && prev.index <= p.to) : null
                       const showPhase = filters.views.hidden && phase && (!prevPhase || prevPhase.id !== phase.id)
@@ -1238,6 +1254,8 @@ export default function TranscriptViewer({
                             savedLabel={savedLabels[t.index]}
                             compact={filters.views.compact}
                             expandAll={filters.views.expandAll}
+                            modelActions={actionRun}
+                            suppressWork={suppressWork}
                           />
                           {/* host per-turn extension (touched-files panels etc.) —
                               rendered under the card, inside the turn's anchor block */}
@@ -1245,7 +1263,8 @@ export default function TranscriptViewer({
                           {turnCommits.map((c) => <CheckpointMarker key={c.hash} commit={c} />)}
                         </div>
                       )
-                    })}
+                    })
+                    })()}
                     {looseCommits.map((c) => <CheckpointMarker key={c.hash} commit={c} />)}
                   </div>
                 </div>

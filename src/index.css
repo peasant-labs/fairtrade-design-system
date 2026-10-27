@@ -2271,7 +2271,7 @@
   .txn-thinking-toggle i { font-style: italic; font-weight: 400; color: var(--ink-3); }
   .txn-thinking-wc { color: var(--ink-4); }
   .txn-thinking-body { margin-top: var(--sp-2); padding: var(--sp-3); border: var(--bd); border-left: var(--stroke-emphasis) solid var(--mauve); background: color-mix(in srgb, var(--mauve) 5%, var(--surface)); }
-  .txn-thinking-body em { font-style: italic; font-weight: 400; color: var(--ink-2); line-height: 1.5; }
+  .txn-thinking-body em { display: block; font-style: italic; font-weight: 400; color: var(--ink-2); line-height: 1.5; white-space: pre-wrap; }
 
   /* ---- tool calls + per-tool renderers ---- */
   .txn-toolcall { margin-top: var(--sp-2); }
@@ -3811,6 +3811,15 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   /* a turn's own row (the host's per-turn panel, a commit marker) belongs to the reading
      column, not the scrolled stream, or it lands at the stream's far-left edge. */
   .txn-ledger .txn-turnrow { max-inline-size: var(--txn-reader-width); margin-inline: auto; }
+  /* a run of wordless turns reads as one quiet model-actions block */
+  .txn-modelactions { border: var(--bd); background: var(--surface-2); }
+  .txn-modelactions-head { display: flex; align-items: center; gap: var(--sp-2); width: 100%; padding: var(--sp-2) var(--sp-3); border: 0; background: transparent; color: var(--ink-3); font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; text-align: start; cursor: pointer; }
+  .txn-modelactions-head:hover { color: var(--ink); }
+  .txn-modelactions-head:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
+  .txn-modelactions-label { color: var(--ink-2); font-weight: 700; }
+  .txn-modelactions-summary { margin-inline-start: auto; font-variant-numeric: tabular-nums; }
+  .txn-modelactions-rows { padding: 0 var(--sp-3) var(--sp-2); }
+  .txn-modelactions-turn + .txn-modelactions-turn { margin-top: var(--sp-2); }
   .txn-ledger .txn-turnwork { margin-top: var(--sp-3); padding-inline: var(--sp-4); }
   .txn-ledger .txn-turnwork .txn-work { margin-top: 0; }
   /* the ledger draws a turn's work as branch lines under the prose: no card per call */
@@ -3887,7 +3896,9 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 .txn-reader-handle {
   position: absolute;
   top: 50%;
-  inset-inline-start: calc(100% - var(--txn-zen-size) - var(--sp-4));
+  /* the reader is centred in the stream, so its trailing edge is half the free space plus half
+     the reader; clamping keeps the handle inside the container when the reader cannot fit. */
+  inset-inline-start: clamp(var(--sp-4), calc(50% + (var(--txn-reader-width) / 2)), calc(100% - var(--sp-5)));
   transform: translate(0, -50%);
   z-index: 3;
   display: inline-flex; align-items: center; justify-content: center;
