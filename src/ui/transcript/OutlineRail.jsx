@@ -2,6 +2,7 @@ import {
   Pencil, FileText, Play, Flag, AlertTriangle, GitCommitHorizontal, Sparkles,
   RefreshCw, RotateCcw, CornerDownRight, ChevronRight,
 } from 'lucide-react'
+import { useEffect, useRef } from 'react'
 import StepsWaterfall, { formatDuration } from '../StepsWaterfall.jsx'
 import { Term } from '../Explainer.jsx'
 
@@ -32,6 +33,65 @@ const ANNOTATION_META = {
   subagent: { label: 'subagent', icon: CornerDownRight, tip: 'a Task spawned a nested subagent at depth > 0' },
 }
 const ANNOTATION_ORDER = ['error', 'retry', 'revert', 'subagent']
+
+/** the nearest ancestor that scrolls vertically, or null. */
+function scrollParent(node) {
+  for (let el = node?.parentElement; el; el = el.parentElement) {
+    const overflowY = getComputedStyle(el).overflowY
+    if ((overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight) return el
+  }
+  return null
+}
+
+/* the ledger's user-turn cards. The rail follows the reader: when the task holding the active
+   turn changes, its card is scrolled into the rail's view (the nearest edge, instantly), so a deep
+   transcript never leaves the current card out of sight. Only the rail scrolls; the page and the
+   trace stay where the reader put them. */
+function LedgerTurnCards({ viewModel, activeTurn, onJump }) {
+  const listRef = useRef(null)
+  const turns = viewModel?.turns ?? []
+  const tasks = viewModel?.tasks ?? []
+  const activeTask = tasks.find((task) => (task.turnIndices ?? []).includes(activeTurn))
+  const activeKey = activeTask ? activeTask.id ?? activeTask.turnIndices?.[0] : null
+  useEffect(() => {
+    if (activeKey == null) return
+    const card = listRef.current?.querySelector('.txn-rail-turn[aria-current="true"]')
+    const scroller = card && scrollParent(card)
+    if (!scroller) return
+    const view = scroller.getBoundingClientRect()
+    const box = card.getBoundingClientRect()
+    if (box.top < view.top) scroller.scrollTop -= view.top - box.top
+    else if (box.bottom > view.bottom) scroller.scrollTop += box.bottom - view.bottom
+  }, [activeKey])
+  return (
+    <ul className="txn-rail-turns" ref={listRef}>
+      {tasks.map((task) => {
+        const first = task.turnIndices?.[0]
+        if (first == null) return null
+        const firstTurn = turns.find((turn) => turn.index === first)
+        const active = task === activeTask
+        const prompt = task.displayPrompt ?? task.prompt
+        return (
+          <li key={task.id ?? first}>
+            <button
+              type="button"
+              className="txn-rail-turn"
+              aria-current={active ? 'true' : undefined}
+              title={prompt}
+              onClick={() => onJump(first)}
+            >
+              <span className="txn-rail-turn-top">
+                <b className="tnum">#{firstTurn?.label ?? task.index}</b>
+                <span className="tnum">{formatDuration(task.durationMs)}</span>
+              </span>
+              <span className="txn-rail-turn-copy">{prompt}</span>
+            </button>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
 
 /**
  * @param {object} props
@@ -131,35 +191,7 @@ export default function OutlineRail({ viewModel, tab, onJump = () => {}, present
      prompt the reader is jumping to. The card covering the active turn is marked current. A
      task with no first turn offers no destination, so it is skipped rather than sent to turn 0. */
   if (tab === 'trace' && presentation === 'ledger') {
-    const turns = viewModel?.turns ?? []
-    return (
-      <ul className="txn-rail-turns">
-        {(viewModel?.tasks ?? []).map((task) => {
-          const first = task.turnIndices?.[0]
-          if (first == null) return null
-          const firstTurn = turns.find((turn) => turn.index === first)
-          const active = (task.turnIndices ?? []).includes(activeTurn)
-          const prompt = task.displayPrompt ?? task.prompt
-          return (
-            <li key={task.id ?? first}>
-              <button
-                type="button"
-                className="txn-rail-turn"
-                aria-current={active ? 'true' : undefined}
-                title={prompt}
-                onClick={() => onJump(first)}
-              >
-                <span className="txn-rail-turn-top">
-                  <b className="tnum">#{firstTurn?.label ?? task.index}</b>
-                  <span className="tnum">{formatDuration(task.durationMs)}</span>
-                </span>
-                <span className="txn-rail-turn-copy">{prompt}</span>
-              </button>
-            </li>
-          )
-        })}
-      </ul>
-    )
+    return <LedgerTurnCards viewModel={viewModel} activeTurn={activeTurn} onJump={onJump} />
   }
 
   /* trace → the per-task duration trail. Map each cooked TaskGroupVM onto a StepsWaterfall row;

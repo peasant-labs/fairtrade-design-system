@@ -27,6 +27,7 @@ requiredInteractionNames:
   - the rail renders one card per task with its turn, duration and prompt
   - the card covering the active turn is current
   - clicking a card selects its first turn
+  - the rail follows the reader to the current card
   - the subtitle renders in both presentations
 requiredInteractionKinds:
   the minimap is one slider over the visible turns: minimap-slider
@@ -37,6 +38,7 @@ requiredInteractionKinds:
   the rail renders one card per task with its turn, duration and prompt: rail-cards
   the card covering the active turn is current: rail-current
   clicking a card selects its first turn: rail-jump
+  the rail follows the reader to the current card: rail-follows
   the subtitle renders in both presentations: subtitle-modes
 requiredRailNames:
   - the first task card
@@ -44,6 +46,7 @@ requiredRailNames:
 
 # Production mutations the gate must kill (scripts/parts-mutations.mjs).
 requiredMutationNames:
+  - the rail stays where the reader left it
   - the ledger header ignores the presentation
   - the subtitle is dropped
   - the ledger keeps the classic task boundary
@@ -54,6 +57,11 @@ requiredMutationNames:
   - the minimap mis-kinds a system turn
   - the minimap demotes a tool-calling agent turn
 mutations:
+  - name: the rail stays where the reader left it
+    file: src/ui/transcript/OutlineRail.jsx
+    find: "    if (box.top < view.top) scroller.scrollTop -= view.top - box.top"
+    replace: "    if (false) scroller.scrollTop -= view.top - box.top"
+    expectedDiagnostic: "the rail follows the reader to the current card: moving back to a card above the view must scroll it in"
   - name: the ledger header ignores the presentation
     file: src/ui/transcript/TranscriptViewer.jsx
     find: "                  {ledger ? ("

@@ -285,6 +285,34 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       const currentCard = mounted.container.querySelector('.txn-rail-turn[aria-current="true"]')
       report.check(currentCard === (mounted.container.querySelectorAll('.txn-rail-turn')[1] ?? null), `${row.name}: the clicked card must become current`)
       await mounted.unmount()
+    } else if (row.kind === 'rail-follows') {
+      /* jsdom lays nothing out, so the rail body gets a 100px view over 80px cards stacked at
+         0 and 120 that move with its scrollTop; moving the reader must bring the current card in */
+      let setTurn = null
+      function Following() {
+        const [activeTurn, setActiveTurn] = React.useState(tasks[0].turnIndices[0])
+        setTurn = setActiveTurn
+        return React.createElement(TranscriptViewer, { viewModel: vm, capabilities: CAPABILITIES, presentation: 'ledger', activeTurn, onActiveTurnChange: setActiveTurn })
+      }
+      const mounted = await mount(React.createElement(Following))
+      const body = mounted.container.querySelector('#txn-rail-left-body')
+      const cards = [...mounted.container.querySelectorAll('.txn-rail-left .txn-rail-turn')]
+      let scrollTop = 0
+      body.style.overflowY = 'auto'
+      Object.defineProperty(body, 'scrollTop', { configurable: true, get: () => scrollTop, set: (value) => { scrollTop = value } })
+      Object.defineProperty(body, 'scrollHeight', { configurable: true, get: () => 400 })
+      Object.defineProperty(body, 'clientHeight', { configurable: true, get: () => 100 })
+      body.getBoundingClientRect = () => ({ top: 0, bottom: 100, left: 0, right: 240, width: 240, height: 100 })
+      cards.forEach((card, i) => {
+        card.getBoundingClientRect = () => ({ top: i * 120 - scrollTop, bottom: i * 120 + 80 - scrollTop, left: 0, right: 240, width: 240, height: 80 })
+      })
+      await mounted.act(() => setTurn(tasks[1].turnIndices[0]))
+      await mounted.settle()
+      report.check(scrollTop === 100, `${row.name}: moving to a card below the rail's view must scroll it in, expected scrollTop 100, received ${scrollTop}`)
+      await mounted.act(() => setTurn(tasks[0].turnIndices[0]))
+      await mounted.settle()
+      report.check(scrollTop === 0, `${row.name}: moving back to a card above the view must scroll it in, expected scrollTop 0, received ${scrollTop}`)
+      await mounted.unmount()
     } else if (row.kind === 'subtitle-modes') {
       for (const presentation of ['classic', 'ledger']) {
         const mounted = await mountViewer({ presentation, subtitle: SUBTITLE })
