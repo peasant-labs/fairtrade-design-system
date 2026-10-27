@@ -213,7 +213,7 @@ export default function TurnCard({
         </div>
       )}
       <Markdown text={turn.displayContent ?? turn.content} />
-      {!ledger && turn.thinking && !turn.toolCalls?.length && <Thinking block={turn.thinking} />}
+      {!ledger && turn.thinking && <Thinking block={turn.thinking} />}
       <UsageDisclosure usage={turn.usage} />
       {turn.toolCalls && !ledger && (
         turn.toolCalls.map((t) => (
