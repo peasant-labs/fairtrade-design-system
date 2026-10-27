@@ -165,8 +165,8 @@
  * @property {(layout: TranscriptSidebarLayout) => void} [onSidebarLayoutChange]  fires the FULL layout object on every explicit rail action and on zen entry and exit
  * @property {boolean} [zen]                                           ledger only: reading mode collapses both viewer rails to nothing (their strips leave too) and `host` reports false; ignored in classic; defaults false
  * @property {(zen: boolean) => void} [onZenChange]
- * @property {number} [readerWidth]                                    ledger only: the reader column width in CSS pixels. A supplied value is normalised at the boundary (clamped to 600..936 and snapped to the nearest of the exported `READER_SNAPS`), so the column and `aria-valuenow` always report a supported width; defaults 840
- * @property {(width: number) => void} [onReaderWidthChange]
+ * @property {number | 'full'} [readerWidth]                            ledger only: the reader column width, one of the exported `READER_SNAPS` (600, 840 or `'full'`, the stream's whole measured content width). A supplied number is normalised at the boundary to the nearest snap, so the column and `aria-valuenow` always report a supported width; defaults 840
+ * @property {(width: number | 'full') => void} [onReaderWidthChange]      a live drag reports pixel widths; a release or a key reports the snap it rests at
  * @property {boolean} [leftRailOpen]                                  alias for `sidebarLayout.outline`; when supplied it wins for that rail and still calls `onLeftRailOpenChange`
  * @property {(open: boolean) => void} [onLeftRailOpenChange]
  * @property {boolean} [rightRailOpen]                                 alias for `sidebarLayout.filters`; when supplied it wins for that rail and still calls `onRightRailOpenChange`

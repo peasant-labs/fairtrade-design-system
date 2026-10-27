@@ -306,7 +306,11 @@ async function readingLayoutPlay({ canvasElement }) {
   const canvas = within(canvasElement)
   const handle = canvas.getByRole('separator', { name: 'reading width' })
   expect(handle).toHaveAttribute('aria-valuemin', '600')
-  expect(handle).toHaveAttribute('aria-valuemax', '936')
+  // the widest snap is the stream's whole content width, measured, not a fixed number.
+  const stream = canvasElement.querySelector('.txn-stream')
+  const streamStyle = getComputedStyle(stream)
+  const fullWidth = Math.floor(stream.clientWidth - parseFloat(streamStyle.paddingLeft) - parseFloat(streamStyle.paddingRight))
+  await waitFor(() => expect(handle).toHaveAttribute('aria-valuemax', String(Math.max(600, fullWidth))))
   expect(handle).toHaveAttribute('aria-valuenow', '840')
   expect(handle).toHaveAttribute('aria-orientation', 'vertical')
   expect(handle).toHaveAttribute('tabindex', '0')
@@ -314,11 +318,16 @@ async function readingLayoutPlay({ canvasElement }) {
   // the keyboard rests on the snaps, and the ends are reachable.
   handle.focus()
   await userEvent.keyboard('{ArrowRight}')
-  expect(handle).toHaveAttribute('aria-valuenow', '936')
+  expect(handle).toHaveAttribute('aria-valuetext', 'full width')
+  expect(handle).toHaveAttribute('aria-valuenow', handle.getAttribute('aria-valuemax'))
+  // at full the column runs to the stream's content edge, up to the zen lane.
+  const row = canvasElement.querySelector('.txn-ledger .txn-turnrow')
+  const contentRight = stream.getBoundingClientRect().right - parseFloat(streamStyle.paddingRight) - (stream.offsetWidth - stream.clientWidth)
+  expect(Math.abs(row.getBoundingClientRect().right - contentRight)).toBeLessThanOrEqual(2)
   await userEvent.keyboard('{ArrowLeft}{ArrowLeft}')
   expect(handle).toHaveAttribute('aria-valuenow', '600')
   await userEvent.keyboard('{End}')
-  expect(handle).toHaveAttribute('aria-valuenow', '936')
+  expect(handle).toHaveAttribute('aria-valuetext', 'full width')
   await userEvent.keyboard('{Home}')
   expect(handle).toHaveAttribute('aria-valuenow', '600')
   // collapse the outline, then change the width both ways: the strip must stay closed.

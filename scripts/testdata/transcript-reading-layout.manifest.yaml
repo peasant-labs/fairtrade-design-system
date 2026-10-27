@@ -32,6 +32,8 @@ requiredInteractionNames:
   - classic ignores a zen request and keeps its rails
   - an interrupted pointer drag does not resize later
   - a controlled reader width above the range renders the widest snap
+  - a controlled full reader width renders the measured stream width
+  - a reader at full follows the stream when it resizes
   - a controlled reader width below the range renders the nearest snap
   - a non-numeric controlled reader width falls back to the default width
   - the session views are the bottom bar's first row
@@ -58,6 +60,8 @@ requiredInteractionKinds:
   classic ignores a zen request and keeps its rails: classic-zen
   an interrupted pointer drag does not resize later: width-drag-lifecycle
   a controlled reader width above the range renders the widest snap: width-controlled
+  a controlled full reader width renders the measured stream width: width-controlled
+  a reader at full follows the stream when it resizes: width-full-follows
   a controlled reader width below the range renders the nearest snap: width-controlled
   a non-numeric controlled reader width falls back to the default width: width-controlled
   the session views are the bottom bar's first row: footer-tabs
@@ -71,6 +75,8 @@ requiredInteractionKinds:
 # mutations the mounted harness applies; the five stylesheet rows are applied to the gate's
 # own stylesheet read, which mirrors the harness transform for a file read from disk.
 requiredMutationNames:
+  - the full width stops following the stream
+  - the full width is capped at the old widest snap
   - the width handler writes the rail state
   - zen does not snapshot the layout
   - zen does not restore the layout
@@ -90,10 +96,20 @@ requiredMutationNames:
   - graph mode never marks the bar
   - the sidebar cards lose their inset
 mutations:
+  - name: the full width stops following the stream
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "    window.addEventListener('resize', update)"
+    replace: "    void update"
+    expectedDiagnostic: "a reader at full follows the stream when it resizes: full must follow the stream"
+  - name: the full width is capped at the old widest snap
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "  return Math.max(READER_MIN, fullPx ?? DEFAULT_READER_WIDTH)"
+    replace: "  return Math.max(READER_MIN, Math.min(936, fullPx ?? DEFAULT_READER_WIDTH))"
+    expectedDiagnostic: "aria-valuemax must be the measured full width"
   - name: the width handler writes the rail state
     file: src/ui/transcript/TranscriptViewer.jsx
-    find: "    const next = clampReaderWidth(drag.startWidth + (e.clientX - drag.startX) * 2)"
-    replace: "    commitSidebarLayout({ outline: false })\n    const next = clampReaderWidth(drag.startWidth + (e.clientX - drag.startX) * 2)"
+    find: "    const next = clampReaderPx(drag.startWidth + (e.clientX - drag.startX) * 2, drag.fullPx)"
+    replace: "    commitSidebarLayout({ outline: false })\n    const next = clampReaderPx(drag.startWidth + (e.clientX - drag.startX) * 2, drag.fullPx)"
     expectedDiagnostic: "a width change never reopens a closed rail: a width change must not emit a sidebar layout"
   - name: zen does not snapshot the layout
     file: src/ui/transcript/TranscriptViewer.jsx
@@ -127,8 +143,8 @@ mutations:
     expectedDiagnostic: "the width handle never covers the text edge: the handle must be drawn fully outside the measure"
   - name: the controlled reader width is rendered raw
     file: src/ui/transcript/TranscriptViewer.jsx
-    find: "readerWidthProp === undefined ? rawReaderWidth : normaliseReaderWidth(rawReaderWidth)"
-    replace: "readerWidthProp === undefined ? rawReaderWidth : rawReaderWidth"
+    find: "  const readerSnap = normaliseReaderWidth(rawReaderWidth, readerFullPx)"
+    replace: "  const readerSnap = rawReaderWidth"
     expectedDiagnostic: "a controlled reader width above the range renders the widest snap: the supplied width must normalise"
   - name: the last crumb is the session id again
     file: src/ui/transcript/TranscriptViewer.jsx

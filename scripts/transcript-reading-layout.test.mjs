@@ -38,8 +38,14 @@ const LAYOUT_KEYS = ['outline', 'filters', 'host']
 const RAIL_KEYS = ['outline', 'filters']
 const SNAPS = fixture.snaps
 if (!Array.isArray(SNAPS) || SNAPS.length !== 3) throw new Error(`${FIXTURE}: snaps must list the three supported widths`)
-if (SNAPS[0] !== 600 || SNAPS[1] !== 840 || SNAPS[2] !== 936) throw new Error(`${FIXTURE}: snaps must be 600/840/936, received ${JSON.stringify(SNAPS)}`)
+if (SNAPS[0] !== 600 || SNAPS[1] !== 840 || SNAPS[2] !== 'full') throw new Error(`${FIXTURE}: snaps must be 600/840/full, received ${JSON.stringify(SNAPS)}`)
 if (fixture.defaultWidth !== SNAPS[1]) throw new Error(`${FIXTURE}: defaultWidth must be the middle snap`)
+/* jsdom lays nothing out, so the gate gives the stream a content width for `full` to measure */
+const FULL = fixture.streamWidth
+const RESIZED = fixture.resizedStreamWidth
+if (!(FULL > SNAPS[1]) || !(RESIZED > SNAPS[1]) || RESIZED === FULL) throw new Error(`${FIXTURE}: streamWidth and resizedStreamWidth must be distinct widths wider than ${SNAPS[1]}`)
+/** a snap's pixel width under the stubbed stream */
+const px = (snap) => (snap === 'full' ? FULL : snap)
 
 for (const row of [fixture.defaultsCase, ...fixture.layoutCases]) {
   assertFields(row, ['name', 'kind', 'layout', 'open'], `${FIXTURE} ${row.name}`, ['alias'])
@@ -157,6 +163,11 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   const { adaptTranscript } = await load('/src/ui/transcript/adapter.js')
   const { default: TranscriptViewer } = await load('/src/ui/transcript/TranscriptViewer.jsx')
   const vm = adaptTranscript(fixture.payload)
+  let streamWidth = FULL
+  Object.defineProperty(window.HTMLElement.prototype, 'clientWidth', {
+    configurable: true,
+    get() { return this.classList?.contains('txn-stream') ? streamWidth : 0 },
+  })
   if (vm.turns.length !== 6 || vm.tasks.length !== 2) throw new Error(`${FIXTURE}: the payload must cook to 6 turns and 2 tasks`)
   const toolsTurn = vm.turns.find((turn) => turn.index === 1)
   const tools = toolsTurn?.toolCalls ?? []
@@ -333,7 +344,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(!!handle, `${row.name}: the ledger reader must render the width handle`)
       report.check(handle?.getAttribute('aria-orientation') === 'vertical', `${row.name}: the handle must be a vertical separator`)
       report.check(handle?.getAttribute('aria-valuemin') === String(SNAPS[0]), `${row.name}: aria-valuemin must be ${SNAPS[0]}`)
-      report.check(handle?.getAttribute('aria-valuemax') === String(SNAPS[2]), `${row.name}: aria-valuemax must be ${SNAPS[2]}`)
+      report.check(handle?.getAttribute('aria-valuemax') === String(FULL), `${row.name}: aria-valuemax must be the measured full width ${FULL}, received ${handle?.getAttribute('aria-valuemax')}`)
       report.check(handle?.getAttribute('aria-valuenow') === String(fixture.defaultWidth), `${row.name}: the width must start at ${fixture.defaultWidth}`)
       report.check(rootWidthOf(container) === fixture.defaultWidth, `${row.name}: the root must carry the reader width custom property, received ${rootWidthOf(container)}`)
       const press = (type, clientX, buttons = type === 'pointerup' ? 0 : 1) => handle.dispatchEvent(new window.PointerEvent(type, { bubbles: true, cancelable: true, button: 0, buttons, clientX, clientY: 12, pointerId: 1, pointerType: 'mouse' }))
@@ -344,11 +355,12 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(widthOf(container) === fixture.defaultWidth, `${row.name}: releasing at 880 must snap back to ${fixture.defaultWidth}, received ${widthOf(container)}`)
       await mounted.act(() => press('pointerdown', 400))
       await mounted.act(() => press('pointermove', 560))
-      report.check(widthOf(container) === SNAPS[2], `${row.name}: a long drag must clamp at ${SNAPS[2]}, received ${widthOf(container)}`)
+      report.check(widthOf(container) === FULL, `${row.name}: a long drag must clamp at the full width ${FULL}, received ${widthOf(container)}`)
       await mounted.act(() => press('pointerup', 560))
-      report.check(widthOf(container) === SNAPS[2], `${row.name}: releasing past the end must rest at ${SNAPS[2]}, received ${widthOf(container)}`)
-      report.check(same(widths.slice(0, 4), [880, fixture.defaultWidth, SNAPS[2], SNAPS[2]]), `${row.name}: the host must hear every width change, received ${JSON.stringify(widths)}`)
-      report.check(rootWidthOf(container) === SNAPS[2], `${row.name}: the root must follow the released width, received ${rootWidthOf(container)}`)
+      report.check(widthOf(container) === FULL, `${row.name}: releasing past the end must rest at full, received ${widthOf(container)}`)
+      report.check(handle?.getAttribute('aria-valuetext') === 'full width', `${row.name}: the full snap must be announced as full width, received ${JSON.stringify(handle?.getAttribute('aria-valuetext'))}`)
+      report.check(same(widths.slice(0, 4), [880, fixture.defaultWidth, FULL, 'full']), `${row.name}: the host must hear every width change, received ${JSON.stringify(widths)}`)
+      report.check(rootWidthOf(container) === FULL, `${row.name}: the root must follow the released width, received ${rootWidthOf(container)}`)
       await mounted.unmount()
     } else if (row.kind === 'width-keys') {
       const widths = []
@@ -361,15 +373,15 @@ await withMountedSource(async ({ load, mount, window, React }) => {
         report.check(prevented, `${row.name}: ${key} must prevent the page default`)
         report.check(widthOf(container) === expected, `${row.name}: ${key} must rest at ${expected}, received ${widthOf(container)}`)
       }
-      await step('ArrowRight', SNAPS[2])
+      await step('ArrowRight', FULL)
       await step('ArrowLeft', SNAPS[1])
       await step('ArrowLeft', SNAPS[0])
       await step('ArrowLeft', SNAPS[0])
-      await step('End', SNAPS[2])
+      await step('End', FULL)
       await step('Home', SNAPS[0])
       await step('ArrowUp', SNAPS[1])
       await step('ArrowDown', SNAPS[0])
-      report.check(widths[0] === SNAPS[2] && widths.at(-1) === SNAPS[0], `${row.name}: the host must hear every keyboard snap, received ${JSON.stringify(widths)}`)
+      report.check(widths[0] === 'full' && widths.at(-1) === SNAPS[0], `${row.name}: the host must hear every keyboard snap, received ${JSON.stringify(widths)}`)
       await mounted.unmount()
     } else if (row.kind === 'width-rails') {
       const layouts = []
@@ -382,7 +394,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       await mounted.act(() => press('pointerdown', 400))
       await mounted.act(() => press('pointermove', 560))
       await mounted.act(() => press('pointerup', 560))
-      report.check(widthOf(container) === SNAPS[2], `${row.name}: the drag must reach ${SNAPS[2]}, received ${widthOf(container)}`)
+      report.check(widthOf(container) === FULL, `${row.name}: the drag must reach the full width ${FULL}, received ${widthOf(container)}`)
       await mounted.act(() => keydown(window, handle, 'Home'))
       report.check(widthOf(container) === SNAPS[0], `${row.name}: the keyboard must tighten to ${SNAPS[0]}, received ${widthOf(container)}`)
       report.check(layouts.length === 0, `${row.name}: a width change must not emit a sidebar layout, received ${JSON.stringify(layouts)}`)
@@ -474,8 +486,21 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     } else if (row.kind === 'width-controlled') {
       const mounted = await mountViewer({ readerWidth: row.readerWidth })
       const container = mounted.container
-      report.check(widthOf(container) === row.expected, `${row.name}: the supplied width must normalise to ${row.expected}, received ${widthOf(container)}`)
-      report.check(rootWidthOf(container) === row.expected, `${row.name}: the root property must carry the normalised width, received ${rootWidthOf(container)}`)
+      report.check(widthOf(container) === px(row.expected), `${row.name}: the supplied width must normalise to ${row.expected}, received ${widthOf(container)}`)
+      report.check(rootWidthOf(container) === px(row.expected), `${row.name}: the root property must carry the normalised width, received ${rootWidthOf(container)}`)
+      await mounted.unmount()
+    } else if (row.kind === 'width-full-follows') {
+      /* a reader resting at full follows the space it has: a resize re-measures the stream */
+      const mounted = await mountViewer({ readerWidth: 'full' })
+      const container = mounted.container
+      report.check(widthOf(container) === FULL, `${row.name}: full must start at the measured width ${FULL}, received ${widthOf(container)}`)
+      streamWidth = RESIZED
+      await mounted.act(() => window.dispatchEvent(new window.Event('resize')))
+      await mounted.settle()
+      report.check(widthOf(container) === RESIZED, `${row.name}: full must follow the stream to ${RESIZED}, received ${widthOf(container)}`)
+      report.check(rootWidthOf(container) === RESIZED, `${row.name}: the root property must follow the resize, received ${rootWidthOf(container)}`)
+      report.check(handleOf(container)?.getAttribute('aria-valuemax') === String(RESIZED), `${row.name}: the range must end at the new full width`)
+      streamWidth = FULL
       await mounted.unmount()
     } else if (row.kind === 'footer-tabs') {
       const mounted = await mountViewer()

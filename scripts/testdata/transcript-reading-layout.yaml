@@ -78,8 +78,14 @@ interactions:
     kind: width-drag-lifecycle
   - name: a controlled reader width above the range renders the widest snap
     kind: width-controlled
-    readerWidth: 1200
-    expected: 936
+    readerWidth: 1600
+    expected: full
+  - name: a controlled full reader width renders the measured stream width
+    kind: width-controlled
+    readerWidth: full
+    expected: full
+  - name: a reader at full follows the stream when it resizes
+    kind: width-full-follows
   - name: a controlled reader width below the range renders the nearest snap
     kind: width-controlled
     readerWidth: 700
@@ -97,10 +103,14 @@ interactions:
   - name: the phone header keeps the title to two lines
     kind: mobile-header
 
-# The widths the handle must rest on, narrowest first. The gate compares the mounted
+# The widths the handle must rest on, narrowest first. `full` is the stream's measured content
+# width: jsdom lays nothing out, so the gate gives the stream `streamWidth`, then
+# `resizedStreamWidth` to prove full follows a resize. The gate compares the mounted
 # aria-valuenow and the root's inline custom property to these literals.
-snaps: [600, 840, 936]
+snaps: [600, 840, full]
 defaultWidth: 840
+streamWidth: 1120
+resizedStreamWidth: 980
 
 # A payload with a bash call and an edit call, so the work panel holds both an output body
 # and a diff body (the two the shared inline edge must cover).
