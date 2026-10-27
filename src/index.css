@@ -3808,12 +3808,22 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 .txn-work-count { color: var(--ink-2); font-weight: 700; }
 .txn-work-meta { margin-left: auto; color: var(--ink-3); font-variant-numeric: tabular-nums; }
   /* the ledger draws a turn's work as branch lines under the prose: no card per call */
+  /* the reference has no rule between the prose and the work, no chevron on a row, and the
+     summary line itself is the click target that opens the rows */
+  .txn-ledger .txn-work { border-top: 0; padding-top: 0; }
+  .txn-ledger .txn-work-head { padding-inline: 0; }
+  .txn-ledger .txn-work-head .txn-work-count { padding-inline-start: 0; }
+  .txn-ledger .txn-work-rows .txn-tc-chev { display: none; }
   .txn-ledger .txn-work-rows { margin-inline-start: var(--sp-4); padding-inline-start: var(--sp-2); border-inline-start: var(--bd); }
   .txn-ledger .txn-work-rows .txn-toolcall { margin-top: 0; border: 0; background: transparent; }
   .txn-ledger .txn-work-rows .txn-tc-head { background: transparent; border: 0; padding-inline: 0; padding-block: var(--sp-1); }
   .txn-ledger .txn-work-rows .txn-tc-head:hover { background: transparent; color: var(--ink); }
   .txn-ledger .txn-work-rows .txn-tcbody { border-top: 0; padding-inline-start: var(--sp-4); }
   .txn-ledger .txn-work-rows .txn-thinking { border-top: 0; margin-top: 0; }
+  /* the reference rows lead with the kind icon alone: no disclosure chevron on the row or the
+     thinking line, and the tool name keeps chrome case */
+  .txn-ledger .txn-work-rows .txn-thinking-toggle > svg:first-child { display: none; }
+  .txn-ledger .txn-work-rows .txn-tc-head .kind { text-transform: lowercase; }
   .txn-ledger .txn-work-rows .txn-thinking-toggle { padding-block: var(--sp-1); }
 .txn-work-rows { margin-top: var(--sp-1); }
 /* the summary text sits where a tool NAME sits: past the row's chevron, its kind icon and gaps. */

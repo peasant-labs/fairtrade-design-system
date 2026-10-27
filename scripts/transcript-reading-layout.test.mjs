@@ -146,8 +146,8 @@ const css = stylesheet('src/index.css')
     const block = ruleAt(css, anchor)
     report.check(!!block && block.includes('padding-inline: var(--txn-work-inline);'), `the work summary and the tool rows share one inline edge: ${anchor.slice(0, -2)} must pad by var(--txn-work-inline)`)
   }
-  const count = ruleAt(css, '.txn-work-head .txn-work-count {')
-  report.check(!!count && count.includes('padding-inline-start: var(--txn-work-name-offset);'), 'the work summary and the tool rows share one inline edge: the summary text must take the tool-name column offset')
+  const ledgerCount = ruleAt(css, '.txn-ledger .txn-work-head .txn-work-count {')
+  report.check(!!ledgerCount && ledgerCount.includes('padding-inline-start: 0;'), 'the work summary starts at the reading edge: the ledger drops the tool-name offset')
 }
 
 /* ── mounted behaviour ────────────────────────────────────────────────────────── */
@@ -394,7 +394,10 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       const container = mounted.container
       const panel = container.querySelector('.txn-work')
       report.check(!!panel, `${row.name}: the turn with tools must render the work panel`)
-      report.check(panel?.querySelector('.txn-work-head') === null, `${row.name}: the ledger panel draws no summary head`)
+      report.check(!!panel?.querySelector('.txn-work-head'), `${row.name}: the panel names the work on one line`)
+      const panelToggle = panel?.querySelector('.txn-work-toggle')
+      if (panelToggle) await mounted.act(() => click(window, panelToggle))
+      await mounted.settle()
       const rows = [...(panel?.querySelectorAll('.txn-work-rows .txn-tc-head') ?? [])]
       report.check(rows.length === tools.length, `${row.name}: the panel must hold all ${tools.length} tool rows, received ${rows.length}`)
       for (const rowButton of rows) await mounted.act(() => click(window, rowButton))

@@ -1,5 +1,4 @@
 import { useId, useState } from 'react'
-import { ChevronDown, ChevronRight } from 'lucide-react'
 import ToolCall from './ToolCall.jsx'
 import Thinking from './Thinking.jsx'
 import { workCountLabel, workMetaLabel, workSummary } from './work-summary.js'
@@ -49,7 +48,6 @@ export default function TranscriptWorkGroup({ tools = [], thinking, openTools = 
             aria-controls={rowsId}
             onClick={() => setOpen((value) => !value)}
           >
-            {shown ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}
             <span className="txn-work-count">{count}</span>
             {meta && <span className="txn-work-meta tnum">{meta}</span>}
           </button>
@@ -61,6 +59,7 @@ export default function TranscriptWorkGroup({ tools = [], thinking, openTools = 
             <ToolCall
               key={tool.id}
               tool={tool}
+              showChevron={false}
               open={expandAll || !!openTools[tool.id]}
               onToggle={() => onToggle(tool.id)}
             />

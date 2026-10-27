@@ -220,7 +220,6 @@ export default function TurnCard({
         <TranscriptWorkGroup
           tools={turn.toolCalls}
           thinking={turn.thinking}
-          bare
           openTools={openTools}
           onToggle={toggleTool}
           expandAll={expandAll}
