@@ -32,7 +32,7 @@ requiredCaseNames:
   - the ledger head carries only the role line and its controls
   - host turn actions survive on every role
   - a role change draws one rule and the first turn draws none
-  - consecutive wordless turns share one model actions block
+  - consecutive wordless turns share one action block
   - a turn with no words is inline detail, not a card
   - the system turn's heading follows the page level
 requiredCaseKinds:
@@ -48,7 +48,7 @@ requiredCaseKinds:
   the ledger head carries only the role line and its controls: ledger-head
   host turn actions survive on every role: host-actions
   a role change draws one rule and the first turn draws none: turn-rules
-  consecutive wordless turns share one model actions block: model-actions
+  consecutive wordless turns share one action block: model-actions
   a turn with no words is inline detail, not a card: detail-turns
   the system turn's heading follows the page level: heading-level
 
@@ -65,13 +65,13 @@ requiredMutationNames:
 mutations:
   - name: the ledger keeps the classic tool rows
     file: src/ui/transcript/TurnCard.jsx
-    find: "  const workBlock = ledger && turn.role !== 'system' && (turn.toolCalls?.length || turn.thinking) ? ("
-    replace: "  const workBlock = false && (turn.toolCalls?.length || turn.thinking) ? ("
-    expectedDiagnostic: "ledger groups one turn's tools into one panel: exactly one work panel"
+    find: "  const workBlock = ledger && turn.role !== 'system' && !suppressWork && (hasWork || modelActions?.length) ? ("
+    replace: "  const workBlock = false && (hasWork || modelActions?.length) ? ("
+    expectedDiagnostic: "the turn with tools must carry one model-actions block"
   - name: the panel ignores a tool's open state
     file: src/ui/transcript/WorkGroup.jsx
-    find: "open={expandAll || !!openTools[tool.id]}"
-    replace: "open={false}"
+    find: "                  showChevron={false}\n                  open={expandAll || !!openTools[tool.id]}"
+    replace: "                  showChevron={false}\n                  open={false}"
     expectedDiagnostic: "ledger tool rows open and close: the clicked row must stay open"
   - name: the system row ignores its disclosure
     file: src/ui/transcript/SystemRow.jsx

@@ -788,7 +788,20 @@ function DefaultTranscriptApp({ theme }) {
           label: String(n + 2),
           time: '30s ago',
           content: '',
-          toolCalls: tool ? [{ ...tool, id: `${tool.id}-demo-actions` }] : [],
+          toolCalls: tool
+            ? [{
+                ...tool,
+                id: `${tool.id}-demo-actions`,
+                name: 'Bash',
+                group: 'bash',
+                preview: 'git diff --stat main...HEAD',
+                args: { command: 'git diff --stat main...HEAD' },
+                durationMs: 1200,
+                output: ' 3 files changed, 41 insertions(+), 12 deletions(-)',
+                exitCode: 0,
+                isError: false,
+              }]
+            : [],
         },
       ]
       return { ...base, turns, session: { ...base.session, turnCount: turns.length } }

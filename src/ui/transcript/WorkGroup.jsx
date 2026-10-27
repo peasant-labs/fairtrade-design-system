@@ -106,7 +106,6 @@ export function ModelActions({ turns = [], openTools = {}, onToggle = () => {}, 
   return (
     <div className={'txn-modelactions' + (shown ? ' is-open' : '')}>
       <button type="button" className="txn-modelactions-head" aria-expanded={shown} onClick={closeAll}>
-        <span className="txn-modelactions-label">model actions</span>
         <span className="txn-modelactions-summary tnum">{label}</span>
       </button>
       {shown && (

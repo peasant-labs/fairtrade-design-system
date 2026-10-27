@@ -660,7 +660,7 @@ export default function TranscriptViewer({
     }
   }
   function stepTurn(dir) {
-    const ids = visibleTurns.map((t) => t.index)
+    const ids = (cardTurns.length ? cardTurns : visibleTurns).map((t) => t.index)
     const cur = ids.indexOf(activeTurn)
     const next = Math.max(0, Math.min(ids.length - 1, cur + dir))
     if (ids[next] != null) jumpTo(ids[next], { switchTab: false })
@@ -711,12 +711,19 @@ export default function TranscriptViewer({
     const focusInHeader = !!header && typeof document !== 'undefined' && header.contains(document.activeElement)
     setHeroHidden(pinned && !focusInHeader && overflowAfterRelease > STICKY_SCROLL_THRESHOLD + HERO_RELEASE_SLACK)
   }
+  /* A model-actions block is not a turn: only a turn that draws a card (prose, or the system
+     row) owns the reading position and the keyboard step. */
+  const cardTurns = useMemo(
+    () => visibleTurns.filter((t) => t.role === 'system' || String(t.displayContent ?? t.content ?? '').trim() !== ''),
+    [visibleTurns],
+  )
+
   function onScroll() {
     const sc = scrollRef.current
     if (!sc) return
     latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()
     syncScrollChrome(sc)
-    setActiveTurn(turnAtReadingLine(visibleTurns,
+    setActiveTurn(turnAtReadingLine(cardTurns,
       index => turnRefs.current[index]?.offsetTop ?? Infinity,
       sc.scrollTop + sc.clientHeight * 0.4))
   }
