@@ -213,12 +213,13 @@ export default function TurnCard({
         </div>
       )}
       <Markdown text={turn.displayContent ?? turn.content} />
-      {turn.thinking && <Thinking block={turn.thinking} />}
+      {turn.thinking && !turn.toolCalls?.length && <Thinking block={turn.thinking} />}
       <UsageDisclosure usage={turn.usage} />
       {turn.toolCalls && (ledger ? (
         /* one grouped panel per turn: the computed summary above the same tool rows */
         <TranscriptWorkGroup
           tools={turn.toolCalls}
+          thinking={turn.thinking}
           openTools={openTools}
           onToggle={toggleTool}
           expandAll={expandAll}

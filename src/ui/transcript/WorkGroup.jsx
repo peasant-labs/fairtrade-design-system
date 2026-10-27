@@ -1,6 +1,7 @@
 import { useId, useState } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import ToolCall from './ToolCall.jsx'
+import Thinking from './Thinking.jsx'
 import { workCountLabel, workMetaLabel, workSummary } from './work-summary.js'
 
 /* TranscriptWorkGroup — one turn's tool activity as a single panel. In the ledger presentation
@@ -23,7 +24,7 @@ import { workCountLabel, workMetaLabel, workSummary } from './work-summary.js'
  * @param {(id: string) => void} [props.onToggle]
  * @param {boolean} [props.expandAll]
  */
-export default function TranscriptWorkGroup({ tools = [], openTools = {}, onToggle = () => {}, expandAll = false }) {
+export default function TranscriptWorkGroup({ tools = [], thinking, openTools = {}, onToggle = () => {}, expandAll = false }) {
   /* One line per turn: the computed summary is the panel, and the tool rows open on request.
      A host filter ("expand all tool calls"), a host-opened tool, or a search reveal opens it. */
   const [open, setOpen] = useState(false)
@@ -60,6 +61,8 @@ export default function TranscriptWorkGroup({ tools = [], openTools = {}, onTogg
               onToggle={() => onToggle(tool.id)}
             />
           ))}
+          {/* the turn's thinking closes the same branch list, one line like a tool call */}
+          {thinking && <Thinking block={thinking} />}
         </div>
       )}
     </div>

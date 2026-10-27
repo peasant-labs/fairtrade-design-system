@@ -3756,12 +3756,12 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
    opt-in presentation adds, so the classic card is untouched. Tokens only, radius 0, both
    themes free. */
 .txn-ledger { --txn-reader-width: 840px; }
-.txn-turnwrap-ledger { max-inline-size: var(--txn-reader-width); margin-inline: auto 0; }
+.txn-turnwrap-ledger { max-inline-size: var(--txn-reader-width); margin-inline: auto; }
 .txn-turn.txn-turn-ledger { background: transparent; border: 0; }
 /* a faint rule marks a change of role between adjacent turns, and never opens the trace. */
 /* the rule belongs to the reader column, not the scrolled stream: without the cap it runs out
    to the stream's left edge while the turns sit right-aligned inside the reading width. */
-.txn-ledger .txn-turn-rule { border: 0; border-top: var(--bd); opacity: .7; margin-block: var(--sp-4); margin-inline: auto 0; max-inline-size: var(--txn-reader-width); }
+.txn-ledger .txn-turn-rule { border: 0; border-top: var(--bd); opacity: .7; margin-block: var(--sp-4); margin-inline: auto; max-inline-size: var(--txn-reader-width); }
 
 /* the active marker stays: the leading rail is an inset shadow, so a borderless ledger turn
    still shows which turn is current. */
@@ -3772,7 +3772,7 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
    The reader column is right-aligned inside the stream (margin-inline: auto 0, as on the turn
    column), so the phase takes the same trailing alignment. Sticky behaviour and the vertical
    rhythm stay. */
-.txn-ledger .txn-phase { max-inline-size: var(--txn-reader-width); margin-inline: auto 0; }
+.txn-ledger .txn-phase { max-inline-size: var(--txn-reader-width); margin-inline: auto; }
 
 .txn-turnhead-ledger { gap: var(--sp-2); }
 .txn-roleico {
@@ -3804,6 +3804,14 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 }
 .txn-work-count { color: var(--ink-2); font-weight: 700; }
 .txn-work-meta { margin-left: auto; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  /* the ledger draws a turn's work as branch lines under the prose: no card per call */
+  .txn-ledger .txn-work-rows { margin-inline-start: var(--sp-4); padding-inline-start: var(--sp-2); border-inline-start: var(--bd); }
+  .txn-ledger .txn-work-rows .txn-toolcall { margin-top: 0; border: 0; background: transparent; }
+  .txn-ledger .txn-work-rows .txn-tc-head { background: transparent; border: 0; padding-inline: 0; padding-block: var(--sp-1); }
+  .txn-ledger .txn-work-rows .txn-tc-head:hover { background: transparent; color: var(--ink); }
+  .txn-ledger .txn-work-rows .txn-tcbody { border-top: 0; padding-inline-start: var(--sp-4); }
+  .txn-ledger .txn-work-rows .txn-thinking { border-top: 0; margin-top: 0; }
+  .txn-ledger .txn-work-rows .txn-thinking-toggle { padding-block: var(--sp-1); }
 .txn-work-rows { margin-top: var(--sp-1); }
 /* the summary text sits where a tool NAME sits: past the row's chevron, its kind icon and gaps. */
 .txn-work-head .txn-work-count { padding-inline-start: var(--txn-work-name-offset); }
