@@ -4,6 +4,44 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.47 - 2026-10-27
+
+### Changed
+
+- A ledger turn's work is its own row after the turn card. The prose ends the
+  turn, and the tool and thinking lines follow as a separate block, so the
+  summary is never read as the turn's footer. The summary line is the click
+  target that opens the rows, and collapsing it closes any tool left open
+  inside, so the block always reopens.
+- Tool rows and the thinking line are inline detail, one line each with the
+  kind icon: no disclosure chevron on the row, no rule between the prose and
+  the work, and the thinking text lines up with a tool output's first line.
+- Only a turn with words gets a card. A turn that is only thinking or tool work
+  renders inline with no role well, no number and no time, keeping its heading
+  for assistive tech. A subagent turn is a ledger turn too, not the classic
+  subtask box.
+- The ledger's pinned bar is the timeline alone; the session title stays in the
+  breadcrumb and the page header. The reader centres in the space it has, with
+  the reserved control lane mirrored on both sides, and the turn rule and phase
+  heading stay inside the reading column.
+- The timeline's tick kind follows the role: a user turn fills the bar, an
+  agent turn is the amber band, and a system notice is the short neutral mark.
+  A tool call no longer demotes an agent turn, so a run of agent turns reads
+  amber again.
+- The checkpoint marker is the chip alone, with no whiskers running out to
+  either side.
+- The in-use demo's switcher names the apps `transcript`, `village` and
+  `peasant`.
+
+### Fixed
+
+- The publish bar's action reads `publish` in every state. The popup still
+  opens in update mode for a published transcript, so the distinction lives in
+  the dialog, not the button.
+- The work summary counts a file only for a read; an edit already counts as an
+  edit, so one edit no longer reads "1 file, 1 edit".
+- Classic keeps a turn's thinking disclosure when the turn also has tool calls.
+
 ## 0.0.46 - 2026-10-26
 
 ### Added
