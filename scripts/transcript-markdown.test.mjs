@@ -25,8 +25,10 @@ const importDom = new JSDOM('<!doctype html><html><body></body></html>')
 for (const [key, value] of Object.entries({ window: importDom.window, document: importDom.window.document, navigator: importDom.window.navigator })) {
   Object.defineProperty(globalThis, key, { configurable: true, writable: true, value })
 }
-const mutation = process.env.FAIRTRADE_MARKDOWN_SOURCE_MUTATION ? JSON.parse(process.env.FAIRTRADE_MARKDOWN_SOURCE_MUTATION) : null
-const sourceOnly = !!mutation || process.env.FAIRTRADE_MARKDOWN_SOURCE_BASELINE === '1'
+// Only the dedicated mutation child imports this module with the source-only query.
+// Invoking this file normally always runs the built and mounted gate, regardless of environment.
+const sourceOnly = new URL(import.meta.url).search === '?source-only'
+const mutation = sourceOnly && process.env.FAIRTRADE_MARKDOWN_SOURCE_MUTATION ? JSON.parse(process.env.FAIRTRADE_MARKDOWN_SOURCE_MUTATION) : null
 const ui = sourceOnly ? null : await import('../dist/lib/ui.js')
 
 const CASE_FIELDS = ['name', 'prop', 'source', 'expect']

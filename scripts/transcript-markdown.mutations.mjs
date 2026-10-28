@@ -17,7 +17,7 @@ const manifest = document.toJS()
 if (!Array.isArray(manifest?.mutations) || manifest.expectedMutationCount !== manifest.mutations.length) throw new Error('Markdown mutation manifest must contain its exact mutation inventory')
 
 const source = readFileSync(sourcePath, 'utf8')
-const baseline = spawnSync(process.execPath, ['scripts/transcript-markdown.test.mjs'], {
+const baseline = spawnSync(process.execPath, ['scripts/transcript-markdown.source-child.mjs'], {
   cwd: ROOT,
   encoding: 'utf8',
   env: { ...process.env, FAIRTRADE_MARKDOWN_SOURCE_BASELINE: '1', FAIRTRADE_MARKDOWN_SOURCE_MUTATION: '' },
@@ -26,7 +26,7 @@ if (baseline.status !== 0 || baseline.signal || baseline.error) throw new Error(
 for (const mutation of manifest.mutations) {
   const occurrences = source.split(mutation.find).length - 1
   if (occurrences !== 1) throw new Error(`${mutation.name}: source mutation anchor occurred ${occurrences} times`)
-  const result = spawnSync(process.execPath, ['scripts/transcript-markdown.test.mjs'], {
+  const result = spawnSync(process.execPath, ['scripts/transcript-markdown.source-child.mjs'], {
     cwd: ROOT,
     encoding: 'utf8',
     env: { ...process.env, FAIRTRADE_MARKDOWN_SOURCE_BASELINE: '', FAIRTRADE_MARKDOWN_SOURCE_MUTATION: JSON.stringify(mutation) },

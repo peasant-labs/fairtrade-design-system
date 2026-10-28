@@ -191,7 +191,7 @@
     "test:mobile-layout": "node scripts/mobile-layout.test.mjs",
     "test:transcript-composite-width": "node scripts/transcript-composite-width.test.mjs",
     "test:transcript-markdown": "node scripts/transcript-markdown.test.mjs",
-    "test:transcript-markdown:mutations": "node scripts/transcript-markdown.mutations.mjs",
+    "test:transcript-markdown:mutations": "node scripts/transcript-markdown.entrypoint.test.mjs && node scripts/transcript-markdown.mutations.mjs",
     "lint:css": "node scripts/css-token-lint.mjs",
     "test:css-guards": "node scripts/css-guards.test.mjs",
     "smoke:transcript": "node scripts/smoke-transcript.mjs",
