@@ -2293,12 +2293,12 @@
 
   /* ---- tool calls + per-tool renderers ---- */
   .txn-toolcall { margin-top: var(--sp-2); }
-  .txn-tc-head { grid-template-columns: auto auto 1fr auto; cursor: pointer; width: 100%; text-align: left; background: var(--surface-2); border: 0; }
+  .txn-tc-head { grid-template-columns: auto auto minmax(0, 1fr) max-content; cursor: pointer; width: 100%; text-align: left; background: var(--surface-2); border: 0; }
   .txn-tc-head:hover { background: var(--surface-hover); }
   .txn-tc-chev { color: var(--ink-4); flex: none; }
   .txn-tc-head .kind { color: var(--olive); }
   .txn-tc-head .path { font-size: var(--fs-label); }
-  .txn-tc-dur { color: var(--ink-4); }
+  .txn-tc-dur { color: var(--ink-4); white-space: nowrap; overflow-wrap: normal; word-break: normal; flex-shrink: 0; }
 
   .txn-tcbody { border-top: var(--bd); padding: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-2); }
   .txn-tc-desc { font-size: var(--fs-body); color: var(--ink-3); line-height: 1.5; }

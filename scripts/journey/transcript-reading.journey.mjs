@@ -16,6 +16,15 @@ for (const row of fixture.mobile) test(`transcript mobile drawers ${row.name}`, 
   await page.goto(`${origin}/?app=transcript&transcript=ledger-reading&fb=off&theme=${info.project.name}#inuse`, { waitUntil: 'domcontentloaded' })
   await page.locator('#inuse').scrollIntoViewIfNeeded()
   const viewer = page.locator('.txn-app'), footer = viewer.locator('.txn-footer')
+  if (row.width === 320) {
+    const durations = viewer.locator('#turn-1 .txn-tc-dur')
+    for (const [index, { label }] of fixture.toolDurations.entries()) {
+      const item = durations.nth(index)
+      await expect(item).toHaveText(label)
+      const geometry = await item.evaluate(el => { const range = document.createRange(); range.selectNodeContents(el); return { rects: range.getClientRects().length, whiteSpace: getComputedStyle(el).whiteSpace, width: el.getBoundingClientRect().width, scrollWidth: el.scrollWidth } })
+      expect(geometry.rects).toBe(1); expect(geometry.whiteSpace).toBe('nowrap'); expect(geometry.width).toBeGreaterThanOrEqual(geometry.scrollWidth)
+    }
+  }
   const menu = footer.getByRole('button', { name: 'transcript tools', exact: true })
   const shot = async state => { if (row.width === 320) await page.screenshot({ path: `/tmp/opencode/mobile-proof-expandable/${info.project.name}-${state}.png` }) }
   await expect(viewer.getByRole('tablist', { name: 'session views' })).toBeVisible()

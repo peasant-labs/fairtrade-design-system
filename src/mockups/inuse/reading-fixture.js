@@ -4,10 +4,10 @@ const spec = JSON.parse(source)
 export const readingUnverifiedPull = spec.unverified
 
 export function readingPayload({ short = false, taskCount = short ? spec.shortTaskCount : spec.taskCount } = {}) {
-  const tool = (id) => ({ id, name: 'Bash', arguments: JSON.stringify({ command: `printf ${id}` }), result: `${id}-output`, durationMs: 1000 })
+  const tool = (id, durationMs = 1000) => ({ id, name: 'Bash', arguments: JSON.stringify({ command: `printf ${id}` }), result: `${id}-output`, durationMs })
   const turns = [
     { index: 0, role: 'user', content: 'Reading request 0' },
-    { index: 1, role: 'assistant', content: `First response owns the action list.\n\n\`\`\`text\n${spec.longCode}\n\`\`\``, toolCalls: Array.from({ length: short ? spec.shortLeadingActions : spec.leadingActions }, (_, n) => tool(`leading-${n}`)) },
+    { index: 1, role: 'assistant', content: `First response owns the action list.\n\n\`\`\`text\n${spec.longCode}\n\`\`\``, toolCalls: Array.from({ length: short ? spec.shortLeadingActions : spec.leadingActions }, (_, n) => tool(`leading-${n}`, spec.toolDurations[n % spec.toolDurations.length].ms)) },
     { index: 2, role: 'assistant', content: 'Later distinct prose target', toolCalls: [tool('target-beta')] },
     { index: 3, role: 'assistant', content: '', toolCalls: [tool('target-gamma')] },
     { index: 4, role: 'assistant', entryType: 'thinking', content: 'target thinking evidence, kept with its original source identity.' },

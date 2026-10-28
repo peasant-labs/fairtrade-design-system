@@ -6,6 +6,7 @@
   "leadingActions": 32,
   "lastResponseParagraphs": 24,
   "unverified": {"owner": "example", "repo": "sample", "number": 42, "url": "https://github.com/example/sample/pull/42", "source": {"turnIndex": 3, "toolCallIndex": 0, "toolCallId": "target-gamma"}},
+  "toolDurations": [{"name": "seconds", "ms": 1000, "label": "1s"}, {"name": "milliseconds", "ms": 820, "label": "820ms"}, {"name": "minutes and seconds", "ms": 75000, "label": "1m 15s"}],
   "shortTaskCount": 1,
   "shortLeadingActions": 1,
   "width": [
