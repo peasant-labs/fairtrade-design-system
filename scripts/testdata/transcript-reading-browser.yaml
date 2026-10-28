@@ -6,6 +6,14 @@
   "leadingActions": 32,
   "lastResponseParagraphs": 12,
   "unverified": {"owner": "example", "repo": "sample", "number": 42, "url": "https://github.com/example/sample/pull/42", "source": {"turnIndex": 3, "toolCallIndex": 0, "toolCallId": "target-gamma"}},
+  "shortTaskCount": 1,
+  "shortLeadingActions": 1,
+  "longCode": "very_long_synthetic_identifier_for_local_code_scroll_very_long_synthetic_identifier_for_local_code_scroll_very_long_synthetic_identifier_for_local_code_scroll",
+  "longTitle": "SyntheticLongTranscriptTitleWithoutSpacesForNarrowViewportSyntheticLongTranscriptTitleWithoutSpacesForNarrowViewportSyntheticLongTranscriptTitleWithoutSpaces",
+  "mobile": [
+    {"name": "narrow portrait", "width": 320, "height": 720, "motion": "reduce", "footerMaxHeight": 52},
+    {"name": "phone landscape", "width": 720, "height": 390, "motion": "no-preference", "footerMaxHeight": 52}
+  ],
   "navigation": [
     {"name": "later prose tool destination", "query": "target-beta-output", "turn": 2, "kind": "tool", "command": "printf target-beta", "compact": false},
     {"name": "wordless tool destination in compact", "query": "target-gamma-output", "turn": 3, "kind": "tool", "command": "printf target-gamma", "compact": true},

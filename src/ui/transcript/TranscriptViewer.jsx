@@ -8,7 +8,7 @@ import {
   GitCommitHorizontal, List, Network, Eye,
   Filter as FilterIcon, FileSearch, Sparkles, Flag, Play, RefreshCw, RotateCcw,
   CornerDownRight, Check, X, PanelLeftClose, PanelLeftOpen,
-  PanelRightClose, PanelRightOpen,
+  PanelRightClose, PanelRightOpen, Menu as MenuIcon,
 } from 'lucide-react'
 import ProviderIcon from '../ProviderIcon.jsx'
 import { formatDurationMins, formatDurationMs } from './time.js'
@@ -286,6 +286,7 @@ export default function TranscriptViewer({
   renderTurnActions,
   anchorHref,
   headerActions,
+  utilityActions,
   streamPrelude,
   showTail = false,
   showOutcome = true,
@@ -337,6 +338,49 @@ export default function TranscriptViewer({
   // the action-menu disclosures are view-state too (controllable; default CLOSED).
   const [shareOpen, setShareOpen] = useControllable(shareOpenProp, onShareOpenChange, false)
   const [moreOpen, setMoreOpen] = useControllable(moreOpenProp, onMoreOpenChange, false)
+  // Mobile overlays are transient and never update the persisted desktop rail layout.
+  const [mobile, setMobile] = useState(false)
+  const [mobileToolsOpen, setMobileToolsOpen] = useState(false)
+  const [mobileDrawer, setMobileDrawer] = useState(null)
+  const mobileDialogRef = useRef(null)
+  const mobileOpenerRef = useRef(null)
+  const mobileOutlineRef = useRef(null)
+  const mobileFiltersRef = useRef(null)
+  const mobileToolsRef = useRef(null)
+  const mobileDrawerId = useId()
+  const closeMobileDrawer = useCallback(() => {
+    setMobileDrawer(null)
+    requestAnimationFrame(() => mobileOpenerRef.current?.focus())
+  }, [])
+  useEffect(() => {
+    const dialog = mobileDialogRef.current
+    if (!dialog) return
+    if (mobileDrawer && !dialog.open) dialog.showModal()
+    if (!mobileDrawer && dialog.open) dialog.close()
+  }, [mobileDrawer])
+  useEffect(() => {
+    const media = window.matchMedia?.('(min-width: 768px)')
+    if (!media) return
+    const onResize = () => { setMobile(!media.matches); if (media.matches) { setMobileDrawer(null); setMobileToolsOpen(false) } }
+    onResize()
+    media.addEventListener('change', onResize)
+    return () => media.removeEventListener('change', onResize)
+  }, [])
+  useEffect(() => { setMobileDrawer(null); setMobileToolsOpen(false) }, [vm?.session?.id])
+  useEffect(() => {
+    if (!mobileToolsOpen) return
+    const onKey = (event) => { if (event.key === 'Escape' && !event.defaultPrevented) { setMobileToolsOpen(false); mobileToolsRef.current?.focus() } }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [mobileToolsOpen])
+  useEffect(() => {
+    if (!mobile) return
+    const item = tabRefs.current[tab], strip = item?.parentElement
+    if (!item || !strip) return
+    const view = strip.getBoundingClientRect(), box = item.getBoundingClientRect()
+    if (box.left < view.left) strip.scrollLeft -= view.left - box.left
+    else if (box.right > view.right) strip.scrollLeft += box.right - view.right
+  }, [mobile, tab])
 
   /* ── the sidebar layout view model ──────────────────────────────────────────
      Openness is USER STATE, never a function of the reading width. `sidebarLayout`
@@ -1121,6 +1165,39 @@ export default function TranscriptViewer({
     </div>
   )
 
+  const moreActions = (caps.canEdit || caps.canExport) && (
+            <div className="menu-anchor">
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm btn-icon menu-trigger"
+                aria-label="more actions"
+                aria-expanded={moreOpen}
+                aria-haspopup="menu"
+                onClick={() => { setMoreOpen((o) => !o); setShareOpen(false) }}
+              >
+                <MoreHorizontal size={14} aria-hidden="true" />
+              </button>
+              {moreOpen && (
+                <div className="menu-pop menu-float txn-more-pop" data-align="end" role="menu" aria-label="more actions">
+                  <ul className="menu-list">
+                    {caps.canEdit && (
+                      <li><button type="button" className="menu-item" role="menuitem" onClick={() => { setMoreOpen(false); callbacks.onEdit && callbacks.onEdit() }}><Pencil size={14} aria-hidden="true" /><span className="menu-text">edit</span></button></li>
+                    )}
+                    {caps.canExport && (
+                      <>
+                        {caps.canEdit && <li role="separator"><hr className="menu-sep" /></li>}
+                        <li className="menu-cap">download</li>
+                        {['json', 'jsonl', 'markdown'].map((fmt) => (
+                          <li key={fmt}><button type="button" className="menu-item" role="menuitem" onClick={() => { setMoreOpen(false); callbacks.onExport && callbacks.onExport(/** @type {'json'|'jsonl'|'markdown'} */ (fmt)) }}><Download size={14} aria-hidden="true" /><span className="menu-text">{fmt}</span></button></li>
+                        ))}
+                      </>
+                    )}
+                  </ul>
+                </div>
+              )}
+            </div>
+            )
+
   return (
     <div
       className={'txn-app' + (theme === 'light' ? ' txn-light' : '') + (ledger ? ' txn-ledger' : '') + (ledger && zen ? ' txn-zen' : '') + (heroCondensed ? ' txn-app-condensed' : '')}
@@ -1166,6 +1243,7 @@ export default function TranscriptViewer({
             {/* host session-level actions (attest etc.) lead the row — the
                 composite's fixed capability set stays the shared tail */}
             {headerActions}
+            {!mobile && utilityActions}
             {showTail && (<>
             <div className="menu-anchor">
               <button
@@ -1198,38 +1276,7 @@ export default function TranscriptViewer({
               )}
             </div>
 
-            {(caps.canEdit || caps.canExport) && (
-            <div className="menu-anchor">
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm btn-icon menu-trigger"
-                aria-label="more actions"
-                aria-expanded={moreOpen}
-                aria-haspopup="menu"
-                onClick={() => { setMoreOpen((o) => !o); setShareOpen(false) }}
-              >
-                <MoreHorizontal size={14} aria-hidden="true" />
-              </button>
-              {moreOpen && (
-                <div className="menu-pop menu-float txn-more-pop" data-align="end" role="menu" aria-label="more actions">
-                  <ul className="menu-list">
-                    {caps.canEdit && (
-                      <li><button type="button" className="menu-item" role="menuitem" onClick={() => { setMoreOpen(false); callbacks.onEdit && callbacks.onEdit() }}><Pencil size={14} aria-hidden="true" /><span className="menu-text">edit</span></button></li>
-                    )}
-                    {caps.canExport && (
-                      <>
-                        {caps.canEdit && <li role="separator"><hr className="menu-sep" /></li>}
-                        <li className="menu-cap">download</li>
-                        {['json', 'jsonl', 'markdown'].map((fmt) => (
-                          <li key={fmt}><button type="button" className="menu-item" role="menuitem" onClick={() => { setMoreOpen(false); callbacks.onExport && callbacks.onExport(/** @type {'json'|'jsonl'|'markdown'} */ (fmt)) }}><Download size={14} aria-hidden="true" /><span className="menu-text">{fmt}</span></button></li>
-                        ))}
-                      </>
-                    )}
-                  </ul>
-                </div>
-              )}
-            </div>
-            )}
+            {!mobile && moreActions}
             </>)}
           </div>
         </div>
@@ -1329,7 +1376,7 @@ export default function TranscriptViewer({
           </Collapsible>
 
         {/* CENTER */}
-        <section className="txn-center" role="tabpanel" id={`${tabsId}-panel`} aria-labelledby={`${tabsId}-${tab}`}>
+        <section className="txn-center" role="tabpanel" id={`${tabsId}-panel`} aria-labelledby={`${tabsId}-${tab}`} onClickCapture={() => { if (mobileToolsOpen) setMobileToolsOpen(false) }}>
           {tab === 'trace' && (
             <div className={'txn-trace' + (sticky && viewMode === 'list' ? ' txn-trace-pinned' : '')}>
               <Collapsible open={sticky && viewMode === 'list'} className="txn-sticky-disclosure">
@@ -1660,6 +1707,30 @@ export default function TranscriptViewer({
       </div>
 
       {/* ===================== OVERLAYS ===================== */}
+      <dialog
+        id={mobileDrawerId}
+        ref={mobileDialogRef}
+        className="txn-mobile-drawer"
+        aria-label={mobileDrawer === 'outline' ? 'user turns' : 'filters'}
+        onCancel={(event) => { event.preventDefault(); closeMobileDrawer() }}
+        onClick={(event) => { if (event.target === event.currentTarget) closeMobileDrawer() }}
+      >
+        {mobileDrawer && <div className="txn-mobile-drawer-panel">
+          <div className="txn-mobile-drawer-head">
+            <button type="button" aria-pressed={mobileDrawer === 'outline'} onClick={() => { mobileOpenerRef.current = mobileToolsRef.current; if (mobileDrawer === 'outline') closeMobileDrawer(); else setMobileDrawer('outline') }}>user turns</button>
+            {tabHasFilters && <button type="button" aria-pressed={mobileDrawer === 'filters'} onClick={() => { mobileOpenerRef.current = mobileToolsRef.current; if (mobileDrawer === 'filters') closeMobileDrawer(); else setMobileDrawer('filters') }}>filters</button>}
+            <button type="button" aria-label="close drawer" onClick={closeMobileDrawer}><X size={14} aria-hidden="true" /></button>
+          </div>
+          <div className="txn-mobile-drawer-body">
+            {mobileDrawer === 'outline'
+              ? <OutlineRail viewModel={vm} tab={tab} presentation={presentation} activeTurn={activeTurn} onJump={(idx) => { jumpTo(idx, { switchTab: false }); closeMobileDrawer() }} />
+              : <FiltersRail tab={tab} filters={filters} onFiltersChange={setFilters} counts={counts} checkpoints={commits} filtersActive={filtersActive}
+                onClear={() => setFilters({ ...DEFAULT_FILTERS, toolGroups: Object.fromEntries(TOOL_GROUPS.map((id) => [id, true])) })}
+                onJumpStart={() => { jumpTo(visibleTurns[0]?.index ?? 0, { switchTab: false }); closeMobileDrawer() }}
+                onJumpLatest={() => { jumpTo(visibleTurns[visibleTurns.length - 1]?.index ?? 0, { switchTab: false }); closeMobileDrawer() }} />}
+          </div>
+        </div>}
+      </dialog>
       {/* per-turn label popover — rendered ONLY when canLabel (capability-gated). */}
       {canLabel && labelFor != null && (
         <LabelPopover turnId={labelFor} current={savedLabels[labelFor]} onSave={saveLabel} onClose={() => setLabelFor(null)} />
@@ -1669,6 +1740,14 @@ export default function TranscriptViewer({
           and position as a smaller second one. The tab row never leaves — a touch screen has no
           keyboard, but it still needs to reach every view. */}
       <footer className="txn-footer">
+        <Collapsible open={mobile && mobileToolsOpen} keepMounted className="txn-mobile-utilities">
+        <div className="txn-mobile-controls">
+          {mobile && utilityActions}
+          {mobile && showTail && moreActions}
+          <button className="txn-mobile-rail-button" ref={mobileOutlineRef} type="button" aria-label="user turns" title="user turns" aria-controls={mobileDrawerId} aria-expanded={mobileDrawer === 'outline'} onClick={() => { mobileOpenerRef.current = mobileToolsRef.current; setMobileToolsOpen(false); setMobileDrawer('outline') }}><LayoutList size={14} aria-hidden="true" /></button>
+          {tabHasFilters && <button className="txn-mobile-rail-button" ref={mobileFiltersRef} type="button" aria-label="filters" title="filters" aria-controls={mobileDrawerId} aria-expanded={mobileDrawer === 'filters'} onClick={() => { mobileOpenerRef.current = mobileToolsRef.current; setMobileToolsOpen(false); setMobileDrawer('filters') }}><SlidersHorizontal size={14} aria-hidden="true" /></button>}
+        </div>
+        </Collapsible>
         <div className="txn-foot-tabs">
           {tabStrip}
           {showSearchTrigger && (
@@ -1683,6 +1762,7 @@ export default function TranscriptViewer({
               <kbd className="txn-search-key">⌘F</kbd>
             </button>
           )}
+          {mobile && <button ref={mobileToolsRef} type="button" className="txn-mobile-tools-toggle" aria-label="transcript tools" title="transcript tools" aria-expanded={mobileToolsOpen} onClick={() => setMobileToolsOpen(open => !open)}><MenuIcon size={14} aria-hidden="true" /></button>}
         </div>
         {(footerHints || footerProgress) && (
           <div className="txn-foot-meta">

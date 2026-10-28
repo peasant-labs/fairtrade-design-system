@@ -763,9 +763,9 @@ function DefaultTranscriptApp({ theme }) {
   // `?transcript=ledger` reads the same demo session through the ledger presentation.
   // `?transcript=ledger-system` keeps that canonical session and appends one synthetic system
   // turn, so the built app renders the compact system row (the canonical demo has none).
-  const ledger = search === 'ledger' || search === 'ledger-system' || search === 'ledger-actions' || search === 'ledger-reading'
+  const ledger = search === 'ledger' || search === 'ledger-system' || search === 'ledger-actions' || search === 'ledger-reading' || search === 'ledger-reading-short'
   const vm = useMemo(() => {
-    if (search === 'ledger-reading') return adaptTranscript(readingPayload())
+    if (search === 'ledger-reading' || search === 'ledger-reading-short') return adaptTranscript(readingPayload({ short: search === 'ledger-reading-short' }))
     if (search === 'pi') return adaptTranscript(piPayload)
     const base = buildMockupVM()
     if (search === 'ledger-actions') {
@@ -828,7 +828,7 @@ function DefaultTranscriptApp({ theme }) {
   // object. The demo has no host sidebar, so `host` is carried but renders nothing here.
   const [sidebarLayout, setSidebarLayout] = useState({ outline: true, filters: true, host: true })
   // the local app owns the header row: the publish bar (status, one action, more) and its popup.
-  const publish = usePublishFlow()
+  const publish = usePublishFlow(vm)
   return (
     <>
       <TranscriptViewer
@@ -844,6 +844,7 @@ function DefaultTranscriptApp({ theme }) {
         onSidebarLayoutChange={ledger ? setSidebarLayout : undefined}
         onZenChange={ledger ? () => {} : undefined}
         headerActions={publish.bar}
+        utilityActions={publish.utility}
         openTools={openTools}
         onOpenToolsChange={setOpenTools}
         graphSlot={({ viewModel: gvm, activeTurn, onSelectTurn }) => (
@@ -851,6 +852,7 @@ function DefaultTranscriptApp({ theme }) {
         )}
       />
       {publish.dialog}
+      {publish.toast}
     </>
   )
 }

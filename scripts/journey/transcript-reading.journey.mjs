@@ -4,9 +4,77 @@ import { loadFixturePair } from '../mounted-parts.mjs'
 // Pixels, real overflow and post-animation visibility cannot be proved in JSDOM.
 // Reuse the existing built app/runner and small shared demo fixture; no extra service.
 const { fixture } = loadFixturePair('scripts/testdata/transcript-reading-browser.yaml', 'scripts/testdata/transcript-reading-browser.manifest.yaml', {
-  navigation: 'requiredNavigationNames', initial: 'requiredInitialNames', rail: 'requiredRailNames',
+  navigation: 'requiredNavigationNames', initial: 'requiredInitialNames', rail: 'requiredRailNames', mobile: 'requiredMobileNames',
 })
 const origin = `http://localhost:${process.env.JOURNEY_APP_PORT || 5180}`
+test.describe('touch transcript', () => {
+test.use({ hasTouch: true })
+for (const row of fixture.mobile) test(`transcript mobile drawers ${row.name}`, async ({ page }, info) => {
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin })
+  await page.setViewportSize({ width: row.width, height: row.height })
+  await page.emulateMedia({ reducedMotion: row.motion })
+  await page.goto(`${origin}/?app=transcript&transcript=ledger-reading&fb=off&theme=${info.project.name}#inuse`, { waitUntil: 'domcontentloaded' })
+  await page.locator('#inuse').scrollIntoViewIfNeeded()
+  const viewer = page.locator('.txn-app'), footer = viewer.locator('.txn-footer')
+  const menu = footer.getByRole('button', { name: 'transcript tools', exact: true })
+  const shot = async state => { if (row.width === 320) await page.screenshot({ path: `/tmp/opencode/mobile-proof-expandable/${info.project.name}-${state}.png` }) }
+  await expect(viewer.getByRole('tablist', { name: 'session views' })).toBeVisible()
+  const active = viewer.getByRole('tab', { selected: true })
+  await active.focus(); await page.keyboard.press('End')
+  const lastTab = viewer.getByRole('tab', { name: /annotations/ })
+  await expect(lastTab).toHaveAttribute('aria-selected', 'true')
+  expect(await lastTab.evaluate(el => { const a = el.getBoundingClientRect(), b = el.parentElement.getBoundingClientRect(); return a.left >= b.left - 1 && a.right <= b.right + 1 })).toBe(true)
+  await page.keyboard.press('Home'); await page.keyboard.press('ArrowRight')
+  await expect(menu).toHaveAttribute('aria-expanded', 'false')
+  const closedHeight = (await footer.boundingBox()).height
+  expect(closedHeight).toBeLessThanOrEqual(row.footerMaxHeight)
+  await shot('closed')
+  await menu.click()
+  await expect(menu).toHaveAttribute('aria-expanded', 'true')
+  const copy = footer.getByRole('button', { name: 'copy transcript', exact: true })
+  const more = footer.getByRole('button', { name: 'more', exact: true })
+  const outline = footer.getByRole('button', { name: 'user turns', exact: true })
+  const filters = footer.getByRole('button', { name: 'filters', exact: true })
+  await expect(copy).toBeVisible()
+  const boxes = await Promise.all([copy, more, outline, filters].map(el => el.boundingBox()))
+  for (const box of boxes) { expect(box.width).toBeGreaterThanOrEqual(44); expect(box.height).toBeGreaterThanOrEqual(44) }
+  for (const control of [copy, more, outline, filters]) {
+    const border = await control.evaluate(el => ({ width: parseFloat(getComputedStyle(el).borderTopWidth), style: getComputedStyle(el).borderTopStyle }))
+    expect(border.width).toBeGreaterThan(0); expect(border.style).toBe('solid')
+  }
+  for (let i = 1; i < boxes.length; i++) expect(Math.abs(boxes[i].x - (boxes[i-1].x + boxes[i-1].width))).toBeLessThanOrEqual(1)
+  expect((await footer.boundingBox()).height).toBeLessThanOrEqual(closedHeight + 52)
+  await shot('expanded')
+  await copy.click()
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain('Reading request 0')
+  await expect(page.getByRole('status').filter({ hasText: 'transcript copied' })).toBeVisible()
+  await more.click(); await page.getByRole('menuitem', { name: 'copy link' }).click()
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain('transcript=ledger-reading')
+  await expect(page.getByRole('status').filter({ hasText: 'link copied' })).toBeVisible()
+  await expect(viewer.locator('.txn-header').getByText('link copied')).toHaveCount(0)
+  await expect(more).toBeFocused()
+  await shot('toast')
+  await page.locator('#turn-1 .txn-turn').click()
+  await expect(menu).toHaveAttribute('aria-expanded', 'false')
+  await expect(page.locator('#turn-1 .txn-turn')).toHaveClass(/txn-active/)
+  await menu.click()
+  await filters.click()
+  await expect(viewer.getByRole('dialog', { name: 'filters' })).toBeVisible()
+  await expect(menu).toHaveAttribute('aria-expanded', 'false')
+  await shot('filters')
+  const prompts = viewer.getByRole('dialog').getByRole('checkbox', { name: /prompts/ })
+  await prompts.uncheck(); await expect(page.locator('#turn-0')).toHaveCount(0)
+  await prompts.check(); await expect(page.locator('#turn-0')).toHaveCount(1)
+  await page.keyboard.press('Escape')
+  await menu.click(); await outline.click()
+  await expect(viewer.getByRole('dialog', { name: 'user turns' })).toBeVisible()
+  await shot('turns')
+  await page.keyboard.press('Escape')
+  await menu.click(); await page.keyboard.press('Escape')
+  await expect(menu).toHaveAttribute('aria-expanded', 'false')
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
+})
+})
 const open = async (page, theme, turn) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.goto(`${origin}/?app=transcript&transcript=ledger-reading&fb=off&theme=${theme}${turn == null ? '' : `&turn=${turn}`}#inuse`)
