@@ -1,4 +1,4 @@
-import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
+import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
 import TranscriptViewer from './TranscriptViewer.jsx'
 import { frame } from '../story-frame.jsx'
 import { piPayload } from '../../mockups/inuse/pi-fixture.js'
@@ -110,14 +110,23 @@ export default meta
 
 /* Unmanaged: only the two required props. Proves the state defaults (trace tab, dark theme). */
 export const Default = {
-  args: { viewModel, capabilities: fullCaps },
-  play: async ({ canvasElement }) => {
+  args: { viewModel, capabilities: fullCaps, callbacks: { onLabel: fn() } },
+  play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
     // state default → the trace tab is active and the turn cards render.
     expect(canvas.getAllByText('#1').length).toBeGreaterThan(0)
     // canLabel:true → the per-turn label affordance is wired.
     expect(canvas.getAllByText('label').length).toBeGreaterThan(0)
+    await userEvent.click(within(canvasElement.querySelector('#turn-0')).getByRole('button', { name: 'label', exact: true }))
+    expect(canvas.getByText('label turn 0')).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'save label' }))
+    expect(args.callbacks.onLabel).toHaveBeenCalledWith(0, { outcome: 'neutral', flag: '' })
   },
+}
+
+export const ClassicLabel = {
+  args: { viewModel, capabilities: fullCaps, presentation: 'classic', callbacks: { onLabel: fn() } },
+  play: Default.play,
 }
 
 // a host's trail, as online passes it for a transcript opened from a collective: with room on the row
