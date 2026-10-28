@@ -77,7 +77,7 @@ export default function ToolCall({ tool, open = false, onToggle, showChevron = t
           )}
         </span>
       </button>
-      <Collapsible open={open}><ToolBody tool={tool} /><UsageDisclosure usage={tool.usage} /></Collapsible>
+      <Collapsible open={open} startOnFrame><ToolBody tool={tool} /><UsageDisclosure usage={tool.usage} /></Collapsible>
     </div>
   )
 }
