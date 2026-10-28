@@ -243,18 +243,44 @@ for (const row of fixture.widthLifecycle) test(`transcript reading width ${row.n
     expect(await stream.evaluate(el => el.scrollTop)).toBe(0)
     return
   }
-  const stream = page.locator('.txn-stream'), target = page.locator('#turn-49 .txn-turn')
+  const stream = page.locator('.txn-stream'), target = page.locator(row.kind === 'top' ? '#turn-0 .txn-turn' : '#turn-49 .txn-turn')
   await target.click()
+  if (row.kind === 'top') await stream.evaluate(el => { el.scrollTop = 0 })
+  const topY = row.kind === 'top' ? await target.evaluate(el => el.getBoundingClientRect().top) : null
   const handle = page.getByRole('separator', { name: 'reading width' })
-  const box = await handle.boundingBox()
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await page.mouse.down()
-  await page.mouse.move(box.x + box.width / 2 - 40, box.y + box.height / 2)
+  await handle.evaluate(el => { el.addEventListener('pointerdown', e => { window.__widthPointerId = e.pointerId }, { once: true }) })
+  const box = await handle.boundingBox(), x = box.x + box.width / 2, y = box.y + box.height / 2
+  await page.mouse.move(x, y); await page.mouse.down()
+  await expect.poll(() => handle.evaluate(el => el.hasPointerCapture(window.__widthPointerId))).toBe(true)
+  await page.mouse.move(x - 40, y)
+  await expect.poll(() => handle.evaluate(el => el.hasPointerCapture(window.__widthPointerId))).toBe(true)
+  if (row.kind === 'top') {
+    await expect(target).toHaveClass(/txn-active/)
+    expect(await stream.evaluate(el => el.scrollTop)).toBe(0)
+    await page.mouse.up()
+    await expect(page.locator('.txn-app')).not.toHaveClass(/txn-app-condensed/)
+    expect(await stream.evaluate(el => el.scrollTop)).toBe(0)
+    await expect(target).toHaveClass(/txn-active/)
+    const position = await target.evaluate(el => el.getBoundingClientRect().top)
+    expect(Math.abs(position - topY)).toBeLessThan(3)
+    return
+  }
   const view = await stream.boundingBox()
   await page.mouse.move(view.x + view.width / 2, view.y + view.height / 2)
+  await expect.poll(() => handle.evaluate(el => el.hasPointerCapture(window.__widthPointerId))).toBe(true)
   const before = await stream.evaluate(el => el.scrollTop)
-  await page.mouse.wheel(0, -180)
+  if (row.kind === 'keyboard') { await stream.focus(); await page.keyboard.press('PageUp') }
+  else await page.mouse.wheel(0, -180)
   await expect.poll(() => stream.evaluate(el => el.scrollTop)).toBeLessThan(before)
+  await expect.poll(() => handle.evaluate(el => el.hasPointerCapture(window.__widthPointerId))).toBe(true)
+  const after = await stream.evaluate(el => el.scrollTop)
   await page.mouse.up()
+  await expect.poll(() => stream.evaluate(el => el.scrollTop)).toBeLessThanOrEqual(after)
+  if (row.kind === 'interrupt') {
+    await page.evaluate(async () => { await new Promise(requestAnimationFrame); await new Promise(requestAnimationFrame) })
+    expect(await stream.evaluate(el => el.scrollTop)).toBeLessThanOrEqual(after)
+  }
+
 })
 for (const row of fixture.widthAction) test(`transcript reading width ${row.name}`, async ({ page }, info) => {
   await open(page, info.project.name)

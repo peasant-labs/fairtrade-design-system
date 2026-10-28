@@ -1003,8 +1003,8 @@ export default function TranscriptViewer({
     }
     endReaderDrag(e.clientX)
   }
-  function onReaderPointerLeave() {
-    endReaderDrag()
+  function onReaderPointerLeave(e) {
+    if (!e.currentTarget.hasPointerCapture?.(e.pointerId)) endReaderDrag()
   }
   function onReaderLostPointerCapture() {
     endReaderDrag()

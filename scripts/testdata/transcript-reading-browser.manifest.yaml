@@ -24,3 +24,5 @@ requiredMovingHeaderNames:
 requiredWidthLifecycleNames:
   - wheel interrupts active resize
   - short trace stays expanded at top
+  - long trace width drag at top
+  - keyboard scroll interrupts captured resize

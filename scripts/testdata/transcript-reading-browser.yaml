@@ -20,7 +20,9 @@
   ],
   "widthLifecycle": [
     {"name": "wheel interrupts active resize", "kind": "interrupt"},
-    {"name": "short trace stays expanded at top", "kind": "short"}
+    {"name": "short trace stays expanded at top", "kind": "short"},
+    {"name": "long trace width drag at top", "kind": "top"},
+    {"name": "keyboard scroll interrupts captured resize", "kind": "keyboard"}
   ],
   "widthAction": [
     {"name": "folded action retains its visible source", "query": "target-gamma-output", "command": "printf target-gamma"}
