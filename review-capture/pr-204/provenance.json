@@ -1,0 +1,85 @@
+{
+  "source": "278339e46b1cf1090da0e33d7c955a95d7244b62",
+  "url": "http://127.0.0.1:15580",
+  "build": "pnpm build:app",
+  "results": [
+    {
+      "file": "desktop-dark.png",
+      "theme": "dark",
+      "ledger": true,
+      "shell": true,
+      "title": "Port the transcript canvas into the shared package",
+      "font": "\"Atkinson Hyperlegible Mono\", ui-monospace, Menlo, Consolas, monospace",
+      "body": 11,
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "control": null,
+      "footer": true,
+      "header": true,
+      "assets": [
+        "/assets/index-Dflan3hP.js",
+        "/assets/index-8bBCzmm3.css"
+      ]
+    },
+    {
+      "file": "mobile-dark.png",
+      "theme": "dark",
+      "ledger": true,
+      "shell": true,
+      "title": "Port the transcript canvas into the shared package",
+      "font": "\"Atkinson Hyperlegible Mono\", ui-monospace, Menlo, Consolas, monospace",
+      "body": 11,
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "control": {
+        "width": 104.484375,
+        "height": 44
+      },
+      "footer": true,
+      "header": true,
+      "assets": [
+        "/assets/index-Dflan3hP.js",
+        "/assets/index-8bBCzmm3.css"
+      ]
+    },
+    {
+      "file": "desktop-light.png",
+      "theme": "light",
+      "ledger": true,
+      "shell": true,
+      "title": "Port the transcript canvas into the shared package",
+      "font": "\"Atkinson Hyperlegible Mono\", ui-monospace, Menlo, Consolas, monospace",
+      "body": 11,
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "control": null,
+      "footer": true,
+      "header": true,
+      "assets": [
+        "/assets/index-Dflan3hP.js",
+        "/assets/index-8bBCzmm3.css"
+      ]
+    },
+    {
+      "file": "mobile-light.png",
+      "theme": "light",
+      "ledger": true,
+      "shell": true,
+      "title": "Port the transcript canvas into the shared package",
+      "font": "\"Atkinson Hyperlegible Mono\", ui-monospace, Menlo, Consolas, monospace",
+      "body": 11,
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "control": {
+        "width": 104.484375,
+        "height": 44
+      },
+      "footer": true,
+      "header": true,
+      "assets": [
+        "/assets/index-Dflan3hP.js",
+        "/assets/index-8bBCzmm3.css"
+      ]
+    }
+  ]
+}
