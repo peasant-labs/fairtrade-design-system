@@ -5,7 +5,16 @@
   "shortTaskCount": 1,
   "shortLeadingActions": 1,
   "leadingActions": 32,
-  "lastResponseParagraphs": 12,
+  "lastResponseParagraphs": 24,
+  "width": [
+    {"name": "long assistant reading point survives keyboard reflow", "turn": 50, "paragraph": 6, "gesture": "keyboard", "motion": "reduce"},
+    {"name": "long assistant reading point survives pointer reversal", "turn": 50, "paragraph": 6, "gesture": "pointer", "motion": "no-preference"},
+    {"name": "long assistant reading point survives cancelled drag", "turn": 50, "paragraph": 6, "gesture": "cancel", "motion": "reduce"},
+    {"name": "selected user survives keyboard reflow", "turn": 49, "paragraph": 0, "gesture": "keyboard", "motion": "no-preference"}
+  ],
+  "widthAction": [
+    {"name": "folded action retains its visible source", "query": "target-gamma-output", "command": "printf target-gamma"}
+  ],
   "longCode": "very_long_synthetic_identifier_for_local_code_scroll_very_long_synthetic_identifier_for_local_code_scroll_very_long_synthetic_identifier_for_local_code_scroll",
   "longTitle": "SyntheticLongTranscriptTitleWithoutSpacesForNarrowViewportSyntheticLongTranscriptTitleWithoutSpacesForNarrowViewportSyntheticLongTranscriptTitleWithoutSpaces",
   "mobile": [

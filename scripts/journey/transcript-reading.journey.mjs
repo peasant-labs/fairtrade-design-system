@@ -4,7 +4,7 @@ import { loadFixturePair } from '../mounted-parts.mjs'
 // Pixels, real overflow and post-animation visibility cannot be proved in JSDOM.
 // Reuse the existing built app/runner and small shared demo fixture; no extra service.
 const { fixture } = loadFixturePair('scripts/testdata/transcript-reading-browser.yaml', 'scripts/testdata/transcript-reading-browser.manifest.yaml', {
-  navigation: 'requiredNavigationNames', initial: 'requiredInitialNames', rail: 'requiredRailNames', mobile: 'requiredMobileNames',
+  navigation: 'requiredNavigationNames', initial: 'requiredInitialNames', rail: 'requiredRailNames', mobile: 'requiredMobileNames', width: 'requiredWidthNames', widthAction: 'requiredWidthActionNames',
 })
 const origin = `http://localhost:${process.env.JOURNEY_APP_PORT || 5180}`
 test.describe('touch transcript', () => {
@@ -97,7 +97,7 @@ for (const row of fixture.mobile) test(`transcript mobile drawers ${row.name}`, 
   await expect.poll(() => page.locator('.txn-stream').evaluate(el => el.scrollTop)).toBeGreaterThan(0)
   const stream = viewer.locator('.txn-stream')
   await stream.evaluate(el => { el.scrollTop = el.scrollHeight })
-  const last = viewer.getByText('Response for reading request 23, paragraph 12.', { exact: false })
+  const last = viewer.getByText(`Response for reading request 23, paragraph ${fixture.lastResponseParagraphs}.`, { exact: false })
   await expect(last).toBeVisible()
   const lastGeometry = await last.evaluate(el => ({ bottom: el.getBoundingClientRect().bottom, streamBottom: el.closest('.txn-stream').getBoundingClientRect().bottom }))
   expect(lastGeometry.bottom).toBeLessThanOrEqual(lastGeometry.streamBottom)
@@ -141,6 +141,85 @@ const inside = locator => locator.evaluate(el => {
   const stream = el.closest('.txn-stream')
   const box = el.getBoundingClientRect(), view = stream.getBoundingClientRect()
   return { top: box.top, bottom: box.bottom, viewTop: view.top, viewBottom: view.bottom, shown: !el.closest('[hidden], [inert]') }
+})
+for (const row of fixture.width) test(`transcript reading width ${row.name}`, async ({ page }, info) => {
+  await page.emulateMedia({ reducedMotion: row.motion })
+  await open(page, info.project.name)
+  const stream = page.locator('.txn-stream')
+  const paragraph = page.locator(`#turn-${row.turn} .txn-body p`).nth(row.paragraph)
+  await paragraph.click()
+  await paragraph.evaluate(el => {
+    const stream = el.closest('.txn-stream')
+    stream.scrollTop += el.getBoundingClientRect().top - stream.getBoundingClientRect().top - stream.clientHeight * 0.4
+  })
+  await expect.poll(() => paragraph.evaluate(el => {
+    const r = el.getBoundingClientRect(), s = el.closest('.txn-stream').getBoundingClientRect()
+    return r.top > s.top && r.top < s.bottom
+  })).toBe(true)
+  await expect(page.locator(`#turn-${row.turn} .txn-turn`)).toHaveClass(/txn-active/)
+  if (row.turn === 50) {
+    const geometry = await page.locator(`#turn-${row.turn}`).evaluate(el => {
+      const box = el.getBoundingClientRect(), view = el.closest('.txn-stream').getBoundingClientRect()
+      return { top: box.top, bottom: box.bottom, viewTop: view.top, viewBottom: view.bottom }
+    })
+    expect(geometry.top).toBeLessThan(geometry.viewTop)
+    expect(geometry.bottom).toBeGreaterThan(geometry.viewBottom)
+  }
+  const handle = page.getByRole('separator', { name: 'reading width' })
+  await handle.evaluate(el => el.focus({ preventScroll: true }))
+  const initial = await paragraph.evaluate(el => {
+    const target = el.closest('.txn-turnwrap'), stream = el.closest('.txn-stream')
+    const view = stream.getBoundingClientRect(), box = target.getBoundingClientRect()
+    const y = Math.max(Math.max(view.top, box.top) + 1, Math.min(Math.min(view.bottom, box.bottom) - 1, view.top + view.height * 0.4))
+    const left = Math.max(view.left, box.left), right = Math.min(view.right, box.right)
+    const pos = document.caretPositionFromPoint(left + (right - left) * 0.5, y)
+    if (!pos || pos.offsetNode.nodeType !== Node.TEXT_NODE || !target.contains(pos.offsetNode)) throw new Error('no visible text point in selected source')
+    const range = document.createRange()
+    range.setStart(pos.offsetNode, pos.offset)
+    range.collapse(true)
+    window.__readerTestRange = range
+    return range.getBoundingClientRect().top
+  })
+  const positions = [{ event: 'before', y: initial }]
+  if (process.env.READER_WIDTH_PROOF_DIR && row.gesture === 'keyboard' && row.turn === 50) await page.screenshot({ path: `${process.env.READER_WIDTH_PROOF_DIR}/${info.project.name}-before.png` })
+  const check = async () => {
+    const point = await page.evaluate(() => window.__readerTestRange.getBoundingClientRect().top)
+    positions.push({ event: 'width update', y: point, scrollTop: await stream.evaluate(el => el.scrollTop) })
+    expect(Math.abs(point - initial)).toBeLessThan(3)
+    await expect(page.locator(`#turn-${row.turn} .txn-turn`)).toHaveClass(/txn-active/)
+  }
+  if (row.gesture === 'keyboard') {
+    for (const key of ['Home', 'ArrowRight', 'ArrowLeft', 'End']) {
+      await page.keyboard.press(key); await check()
+      if (key === 'Home' && process.env.READER_WIDTH_PROOF_DIR && row.turn === 50) await page.screenshot({ path: `${process.env.READER_WIDTH_PROOF_DIR}/${info.project.name}-after.png` })
+    }
+  } else {
+    const box = await handle.boundingBox(), x = box.x + box.width / 2, y = box.y + box.height / 2
+    await page.mouse.move(x, y); await page.mouse.down()
+    for (const dx of [-60, -30, -70]) { await page.mouse.move(x + dx, y); await check() }
+    if (row.gesture === 'cancel') await handle.dispatchEvent('pointercancel', { pointerId: 1, pointerType: 'mouse', button: 0 })
+    await page.mouse.up(); await check()
+  }
+  const beforeScroll = await stream.evaluate(el => el.scrollTop)
+  const streamBox = await stream.boundingBox()
+  await page.mouse.move(streamBox.x + streamBox.width / 2, streamBox.y + streamBox.height / 2)
+  await page.mouse.wheel(0, -180)
+  await expect.poll(() => stream.evaluate(el => el.scrollTop)).toBeLessThan(beforeScroll)
+  await info.attach('reader-position', { body: JSON.stringify(positions), contentType: 'application/json' })
+})
+for (const row of fixture.widthAction) test(`transcript reading width ${row.name}`, async ({ page }, info) => {
+  await open(page, info.project.name)
+  await page.locator('.txn-stream').focus()
+  await page.keyboard.press('Control+f')
+  await page.getByRole('textbox', { name: 'search transcript' }).fill(row.query)
+  const target = page.locator('.txn-toolcall').filter({ has: page.locator('.path', { hasText: row.command }) })
+  await expect(target.locator('button').first()).toHaveAttribute('aria-expanded', 'true')
+  await expect.poll(async () => { const m = await inside(target); return m.shown && m.top >= m.viewTop && m.top < m.viewBottom }).toBe(true)
+  const handle = page.getByRole('separator', { name: 'reading width' })
+  await handle.evaluate(el => el.focus({ preventScroll: true }))
+  const before = await target.evaluate(el => el.getBoundingClientRect().top)
+  await page.keyboard.press('Home')
+  expect(Math.abs(await target.evaluate(el => el.getBoundingClientRect().top) - before)).toBeLessThan(3)
 })
 for (const row of fixture.navigation) test(`transcript rendered navigation ${row.name}`, async ({ page }, info) => {
   await open(page, info.project.name)
