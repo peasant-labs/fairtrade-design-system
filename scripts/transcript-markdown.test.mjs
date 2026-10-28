@@ -8,10 +8,8 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { createServer } from 'vite'
 import { JSDOM } from 'jsdom'
 import YAML from 'yaml'
-import { withMountedSource } from './mounted-parts.mjs'
 
 const ROOT = resolve(new URL('..', import.meta.url).pathname)
 const MANIFEST_PATH = resolve(ROOT, 'scripts/testdata/transcript-markdown.manifest.yaml')
@@ -27,7 +25,9 @@ const importDom = new JSDOM('<!doctype html><html><body></body></html>')
 for (const [key, value] of Object.entries({ window: importDom.window, document: importDom.window.document, navigator: importDom.window.navigator })) {
   Object.defineProperty(globalThis, key, { configurable: true, writable: true, value })
 }
-const ui = await import('../dist/lib/ui.js')
+const mutation = process.env.FAIRTRADE_MARKDOWN_SOURCE_MUTATION ? JSON.parse(process.env.FAIRTRADE_MARKDOWN_SOURCE_MUTATION) : null
+const sourceOnly = !!mutation || process.env.FAIRTRADE_MARKDOWN_SOURCE_BASELINE === '1'
+const ui = sourceOnly ? null : await import('../dist/lib/ui.js')
 
 const CASE_FIELDS = ['name', 'prop', 'source', 'expect']
 const EXPECT_FIELDS = [
@@ -121,30 +121,36 @@ function loadFixtures() {
 }
 
 const fixtures = loadFixtures()
-const mutation = process.env.FAIRTRADE_MARKDOWN_SOURCE_MUTATION ? JSON.parse(process.env.FAIRTRADE_MARKDOWN_SOURCE_MUTATION) : null
-let TranscriptMarkdown = ui.TranscriptMarkdown
+let TranscriptMarkdown = ui?.TranscriptMarkdown
 let viteServer
 
-if (mutation) {
-  const mutationPlugin = {
-    name: 'fairtrade-markdown-source-mutation',
-    enforce: 'pre',
-    transform(code, id) {
-      if (!id.split('?')[0].endsWith(`/${mutation.file}`)) return null
-      const count = code.split(mutation.find).length - 1
-      if (count !== 1) throw new Error(`${mutation.name}: source mutation anchor occurred ${count} times`)
-      return { code: code.replace(mutation.find, mutation.replace), map: null }
+if (sourceOnly) {
+  // Transpile the real source and its JSX imports in memory. The mutation child does not
+  // need Vite or the built bundle; mixing both loaders also exposed native allocator crashes.
+  const { registerHooks } = await import('node:module')
+  const { fileURLToPath, pathToFileURL } = await import('node:url')
+  const ts = await import('typescript')
+  const target = resolve(ROOT, mutation?.file ?? 'src/ui/transcript/Markdown.jsx')
+  let applied = false
+  const hooks = registerHooks({
+    load(url, context, nextLoad) {
+      if (!url.startsWith('file:') || !url.endsWith('.jsx')) return nextLoad(url, context)
+      const file = fileURLToPath(url)
+      if (!file.startsWith(`${ROOT}/src/`)) return nextLoad(url, context)
+      let source = readFileSync(file, 'utf8')
+      if (mutation && file === target) {
+        const count = source.split(mutation.find).length - 1
+        if (count !== 1) throw new Error(`${mutation.name}: source mutation anchor occurred ${count} times`)
+        source = source.replace(mutation.find, mutation.replace)
+        applied = true
+      }
+      const output = ts.transpileModule(source, { fileName: file, compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } })
+      return { format: 'module', source: output.outputText, shortCircuit: true }
     },
-  }
-  viteServer = await createServer({
-    appType: 'custom',
-    configFile: false,
-    logLevel: 'silent',
-    plugins: [mutationPlugin],
-    root: ROOT,
-    server: { middlewareMode: true },
   })
-  const loaded = await viteServer.ssrLoadModule('/src/ui/transcript/Markdown.jsx')
+  const loaded = await import(pathToFileURL(target).href)
+  hooks.deregister()
+  if (mutation && !applied) throw new Error(`${mutation.name}: production source mutation was not applied`)
   TranscriptMarkdown = loaded.default
 }
 
@@ -195,9 +201,11 @@ for (const testCase of fixtures.cases) {
   }
 }
 
-// Markdown mutations exercise the complete Markdown corpus above. The unrelated demo and
+// Source-only runs exercise the complete Markdown corpus above. The unrelated demo and
 // Mermaid probes below create additional Vite/DOM environments and cannot detect these mutations.
-if (!mutation) {
+if (!sourceOnly) {
+const { createServer } = await import('vite')
+const { withMountedSource } = await import('./mounted-parts.mjs')
 /* Mount the canonical in-use demo, not a hand-built view model, so the shipped fixture is checked
    through TranscriptApp -> buildWire -> adaptTranscript -> TranscriptViewer -> TurnCard ->
    TranscriptMarkdown. The marker locates the existing turn that owns the structured body; all
@@ -303,4 +311,4 @@ if (failures.length) {
   ].join('\n'))
   process.exit(1)
 }
-console.log(`\ntranscript markdown fixture gate: all ${results.length} built-export assertions passed across ${fixtures.cases.length} strict cases.`)
+console.log(`\ntranscript markdown fixture gate: all ${results.length} ${sourceOnly ? 'source' : 'built-export'} assertions passed across ${fixtures.cases.length} strict cases.`)

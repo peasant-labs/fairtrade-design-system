@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* Reversible bite proof for the built renderer gate. Each mutation is declared in the strict
-   manifest, applied only by a Vite transform in a child process, and must make the production
+   manifest, applied only to in-memory production source in a child process, and must make the production
    behavior assertions fail. The checked-out source is never changed. */
 
 import { readFileSync } from 'node:fs'
@@ -17,17 +17,23 @@ const manifest = document.toJS()
 if (!Array.isArray(manifest?.mutations) || manifest.expectedMutationCount !== manifest.mutations.length) throw new Error('Markdown mutation manifest must contain its exact mutation inventory')
 
 const source = readFileSync(sourcePath, 'utf8')
+const baseline = spawnSync(process.execPath, ['scripts/transcript-markdown.test.mjs'], {
+  cwd: ROOT,
+  encoding: 'utf8',
+  env: { ...process.env, FAIRTRADE_MARKDOWN_SOURCE_BASELINE: '1', FAIRTRADE_MARKDOWN_SOURCE_MUTATION: '' },
+})
+if (baseline.status !== 0 || baseline.signal || baseline.error) throw new Error(`production source baseline failed: child status=${baseline.status}, signal=${baseline.signal}, spawn error=${baseline.error?.stack ?? 'none'}; output: ${baseline.stdout}\n${baseline.stderr}`)
 for (const mutation of manifest.mutations) {
   const occurrences = source.split(mutation.find).length - 1
   if (occurrences !== 1) throw new Error(`${mutation.name}: source mutation anchor occurred ${occurrences} times`)
   const result = spawnSync(process.execPath, ['scripts/transcript-markdown.test.mjs'], {
     cwd: ROOT,
     encoding: 'utf8',
-    env: { ...process.env, FAIRTRADE_MARKDOWN_SOURCE_MUTATION: JSON.stringify(mutation) },
+    env: { ...process.env, FAIRTRADE_MARKDOWN_SOURCE_BASELINE: '', FAIRTRADE_MARKDOWN_SOURCE_MUTATION: JSON.stringify(mutation) },
   })
   if (result.status === 0) throw new Error(`${mutation.name}: the isolated production mutation survived the fixture gate`)
   const output = `${result.stdout}\n${result.stderr}`
-  if (!output.includes(mutation.expectedError)) throw new Error(`${mutation.name}: gate failed for an unrelated reason; expected ${mutation.expectedError}; child status=${result.status}, signal=${result.signal}, spawn error=${result.error?.stack ?? 'none'}; output: ${output.trim()}`)
+  if (result.status !== 1 || result.signal || result.error || !output.includes(`FAIL ${mutation.expectedError}`)) throw new Error(`${mutation.name}: gate failed for an unrelated reason; expected failed assertion ${mutation.expectedError} and exit 1; child status=${result.status}, signal=${result.signal}, spawn error=${result.error?.stack ?? 'none'}; output: ${output.trim()}`)
   if (source !== readFileSync(sourcePath, 'utf8')) throw new Error(`${mutation.name}: mutation changed the checked-out production source`)
 }
 
