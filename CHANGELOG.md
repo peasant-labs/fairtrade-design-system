@@ -18,6 +18,8 @@ package is pre-1.0, so minor/patch semantics are best-effort.
 - Standalone transcripts default to the ledger presentation; classic remains available explicitly.
 - The shared app frame follows the transcript's existing host-sidebar visibility in zen mode.
 - The coordinated session header and timeline exchange uses a shorter transition while retaining reduced-motion behavior.
+- Transcript demo surfaces use ledger by default; classic remains an explicit example. Mobile rails slide with reduced-motion support, and desktop rails retain painted content while their frame collapses.
+- Mermaid diagrams render through structured SVG, and reader-width changes preserve the reading context.
 
 ## 0.0.48 - 2026-10-27
 

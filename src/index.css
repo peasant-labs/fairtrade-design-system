@@ -2134,12 +2134,15 @@
   .txn-body-grid[data-right-rail="none"] { grid-template-columns: var(--txn-outline-w) minmax(0, 1fr) 0; }
   .txn-body-grid[data-left-rail="closed"][data-right-rail="none"] { grid-template-columns: var(--txn-rail-strip-w) minmax(0, 1fr) 0; }
   /* Keep three tracks, including zero-width hidden rails, so width and content move once.
-     Expanded and collapsed controls share a cell and crossfade without replacing the DOM. */
+     Expanded and collapsed controls share a cell without replacing the DOM. */
   .txn-center { grid-column: 2; grid-row: 1; }
   .txn-rail-left, .txn-rail-strip-left { grid-column: 1; grid-row: 1; --txn-rail-open-w: var(--txn-outline-w); }
   .txn-rail-right, .txn-rail-strip-right { grid-column: 3; grid-row: 1; --txn-rail-open-w: var(--txn-filters-w); }
   .txn-rail[hidden], .txn-rail-strip[hidden] { display: none; }
   .txn-rail, .txn-rail-strip { transition-property: none; }
+  /* The full rail paints above its collapsed control until its exit completes. Otherwise
+     the strip's stationary border obscures the moving frame at the start and end. */
+  .txn-rail { z-index: 1; }
   @media (prefers-reduced-motion: no-preference) and (width >= 1080px) {
     .txn-body-grid { transition: grid-template-columns var(--dur-3) var(--ease-in-out); }
   }
@@ -3674,7 +3677,7 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 
 /* ======================================================================
    ledger presentation — the opt-in reading surface behind
-   `presentation="ledger"` on TranscriptViewer (default stays classic).
+   `presentation="ledger"` on TranscriptViewer (the default presentation).
    The root swaps to `.txn-ledger`; the pinned trace header shows the
    session title plus a visible-turns minimap in place of the
    provider/model + scrubber, and the left rail's trace tab lists one card

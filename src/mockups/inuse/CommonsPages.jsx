@@ -290,7 +290,6 @@ export function VillageTranscriptView({ viewModel, theme, onNavigate }) {
       viewModel={viewModel}
       theme={theme}
       capabilities={TRANSCRIPT_CAPS}
-      presentation="classic"
       showTail={false}
       showOutcome={false}
       headerActions={actions}
