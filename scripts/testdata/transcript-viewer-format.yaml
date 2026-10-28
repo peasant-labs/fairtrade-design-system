@@ -99,6 +99,16 @@ cases:
     kind: source-jump
     position: {kind: tool-call, turnIndex: 42, toolCallIndex: 8, requestKey: missing}
     expectedOpen: none
+  - name: filtered compact source reveals only its exact evidence
+    kind: source-jump
+    position: {kind: tool-call, turnIndex: 42, toolCallIndex: 1, requestKey: filtered}
+    filters:
+      categories: {prompts: false, responses: false, thinking: false, toolcalls: false, system: false}
+      toolGroups: {bash: false}
+      tags: {errors: true, retries: false, revert: false}
+      views: {hidden: true, expandAll: false, compact: true}
+      checkpoint: all
+    expectedOpen: second
   - name: duplicate turn index never opens a call
     kind: source-jump
     variant: duplicate-turn

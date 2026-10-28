@@ -12,6 +12,7 @@ requiredCaseNames:
   - sparse source opens the second empty-id call
   - mismatched source id never opens a call
   - absent source call never opens a call
+  - filtered compact source reveals only its exact evidence
   - duplicate turn index never opens a call
   - duplicate recorded id never opens a call
   - exact recorded id opens its command

@@ -108,9 +108,11 @@ await withMountedSource(async ({ load, mount, React, window }) => {
       if (row.variant === 'user-role') sourcePayload.turns[1].role = 'user'
       if (row.variant === 'system-role') sourcePayload.turns[1].role = 'system'
       const sourceVM = adaptTranscript(sourcePayload)
-      const SourceViewer = () => {
+      const filterChanges = []
+      const SourceViewer = ({ overrideFilters }) => {
         const [tab, setTab] = React.useState('highlights')
-        return React.createElement(TranscriptViewer, { viewModel: sourceVM, capabilities: CAPABILITIES, activeTab: tab, onTabChange: setTab, initialPosition: row.position })
+        const [, rerenderHost] = React.useState(0)
+        return React.createElement(TranscriptViewer, { viewModel: sourceVM, capabilities: CAPABILITIES, activeTab: tab, onTabChange: setTab, initialPosition: row.position, ...(row.filters ? { filters: structuredClone(overrideFilters ?? row.filters), onFiltersChange: (next) => filterChanges.push(next), onOpenToolsChange: () => rerenderHost(n => n + 1) } : {}) })
       }
       const mounted = await mount(React.createElement(SourceViewer))
       await mounted.settle(30)
@@ -120,6 +122,14 @@ await withMountedSource(async ({ load, mount, React, window }) => {
         report.check(open.length === 1 && text(open[0]).includes('printf second'), `${name}: only the second recorded command must open`)
         report.check(open.length === 1 && text(open[0]).includes('second-result'), `${name}: the matching recorded result must be shown`)
         report.check(!!mounted.container.querySelector('[role="tab"][aria-selected="true"]') && text(mounted.container.querySelector('[role="tab"][aria-selected="true"]')).includes('full trace'), `${name}: source navigation must switch to the trace`)
+        if (row.filters) {
+          report.check(filterChanges.length === 0, `${name}: revealing evidence must not rewrite persisted filters`)
+          report.check(mounted.container.querySelectorAll('.txn-toolcall').length === 1, `${name}: unrelated filtered calls must stay hidden`)
+          const changed = structuredClone(row.filters)
+          changed.views.compact = false
+          await mounted.rerender(React.createElement(SourceViewer, { overrideFilters: changed }))
+          report.check(mounted.container.querySelectorAll('.txn-toolcall').length === 0, `${name}: a later filter change must end the temporary reveal`)
+        }
       }
       await mounted.unmount()
     } else if (row.kind === 'filters-rail') {

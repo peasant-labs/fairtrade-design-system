@@ -176,6 +176,12 @@ const DEFAULT_FILTERS = Object.freeze({
   checkpoint: 'all',
 })
 
+// Controlled hosts may recreate equivalent filter objects on every render.
+const filterFingerprint = (filters) => JSON.stringify([
+  ...['categories', 'toolGroups', 'tags', 'views'].map((key) => Object.entries(filters[key] ?? {}).sort(([a], [b]) => a.localeCompare(b))),
+  filters.checkpoint,
+])
+
 /* ── between-turn markers (lifted from the mockup's inline trace markup so the .txn-* CSS matches
    exactly; the composite draws them, not the per-turn TurnCard) ─────────────────────────────── */
 
@@ -513,8 +519,20 @@ export default function TranscriptViewer({
       annotationsByTurn: vm?.filterIndex?.annotationsByTurn ?? {},
       checkpointTurn: selCommit?.turn ?? null, // adapter-joined anchor; scopes only when present
     }
-    return turns.map((t) => projectTurn(t, filters, ctx)).filter((t) => t != null)
-  }, [turns, filters, commits, vm])
+    const sourceFiltersMatch = searchReveal?.sourceIndex != null && searchReveal.filterFingerprint === filterFingerprint(filters)
+    return turns.map((t) => {
+      const projected = projectTurn(t, filters, ctx)
+      // A deliberate source jump may temporarily reveal exactly its readable
+      // call without changing the reader's persisted filter choices. A later
+      // filter change or session switch ends that exception.
+      if (!sourceFiltersMatch || searchReveal.sessionId !== session.id || searchReveal.turn !== t.index || !t.sourceIndexUnique) return projected
+      const call = t.toolCalls?.find((tool) => tool.sourceIndex === searchReveal.sourceIndex)
+      if (!call || !call.sourceIdUnique || (searchReveal.toolCallId !== undefined && searchReveal.toolCallId !== call.id)) return projected
+      if (projected?.toolCalls?.some((tool) => tool.sourceIndex === call.sourceIndex)) return projected
+      const base = projected ?? { ...t, content: '', displayContent: '', thinking: undefined, toolCalls: [] }
+      return { ...base, toolCalls: [...(base.toolCalls ?? []), call].sort((a, b) => a.sourceIndex - b.sourceIndex) }
+    }).filter((t) => t != null)
+  }, [turns, filters, commits, vm, searchReveal, session.id])
   const actionLayout = useMemo(() => actionGroups(turns, visibleTurns), [turns, visibleTurns])
 
   const readTraceReadingSnapshot = useCallback(() => {
@@ -616,12 +634,10 @@ export default function TranscriptViewer({
       if (!tool.id && turns.some(turn => turn.toolCalls?.some(call => call.id === key))) return 'discarded'
       if (tab !== 'trace') { skipTraceRestoreRef.current = true; setTab('trace'); return 'pending' }
       if (viewMode !== 'list') { setViewMode('list'); return 'pending' }
-      const visible = visibleTurns.find(turn => turn.index === owner.index)?.toolCalls?.some(call => call.sourceIndex === position.toolCallIndex)
-      if (!visible) return 'discarded'
       if (!scrollRef.current) return 'pending'
       selectTurn(owner.index)
       setOpenTools(previous => ({ ...previous, [key]: true }))
-      setSearchReveal({ turn: owner.index, where: `source:${position.toolCallIndex}`, select: false, focus: true, sequence: ++revealSequence.current })
+      setSearchReveal({ turn: owner.index, where: `source:${position.toolCallIndex}`, sourceIndex: position.toolCallIndex, toolCallId: position.toolCallId, sessionId: session.id, filterFingerprint: filterFingerprint(filters), select: false, focus: true, sequence: ++revealSequence.current })
       return 'applied'
     }
     const sc = scrollRef.current
@@ -647,7 +663,7 @@ export default function TranscriptViewer({
     else el.scrollIntoView({ block: 'start', behavior: 'auto' })
     latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()
     return 'applied'
-  }, [readTraceReadingSnapshot, tab, turns, viewMode, visibleTurns, ledger, actionLayout, setTab, setViewMode, setOpenTools])
+  }, [readTraceReadingSnapshot, tab, turns, viewMode, visibleTurns, ledger, actionLayout, setTab, setViewMode, setOpenTools, filters, session.id])
 
   const applyTraceReadingPosition = useCallback((position) => {
     const target = traceReadingPositionRef.current ?? traceReadingPosition
