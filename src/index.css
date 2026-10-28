@@ -2140,6 +2140,9 @@
   .txn-rail-right, .txn-rail-strip-right { grid-column: 3; grid-row: 1; --txn-rail-open-w: var(--txn-filters-w); }
   .txn-rail[hidden], .txn-rail-strip[hidden] { display: none; }
   .txn-rail, .txn-rail-strip { transition-property: none; }
+  /* The full rail paints above its collapsed control until its exit completes. Otherwise
+     the strip's stationary border obscures the moving frame at the start and end. */
+  .txn-rail { z-index: 1; }
   @media (prefers-reduced-motion: no-preference) and (width >= 1080px) {
     .txn-body-grid { transition: grid-template-columns var(--dur-3) var(--ease-in-out); }
   }
@@ -2361,8 +2364,8 @@
 
   /* ---- right rail ---- */
   .txn-rail { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: clip; background: var(--surface); }
-  .txn-rail > .txn-rail-body, .txn-rail > .txn-rail-head { box-sizing: border-box; width: calc(var(--txn-rail-open-w) - var(--stroke-hairline)); }
-  .txn-rail-right > .txn-rail-body, .txn-rail-right > .txn-rail-head { margin-inline-start: calc(100% - var(--txn-rail-open-w) + var(--stroke-hairline)); }
+  .txn-rail > .txn-rail-body { box-sizing: border-box; width: calc(var(--txn-rail-open-w) - var(--stroke-hairline)); }
+  .txn-rail-right > .txn-rail-body { margin-inline-start: calc(100% - var(--txn-rail-open-w) + var(--stroke-hairline)); }
   .txn-rail-left { border-right: var(--bd); }
   /* per-panel header (split layout): an icon + lowercase title, count badge on filters */
   /* rail content inset is --sp-4, matching every other in-use rail/panel (the graph project rail,
