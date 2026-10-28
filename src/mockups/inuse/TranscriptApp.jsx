@@ -765,7 +765,7 @@ function DefaultTranscriptApp({ theme }) {
   // turn, so the built app renders the compact system row (the canonical demo has none).
   const ledger = search !== 'classic'
   const vm = useMemo(() => {
-    if (search === 'ledger-reading' || search === 'ledger-reading-short') return adaptTranscript(readingPayload({ short: search === 'ledger-reading-short' }))
+    if (search === 'ledger-reading' || search === 'ledger-reading-short' || search === 'ledger-disclosure') return adaptTranscript(readingPayload({ short: search === 'ledger-reading-short', disclosure: search === 'ledger-disclosure' }))
     if (search === 'pi') return adaptTranscript(piPayload)
     const base = buildMockupVM()
     if (search === 'mermaid-reading') {

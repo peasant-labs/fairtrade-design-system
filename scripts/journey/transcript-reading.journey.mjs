@@ -6,18 +6,18 @@ import { loadFixturePair } from '../mounted-parts.mjs'
 // Pixels, real overflow and post-animation visibility cannot be proved in JSDOM.
 // Reuse the existing built app/runner and small shared demo fixture; no extra service.
 const { fixture } = loadFixturePair('scripts/testdata/transcript-reading-browser.yaml', 'scripts/testdata/transcript-reading-browser.manifest.yaml', {
-  navigation: 'requiredNavigationNames', initial: 'requiredInitialNames', rail: 'requiredRailNames', mobile: 'requiredMobileNames', width: 'requiredWidthNames', widthAction: 'requiredWidthActionNames', movingHeader: 'requiredMovingHeaderNames', widthLifecycle: 'requiredWidthLifecycleNames', drawerMotion: 'requiredDrawerMotionNames',
+  navigation: 'requiredNavigationNames', initial: 'requiredInitialNames', rail: 'requiredRailNames', mobile: 'requiredMobileNames', width: 'requiredWidthNames', widthAction: 'requiredWidthActionNames', movingHeader: 'requiredMovingHeaderNames', widthLifecycle: 'requiredWidthLifecycleNames', drawerMotion: 'requiredDrawerMotionNames', disclosures: 'requiredDisclosureNames',
 })
 const origin = `http://localhost:${process.env.JOURNEY_APP_PORT || 5180}`
 const cmykFlowchart = YAML.parse(readFileSync(new URL('../testdata/transcript-mermaid.yaml', import.meta.url), 'utf8')).accepted.find(row => row.name === 'cmyk-user-flowchart').source
 
-test('tool disclosure starts at its first frame after a busy click', async ({ page }, info) => {
+for (const row of fixture.disclosures) test(`tool disclosure ${row.name}`, async ({ page }, info) => {
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.emulateMedia({ reducedMotion: 'no-preference' })
-  await page.goto(`${origin}/?app=transcript&transcript=ledger-reading&fb=off&theme=${info.project.name}#inuse`, { waitUntil: 'domcontentloaded' })
-  const tool = page.locator('#turn-1 .txn-tc-head').first()
+  await page.emulateMedia({ reducedMotion: row.motion })
+  await page.goto(`${origin}/?app=transcript&transcript=ledger-disclosure&fb=off&theme=${info.project.name}#inuse`, { waitUntil: 'domcontentloaded' })
+  const tool = page.locator('#turn-1 .txn-tc-head').filter({ has: page.locator('.kind', { hasText: row.tool }) }).filter({ hasText: row.preview })
   await expect(tool).toBeAttached()
-  const result = await tool.evaluate(async button => {
+  const result = await tool.evaluate(async (button, selector) => {
     const original = Element.prototype.animate
     Element.prototype.animate = function (...args) {
       if (this.classList.contains('txn-disclosure')) {
@@ -32,23 +32,39 @@ test('tool disclosure starts at its first frame after a busy click', async ({ pa
         button.click()
         await new Promise(requestAnimationFrame)
         const animation = disclosure.getAnimations()[0]
-        return { time: animation?.currentTime, duration: animation?.effect.getComputedTiming().duration, height: disclosure.getBoundingClientRect().height }
+        return { time: animation?.currentTime ?? null, duration: animation?.effect.getComputedTiming().duration ?? null, height: disclosure.getBoundingClientRect().height, hidden: disclosure.hidden }
       }
       const opening = await capture()
       await new Promise(resolve => setTimeout(resolve, 300))
       const fullHeight = disclosure.getBoundingClientRect().height
+      const body = disclosure.querySelector(selector)
+      const text = body?.textContent ?? ''
+      const rows = body?.querySelectorAll('.dl').length ?? 0
       const closing = await capture()
       await new Promise(resolve => setTimeout(resolve, 300))
-      return { opening, closing, fullHeight, hidden: disclosure.hidden }
+      return { opening, closing, fullHeight, text, rows, hidden: disclosure.hidden }
     } finally {
       Element.prototype.animate = original
     }
-  })
-  expect(result.opening.duration).toBe(200)
-  expect(result.opening.time).toBeLessThanOrEqual(17)
-  expect(result.opening.height).toBeLessThan(result.fullHeight * 0.1)
-  expect(result.closing.time).toBeLessThanOrEqual(17)
-  expect(result.closing.height).toBeGreaterThan(result.fullHeight * 0.9)
+  }, row.selector)
+  expect(result.text).toContain(`${fixture.disclosureLinePrefix} ${fixture.disclosureLineCount}`)
+  if (row.tool === 'Write') expect(result.rows).toBe(fixture.disclosureLineCount)
+  if (row.motion === 'reduce') {
+    expect(result.opening.time).toBeNull()
+    expect(result.opening.hidden).toBe(false)
+    expect(result.closing.time).toBeNull()
+    expect(result.closing.hidden).toBe(true)
+  } else {
+    expect(result.opening.duration).toBe(200)
+    expect(result.opening.time).not.toBeNull()
+    expect(result.opening.time).toBeLessThanOrEqual(17)
+    expect(result.opening.height).toBeLessThan(result.fullHeight * 0.1)
+    expect(result.closing.duration).toBe(200)
+    expect(result.closing.time).not.toBeNull()
+    expect(result.closing.time).toBeLessThanOrEqual(17)
+    expect(result.closing.hidden).toBe(false)
+    expect(result.closing.height).toBeGreaterThan(result.fullHeight * 0.9)
+  }
   expect(result.hidden).toBe(true)
 })
 

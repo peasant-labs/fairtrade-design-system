@@ -30,3 +30,8 @@ requiredDrawerMotionNames:
   - filters drawer enters and exits
   - user turns drawer enters and exits
   - drawer respects reduced motion
+requiredDisclosureNames:
+  - large shell animated
+  - large write animated
+  - large shell reduced motion
+  - large write reduced motion

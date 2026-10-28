@@ -3,7 +3,7 @@ import source from '../../../scripts/testdata/transcript-reading-browser.yaml?ra
 const spec = JSON.parse(source)
 export const readingUnverifiedPull = spec.unverified
 
-export function readingPayload({ short = false, taskCount = short ? spec.shortTaskCount : spec.taskCount } = {}) {
+export function readingPayload({ short = false, taskCount = short ? spec.shortTaskCount : spec.taskCount, disclosure = false } = {}) {
   const tool = (id, durationMs = 1000) => ({ id, name: 'Bash', arguments: JSON.stringify({ command: `printf ${id}` }), result: `${id}-output`, durationMs })
   const turns = [
     { index: 0, role: 'user', content: 'Reading request 0' },
@@ -12,6 +12,13 @@ export function readingPayload({ short = false, taskCount = short ? spec.shortTa
     { index: 3, role: 'assistant', content: '', toolCalls: [tool('target-gamma')] },
     { index: 4, role: 'assistant', entryType: 'thinking', content: 'target thinking evidence, kept with its original source identity.' },
   ]
+  if (disclosure) {
+    const body = Array.from({ length: spec.disclosureLineCount }, (_, index) => `${spec.disclosureLinePrefix} ${index + 1}`).join('\n')
+    turns[1].toolCalls = [
+      { id: 'large-shell', name: 'Bash', arguments: JSON.stringify({ command: 'printf large-shell' }), result: body, durationMs: 1000 },
+      { id: 'large-write', name: 'Write', arguments: JSON.stringify({ file_path: 'src/large-example.js', content: body }), result: 'ok', durationMs: 1000 },
+    ]
+  }
   for (let task = 1; task < taskCount; task++) {
     turns.push({ index: turns.length, role: 'user', content: `Reading request ${task}` })
     const paragraphs = task === taskCount - 1 ? spec.lastResponseParagraphs : 1
