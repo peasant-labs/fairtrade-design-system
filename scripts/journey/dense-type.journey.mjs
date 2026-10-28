@@ -92,7 +92,9 @@ function inspect({ row, mutation }) {
     const saved = el.style.cssText
     if (mutation) {
       el.style.setProperty('transition', 'none', 'important')
-      if (row.reflowMutation === 'zero-width') {
+      if (mutation === 'paragraph-gap') {
+        el.style.setProperty('margin-top', '0', 'important')
+      } else if (row.reflowMutation === 'zero-width') {
         el.style.setProperty('flex', '0 0 0px', 'important')
         el.style.setProperty('max-width', '0px', 'important')
       } else if (row.reflowMutation === 'overlay') {
@@ -101,7 +103,6 @@ function inspect({ row, mutation }) {
       } else if (row.reflow) el.style.setProperty('min-width', '10000px', 'important')
       else {
         el.style.setProperty('font-size', '11px', 'important')
-        if (row.paragraphGap) el.style.setProperty('margin-top', '0', 'important')
         if (row.wrap) el.style.setProperty('white-space', 'nowrap', 'important')
       }
     }
@@ -146,6 +147,9 @@ test('dense text, reflow and disclosure on the built product', async ({ page }, 
       for (const row of rows) {
         expect(await page.evaluate(inspect, { row }), `${row.name} at ${width}/${theme}`).toEqual([])
         expect((await page.evaluate(inspect, { row, mutation: true })).length, row.mutation).toBeGreaterThan(0)
+        if (row.name === 'adjacent transcript paragraphs') {
+          expect(await page.evaluate(inspect, { row, mutation: 'paragraph-gap' }), 'margin-only mutation must trigger the gap check').toContain('paragraph gap is not one line')
+        }
         observations.push({ name: row.name, width, theme, computed: await page.locator(row.selector).evaluateAll(elements => elements.filter(el => el.getClientRects().length).map(el => {
           const style = getComputedStyle(el)
           return { fontSize: style.fontSize, fontFamily: style.fontFamily, lineHeight: style.lineHeight, marginTop: style.marginTop, clientWidth: el.clientWidth, scrollWidth: el.scrollWidth }

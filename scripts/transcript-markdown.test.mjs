@@ -11,6 +11,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { createServer } from 'vite'
 import { JSDOM } from 'jsdom'
 import YAML from 'yaml'
+import { withMountedSource } from './mounted-parts.mjs'
 
 const ROOT = resolve(new URL('..', import.meta.url).pathname)
 const MANIFEST_PATH = resolve(ROOT, 'scripts/testdata/transcript-markdown.manifest.yaml')
@@ -69,7 +70,7 @@ function uniqueStrings(value, label) {
 
 function loadFixtures() {
   const manifest = parseDocument(manifestSource, 'Markdown manifest')
-  exactFields(manifest, ['expectedCaseCount', 'requiredNames', 'expectedMutationCount', 'mounted', 'mutations'], 'Markdown manifest')
+  exactFields(manifest, ['expectedCaseCount', 'requiredNames', 'requiredMermaidRerenderNames', 'expectedMutationCount', 'mounted', 'mutations'], 'Markdown manifest')
   if (!Number.isSafeInteger(manifest.expectedCaseCount) || manifest.expectedCaseCount < 1) throw new Error('Markdown manifest expectedCaseCount must be a positive safe integer')
   if (!Number.isSafeInteger(manifest.expectedMutationCount) || manifest.expectedMutationCount < 1) throw new Error('Markdown manifest expectedMutationCount must be a positive safe integer')
   const requiredNames = uniqueStrings(manifest.requiredNames, 'Markdown manifest requiredNames')
@@ -242,6 +243,47 @@ for (const row of mermaidFixtures.badSvg) {
 assert('mermaid-model-actor-icon', 'native sequence actor icon is rejected', !sourceModule.safeMermaidModel({ db: { getActors: () => new Map([['A', { properties: { icon: '/icon.png' } }]]) } }))
 assert('mermaid-model-image', 'native model with image nodes is rejected', !sourceModule.safeMermaidModel({ db: { getVertices: () => new Map([['A', { img: '/image.png' }]]) } }))
 assert('mermaid-oversize', 'oversized source is rejected before compilation', sourceModule.safeMermaidSource('x'.repeat(8193)) === false)
+
+// Exercise the mounted production component while controlling only the compiler dependency.
+// The pending second render makes the source/diagram identity boundary observable.
+const rerenderNames = uniqueStrings(YAML.parse(manifestSource).requiredMermaidRerenderNames, 'Mermaid rerender manifest')
+if (JSON.stringify(mermaidFixtures.rerender.map(row => row.name).sort()) !== JSON.stringify([...rerenderNames].sort())) throw new Error('Mermaid rerender fixture names differ from manifest')
+await withMountedSource(async ({ load, mount, window, React }) => {
+  const { default: MermaidBlock } = await load('/src/ui/transcript/MermaidBlock.jsx')
+  const { default: mermaid } = await import('mermaid')
+  const original = { initialize: mermaid.initialize, render: mermaid.render, mermaidAPI: mermaid.mermaidAPI }
+  const oldParser = Object.getOwnPropertyDescriptor(globalThis, 'DOMParser')
+  Object.defineProperty(globalThis, 'DOMParser', { configurable: true, writable: true, value: window.DOMParser })
+  const pending = new Map()
+  mermaid.initialize = () => {}
+  mermaid.mermaidAPI = { getDiagramFromText: async () => ({ db: {} }) }
+  mermaid.render = (id, source) => new Promise(resolve => pending.set(source, () => resolve({ svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><text>${source.includes('First') ? 'First' : 'Second'}</text></svg>` })))
+  const waitPending = async (mounted, source) => {
+    for (let i = 0; i < 100 && !pending.has(source); i++) await mounted.settle()
+    if (!pending.has(source)) throw new Error('Mermaid compiler did not start for fixture source')
+  }
+  try {
+    for (const row of mermaidFixtures.rerender) {
+      const mounted = await mount(React.createElement(MermaidBlock, { source: row.first }))
+      await mounted.act(() => mounted.container.querySelectorAll('button')[1].click())
+      await waitPending(mounted, row.first)
+      await mounted.act(() => pending.get(row.first)())
+      assert('mermaid-rerender-first', `${row.name}: first diagram renders`, mounted.container.querySelector('.txn-mermaid-stage')?.textContent.includes('First'))
+      await mounted.rerender(React.createElement(MermaidBlock, { source: row.second }))
+      assert('mermaid-rerender-pending', `${row.name}: changed source never displays first diagram`, !mounted.container.querySelector('.txn-mermaid-stage') && mounted.container.querySelector('code')?.textContent === row.second)
+      await waitPending(mounted, row.second)
+      await mounted.act(() => pending.get(row.second)())
+      assert('mermaid-rerender-second', `${row.name}: second diagram renders`, mounted.container.querySelector('.txn-mermaid-stage')?.textContent.includes('Second'))
+      await mounted.rerender(React.createElement(MermaidBlock, { source: row.unsafe }))
+      assert('mermaid-rerender-unsafe', `${row.name}: unsafe source replaces previous diagram`, !mounted.container.querySelector('.txn-mermaid-stage') && mounted.container.querySelector('code')?.textContent === row.unsafe)
+      await mounted.unmount()
+    }
+  } finally {
+    Object.assign(mermaid, original)
+    if (oldParser) Object.defineProperty(globalThis, 'DOMParser', oldParser)
+    else delete globalThis.DOMParser
+  }
+})
 
 if (viteServer) await viteServer.close()
 const failures = results.filter((result) => !result.ok)

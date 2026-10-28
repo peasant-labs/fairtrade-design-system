@@ -14,7 +14,8 @@ export default function MermaidBlock({ source }) {
   const [copied, setCopied] = useState(false)
   const safe = safeMermaidSource(source)
   useEffect(() => {
-    if (view !== 'diagram' || !safe) return
+    if (view !== 'diagram') return
+    if (!safe) { setView('source'); setStatus('diagram syntax not supported; showing source'); return }
     if (pending >= MAX_PENDING) {
       setView('source')
       setStatus('too many diagrams waiting; try again')
@@ -34,7 +35,7 @@ export default function MermaidBlock({ source }) {
     }
     const current = renderQueue.then(run, run).finally(() => { pending-- })
     renderQueue = current.catch(() => {})
-    current.then(value => { if (active) { setDiagram(value); setStatus('') } }, () => { if (active) { setView('source'); setStatus('diagram unavailable; showing source') } })
+    current.then(value => { if (active) { setDiagram({ source, value }); setStatus('') } }, () => { if (active) { setView('source'); setStatus('diagram unavailable; showing source') } })
     return () => { active = false }
   }, [safe, source, view])
   const showDiagram = () => {
@@ -50,7 +51,7 @@ export default function MermaidBlock({ source }) {
       <button type="button" onClick={showDiagram} aria-pressed={view === 'diagram'}>view diagram</button>
       <button type="button" onClick={copy}>{copied ? 'copied' : 'copy source'}</button>
     </div></div>
-    {view === 'diagram' && diagram ? <div className="txn-mermaid-stage" role="region" aria-label="diagram" tabIndex={0}>{diagram}</div> : <pre className="txn-mermaid-source"><code>{source}</code></pre>}
+    {view === 'diagram' && safe && diagram?.source === source ? <div className="txn-mermaid-stage" role="region" aria-label="diagram" tabIndex={0}>{diagram.value}</div> : <pre className="txn-mermaid-source"><code>{source}</code></pre>}
     {status && <p role="status">{status}</p>}
   </section>
 }

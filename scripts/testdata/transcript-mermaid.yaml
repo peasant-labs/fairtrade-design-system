@@ -1,3 +1,8 @@
+rerender:
+  - name: changed source never displays a previous diagram
+    first: "flowchart LR\nA[First] --> B[End]"
+    second: "flowchart LR\nA[Second] --> B[End]"
+    unsafe: "flowchart LR\nA --> B\nclick A \"https://evil.example\""
 accepted:
   - name: flowchart
     source: |-
