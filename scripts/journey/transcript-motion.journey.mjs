@@ -71,12 +71,15 @@ for (const motion of spec.motion) for (const row of spec.railCases) {
         const middle = read()
         const opacity = Number(getComputedStyle(pane).opacity)
         const painted = getComputedStyle(pane).display !== 'none'
+        const body = pane.querySelector('.txn-rail-body')
+        const bodyWidth = body.getBoundingClientRect().width
+        const clipWidth = pane.getBoundingClientRect().width
         for (const a of animations) a.currentTime = duration * .99
         const end = read()
         const easing = animation.effect.getTiming().easing
         const expectedEasing = getComputedStyle(el).getPropertyValue('--ease-in-out').trim()
         for (const a of animations) a.play()
-        return { before, firstFrame, start, middle, end, opacity, painted, easing, expectedEasing, animations: animations.length }
+        return { before, firstFrame, start, middle, end, opacity, painted, bodyWidth, clipWidth, easing, expectedEasing, animations: animations.length }
       }, { side: row.side, open })
       await info.attach(`${open ? 'expanding' : 'collapsing'}-sidebar`, { body: JSON.stringify(sample), contentType: 'application/json' })
       if (motion === 'no-preference') {
@@ -90,8 +93,8 @@ for (const motion of spec.motion) for (const row of spec.railCases) {
         expect(Math.abs(sample.start - sample.before)).toBeLessThanOrEqual(1)
         expect(sample.middle).toBeGreaterThan(Math.min(sample.start, sample.end))
         expect(sample.middle).toBeLessThan(Math.max(sample.start, sample.end))
-        expect(sample.opacity).toBeGreaterThan(0)
-        expect(sample.opacity).toBeLessThan(1)
+        expect(sample.opacity, 'rail content must not fade during furl or unfurl').toBe(1)
+        expect(sample.bodyWidth, 'content keeps its expanded width while clipped').toBeGreaterThan(sample.clipWidth)
         expect(sample.painted, 'closing contents must remain painted for their exit').toBe(true)
         const curve = value => value.match(/-?\d*\.?\d+/g).map(Number)
         expect(curve(sample.easing)).toEqual(curve(sample.expectedEasing))

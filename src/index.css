@@ -2134,7 +2134,7 @@
   .txn-body-grid[data-right-rail="none"] { grid-template-columns: var(--txn-outline-w) minmax(0, 1fr) 0; }
   .txn-body-grid[data-left-rail="closed"][data-right-rail="none"] { grid-template-columns: var(--txn-rail-strip-w) minmax(0, 1fr) 0; }
   /* Keep three tracks, including zero-width hidden rails, so width and content move once.
-     Expanded and collapsed controls share a cell and crossfade without replacing the DOM. */
+     Expanded and collapsed controls share a cell without replacing the DOM. */
   .txn-center { grid-column: 2; grid-row: 1; }
   .txn-rail-left, .txn-rail-strip-left { grid-column: 1; grid-row: 1; --txn-rail-open-w: var(--txn-outline-w); }
   .txn-rail-right, .txn-rail-strip-right { grid-column: 3; grid-row: 1; --txn-rail-open-w: var(--txn-filters-w); }
@@ -2361,8 +2361,8 @@
 
   /* ---- right rail ---- */
   .txn-rail { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: clip; background: var(--surface); }
-  .txn-rail > .txn-rail-body { box-sizing: border-box; width: calc(var(--txn-rail-open-w) - var(--stroke-hairline)); }
-  .txn-rail-right > .txn-rail-body { margin-inline-start: calc(100% - var(--txn-rail-open-w) + var(--stroke-hairline)); }
+  .txn-rail > .txn-rail-body, .txn-rail > .txn-rail-head { box-sizing: border-box; width: calc(var(--txn-rail-open-w) - var(--stroke-hairline)); }
+  .txn-rail-right > .txn-rail-body, .txn-rail-right > .txn-rail-head { margin-inline-start: calc(100% - var(--txn-rail-open-w) + var(--stroke-hairline)); }
   .txn-rail-left { border-right: var(--bd); }
   /* per-panel header (split layout): an icon + lowercase title, count badge on filters */
   /* rail content inset is --sp-4, matching every other in-use rail/panel (the graph project rail,

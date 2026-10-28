@@ -3,7 +3,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 /* Shared transcript disclosure motion. Closed output stays unmounted until first opened;
    on close it remains only for the exit animation, immediately inert and aria-hidden. A
    reversal starts at the currently painted height rather than jumping to either endpoint.
-   Sidebars use opacity only: their parent grid already owns the width transition. */
+   Sidebars keep their paint: their parent grid owns the clipped width transition. */
 export default function Collapsible({ open, children, className = '', id, keepMounted = false, animateSize = true, as: Tag = 'div', 'aria-label': ariaLabel }) {
   const nodeRef = useRef(null)
   const animationRef = useRef(null)
@@ -17,7 +17,7 @@ export default function Collapsible({ open, children, className = '', id, keepMo
     const node = nodeRef.current
     const current = animationRef.current
     const height = animateSize ? current ? node.getBoundingClientRect().height : open ? 0 : node.scrollHeight : 0
-    const opacity = current ? getComputedStyle(node).opacity : open ? 0 : 1
+    const opacity = animateSize ? (current ? getComputedStyle(node).opacity : open ? 0 : 1) : 1
     current?.cancel()
     animationRef.current = null
     const allowed = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: no-preference)').matches
@@ -33,7 +33,7 @@ export default function Collapsible({ open, children, className = '', id, keepMo
     setAnimating(true)
     const animation = node.animate([
       { ...(animateSize ? { height: `${height}px` } : {}), opacity },
-      { ...(animateSize ? { height: open ? `${node.scrollHeight}px` : '0px' } : {}), opacity: open ? 1 : 0 },
+      { ...(animateSize ? { height: open ? `${node.scrollHeight}px` : '0px' } : {}), opacity: animateSize ? (open ? 1 : 0) : 1 },
     ], { duration, easing: style.getPropertyValue('--ease-in-out').trim(), fill: 'both' })
     animationRef.current = animation
     animation.finished.then(() => {
