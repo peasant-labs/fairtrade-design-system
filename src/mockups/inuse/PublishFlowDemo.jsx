@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Copy, Link as LinkIcon } from 'lucide-react'
-import { PublishBar, PublishDialog, PUBLISH_DIALOG_STATES, PUBLISH_STATES, RedactionCategory } from '../../ui'
+import { Copy, Link as LinkIcon, MoreHorizontal } from 'lucide-react'
+import { Menu, PublishBar, PublishDialog, PUBLISH_DIALOG_STATES, PUBLISH_STATES, RedactionCategory } from '../../ui'
 
 /* The host side of the publish flow for the in-use transcript demo. It stands in for peasant: it
    owns the state, fakes the sign-in, the scan and the publish with short timers, and hands the
@@ -26,10 +26,6 @@ const OTHERS = [
   { id: 'ml', name: 'ML Reading Group', members: 21, note: 'curated, waits for the owner’s approval', curated: true },
 ]
 const DONE = { url: 'https://village.peasantlabs.org/transcripts/3f9c0a17', pullRequest: { number: 42, branch: 'fix/flaky-ingest', href: '?app=commons&commons=pull-request#inuse' } }
-const MORE_ITEMS = [
-  { label: 'copy as markdown', icon: Copy },
-  { label: 'copy link', icon: LinkIcon },
-]
 
 /* In update mode the access list names collectives that already read the transcript, so the
    picker's "suggested" reason no longer describes why they are on the row. The row states the
@@ -49,7 +45,17 @@ function initial() {
 }
 
 /** returns the bar for the header row and the popup to render beside the viewer */
-export function usePublishFlow() {
+export function usePublishFlow(viewModel) {
+  const [copied, setCopied] = useState('')
+  const copyTranscript = () => {
+    const text = (viewModel?.turns ?? []).map(turn => `${turn.role}: ${turn.content ?? ''}`).join('\n\n')
+    void navigator.clipboard?.writeText(text)
+    setCopied('transcript copied')
+  }
+  const copyLink = () => {
+    void navigator.clipboard?.writeText(window.location.href)
+    setCopied('link copied')
+  }
   const start = useRef(initial()).current
   const [bar, setBar] = useState(start.bar)
   const [popup, setPopup] = useState(start.popup)
@@ -90,9 +96,16 @@ export function usePublishFlow() {
       newTurns={6}
       collective="Acme Platform"
       onAction={open}
-      moreItems={MORE_ITEMS}
     />
   )
+  const utilityNode = <>
+    <button type="button" className="btn btn-secondary btn-sm btn-icon" aria-label="copy transcript" onClick={copyTranscript}><Copy size={14} aria-hidden="true" /></button>
+    <Menu icon={MoreHorizontal} ariaLabel="more" size="sm" align="end" items={[
+      { label: 'copy as markdown', icon: Copy, onSelect: copyTranscript },
+      { label: 'copy link', icon: LinkIcon, onSelect: copyLink },
+    ]} />
+    <span role="status">{copied}</span>
+  </>
   const dialogNode = (
     <PublishDialog
       open={popup != null}
@@ -128,7 +141,7 @@ export function usePublishFlow() {
       done={{ ...DONE, collectives: readers, pending }}
     />
   )
-  return { bar: barNode, dialog: dialogNode }
+  return { bar: barNode, utility: utilityNode, dialog: dialogNode }
 }
 
 function summarizeChange(access) {

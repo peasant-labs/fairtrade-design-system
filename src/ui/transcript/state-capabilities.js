@@ -193,6 +193,7 @@
  * @property {(turn: import('./view-model.js').TurnVM) => unknown} [renderTurnActions]  host-owned per-turn actions; replaces the built-in label affordance (hosts with typed label models keep their own popovers)
  * @property {(turnIndex: number) => string} [anchorHref]              host permalink for a turn's copy-anchor action; a root-relative return is absolutized against the page origin. Omitted, the demo copies its bare '#turn-N' placeholder
  * @property {unknown} [headerActions]                                 host session-level actions rendered at the head of the hero action row (attest etc.); the composite's own actions stay the shared tail
+ * @property {import('react').ReactNode} [utilityActions]                host secondary actions, in the header on desktop and the bottom bar on phones
  * @property {unknown} [streamPrelude]                                 host controls or context rendered at the start of the list-mode transcript scroller; omitted in graph mode
  * @property {boolean} [showTail]                                      default false: hosts opt in with true to retain the legacy share/contribute and more menus after `headerActions`
  * @property {boolean} [showOutcome]                                   default true: render the session outcome chip in the meta row when the session carries an outcome

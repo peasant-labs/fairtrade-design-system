@@ -506,6 +506,7 @@ export const HostOwnedHeader = {
     showOutcome: false,
     showSearchTrigger: true,
     headerActions: <button type="button" className="btn btn-primary btn-sm">publish</button>,
+    utilityActions: <button type="button" className="btn btn-secondary btn-sm">copy transcript</button>,
     pullRequests: (
       <ul className="chips" aria-label="pull requests" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
         <li><a className="chip mono" href="#pr-42">acme/ingest-api #42</a></li>

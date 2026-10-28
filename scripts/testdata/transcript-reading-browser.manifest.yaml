@@ -9,3 +9,6 @@ requiredInitialNames:
 requiredRailNames:
   - deep reading brings the last user card into view
   - reverse reading brings the first user card into view
+requiredMobileNames:
+  - narrow portrait
+  - phone landscape

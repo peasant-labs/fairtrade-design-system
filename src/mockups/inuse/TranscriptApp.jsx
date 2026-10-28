@@ -828,7 +828,7 @@ function DefaultTranscriptApp({ theme }) {
   // object. The demo has no host sidebar, so `host` is carried but renders nothing here.
   const [sidebarLayout, setSidebarLayout] = useState({ outline: true, filters: true, host: true })
   // the local app owns the header row: the publish bar (status, one action, more) and its popup.
-  const publish = usePublishFlow()
+  const publish = usePublishFlow(vm)
   return (
     <>
       <TranscriptViewer
@@ -844,6 +844,7 @@ function DefaultTranscriptApp({ theme }) {
         onSidebarLayoutChange={ledger ? setSidebarLayout : undefined}
         onZenChange={ledger ? () => {} : undefined}
         headerActions={publish.bar}
+        utilityActions={publish.utility}
         openTools={openTools}
         onOpenToolsChange={setOpenTools}
         graphSlot={({ viewModel: gvm, activeTurn, onSelectTurn }) => (

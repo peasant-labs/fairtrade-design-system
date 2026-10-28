@@ -279,6 +279,7 @@ export default function TranscriptViewer({
   renderTurnActions,
   anchorHref,
   headerActions,
+  utilityActions,
   streamPrelude,
   showTail = false,
   showOutcome = true,
@@ -330,6 +331,33 @@ export default function TranscriptViewer({
   // the action-menu disclosures are view-state too (controllable; default CLOSED).
   const [shareOpen, setShareOpen] = useControllable(shareOpenProp, onShareOpenChange, false)
   const [moreOpen, setMoreOpen] = useControllable(moreOpenProp, onMoreOpenChange, false)
+  // Mobile overlays are transient and never update the persisted desktop rail layout.
+  const [mobile, setMobile] = useState(false)
+  const [mobileDrawer, setMobileDrawer] = useState(null)
+  const mobileDialogRef = useRef(null)
+  const mobileOpenerRef = useRef(null)
+  const mobileOutlineRef = useRef(null)
+  const mobileFiltersRef = useRef(null)
+  const mobileDrawerId = useId()
+  const closeMobileDrawer = useCallback(() => {
+    setMobileDrawer(null)
+    requestAnimationFrame(() => mobileOpenerRef.current?.focus())
+  }, [])
+  useEffect(() => {
+    const dialog = mobileDialogRef.current
+    if (!dialog) return
+    if (mobileDrawer && !dialog.open) dialog.showModal()
+    if (!mobileDrawer && dialog.open) dialog.close()
+  }, [mobileDrawer])
+  useEffect(() => {
+    const media = window.matchMedia?.('(min-width: 768px)')
+    if (!media) return
+    const onResize = () => { setMobile(!media.matches); if (media.matches) setMobileDrawer(null) }
+    onResize()
+    media.addEventListener('change', onResize)
+    return () => media.removeEventListener('change', onResize)
+  }, [])
+  useEffect(() => { setMobileDrawer(null) }, [vm?.session?.id])
 
   /* ── the sidebar layout view model ──────────────────────────────────────────
      Openness is USER STATE, never a function of the reading width. `sidebarLayout`
@@ -1085,6 +1113,39 @@ export default function TranscriptViewer({
     </div>
   )
 
+  const moreActions = (caps.canEdit || caps.canExport) && (
+            <div className="menu-anchor">
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm btn-icon menu-trigger"
+                aria-label="more actions"
+                aria-expanded={moreOpen}
+                aria-haspopup="menu"
+                onClick={() => { setMoreOpen((o) => !o); setShareOpen(false) }}
+              >
+                <MoreHorizontal size={14} aria-hidden="true" />
+              </button>
+              {moreOpen && (
+                <div className="menu-pop menu-float txn-more-pop" data-align="end" role="menu" aria-label="more actions">
+                  <ul className="menu-list">
+                    {caps.canEdit && (
+                      <li><button type="button" className="menu-item" role="menuitem" onClick={() => { setMoreOpen(false); callbacks.onEdit && callbacks.onEdit() }}><Pencil size={14} aria-hidden="true" /><span className="menu-text">edit</span></button></li>
+                    )}
+                    {caps.canExport && (
+                      <>
+                        {caps.canEdit && <li role="separator"><hr className="menu-sep" /></li>}
+                        <li className="menu-cap">download</li>
+                        {['json', 'jsonl', 'markdown'].map((fmt) => (
+                          <li key={fmt}><button type="button" className="menu-item" role="menuitem" onClick={() => { setMoreOpen(false); callbacks.onExport && callbacks.onExport(/** @type {'json'|'jsonl'|'markdown'} */ (fmt)) }}><Download size={14} aria-hidden="true" /><span className="menu-text">{fmt}</span></button></li>
+                        ))}
+                      </>
+                    )}
+                  </ul>
+                </div>
+              )}
+            </div>
+            )
+
   return (
     <div
       className={'txn-app' + (theme === 'light' ? ' txn-light' : '') + (ledger ? ' txn-ledger' : '') + (ledger && zen ? ' txn-zen' : '') + (heroCondensed ? ' txn-app-condensed' : '')}
@@ -1128,6 +1189,7 @@ export default function TranscriptViewer({
             {/* host session-level actions (attest etc.) lead the row — the
                 composite's fixed capability set stays the shared tail */}
             {headerActions}
+            {!mobile && utilityActions}
             {showTail && (<>
             <div className="menu-anchor">
               <button
@@ -1160,38 +1222,7 @@ export default function TranscriptViewer({
               )}
             </div>
 
-            {(caps.canEdit || caps.canExport) && (
-            <div className="menu-anchor">
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm btn-icon menu-trigger"
-                aria-label="more actions"
-                aria-expanded={moreOpen}
-                aria-haspopup="menu"
-                onClick={() => { setMoreOpen((o) => !o); setShareOpen(false) }}
-              >
-                <MoreHorizontal size={14} aria-hidden="true" />
-              </button>
-              {moreOpen && (
-                <div className="menu-pop menu-float txn-more-pop" data-align="end" role="menu" aria-label="more actions">
-                  <ul className="menu-list">
-                    {caps.canEdit && (
-                      <li><button type="button" className="menu-item" role="menuitem" onClick={() => { setMoreOpen(false); callbacks.onEdit && callbacks.onEdit() }}><Pencil size={14} aria-hidden="true" /><span className="menu-text">edit</span></button></li>
-                    )}
-                    {caps.canExport && (
-                      <>
-                        {caps.canEdit && <li role="separator"><hr className="menu-sep" /></li>}
-                        <li className="menu-cap">download</li>
-                        {['json', 'jsonl', 'markdown'].map((fmt) => (
-                          <li key={fmt}><button type="button" className="menu-item" role="menuitem" onClick={() => { setMoreOpen(false); callbacks.onExport && callbacks.onExport(/** @type {'json'|'jsonl'|'markdown'} */ (fmt)) }}><Download size={14} aria-hidden="true" /><span className="menu-text">{fmt}</span></button></li>
-                        ))}
-                      </>
-                    )}
-                  </ul>
-                </div>
-              )}
-            </div>
-            )}
+            {!mobile && moreActions}
             </>)}
           </div>
         </div>
@@ -1622,6 +1653,30 @@ export default function TranscriptViewer({
       </div>
 
       {/* ===================== OVERLAYS ===================== */}
+      <dialog
+        id={mobileDrawerId}
+        ref={mobileDialogRef}
+        className="txn-mobile-drawer"
+        aria-label={mobileDrawer === 'outline' ? 'user turns' : 'filters'}
+        onCancel={(event) => { event.preventDefault(); closeMobileDrawer() }}
+        onClick={(event) => { if (event.target === event.currentTarget) closeMobileDrawer() }}
+      >
+        {mobileDrawer && <div className="txn-mobile-drawer-panel">
+          <div className="txn-mobile-drawer-head">
+            <button type="button" aria-pressed={mobileDrawer === 'outline'} onClick={() => { mobileOpenerRef.current = mobileOutlineRef.current; if (mobileDrawer === 'outline') closeMobileDrawer(); else setMobileDrawer('outline') }}>user turns</button>
+            {tabHasFilters && <button type="button" aria-pressed={mobileDrawer === 'filters'} onClick={() => { mobileOpenerRef.current = mobileFiltersRef.current; if (mobileDrawer === 'filters') closeMobileDrawer(); else setMobileDrawer('filters') }}>filters</button>}
+            <button type="button" aria-label="close drawer" onClick={closeMobileDrawer}><X size={14} aria-hidden="true" /></button>
+          </div>
+          <div className="txn-mobile-drawer-body">
+            {mobileDrawer === 'outline'
+              ? <OutlineRail viewModel={vm} tab={tab} presentation={presentation} activeTurn={activeTurn} onJump={(idx) => { jumpTo(idx, { switchTab: false }); closeMobileDrawer() }} />
+              : <FiltersRail tab={tab} filters={filters} onFiltersChange={setFilters} counts={counts} checkpoints={commits} filtersActive={filtersActive}
+                onClear={() => setFilters({ ...DEFAULT_FILTERS, toolGroups: Object.fromEntries(TOOL_GROUPS.map((id) => [id, true])) })}
+                onJumpStart={() => { jumpTo(visibleTurns[0]?.index ?? 0, { switchTab: false }); closeMobileDrawer() }}
+                onJumpLatest={() => { jumpTo(visibleTurns[visibleTurns.length - 1]?.index ?? 0, { switchTab: false }); closeMobileDrawer() }} />}
+          </div>
+        </div>}
+      </dialog>
       {/* per-turn label popover — rendered ONLY when canLabel (capability-gated). */}
       {canLabel && labelFor != null && (
         <LabelPopover turnId={labelFor} current={savedLabels[labelFor]} onSave={saveLabel} onClose={() => setLabelFor(null)} />
@@ -1631,6 +1686,12 @@ export default function TranscriptViewer({
           and position as a smaller second one. The tab row never leaves — a touch screen has no
           keyboard, but it still needs to reach every view. */}
       <footer className="txn-footer">
+        <div className="txn-mobile-controls">
+          {mobile && utilityActions}
+          {mobile && showTail && moreActions}
+          <button ref={mobileOutlineRef} type="button" aria-controls={mobileDrawerId} aria-expanded={mobileDrawer === 'outline'} onClick={(event) => { mobileOpenerRef.current = event.currentTarget; setMobileDrawer('outline') }}><LayoutList size={14} aria-hidden="true" /> user turns</button>
+          {tabHasFilters && <button ref={mobileFiltersRef} type="button" aria-controls={mobileDrawerId} aria-expanded={mobileDrawer === 'filters'} onClick={(event) => { mobileOpenerRef.current = event.currentTarget; setMobileDrawer('filters') }}><SlidersHorizontal size={14} aria-hidden="true" /> filters</button>}
+        </div>
         <div className="txn-foot-tabs">
           {tabStrip}
           {showSearchTrigger && (

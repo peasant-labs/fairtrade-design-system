@@ -4,6 +4,12 @@
   "taskCount": 24,
   "leadingActions": 32,
   "lastResponseParagraphs": 12,
+  "longCode": "very_long_synthetic_identifier_for_local_code_scroll_very_long_synthetic_identifier_for_local_code_scroll_very_long_synthetic_identifier_for_local_code_scroll",
+  "longTitle": "SyntheticLongTranscriptTitleWithoutSpacesForNarrowViewportSyntheticLongTranscriptTitleWithoutSpacesForNarrowViewportSyntheticLongTranscriptTitleWithoutSpaces",
+  "mobile": [
+    {"name": "narrow portrait", "width": 320, "height": 720, "motion": "reduce"},
+    {"name": "phone landscape", "width": 720, "height": 390, "motion": "no-preference"}
+  ],
   "navigation": [
     {"name": "later prose tool destination", "query": "target-beta-output", "turn": 2, "kind": "tool", "command": "printf target-beta", "compact": false},
     {"name": "wordless tool destination in compact", "query": "target-gamma-output", "turn": 3, "kind": "tool", "command": "printf target-gamma", "compact": true},
