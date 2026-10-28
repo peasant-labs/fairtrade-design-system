@@ -35,6 +35,7 @@ import { transcriptTitle } from './title.js'
 import { Term } from '../Explainer.jsx'
 import Tooltip from '../Tooltip.jsx'
 import { toolStateKey } from './tool-state-key.js'
+import { renderedSearchRanges, setSearchHighlights } from './search-highlights.js'
 
 /* ───────────────────────────────────────────────────────────────────────────
    TranscriptViewer — the composite single-transcript surface (the headline)
@@ -471,6 +472,7 @@ export default function TranscriptViewer({
   const [matchIdx, setMatchIdx] = useState(0)
   const [searchNavigation, setSearchNavigation] = useState(0)
   const [searchReveal, setSearchReveal] = useState(null)
+  const [searchUnrendered, setSearchUnrendered] = useState(false)
   const [diffMode, setDiffMode] = useState('file')
   const [diffGroupsOpen, setDiffGroupsOpen] = useState({}) // path -> open? (default open)
   const [fileSort, setFileSort] = useState({ key: 'path', dir: 'asc' })
@@ -538,9 +540,12 @@ export default function TranscriptViewer({
     if (el) actionRefs.current.set(key, el)
     else actionRefs.current.delete(key)
   }, [])
-  function revealAction(turn, where, { select = true } = {}) {
-    if (where !== 'body' && where !== 'thinking') setOpenTools(previous => ({ ...previous, [where]: true }))
-    setSearchReveal({ turn, where, select, sequence: ++revealSequence.current })
+  function revealAction(turn, where, { select = true, search = false } = {}) {
+    if (where !== 'body' && where !== 'thinking') {
+      const call = turns.find(item => item.index === turn)?.toolCalls?.find(tool => tool.id === where || `source:${tool.sourceIndex}` === where)
+      if (call) setOpenTools(previous => ({ ...previous, [toolStateKey(turn, call)]: true }))
+    }
+    setSearchReveal({ turn, where, select, search, sequence: ++revealSequence.current })
   }
 
   /* ── cooked slices off the VM ───────────────────────────────────────────────── */
@@ -802,17 +807,17 @@ export default function TranscriptViewer({
     if (!query.trim()) return []
     const q = query.toLowerCase()
     const found = []
-    for (const t of turns) {
-      if ((t.content || '').toLowerCase().includes(q)) found.push({ turn: t.index, where: 'body' })
+    for (const t of visibleTurns) {
+      if ((t.displayContent ?? t.content ?? '').toLowerCase().includes(q)) found.push({ turn: t.index, where: 'body' })
       if ((t.thinking?.text || '').toLowerCase().includes(q)) found.push({ turn: t.index, where: 'thinking' })
       for (const tc of t.toolCalls || []) {
         const out = typeof tc.output === 'string' ? tc.output : tc.output != null ? JSON.stringify(tc.output) : ''
         const hay = [tc.preview, out].filter(Boolean).join(' ').toLowerCase()
-        if (hay.includes(q)) found.push({ turn: t.index, where: tc.id })
+        if (hay.includes(q) && (tc.id || tc.sourceIndex != null)) found.push({ turn: t.index, where: tc.id || `source:${tc.sourceIndex}` })
       }
     }
     return found
-  }, [query, turns])
+  }, [query, visibleTurns])
 
   const progress = useMemo(() => {
     const idx = visibleTurns.findIndex((t) => t.index === activeTurn)
@@ -1091,7 +1096,7 @@ export default function TranscriptViewer({
   useLayoutEffect(() => {
     if (!searchOpen || matches.length === 0) return
     const m = matches[Math.min(matchIdx, matches.length - 1)]
-    revealAction(m.turn, m.where)
+    revealAction(m.turn, m.where, { search: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchNavigation])
 
@@ -1108,13 +1113,18 @@ export default function TranscriptViewer({
       await Promise.allSettled(animations.map(animation => animation.finished))
       if (cancelled) return
       const sourceTarget = searchReveal.where.startsWith('source:')
-      const el = (ledger || sourceTarget) && searchReveal.where !== 'body'
+      const el = (ledger || sourceTarget || searchReveal.search) && searchReveal.where !== 'body'
         ? actionRefs.current.get(`${searchReveal.turn}:${searchReveal.where}`)
         : turnRefs.current[searchReveal.turn]
       if (!el || el.closest('[hidden], [inert]')) return
       const reduce = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
       const padding = Number.parseFloat(getComputedStyle(sc).scrollPaddingTop) || 12
-      const top = (ledger || sourceTarget) && searchReveal.where !== 'body'
+      const scope = searchReveal.where === 'body' ? el.querySelector('.txn-body') : el
+      const match = searchReveal.search ? renderedSearchRanges(scope, query)[0] : null
+      if (searchReveal.search) setSearchUnrendered(!match)
+      const top = match
+        ? sc.scrollTop + match.getBoundingClientRect().top - sc.getBoundingClientRect().top - sc.clientHeight * 0.4
+        : (ledger || sourceTarget || searchReveal.search) && searchReveal.where !== 'body'
         ? sc.scrollTop + el.getBoundingClientRect().top - sc.getBoundingClientRect().top - padding
         : turnScrollTop(sc, el)
       sc.scrollTo({ top, behavior: !searchReveal.select || reduce ? 'auto' : 'smooth' })
@@ -1125,6 +1135,29 @@ export default function TranscriptViewer({
     return () => { cancelled = true; cancelAnimationFrame(frame) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchReveal, ledger])
+
+  const highlightOwner = useRef({})
+  useEffect(() => {
+    const owner = highlightOwner.current
+    const sc = scrollRef.current
+    if (!sc || !searchOpen || !query.trim() || tab !== 'trace' || viewMode !== 'list') {
+      setSearchHighlights(owner, [])
+      return undefined
+    }
+    let frame
+    const update = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        const roots = sc.querySelectorAll('.txn-body, .txn-thinking-box, .txn-toolcall')
+        const ranges = [...roots].flatMap(root => renderedSearchRanges(root, query))
+        setSearchHighlights(owner, ranges)
+      })
+    }
+    update()
+    const observer = new MutationObserver(update)
+    observer.observe(sc, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['hidden', 'inert', 'aria-hidden', 'class'] })
+    return () => { observer.disconnect(); cancelAnimationFrame(frame); setSearchHighlights(owner, []) }
+  }, [query, searchOpen, tab, viewMode, visibleTurns])
 
   /* files / diffs derived. */
   const sortedFiles = useMemo(() => {
@@ -1365,14 +1398,15 @@ export default function TranscriptViewer({
             className="txn-search-input"
             placeholder="search across turns, tool args, and results…"
             value={query}
-            onChange={(e) => { setQuery(e.target.value); setMatchIdx(0); setSearchNavigation(sequence => sequence + 1) }}
+            onChange={(e) => { setSearchUnrendered(false); setQuery(e.target.value); setMatchIdx(0); setSearchNavigation(sequence => sequence + 1) }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') { e.preventDefault(); navigateSearch(e.shiftKey ? -1 : 1) }
               if (e.key === 'Escape') setSearchOpen(false)
             }}
             aria-label="search transcript"
           />
-          <span className="txn-search-count tnum">{matches.length ? `${matchIdx + 1}/${matches.length}` : '0 matches'}</span>
+          <span className="txn-search-count tnum" role="status" aria-live="polite" aria-label={matches.length ? `section ${Math.min(matchIdx, matches.length - 1) + 1} of ${matches.length}` : undefined}>{matches.length ? `${Math.min(matchIdx, matches.length - 1) + 1}/${matches.length}` : '0 matches'}</span>
+          {searchUnrendered && matches.length > 0 && <span className="txn-search-unrendered" role="status">match in source, not visible in rendered content</span>}
           <button type="button" className="txn-search-nav" aria-label="previous match" disabled={!matches.length} onClick={() => navigateSearch(-1)}><ChevronUp size={14} aria-hidden="true" /></button>
           <button type="button" className="txn-search-nav" aria-label="next match" disabled={!matches.length} onClick={() => navigateSearch(1)}><ChevronDown size={14} aria-hidden="true" /></button>
           <kbd className="kbd-key txn-search-esc">esc</kbd>

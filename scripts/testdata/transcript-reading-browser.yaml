@@ -9,6 +9,7 @@
   "toolDurations": [{"name": "seconds", "ms": 1000, "label": "1s"}, {"name": "milliseconds", "ms": 820, "label": "820ms"}, {"name": "minutes and seconds", "ms": 75000, "label": "1m 15s"}],
   "shortTaskCount": 1,
   "shortLeadingActions": 1,
+  "searchSourceOnly": "**source-only markup evidence**",
   "width": [
     {"name": "long assistant reading point survives keyboard reflow", "turn": 50, "paragraph": 6, "gesture": "keyboard", "motion": "reduce"},
     {"name": "long assistant reading point survives pointer reversal", "turn": 50, "paragraph": 6, "gesture": "pointer", "motion": "no-preference"},

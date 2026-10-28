@@ -373,6 +373,15 @@ for (const row of fixture.navigation) test(`transcript rendered navigation ${row
   await page.getByRole('textbox', { name: 'search transcript', exact: true }).fill(row.query)
   const target = action(page, row)
   if (row.kind !== 'body') await expect(target.locator('button').first()).toHaveAttribute('aria-expanded', 'true')
+  // Inspect the real range, not the containing card: a long card can be on screen while its hit is not.
+  await expect.poll(() => page.evaluate(query => [...(CSS.highlights.get('txn-search-match') ?? [])].some(range => range.toString().toLowerCase() === query.toLowerCase()), row.query)).toBe(true)
+  await expect.poll(() => target.evaluate((el, query) => {
+    const range = [...(CSS.highlights.get('txn-search-match') ?? [])].find(item => el.contains(item.startContainer) && item.toString().toLowerCase() === query.toLowerCase())
+    if (!range) return false
+    const stream = el.closest('.txn-stream'), r = range.getBoundingClientRect(), s = stream.getBoundingClientRect()
+    const unclamped = stream.scrollTop > 1 && stream.scrollTop < stream.scrollHeight - stream.clientHeight - 1
+    return r.top >= s.top && r.top < s.bottom && (!unclamped || Math.abs((r.top - s.top) / stream.clientHeight - 0.4) < 0.05)
+  }, row.query)).toBe(true)
   await expect.poll(async () => { const m = await inside(target); return m.shown && m.top >= m.viewTop - 1 && m.top < m.viewBottom }).toBe(true)
   if (row.kind !== 'body') {
     const separation = await target.evaluate(el => el.getBoundingClientRect().top - el.closest('article').getBoundingClientRect().top)
@@ -386,7 +395,34 @@ for (const row of fixture.navigation) test(`transcript rendered navigation ${row
     await expect.poll(async () => { const m = await inside(target); return m.shown && m.top >= m.viewTop - 1 && m.top < m.viewBottom }).toBe(true)
   }
   expect(await page.locator(`#turn-${row.turn}`).count()).toBe(1)
+  await page.getByRole('button', { name: 'close search', exact: true }).click()
+  await expect.poll(() => page.evaluate(() => CSS.highlights.get('txn-search-match')?.size ?? 0)).toBe(0)
   await info.attach('rendered-destination', { body: JSON.stringify(await inside(target)), contentType: 'application/json' })
+})
+test('search excludes filtered thinking and restores it without changing the filter', async ({ page }, info) => {
+  const row = fixture.navigation.find(item => item.kind === 'thinking')
+  await open(page, info.project.name)
+  const thinking = page.locator('.txn-filters').getByRole('checkbox', { name: /thinking/ })
+  await thinking.uncheck()
+  await page.locator('.txn-stream').focus()
+  await page.keyboard.press('Control+f')
+  await page.getByRole('textbox', { name: 'search transcript' }).fill(row.query)
+  await expect(page.locator('.txn-search-count')).toHaveText('0 matches')
+  await expect(thinking).not.toBeChecked()
+  await thinking.check()
+  await expect(page.locator('.txn-search-count')).toHaveText('1/1')
+  await page.getByRole('button', { name: 'next match', exact: true }).click()
+  await expect(page.locator('.txn-thinking-toggle')).toHaveAttribute('aria-expanded', 'true')
+  await expect.poll(() => page.evaluate(query => [...(CSS.highlights.get('txn-search-match') ?? [])].some(range => range.toString().includes(query)), row.query)).toBe(true)
+})
+test('search identifies a source-only markdown match', async ({ page }, info) => {
+  await open(page, info.project.name)
+  await page.locator('.txn-stream').focus()
+  await page.keyboard.press('Control+f')
+  await page.getByRole('textbox', { name: 'search transcript' }).fill(fixture.searchSourceOnly)
+  await expect(page.locator('.txn-search-count')).toHaveText('1/1')
+  await expect(page.getByRole('status').filter({ hasText: 'match in source, not visible in rendered content' })).toBeVisible()
+  await expect.poll(() => page.evaluate(() => CSS.highlights.get('txn-search-match')?.size ?? 0)).toBe(0)
 })
 for (const row of fixture.initial) test(`transcript rendered initial ${row.name}`, async ({ page }, info) => {
   await open(page, info.project.name, row.turn)

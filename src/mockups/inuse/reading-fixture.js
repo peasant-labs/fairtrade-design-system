@@ -8,7 +8,7 @@ export function readingPayload({ short = false, taskCount = short ? spec.shortTa
   const turns = [
     { index: 0, role: 'user', content: 'Reading request 0' },
     { index: 1, role: 'assistant', content: `First response owns the action list.\n\n\`\`\`text\n${spec.longCode}\n\`\`\``, toolCalls: Array.from({ length: short ? spec.shortLeadingActions : spec.leadingActions }, (_, n) => tool(`leading-${n}`, spec.toolDurations[n % spec.toolDurations.length].ms)) },
-    { index: 2, role: 'assistant', content: 'Later distinct prose target', toolCalls: [tool('target-beta')] },
+    { index: 2, role: 'assistant', content: `Later distinct prose target\n\n${spec.searchSourceOnly}`, toolCalls: [tool('target-beta')] },
     { index: 3, role: 'assistant', content: '', toolCalls: [tool('target-gamma')] },
     { index: 4, role: 'assistant', entryType: 'thinking', content: 'target thinking evidence, kept with its original source identity.' },
   ]
