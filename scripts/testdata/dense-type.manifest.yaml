@@ -6,6 +6,7 @@ requiredResponsiveNames: [collective grid, transcript grid]
 requiredMeasurementNames:
   - transcript title
   - transcript prose
+  - adjacent transcript paragraphs
   - transcript toolbar
   - filter rail
   - commit subjects

@@ -19,7 +19,7 @@ mutations:
   - {name: undersized turn anchor fails minimum target, kind: minimum-target}
 targets:
   - {name: turn anchor, query: app=transcript, selector: .txn-anchor}
-  - {name: turn label, query: app=transcript, selector: .txn-labelbtn}
+  - {name: turn label, query: 'app=transcript&transcript=classic', selector: .txn-labelbtn}
   - {name: thinking disclosure, query: app=transcript, selector: .txn-thinking-toggle}
   - {name: tool subgroup, query: app=transcript, selector: .txn-toolcat-toggle, desktopOnly: true}
   - {name: trace view switch, query: app=transcript, selector: '.txn-viewsw .sw', desktopOnly: true}

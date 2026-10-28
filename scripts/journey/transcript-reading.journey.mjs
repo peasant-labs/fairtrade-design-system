@@ -103,23 +103,40 @@ for (const row of fixture.drawerMotion) test(`transcript drawer motion ${row.nam
   const viewer = page.locator('.txn-app'), footer = viewer.locator('.txn-footer'), stream = viewer.locator('.txn-stream')
   const scroll = await stream.evaluate(el => el.scrollTop)
   const menu = footer.getByRole('button', { name: 'transcript tools' })
-  await menu.click(); await footer.getByRole('button', { name: row.drawer, exact: true }).click()
+  await menu.click()
+  const armTransition = () => viewer.evaluate(el => {
+    window.__drawerTransition = new Promise(resolve => { const onRun = event => {
+      if (event.propertyName !== 'transform' || !event.target.matches('.txn-mobile-drawer-panel')) return
+      const animation = event.target.getAnimations().find(a => a.transitionProperty === 'transform')
+      if (animation) {
+        el.removeEventListener('transitionrun', onRun)
+        const dialog = event.target.closest('dialog')
+        for (const item of dialog.getAnimations({ subtree: true })) item.pause()
+        resolve(true)
+      }
+    }; el.addEventListener('transitionrun', onRun) })
+  })
+  if (row.motion === 'no-preference') await armTransition()
+  await footer.getByRole('button', { name: row.drawer, exact: true }).click()
   const dialog = viewer.locator('.txn-mobile-drawer'), panel = dialog.locator('.txn-mobile-drawer-panel')
   await expect(dialog).toHaveAttribute('open', '')
   if (row.motion === 'no-preference') {
+    await page.evaluate(() => window.__drawerTransition)
     const entrance = await panel.evaluate(el => el.getAnimations().some(a => a.transitionProperty === 'transform'))
     expect(entrance).toBe(true)
-    const middle = await panel.evaluate(el => { const a = el.getAnimations().find(item => item.transitionProperty === 'transform'); a.pause(); a.currentTime = a.effect.getTiming().duration / 2; const x = new DOMMatrix(getComputedStyle(el).transform).m41; a.play(); return { x, width: el.getBoundingClientRect().width } })
+    const middle = await panel.evaluate(el => { const a = el.getAnimations().find(item => item.transitionProperty === 'transform'); a.currentTime = a.effect.getTiming().duration / 2; const x = new DOMMatrix(getComputedStyle(el).transform).m41; for (const item of el.closest('dialog').getAnimations({ subtree: true })) item.play(); return { x, width: el.getBoundingClientRect().width } })
     expect(middle.x).toBeLessThan(0); expect(middle.x).toBeGreaterThan(-middle.width)
     await panel.evaluate(async el => { await Promise.all(el.getAnimations().map(a => a.finished.catch(() => {}))) })
   } else expect(await panel.evaluate(el => el.getAnimations().length)).toBe(0)
+  if (row.motion === 'no-preference') await armTransition()
   await dialog.getByRole('button', { name: 'close drawer' }).click()
   await expect(menu).toBeFocused()
   await expect(dialog).not.toHaveAttribute('open', '')
   if (row.motion === 'no-preference') {
+    await page.evaluate(() => window.__drawerTransition)
     expect(await panel.evaluate(el => el.inert)).toBe(true)
     expect(await panel.evaluate(el => el.getAnimations().some(a => a.transitionProperty === 'transform'))).toBe(true)
-    const middle = await panel.evaluate(el => { const a = el.getAnimations().find(item => item.transitionProperty === 'transform'); a.pause(); a.currentTime = a.effect.getTiming().duration / 2; const x = new DOMMatrix(getComputedStyle(el).transform).m41; a.play(); return { x, width: el.getBoundingClientRect().width } })
+    const middle = await panel.evaluate(el => { const a = el.getAnimations().find(item => item.transitionProperty === 'transform'); a.currentTime = a.effect.getTiming().duration / 2; const x = new DOMMatrix(getComputedStyle(el).transform).m41; for (const item of el.closest('dialog').getAnimations({ subtree: true })) item.play(); return { x, width: el.getBoundingClientRect().width } })
     expect(middle.x).toBeLessThan(0); expect(middle.x).toBeGreaterThan(-middle.width)
     await panel.evaluate(async el => { await Promise.all(el.getAnimations().map(a => a.finished.catch(() => {}))) })
   }
@@ -228,14 +245,23 @@ for (const row of fixture.movingHeader) test(`transcript reading width ${row.nam
   await expect(turn).toHaveClass(/txn-active/)
   const handle = page.getByRole('separator', { name: 'reading width' })
   await handle.evaluate(el => el.focus({ preventScroll: true }))
+  await page.evaluate(() => {
+    const animate = Element.prototype.animate
+    Element.prototype.animate = function (...args) {
+      const animation = animate.apply(this, args)
+      if (this.classList.contains('txn-header-details')) { animation.pause(); Element.prototype.animate = animate }
+      return animation
+    }
+  })
   await stream.evaluate((el, top) => { el.scrollTop = top }, row.scrollTop)
-  await expect.poll(() => header.evaluate(el => el.getAnimations({ subtree: true }).some(a => a.playState === 'running'))).toBe(true)
+  await expect.poll(() => header.evaluate(el => el.getAnimations({ subtree: true }).some(a => a.playState === 'paused'))).toBe(true)
   await handle.evaluate(el => {
     const app = el.closest('.txn-app'), stream = app.querySelector('.txn-stream')
     window.__chromeChanges = []
     const observer = new MutationObserver(() => window.__chromeChanges.push({ condensed: app.classList.contains('txn-app-condensed'), scrollTop: stream.scrollTop }))
     observer.observe(app, { attributes: true, attributeFilter: ['class'] })
     el.addEventListener('keydown', () => {
+      for (const animation of app.querySelector('.txn-header').getAnimations({ subtree: true })) if (animation.playState === 'paused') animation.play()
       const stream = document.querySelector('.txn-stream'), target = document.querySelector('#turn-0')
       const view = stream.getBoundingClientRect(), box = target.getBoundingClientRect()
       const y = Math.max(Math.max(view.top, box.top) + 1, Math.min(Math.min(view.bottom, box.bottom) - 1, view.top + view.height * 0.4))
@@ -243,7 +269,7 @@ for (const row of fixture.movingHeader) test(`transcript reading width ${row.nam
       if (!pos || pos.offsetNode.nodeType !== Node.TEXT_NODE || !target.contains(pos.offsetNode)) throw new Error('no visible selected text at gesture start')
       const range = document.createRange(); range.setStart(pos.offsetNode, pos.offset); range.collapse(true)
       window.__movingWidth = { range, frames: [], running: document.querySelector('.txn-header').getAnimations({ subtree: true }).some(a => a.playState === 'running') }
-      const record = () => window.__movingWidth.frames.push({ y: range.getBoundingClientRect().top, streamTop: stream.getBoundingClientRect().top })
+      const record = () => window.__movingWidth.frames.push({ y: range.getBoundingClientRect().top, streamTop: stream.getBoundingClientRect().top, scrollTop: stream.scrollTop })
       record()
       const sample = () => { setTimeout(() => { record(); if (document.querySelector('.txn-header').getAnimations({ subtree: true }).some(a => a.playState === 'running')) requestAnimationFrame(sample) }, 0) }
       requestAnimationFrame(sample)
@@ -255,7 +281,9 @@ for (const row of fixture.movingHeader) test(`transcript reading width ${row.nam
   await info.attach('moving-header-position', { body: JSON.stringify(evidence), contentType: 'application/json' })
   expect(evidence.running).toBe(true)
   expect(evidence.frames.length).toBeGreaterThan(1)
-  for (const frame of evidence.frames) expect(Math.abs(frame.y - evidence.frames[0].y)).toBeLessThan(3)
+  for (const frame of evidence.frames) {
+    if (Math.abs(frame.y - evidence.frames[0].y) >= 3) expect(frame.scrollTop, 'a shifted range must be at the top clamp').toBeLessThanOrEqual(1)
+  }
   await expect(turn).toHaveClass(/txn-active/)
   const state = await page.evaluate(() => ({ y: window.__movingWidth.range.getBoundingClientRect().top, scrollTop: document.querySelector('.txn-stream').scrollTop, condensed: document.querySelector('.txn-app').classList.contains('txn-app-condensed'), header: document.querySelector('.txn-header').getBoundingClientRect().height }))
   console.log('settled width chrome', JSON.stringify(state))
@@ -266,7 +294,7 @@ for (const row of fixture.movingHeader) test(`transcript reading width ${row.nam
   const settled = await page.evaluate(() => ({ y: window.__movingWidth.range.getBoundingClientRect().top, scrollTop: document.querySelector('.txn-stream').scrollTop, condensed: document.querySelector('.txn-app').classList.contains('txn-app-condensed') }))
   console.log('post-reconcile', JSON.stringify(settled))
   expect(settled.condensed).toBe(false)
-  expect(Math.abs(settled.y - evidence.frames[0].y)).toBeLessThan(3)
+  if (Math.abs(settled.y - evidence.frames[0].y) >= 3) expect(settled.scrollTop).toBeLessThanOrEqual(1)
 })
 for (const row of fixture.widthLifecycle) test(`transcript reading width ${row.name}`, async ({ page }, info) => {
   await open(page, info.project.name)
@@ -404,6 +432,11 @@ test('mermaid diagrams stay local, readable and inert', async ({ page }, info) =
   await page.goto(`${origin}/?app=transcript&transcript=mermaid-reading&fb=off&theme=${info.project.name}#inuse`)
   const diagrams = page.locator('.txn-mermaid')
   await expect(diagrams).toHaveCount(15)
+  for (const button of await diagrams.first().locator('.txn-mermaid-toolbar button').all()) {
+    const box = await button.boundingBox()
+    expect(box.width).toBeGreaterThanOrEqual(36)
+    expect(box.height).toBeGreaterThanOrEqual(36)
+  }
   for (let i = 0; i < 2; i++) {
     await diagrams.nth(i).getByRole('button', { name: 'view diagram' }).click()
     await expect(diagrams.nth(i).locator('svg')).toBeVisible()
@@ -443,4 +476,20 @@ test('mermaid diagrams stay local, readable and inert', async ({ page }, info) =
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('flowchart LR\nA[Source Case] --> B[Destination]\n')
   await diagrams.first().getByRole('button', { name: 'view source' }).click()
   await expect(diagrams.first().locator('pre')).toContainText('A[Source Case] --> B[Destination]')
+})
+
+test.describe('touch mermaid controls', () => {
+  test.use({ hasTouch: true })
+  test('mermaid toolbar uses comfortable targets', async ({ page }, info) => {
+    await page.setViewportSize({ width: fixture.mobile[0].width, height: fixture.mobile[0].height })
+    await page.goto(`${origin}/?app=transcript&transcript=mermaid-reading&fb=off&theme=${info.project.name}#inuse`)
+    const buttons = page.locator('.txn-mermaid').first().locator('.txn-mermaid-toolbar button')
+    await expect(buttons.first()).toBeVisible()
+    for (const button of await buttons.all()) {
+      const box = await button.boundingBox()
+      expect(box.width).toBeGreaterThanOrEqual(44)
+      expect(box.height).toBeGreaterThanOrEqual(44)
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
+  })
 })

@@ -25,9 +25,15 @@ for (const row of spec.cases) for (const theme of spec.themes) {
       await expect(mark).toHaveCount(1)
       await expect(mark).toBeVisible()
       await expect(mark.locator('path')).toHaveAttribute('d', /.+/)
-      const order = await mark.evaluate(node => ({ brand: node.dataset.brand, nextText: node.nextSibling?.nodeType === Node.TEXT_NODE ? node.nextSibling.textContent.trimStart() : null, decorative: node.getAttribute('aria-hidden') }))
-      expect(order.nextText, `${row.name}: ${selector} must immediately precede its provider name`).toMatch(new RegExp(`^${order.brand}\\b`))
-      expect(order.decorative).toBe('true')
+      const order = await mark.evaluate(node => ({ brand: node.dataset.brand, nextText: node.nextSibling?.nodeType === Node.TEXT_NODE ? node.nextSibling.textContent.trimStart() : node.closest('.txn-roleico')?.nextElementSibling?.textContent.trimStart(), decorative: node.getAttribute('aria-hidden') }))
+      if (selector.includes('.txn-roleico')) {
+        expect(order.nextText).toBe('assistant')
+        await expect(mark).toHaveAttribute('aria-label', new RegExp(`^${order.brand}\\b`, 'i'))
+        await expect(mark).not.toHaveAttribute('aria-hidden', 'true')
+      } else {
+        expect(order.nextText, `${row.name}: ${selector} must immediately precede its provider name`).toMatch(new RegExp(`^${order.brand}\\b`))
+        expect(order.decorative).toBe('true')
+      }
       marks.push({ selector, count: await mark.count(), ...order })
     }
     if (row.disabled) {

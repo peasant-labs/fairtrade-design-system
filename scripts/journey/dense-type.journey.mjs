@@ -101,6 +101,7 @@ function inspect({ row, mutation }) {
       } else if (row.reflow) el.style.setProperty('min-width', '10000px', 'important')
       else {
         el.style.setProperty('font-size', '11px', 'important')
+        if (row.paragraphGap) el.style.setProperty('margin-top', '0', 'important')
         if (row.wrap) el.style.setProperty('white-space', 'nowrap', 'important')
       }
     }
@@ -112,7 +113,10 @@ function inspect({ row, mutation }) {
       const family = getComputedStyle(document.documentElement).getPropertyValue(row.familyToken).trim().split(',')[0].replace(/["']/g, '')
       if (!cs.fontFamily.includes(family)) errors.push(`wrong family ${cs.fontFamily}`)
     }
-    if (row.paragraphGap && Math.abs(parseFloat(cs.marginTop) - parseFloat(cs.lineHeight)) > 1) errors.push('paragraph gap is not one line')
+    if (row.paragraphGap && el.previousElementSibling?.matches('.txn-md-prose')) {
+      const gap = box.top - el.previousElementSibling.getBoundingClientRect().bottom
+      if (Math.abs(parseFloat(cs.marginTop) - parseFloat(cs.lineHeight)) > 1 || Math.abs(gap - parseFloat(cs.lineHeight)) > 1) errors.push('paragraph gap is not one line')
+    }
     if (row.headingGap && parseFloat(cs.marginTop) < 2 * parseFloat(cs.fontSize) - 1) errors.push('heading gap is less than two em')
     if (row.reflow && (box.width <= 0 || box.right > el.parentElement.getBoundingClientRect().right + 1 || el.scrollWidth > el.clientWidth + 1)) errors.push('dense row overflows')
     if (row.reflowMutation === 'overlay' && box.top < document.querySelector('.txn-body-grid').getBoundingClientRect().bottom - 1) errors.push('footer overlaps reading content')
@@ -159,6 +163,7 @@ test('dense text, reflow and disclosure on the built product', async ({ page }, 
         await marker.evaluate(el => el.style.textTransform = 'lowercase')
         expect(await marker.evaluate(el => getComputedStyle(el).textTransform), spec.case.mutation).not.toBe('none')
         await marker.evaluate((el, text) => { el.style.removeProperty('text-transform'); el.textContent = text }, original)
+        await page.goto(`${origin}/?fb=off&app=transcript&transcript=classic&theme=${theme}#inuse`, { waitUntil: 'networkidle' })
         const disclosure = page.locator('.txn-turn-disclosure').first()
         const bodyId = await disclosure.getAttribute('aria-controls')
         const body = page.locator(`[id="${bodyId}"]`)

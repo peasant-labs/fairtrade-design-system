@@ -39,19 +39,19 @@ cases:
     query: app=transcript
     width: 390
     root: .txn-app
-    text: [9 turns, 18.4k tokens, turns 1–3, fairtrade-design-system, returned to claude]
+    text: [9 turns, 18.4k tokens, turns 1–3, fairtrade-design-system]
     absent: [8 turns, turns 0–2, transcript-browser]
     tabular: .txn-app .rng
-    marks: ['.subtask-foot [data-brand="claude"]']
-    focus: .subtask-foot
+    marks: ['#turn-1 .txn-roleico [data-brand="claude"]']
+    focus: .txn-turn
   - name: village transcript
     query: app=commons&commons=transcript-detail
     width: 1440
     root: .txn-app
-    text: [Port the transcript canvas into the shared package, 9 turns, returned to claude]
+    text: [Port the transcript canvas into the shared package, 9 turns]
     absent: [Fix flaky ingest test]
-    marks: ['.subtask-foot [data-brand="claude"]']
-    focus: .subtask-foot
+    marks: ['#turn-1 .txn-roleico [data-brand="claude"]']
+    focus: .txn-turn
   - name: village account
     query: app=commons&commons=account
     width: 390
