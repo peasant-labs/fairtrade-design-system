@@ -120,8 +120,8 @@ mutations:
     expectedDiagnostic: "releasing at 880 must keep 880"
   - name: the full width stops following the stream
     file: src/ui/transcript/TranscriptViewer.jsx
-    find: "    window.addEventListener('resize', update)"
-    replace: "    void update"
+    find: "    observer?.observe(stream)\n    window.addEventListener('resize', update)"
+    replace: "    observer?.observe(stream)\n    void update"
     expectedDiagnostic: "a reader at full follows the stream when it resizes: full must follow the stream"
   - name: the full width is capped at the old widest snap
     file: src/ui/transcript/TranscriptViewer.jsx
@@ -145,8 +145,8 @@ mutations:
     expectedDiagnostic: "leaving zen restores the exact snapshot: leaving zen must restore"
   - name: the rail strips revert to 40px
     file: src/index.css
-    find: ".txn-ledger .txn-body-grid { --txn-rail-strip-w: var(--sp-6); }"
-    replace: ".txn-ledger .txn-body-grid { --txn-rail-strip-w: var(--sp-7); }"
+    find: ".txn-ledger .txn-body-grid { --txn-rail-strip-w: var(--sp-6); --txn-reader-lane: calc(var(--target-comfortable) + var(--sp-4)); }"
+    replace: ".txn-ledger .txn-body-grid { --txn-rail-strip-w: var(--sp-7); --txn-reader-lane: calc(var(--target-comfortable) + var(--sp-4)); }"
     expectedDiagnostic: "both collapsed rail strips are 32px: the collapsed strip width must be var(--sp-6)"
   - name: the reader prose re-caps at 58ch
     file: src/index.css
