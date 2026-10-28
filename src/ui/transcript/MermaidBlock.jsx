@@ -25,7 +25,7 @@ export default function MermaidBlock({ source }) {
     setStatus('loading diagram')
     const run = async () => {
       const { default: mermaid } = await import('mermaid')
-      mermaid.initialize({ startOnLoad: false, logLevel: 'fatal', securityLevel: 'strict', suppressErrorRendering: true, htmlLabels: false, themeVariables: { fontSize: '16px' }, flowchart: { htmlLabels: false }, sequence: { useMaxWidth: false }, fontFamily: 'Atkinson Hyperlegible', maxTextSize: 8192 })
+      mermaid.initialize({ startOnLoad: false, logLevel: 'fatal', securityLevel: 'strict', suppressErrorRendering: true, htmlLabels: false, themeVariables: { fontSize: '16px' }, flowchart: { htmlLabels: false }, sequence: { useMaxWidth: false }, journey: { textPlacement: 'tspan' }, fontFamily: 'Atkinson Hyperlegible', maxTextSize: 8192 })
       const parsed = await mermaid.mermaidAPI.getDiagramFromText(source)
       if (!safeMermaidModel(parsed)) throw new Error('diagram contains unsupported active content')
       const id = `ftmermaid${++serial}`

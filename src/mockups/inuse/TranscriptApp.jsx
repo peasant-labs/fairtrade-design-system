@@ -823,6 +823,44 @@ mindmap
 \`\`\`mermaid
 flowchart LR
 A@{ img: "/mermaid-probe-image.png", label: "image" }
+\`\`\`
+
+\`\`\`mermaid
+journey
+  title Day
+  section Morning
+  Wake: 5: Me
+\`\`\`
+
+\`\`\`mermaid
+erDiagram
+  CUSTOMER ||--o{ ORDER : places
+\`\`\`
+
+\`\`\`mermaid
+xychart-beta
+  x-axis [A, B]
+  y-axis 0 --> 10
+  bar [1, 2]
+\`\`\`
+
+\`\`\`mermaid
+journey
+  section <img src=/mermaid-probe-image.png onerror=malicious()>
+  Wake: 5: Me
+\`\`\`
+
+\`\`\`mermaid
+journey
+  section &#x3c;img src=/mermaid-probe-image.png&#x3e;
+  Wake: 5: Me
+\`\`\`
+
+\`\`\`mermaid
+sequenceDiagram
+participant A
+properties A: {"icon":"/mermaid-probe-image.png"}
+A->>A: Hi
 \`\`\``
       return { ...base, turns: base.turns.map((turn, index) => index === 1 ? { ...turn, content: source } : turn) }
     }

@@ -1,7 +1,7 @@
 /* Mermaid owns the grammar. This small preflight rejects active content and configuration,
    not diagram types. The parsed model is also checked before the renderer touches the DOM. */
 export function safeMermaidSource(source) {
-  return typeof source === 'string' && source.length <= 8192 && !/(?:^\s*---\s*$|%%\s*\{|<\s*\/?[a-z!][^>]*>|&(?:#\d+|#x[\da-f]+|[a-z]+);|(?:https?:|data:|javascript:|file:|\/\/)|\b(?:click|callback)\s|\burl\s*\(|!\s*\[|\b(?:fa|fab|fas|far):|\b(?:classDef|style|linkStyle)\s)/im.test(source)
+  return typeof source === 'string' && source.length <= 8192 && !/(?:^\s*---\s*$|%%\s*\{|<\s*\/?[a-z!][^>]*>|&(?:#\d+|#x[\da-f]+|[a-z]+);|(?:https?:|data:|javascript:|file:|\/\/)|\b(?:click|callback)\s|\burl\s*\(|!\s*\[|[\"'](?:__proto__|constructor|prototype)[\"']\s*:|\b(?:fa|fab|fas|far):|\b(?:classDef|style|linkStyle)\s)/im.test(source)
 }
 
 /* Flowchart image nodes are loaded by Mermaid's live renderer before SVG is returned.
@@ -23,7 +23,7 @@ export function safeMermaidModel(diagram) {
     }
     return true
   }
-  for (const method of ['getData', 'getVertices']) {
+  for (const method of ['getData', 'getVertices', 'getActors']) {
     if (typeof db[method] === 'function') {
       const value = db[method]()
       // getData includes site configuration; inspect its diagram content, not configuration.

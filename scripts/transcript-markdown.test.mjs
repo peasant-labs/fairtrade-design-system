@@ -239,6 +239,7 @@ for (const row of mermaidFixtures.badSvg) {
   try { svgModule.mermaidSvg(row.svg, 'test') } catch { rejected = true }
   assert(`mermaid-svg-${row.name}`, `${row.name}: unsafe SVG is rejected`, rejected)
 }
+assert('mermaid-model-actor-icon', 'native sequence actor icon is rejected', !sourceModule.safeMermaidModel({ db: { getActors: () => new Map([['A', { properties: { icon: '/icon.png' } }]]) } }))
 assert('mermaid-model-image', 'native model with image nodes is rejected', !sourceModule.safeMermaidModel({ db: { getVertices: () => new Map([['A', { img: '/image.png' }]]) } }))
 assert('mermaid-oversize', 'oversized source is rejected before compilation', sourceModule.safeMermaidSource('x'.repeat(8193)) === false)
 

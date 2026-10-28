@@ -75,12 +75,22 @@ test('transcript real overflow user rail follows reading in both directions', as
 test('mermaid diagrams stay local, readable and inert', async ({ page }, info) => {
   const requests = []
   page.on('request', request => { if (request.url().includes('evil.example') || request.url().includes('mermaid-probe-image')) requests.push(request.url()) })
-  await page.addInitScript(() => { window.malicious = () => { window.__maliciousCalled = true } })
+  await page.addInitScript(() => {
+    window.malicious = () => { window.__maliciousCalled = true }
+    window.__compilerForeignObjects = 0
+    document.addEventListener('DOMContentLoaded', () => {
+      new MutationObserver(records => {
+        for (const record of records) for (const node of record.addedNodes) {
+          if (node.nodeType === 1) window.__compilerForeignObjects += (node.localName === 'foreignObject' ? 1 : 0) + node.querySelectorAll('foreignObject').length
+        }
+      }).observe(document.body, { childList: true, subtree: true })
+    })
+  })
   await page.setViewportSize({ width: 390, height: 844 })
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
   await page.goto(`${origin}/?app=transcript&transcript=mermaid-reading&fb=off&theme=${info.project.name}#inuse`)
   const diagrams = page.locator('.txn-mermaid')
-  await expect(diagrams).toHaveCount(9)
+  await expect(diagrams).toHaveCount(15)
   for (let i = 0; i < 2; i++) {
     await diagrams.nth(i).getByRole('button', { name: 'view diagram' }).click()
     await expect(diagrams.nth(i).locator('svg')).toBeVisible()
@@ -89,6 +99,19 @@ test('mermaid diagrams stay local, readable and inert', async ({ page }, info) =
     await diagrams.nth(i).getByRole('button', { name: 'view diagram' }).click()
     await expect(diagrams.nth(i).locator('svg')).toBeVisible()
   }
+  await page.evaluate(() => { window.__compilerForeignObjects = 0 })
+  for (let i = 9; i < 12; i++) {
+    await diagrams.nth(i).getByRole('button', { name: 'view diagram' }).click()
+    await expect(diagrams.nth(i).locator('svg')).toBeVisible()
+    await expect(diagrams.nth(i).locator('foreignObject')).toHaveCount(0)
+  }
+  expect(await page.evaluate(() => window.__compilerForeignObjects)).toBe(0)
+  for (let i = 12; i < 14; i++) {
+    await diagrams.nth(i).getByRole('button', { name: 'view diagram' }).click()
+    await expect(diagrams.nth(i).getByRole('status')).toContainText('not supported')
+  }
+  await diagrams.nth(14).getByRole('button', { name: 'view diagram' }).click()
+  await expect(diagrams.nth(14).getByRole('status')).toContainText('diagram unavailable')
   await diagrams.nth(8).getByRole('button', { name: 'view diagram' }).click()
   await expect(diagrams.nth(8).getByRole('status')).toContainText('diagram unavailable')
   await diagrams.nth(2).getByRole('button', { name: 'view diagram' }).click()
