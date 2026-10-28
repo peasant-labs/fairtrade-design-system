@@ -117,7 +117,9 @@ export async function withMountedSource(run, { url = 'https://fairtrade.invalid/
   // react-dom reads the DOM's capabilities (input events and the like) when it first loads, so it
   // loads only after the jsdom globals exist; loaded earlier it falls back to legacy event paths.
   const { createRoot } = await import('react-dom/client')
-  const server = await createServer({ appType: 'custom', configFile: false, logLevel: 'silent', plugins: [mutationPlugin(), react()], root: ROOT, server: { middlewareMode: true } })
+  // This harness only uses ssrLoadModule. Scanning index.html and prebundling the
+  // client application wastes memory and can race separate mutation processes.
+  const server = await createServer({ appType: 'custom', configFile: false, logLevel: 'silent', plugins: [mutationPlugin(), react()], root: ROOT, optimizeDeps: { noDiscovery: true, include: [] }, server: { middlewareMode: true } })
   const roots = []
   try {
     const load = (path) => server.ssrLoadModule(path)
