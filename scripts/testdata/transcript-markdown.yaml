@@ -154,3 +154,22 @@ cases:
       languageClass: language-text
       unsafeHrefAbsent: true
       rawHtmlAbsent: true
+  - name: mermaid-source-available-before-render
+    prop: text
+    source: |-
+      ```mermaid
+      flowchart LR
+        A[Source Case] --> B[Destination]
+      ```
+    expect:
+      requiredTags: [pre, code, button]
+      textIncludes: ['flowchart LR', 'Source Case', 'Destination', 'view diagram']
+      brCount: 0
+      tableWrapCount: 0
+      codeWrapCount: 0
+      safeHrefCount: 0
+      safeLinkRel: ''
+      blockedLinkCount: 0
+      languageClass: ''
+      unsafeHrefAbsent: true
+      rawHtmlAbsent: true

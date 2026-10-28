@@ -2,8 +2,42 @@
   "name": "overflowing user tasks and separated action destinations",
   "rationale": "24 real task cards overflow the rail; 32 distinct leading actions separate the owner and matched row by more than the reading viewport, without forced geometry.",
   "taskCount": 24,
+  "longTaskCount": 52,
   "leadingActions": 32,
-  "lastResponseParagraphs": 12,
+  "lastResponseParagraphs": 24,
+  "unverified": {"owner": "example", "repo": "sample", "number": 42, "url": "https://github.com/example/sample/pull/42", "source": {"turnIndex": 3, "toolCallIndex": 0, "toolCallId": "target-gamma"}},
+  "toolDurations": [{"name": "seconds", "ms": 1000, "label": "1s"}, {"name": "milliseconds", "ms": 820, "label": "820ms"}, {"name": "minutes and seconds", "ms": 75000, "label": "1m 15s"}],
+  "shortTaskCount": 1,
+  "shortLeadingActions": 1,
+  "width": [
+    {"name": "long assistant reading point survives keyboard reflow", "turn": 50, "paragraph": 6, "gesture": "keyboard", "motion": "reduce"},
+    {"name": "long assistant reading point survives pointer reversal", "turn": 50, "paragraph": 6, "gesture": "pointer", "motion": "no-preference"},
+    {"name": "long assistant reading point survives cancelled drag", "turn": 50, "paragraph": 6, "gesture": "cancel", "motion": "reduce"},
+    {"name": "selected user survives keyboard reflow", "turn": 49, "paragraph": 0, "gesture": "keyboard", "motion": "no-preference"}
+  ],
+  "movingHeader": [
+    {"name": "resize during header exchange", "turn": 0, "scrollTop": 57}
+  ],
+  "drawerMotion": [
+    {"name": "filters drawer enters and exits", "drawer": "filters", "motion": "no-preference"},
+    {"name": "user turns drawer enters and exits", "drawer": "user turns", "motion": "no-preference"},
+    {"name": "drawer respects reduced motion", "drawer": "filters", "motion": "reduce"}
+  ],
+  "widthLifecycle": [
+    {"name": "wheel interrupts active resize", "kind": "interrupt"},
+    {"name": "short trace stays expanded at top", "kind": "short"},
+    {"name": "long trace width drag at top", "kind": "top"},
+    {"name": "keyboard scroll interrupts captured resize", "kind": "keyboard"}
+  ],
+  "widthAction": [
+    {"name": "folded action retains its visible source", "query": "target-gamma-output", "command": "printf target-gamma"}
+  ],
+  "longCode": "very_long_synthetic_identifier_for_local_code_scroll_very_long_synthetic_identifier_for_local_code_scroll_very_long_synthetic_identifier_for_local_code_scroll",
+  "longTitle": "SyntheticLongTranscriptTitleWithoutSpacesForNarrowViewportSyntheticLongTranscriptTitleWithoutSpacesForNarrowViewportSyntheticLongTranscriptTitleWithoutSpaces",
+  "mobile": [
+    {"name": "narrow portrait", "width": 320, "height": 720, "motion": "reduce", "footerMaxHeight": 52},
+    {"name": "phone landscape", "width": 720, "height": 390, "motion": "no-preference", "footerMaxHeight": 52}
+  ],
   "navigation": [
     {"name": "later prose tool destination", "query": "target-beta-output", "turn": 2, "kind": "tool", "command": "printf target-beta", "compact": false},
     {"name": "wordless tool destination in compact", "query": "target-gamma-output", "turn": 3, "kind": "tool", "command": "printf target-gamma", "compact": true},

@@ -4,6 +4,23 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.49 - 2026-10-27
+
+### Added
+
+- A viewport-bounded app frame with in-flow host notices and a transcript header slot.
+- Contextual transcript breadcrumbs that retain the transcript title.
+- A presentation for unverified pull requests recorded in a transcript.
+- Exact source navigation to the recorded tool call and its result, including calls without IDs.
+
+### Changed
+
+- Standalone transcripts default to the ledger presentation; classic remains available explicitly.
+- The shared app frame follows the transcript's existing host-sidebar visibility in zen mode.
+- The coordinated session header and timeline exchange uses a shorter transition while retaining reduced-motion behavior.
+- Transcript demo surfaces use ledger by default; classic remains an explicit example. Mobile rails slide with reduced-motion support, and desktop rails retain painted content while their frame collapses.
+- Mermaid diagrams render through structured SVG, and reader-width changes preserve the reading context.
+
 ## 0.0.48 - 2026-10-27
 
 ### Added

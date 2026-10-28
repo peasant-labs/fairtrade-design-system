@@ -134,6 +134,11 @@ import './AppSidebar.css'
  * @property {import('react').ReactNode} sidebar   an <AppSidebar>.
  * @property {import('react').ReactNode} children  the page body.
  * @property {string} [className]
+ * @property {boolean} [viewport]  bound the frame to the viewport rather than document flow.
+ * @property {import('react').ReactNode} [topBar]
+ * @property {import('react').ReactNode} [notice]
+ * @property {'div' | 'main'} [mainAs]
+ * @property {string} [mainId]
  */
 
 /**
@@ -734,11 +739,15 @@ export default function AppSidebar({
  * (min-width 0, so wide content stays contained). One column below 768px, the top bar above the page.
  * @param {AppSidebarLayoutProps} props
  */
-export function AppSidebarLayout({ sidebar, children, className = '' }) {
+export function AppSidebarLayout({ sidebar, children, className = '', viewport = false, topBar, notice, mainAs: Main = 'div', mainId }) {
   return (
-    <div className={['asb-layout', className].filter(Boolean).join(' ')}>
+    <div className={['asb-layout', viewport && 'asb-layout-viewport', topBar != null && 'asb-layout-has-topbar', className].filter(Boolean).join(' ')}>
+      {topBar != null && <div className="asb-topbar">{topBar}</div>}
       {sidebar}
-      <div className="asb-main">{children}</div>
+      <Main className="asb-main" id={mainId}>
+        {notice != null && <div className="asb-notice">{notice}</div>}
+        {children}
+      </Main>
     </div>
   )
 }

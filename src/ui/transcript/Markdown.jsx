@@ -1,3 +1,4 @@
+import MermaidBlock from './MermaidBlock.jsx'
 import ReactMarkdown from 'react-markdown'
 import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
@@ -85,11 +86,18 @@ const markdownComponents = {
   /** @param {object} props */
   td: ({ children, node: _node, ...props }) => <td {...props}>{children}</td>,
   /** @param {object} props */
-  pre: ({ children, node: _node, ...props }) => (
+  pre: ({ children, node: _node, ...props }) => {
+    const code = _node?.children?.length === 1 ? _node.children[0] : null
+    if (code?.tagName === 'code' && code.properties?.className?.includes('language-mermaid')) {
+      const source = code.children?.map((child) => child.type === 'text' ? child.value : '').join('') ?? ''
+      return <MermaidBlock source={source} />
+    }
+    return (
     <div className="txn-md-code-wrap" tabIndex={0} role="region" aria-label="message code">
       <pre className="txn-md-code" {...props}>{children}</pre>
     </div>
-  ),
+    )
+  },
   /** @param {object} props */
   code: ({ children, className, node: _node, ...props }) => (
     <code className={classNames('txn-inlinecode', className)} {...props}>{children}</code>

@@ -9,3 +9,24 @@ requiredInitialNames:
 requiredRailNames:
   - deep reading brings the last user card into view
   - reverse reading brings the first user card into view
+requiredMobileNames:
+  - narrow portrait
+  - phone landscape
+requiredWidthNames:
+  - long assistant reading point survives keyboard reflow
+  - long assistant reading point survives pointer reversal
+  - long assistant reading point survives cancelled drag
+  - selected user survives keyboard reflow
+requiredWidthActionNames:
+  - folded action retains its visible source
+requiredMovingHeaderNames:
+  - resize during header exchange
+requiredWidthLifecycleNames:
+  - wheel interrupts active resize
+  - short trace stays expanded at top
+  - long trace width drag at top
+  - keyboard scroll interrupts captured resize
+requiredDrawerMotionNames:
+  - filters drawer enters and exits
+  - user turns drawer enters and exits
+  - drawer respects reduced motion

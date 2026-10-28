@@ -62,6 +62,13 @@ measurements:
     mutation: speech shrinks
     familyToken: --font-body
     paragraphGap: true
+  - name: adjacent transcript paragraphs
+    query: app=transcript&transcript=ledger-reading
+    selector: '.txn-body .txn-md-prose + .txn-md-prose'
+    minimumPx: 16
+    mutation: adjacent speech shrinks
+    familyToken: --font-body
+    paragraphGap: true
   - name: transcript toolbar
     query: app=transcript
     selector: .txn-trace-head
@@ -179,7 +186,7 @@ expandedTools:
       minimumPx: 16
 collapsedSearch:
   name: search reveals only its matching collapsed turn
-  query: app=transcript
+  query: app=transcript&transcript=classic
   width: 390
   turn: 0
   otherTurn: 2

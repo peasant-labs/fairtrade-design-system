@@ -31,6 +31,17 @@ payload:
           filePath: src/upload.ts
     - {index: 2, role: user, content: 'Now the region.', timestamp: '2026-10-20T10:02:00Z', depth: 0}
     - {index: 3, role: assistant, content: 'Switching models for this one.', timestamp: '2026-10-20T10:03:00Z', depth: 0, observedModel: anthropic/claude-opus-4-8}
+sourcePayload:
+  id: source-evidence
+  harness: claude-code
+  turns:
+    - {index: 1, role: user, content: 'Inspect source evidence.'}
+    - index: 42
+      role: assistant
+      content: ''
+      toolCalls:
+        - {id: '', name: Bash, arguments: '{"command":"printf first"}', result: 'first-result', toolKind: bash}
+        - {id: '', name: Bash, arguments: '{"command":"printf second"}', result: 'second-result', toolKind: bash}
 
 cases:
   - name: a same-length rewrite counts its lines
@@ -57,6 +68,76 @@ cases:
       - {label: home, href: /}
       - {label: viewer-format}
     expected: [{tag: A, href: /, current: null}, {tag: SPAN, href: null, current: page}]
+  - name: context retains the transcript title
+    kind: crumb-context
+    breadcrumbContext:
+      - {label: collectives, href: /collectives}
+      - {label: EnCUCA, href: /collectives/encuca}
+    title: Rename the upload helpers.
+  - name: unverified evidence retains exact source
+    kind: unverified-pulls
+    pullRequests:
+      - owner: example
+        repo: project
+        number: 42
+        url: https://github.com/example/project/pull/42
+        source: {turnIndex: 42, toolCallIndex: 1}
+      - owner: example
+        repo: project
+        number: 43
+        url: https://github.com.invalid/example/project/pull/43
+        source: {turnIndex: 70, toolCallIndex: 0, toolCallId: call-70}
+  - name: sparse source opens the second empty-id call
+    kind: source-jump
+    position: {kind: tool-call, turnIndex: 42, toolCallIndex: 1, requestKey: exact}
+    expectedOpen: second
+  - name: mismatched source id never opens a call
+    kind: source-jump
+    position: {kind: tool-call, turnIndex: 42, toolCallIndex: 1, toolCallId: wrong, requestKey: mismatch}
+    expectedOpen: none
+  - name: absent source call never opens a call
+    kind: source-jump
+    position: {kind: tool-call, turnIndex: 42, toolCallIndex: 8, requestKey: missing}
+    expectedOpen: none
+  - name: filtered compact source reveals only its exact evidence
+    kind: source-jump
+    position: {kind: tool-call, turnIndex: 42, toolCallIndex: 1, requestKey: filtered}
+    filters:
+      categories: {prompts: false, responses: false, thinking: false, toolcalls: false, system: false}
+      toolGroups: {bash: false}
+      tags: {errors: true, retries: false, revert: false}
+      views: {hidden: true, expandAll: false, compact: true}
+      checkpoint: all
+    expectedOpen: second
+  - name: duplicate turn index never opens a call
+    kind: source-jump
+    variant: duplicate-turn
+    position: {kind: tool-call, turnIndex: 42, toolCallIndex: 1, requestKey: duplicate-turn}
+    expectedOpen: none
+  - name: duplicate recorded id never opens a call
+    kind: source-jump
+    variant: duplicate-id
+    position: {kind: tool-call, turnIndex: 42, toolCallIndex: 1, toolCallId: repeated, requestKey: duplicate-id}
+    expectedOpen: none
+  - name: exact recorded id opens its command
+    kind: source-jump
+    variant: unique-id
+    position: {kind: tool-call, turnIndex: 42, toolCallIndex: 1, toolCallId: exact-id, requestKey: unique-id}
+    expectedOpen: second
+  - name: source position validates its original coordinates
+    kind: source-normalizer
+    valid: {kind: tool-call, turnIndex: 42, toolCallIndex: 1, toolCallId: exact-id, requestKey: one}
+    invalid: {kind: tool-call, turnIndex: 42, toolCallIndex: -1}
+  - name: source on a user turn opens its command
+    kind: source-jump
+    variant: user-role
+    position: {kind: tool-call, turnIndex: 42, toolCallIndex: 1, requestKey: user-role}
+    expectedOpen: second
+  - name: source on a system turn opens its command
+    kind: source-jump
+    variant: system-role
+    position: {kind: tool-call, turnIndex: 42, toolCallIndex: 1, requestKey: system-role}
+    expectedOpen: second
   - name: a tab without filters has no filters rail
     kind: filters-rail
     tabs:

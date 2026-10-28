@@ -3,6 +3,7 @@ import ToolCall from './ToolCall.jsx'
 import Thinking from './Thinking.jsx'
 import Collapsible from './Collapsible.jsx'
 import { workActionsLabel, workCountLabel, workMetaLabel, workSummary } from './work-summary.js'
+import { toolStateKey } from './tool-state-key.js'
 
 /* TranscriptWorkGroup — one turn's tool activity as a single panel. In the ledger presentation
    a turn shows its prose first and then this panel: the computed summary over its tool calls
@@ -117,12 +118,12 @@ export function ModelActions({ turns = [], openTools = {}, onToggle = () => {}, 
             <div key={turn.identity ?? turn.index} className="txn-modelactions-turn">
               {(turn.toolCalls ?? []).map((tool) => (
                 <ToolCall
-                  key={tool.id}
+                  key={toolStateKey(turn.index, tool)}
                   tool={tool}
-                  actionRef={el => registerActionRef(turn.index, tool.id, el)}
+                  actionRef={el => { registerActionRef(turn.index, tool.id, el); if (tool.sourceIndex != null) registerActionRef(turn.index, `source:${tool.sourceIndex}`, el) }}
                   showChevron={false}
-                  open={expandAll || !!openTools[tool.id]}
-                  onToggle={() => onToggle(tool.id)}
+                  open={expandAll || !!openTools[toolStateKey(turn.index, tool)]}
+                  onToggle={() => onToggle(toolStateKey(turn.index, tool))}
                 />
               ))}
               {turn.thinking && <Thinking block={turn.thinking} actionRef={el => registerActionRef(turn.index, 'thinking', el)} revealRequest={reveal?.turn === turn.index && reveal.where === 'thinking' ? reveal.sequence : 0} />}

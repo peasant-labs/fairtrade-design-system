@@ -7,6 +7,10 @@ import {
 import AppSidebar, { AppPage, AppSidebarLayout, APP_SIDEBAR_APPS } from './AppSidebar.jsx'
 import { SettingsLayout } from './SettingsNav.jsx'
 import { SettingGroup, SettingRow } from './Settings.jsx'
+import TranscriptViewer from './transcript/TranscriptViewer.jsx'
+import { adaptTranscript } from './transcript/adapter.js'
+import { longReadingPayload, readingUnverifiedPull } from '../mockups/inuse/reading-fixture.js'
+import UnverifiedPullRequests from './transcript/UnverifiedPullRequests.jsx'
 
 /* CSF3 stories for the shared app sidebar. classes + tokens come from src/index.css via
    .storybook/preview.jsx plus the component's own sheet; the theme toolbar flips data-theme. each
@@ -45,6 +49,25 @@ const ONLINE_GROUPS = [
     { id: 'reading-group', label: 'reading-group', href: '#reading-group', swatch: 'var(--teal)', depth: 1 },
   ] },
 ]
+
+/** The bounded host and transcript share the actual production composition. */
+export const TranscriptViewport = {
+  render: () => {
+    const [notice, setNotice] = useState(true)
+    const [position, setPosition] = useState(null)
+    const [tab, setTab] = useState('trace')
+    const vm = useMemo(() => adaptTranscript(longReadingPayload()), [])
+    return (
+      <AppSidebarLayout viewport mainAs="main" mainId="transcript-main"
+        sidebar={<AppSidebar app="online" groups={ONLINE_GROUPS} currentId="home" storageKey={null} />}
+        notice={notice ? <button type="button" onClick={() => setNotice(false)}>dismiss notice</button> : null}>
+        <TranscriptViewer viewModel={vm} capabilities={{ canEdit: false, canLabel: false, canContribute: false, canChangeVisibility: false, canExport: false }}
+          activeTab={tab} onTabChange={setTab} initialPosition={position}
+          pullRequests={<UnverifiedPullRequests pullRequests={[readingUnverifiedPull]} onSourceSelect={(source) => setPosition(previous => ({ kind: 'tool-call', ...source, requestKey: String(Number(previous?.requestKey ?? 0) + 1) }))} />} />
+      </AppSidebarLayout>
+    )
+  },
+}
 
 const LOCAL_GROUPS = [
   { id: 'main', ariaLabel: 'peasant sections', items: [

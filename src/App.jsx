@@ -125,7 +125,7 @@ function labelIconA11y() {
     if (v) b.setAttribute('aria-label', 'copy ' + v)
   })
   root.querySelectorAll('svg.lucide, svg.brand, svg.logo').forEach((s) => {
-    s.setAttribute('aria-hidden', 'true')
+    if (!(s.getAttribute('role') === 'img' && s.hasAttribute('aria-label'))) s.setAttribute('aria-hidden', 'true')
     s.setAttribute('focusable', 'false')
   })
 }

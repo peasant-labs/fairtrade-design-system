@@ -113,6 +113,7 @@ const promptDigest = {
 }
 
 const sampleProps = {
+  UnverifiedPullRequests: { pullRequests: [], onSourceSelect: () => {} },
   VillageObservations: observationFixtures.base,
   HelperGroup: { ...helperFixtures.smoke.group, getMemberKey: (id) => id,
     renderMember: (id) => React.createElement(ui.HelperThreadRow, helperFixtures.rows[id]),

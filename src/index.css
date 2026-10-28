@@ -1999,6 +1999,12 @@
 @layer components {
   /* ---- shell: fill the host window, flex column, never grow the page ---- */
   .txn-app { position: relative; display: flex; flex-direction: column; height: 100%; min-height: 0; min-width: 0; background: var(--surface); color: var(--ink); overflow: hidden; }
+  .txn-before-header { flex: none; min-width: 0; }
+  .txn-unverified-pulls { margin-block: var(--sp-3); }
+  .txn-unverified-pulls-title { font-family: var(--font-mono); font-size: var(--fs-label); }
+  .txn-unverified-pulls p { margin-block: var(--sp-2); }
+  .txn-unverified-pulls ul { margin: 0; padding: 0; list-style: none; }
+  .txn-unverified-pulls li { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-3); }
 
   /* ---- header ---- */
   .txn-header { padding: var(--sp-4); border-bottom: var(--bd); background: var(--surface); flex: none; }
@@ -2010,7 +2016,7 @@
      the top of the trace. (user-ratified: the row stays; a full hide was rejected.) */
   .txn-app-condensed > .txn-header { padding-block: var(--sp-2); }
   @media (prefers-reduced-motion: no-preference) {
-    .txn-header { transition: padding-block var(--dur-3) var(--ease-in-out); }
+    .txn-header { transition: padding-block var(--dur-1) var(--ease-in-out); }
   }
   /* the condensed row must stay ONE line even on a phone: unwrapped, the breadcrumb and
      the actions stack to ~3 rows at 390px and give back almost all of the reclaimed
@@ -2068,6 +2074,7 @@
      engine (e.g. @xyflow, height:100%) resolves against a 0-height parent and collapses to 0px. */
   .txn-graphslot { flex: 1; min-height: 0; }
   .txn-sticky-disclosure { flex: none; }
+  .txn-header-details, .txn-sticky-disclosure { --txn-disclosure-duration: var(--dur-1); }
   .txn-sticky {
     box-sizing: border-box; height: var(--txn-sticky-h);
     display: flex; align-items: center; gap: var(--sp-3);
@@ -2127,12 +2134,15 @@
   .txn-body-grid[data-right-rail="none"] { grid-template-columns: var(--txn-outline-w) minmax(0, 1fr) 0; }
   .txn-body-grid[data-left-rail="closed"][data-right-rail="none"] { grid-template-columns: var(--txn-rail-strip-w) minmax(0, 1fr) 0; }
   /* Keep three tracks, including zero-width hidden rails, so width and content move once.
-     Expanded and collapsed controls share a cell and crossfade without replacing the DOM. */
+     Expanded and collapsed controls share a cell without replacing the DOM. */
   .txn-center { grid-column: 2; grid-row: 1; }
   .txn-rail-left, .txn-rail-strip-left { grid-column: 1; grid-row: 1; --txn-rail-open-w: var(--txn-outline-w); }
   .txn-rail-right, .txn-rail-strip-right { grid-column: 3; grid-row: 1; --txn-rail-open-w: var(--txn-filters-w); }
   .txn-rail[hidden], .txn-rail-strip[hidden] { display: none; }
   .txn-rail, .txn-rail-strip { transition-property: none; }
+  /* The full rail paints above its collapsed control until its exit completes. Otherwise
+     the strip's stationary border obscures the moving frame at the start and end. */
+  .txn-rail { z-index: 1; }
   @media (prefers-reduced-motion: no-preference) and (width >= 1080px) {
     .txn-body-grid { transition: grid-template-columns var(--dur-3) var(--ease-in-out); }
   }
@@ -2286,12 +2296,12 @@
 
   /* ---- tool calls + per-tool renderers ---- */
   .txn-toolcall { margin-top: var(--sp-2); }
-  .txn-tc-head { grid-template-columns: auto auto 1fr auto; cursor: pointer; width: 100%; text-align: left; background: var(--surface-2); border: 0; }
+  .txn-tc-head { grid-template-columns: auto auto minmax(0, 1fr) max-content; cursor: pointer; width: 100%; text-align: left; background: var(--surface-2); border: 0; }
   .txn-tc-head:hover { background: var(--surface-hover); }
   .txn-tc-chev { color: var(--ink-4); flex: none; }
   .txn-tc-head .kind { color: var(--olive); }
   .txn-tc-head .path { font-size: var(--fs-label); }
-  .txn-tc-dur { color: var(--ink-4); }
+  .txn-tc-dur { color: var(--ink-4); white-space: nowrap; overflow-wrap: normal; word-break: normal; flex-shrink: 0; }
 
   .txn-tcbody { border-top: var(--bd); padding: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-2); }
   .txn-tc-desc { font-size: var(--fs-body); color: var(--ink-3); line-height: 1.5; }
@@ -2696,7 +2706,15 @@
   /* the derived trail now repeats the title, and the title is the header's own first line, so the
      trail leaves a phone. A host's own trail stays: it carries routes the title cannot. */
   .txn-crumb { flex-basis: 100%; }
-  .txn-crumb-derived { display: none; }
+  .txn-crumb-derived { display: flex; max-block-size: 0; overflow: clip; padding: 0; margin: 0; visibility: hidden; }
+  .txn-app-condensed > .txn-header .txn-crumb-derived { max-block-size: var(--target-comfortable); visibility: visible; }
+  @media (prefers-reduced-motion: no-preference) {
+    .txn-crumb-derived { transition: max-block-size var(--dur-1) var(--ease-in-out); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .txn-crumb-derived { display: none; }
+    .txn-app-condensed > .txn-header .txn-crumb-derived { display: flex; }
+  }
   .txn-actions { flex-wrap: wrap; min-width: 0; max-width: 100%; }
   .txn-app-condensed > .txn-header .txn-header-top { flex-wrap: wrap; }
   .txn-trace-head { flex-wrap: wrap; }
@@ -3666,7 +3684,7 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 
 /* ======================================================================
    ledger presentation — the opt-in reading surface behind
-   `presentation="ledger"` on TranscriptViewer (default stays classic).
+   `presentation="ledger"` on TranscriptViewer (the default presentation).
    The root swaps to `.txn-ledger`; the pinned trace header shows the
    session title plus a visible-turns minimap in place of the
    provider/model + scrubber, and the left rail's trace tab lists one card
@@ -3774,6 +3792,9 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
    themes free. */
 .txn-ledger { --txn-reader-width: 840px; }
 .txn-turnwrap-ledger { max-inline-size: var(--txn-reader-width); margin-inline: auto; }
+/* Width is driven by the separator itself. The global reduced-motion duration rule
+   must not create an implicit `all` transition on its otherwise static boxes. */
+.txn-ledger :is(.txn-turnwrap-ledger, .txn-turnrow, .txn-turn-rule, .txn-phase) { transition-property: none; }
 .txn-turn.txn-turn-ledger { background: transparent; border: 0; }
 /* Match the reference's 120ms background fade on both pointer entry and exit. */
 @media (prefers-reduced-motion: no-preference) {
@@ -3799,6 +3820,51 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 .txn-ledger .txn-phase { max-inline-size: var(--txn-reader-width); margin-inline: auto; }
 
 .txn-turnhead-ledger { gap: var(--sp-2); }
+.txn-mobile-controls { display: none; }
+.txn-copy-toast { position: fixed; z-index: var(--z-toast); right: var(--sp-4); bottom: calc(var(--target-comfortable) * 2 + var(--sp-4)); }
+.txn-mobile-drawer:not([open]) { display: none; }
+@media (width < 768px) {
+  .txn-footer { flex-direction: column; gap: 0; padding: 0 var(--sp-2) env(safe-area-inset-bottom, 0px); min-width: 0; }
+  .txn-mobile-controls { display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: 0; min-width: 0; }
+  .txn-mobile-controls > span { gap: 0; }
+  .txn-foot-tabs { display: flex; gap: 0; min-height: var(--target-comfortable); }
+  .txn-foot-meta { display: none; }
+  .txn-mobile-controls .pub-bar { display: contents; }
+  .txn-mobile-controls .menu-pop.menu-float { top: auto; bottom: calc(100% + var(--sp-1)); }
+  .txn-mobile-rail-button, .txn-mobile-drawer-head button {
+    display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-1);
+    min-height: var(--target-comfortable); min-width: var(--target-comfortable);
+    padding-inline: var(--sp-2); border: 0; background: transparent; color: var(--ink);
+    font: 500 var(--fs-label)/var(--lh-mono) var(--font-mono); cursor: pointer;
+  }
+  .txn-mobile-controls .btn-icon, .txn-mobile-controls .txn-mobile-rail-button { min-width: var(--target-comfortable); min-height: var(--target-comfortable); border: var(--bd-strong); }
+  .txn-mobile-tools-toggle { display: inline-flex; align-items: center; justify-content: center; flex: none; min-width: var(--target-comfortable); min-height: var(--target-comfortable); border: 0; background: transparent; color: var(--ink); cursor: pointer; }
+  .txn-foot-tabs .txn-search-trigger { min-width: var(--target-comfortable); min-height: var(--target-comfortable); }
+  .txn-search { gap: var(--sp-1); padding-inline: var(--sp-1); }
+  .txn-search-ico, .txn-search-esc { display: none; }
+  .txn-mobile-drawer { position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: transparent; overflow: hidden; }
+  .txn-mobile-drawer::backdrop { background: color-mix(in srgb, var(--canvas) 55%, transparent); }
+  @media (prefers-reduced-motion: no-preference) {
+    .txn-mobile-drawer { transition: display var(--dur-2) allow-discrete, overlay var(--dur-2) allow-discrete; }
+    .txn-mobile-drawer-panel { transform: translateX(-100%); transition: transform var(--dur-2) var(--ease-in-out); }
+    .txn-mobile-drawer[open] .txn-mobile-drawer-panel { transform: translateX(0); transition-duration: var(--dur-3); }
+    .txn-mobile-drawer::backdrop { opacity: 0; transition: opacity var(--dur-2) var(--ease-in-out), display var(--dur-2) allow-discrete, overlay var(--dur-2) allow-discrete; }
+    .txn-mobile-drawer[open]::backdrop { opacity: 1; transition-duration: var(--dur-3); }
+    @starting-style { .txn-mobile-drawer[open] .txn-mobile-drawer-panel { transform: translateX(-100%); } .txn-mobile-drawer[open]::backdrop { opacity: 0; } }
+  }
+  .txn-mobile-drawer-panel { display: flex; flex-direction: column; width: min(85%, calc(var(--sp-8) * 5)); height: 100%; min-height: 0; background: var(--surface); border-right: var(--bd-strong); }
+  .txn-mobile-drawer-head { display: flex; align-items: center; border-bottom: var(--bd); }
+  .txn-mobile-drawer-head button:last-child { margin-inline-start: auto; }
+  .txn-mobile-drawer-head button[aria-pressed="true"] { box-shadow: inset 0 calc(-1 * var(--stroke-emphasis)) var(--amber); }
+  .txn-mobile-drawer-body { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: var(--sp-3); }
+  .txn-turnhead-ledger { gap: var(--sp-1); }
+  .txn-turnhead { margin-bottom: var(--sp-1); }
+  .txn-body > .txn-md-prose:first-child { margin-block-start: 0; }
+  .txn-ledger .txn-turn-rule { margin-block: var(--sp-2); }
+  .txn-turn.txn-turn-ledger { margin-top: var(--sp-1); padding-block: var(--sp-2); }
+  .txn-ledger .txn-roleico { inline-size: var(--sp-5); block-size: var(--sp-5); }
+  .txn-turnhead, .txn-body, .txn-turn, .txn-turnwrap { min-width: 0; overflow-wrap: anywhere; }
+}
 .txn-roleico {
   display: inline-flex; align-items: center; justify-content: center;
   inline-size: var(--control-h-sm); block-size: var(--control-h-sm);
@@ -3995,3 +4061,23 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 /* with the handle gone the ledger stream needs no trailing lane: the reader takes the page inset
    and the phone stops paying for a control it cannot use. */
 @media (width < 768px) { .txn-ledger .txn-stream { padding-inline: var(--sp-4); } }
+
+/* Mermaid charts remain inside the reading column, including wide diagrams. */
+.txn-mermaid { min-width: 0; max-width: 100%; border: 1px solid var(--rule-strong); background: var(--surface); }
+.txn-mermaid-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--sp-2); padding: var(--sp-2); border-bottom: 1px solid var(--rule-strong); color: var(--ink-3); font-family: var(--font-mono); }
+.txn-mermaid-toolbar div { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.txn-mermaid-toolbar button { min-width: var(--control-h); min-height: var(--control-h); padding-inline: var(--sp-3); color: var(--ink); background: transparent; border: 1px solid var(--rule-strong); cursor: pointer; font: inherit; }
+.txn-mermaid-toolbar button[aria-pressed="true"] { color: var(--amber-bright); }
+.txn-mermaid-source, .txn-mermaid-stage { margin: 0; padding: var(--sp-3); overflow: auto; max-width: 100%; }
+.txn-mermaid-source, .txn-mermaid-source code { text-transform: none; }
+.txn-mermaid-stage svg { display: block; max-width: none; color: var(--ink); font-family: var(--font-body); font-size: 16px; }
+.txn-mermaid-stage svg text, .txn-mermaid-stage svg tspan { fill: var(--ink); font-family: var(--font-body); font-size: var(--fs-body); text-transform: none; }
+.txn-mermaid-stage svg .node text { text-anchor: middle; }
+.txn-mermaid-stage svg path, .txn-mermaid-stage svg line, .txn-mermaid-stage svg polyline { stroke: var(--ink-2); fill: none; }
+.txn-mermaid-stage svg rect, .txn-mermaid-stage svg circle, .txn-mermaid-stage svg polygon { fill: var(--surface-2); stroke: var(--ink-2); }
+.txn-mermaid-stage svg marker path { fill: var(--ink-2); stroke: var(--ink-2); }
+
+.txn-mermaid-stage svg .pieCircle { fill: var(--surface-2); stroke: var(--ink-2); }
+.txn-mermaid-stage svg .pieCircle:nth-of-type(even) { fill: var(--ink-4); }
+
+.txn-mermaid-stage svg switch > text { text-anchor: middle; }

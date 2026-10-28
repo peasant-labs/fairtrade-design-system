@@ -1,5 +1,8 @@
-expectedCaseCount: 5
+expectedCaseCount: 6
+requiredMermaidRerenderNames:
+  - changed source never displays a previous diagram
 requiredNames:
+  - mermaid-source-available-before-render
   - rich-gfm-structures
   - preserves-every-prose-newline
   - hostile-content-stays-inert

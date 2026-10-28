@@ -6,3 +6,5 @@ requiredCaseNames:
 requiredMotionNames:
   - motion-allowed
   - reduced
+requiredViewportCaseNames:
+  - notice and zen stay within the viewport

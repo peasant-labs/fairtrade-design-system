@@ -763,11 +763,107 @@ function DefaultTranscriptApp({ theme }) {
   // `?transcript=ledger` reads the same demo session through the ledger presentation.
   // `?transcript=ledger-system` keeps that canonical session and appends one synthetic system
   // turn, so the built app renders the compact system row (the canonical demo has none).
-  const ledger = search === 'ledger' || search === 'ledger-system' || search === 'ledger-actions' || search === 'ledger-reading'
+  const ledger = search !== 'classic'
   const vm = useMemo(() => {
-    if (search === 'ledger-reading') return adaptTranscript(readingPayload())
+    if (search === 'ledger-reading' || search === 'ledger-reading-short') return adaptTranscript(readingPayload({ short: search === 'ledger-reading-short' }))
     if (search === 'pi') return adaptTranscript(piPayload)
     const base = buildMockupVM()
+    if (search === 'mermaid-reading') {
+      const source = `Mermaid chart examples.
+
+\`\`\`mermaid
+flowchart LR
+A[Source Case] --> B[Destination]
+\`\`\`
+
+\`\`\`mermaid
+sequenceDiagram
+participant A as Alice
+participant B as Bob
+A->>B: Hello Bob
+\`\`\`
+
+\`\`\`mermaid
+flowchart LR
+A --> B
+click A "https://evil.example"
+\`\`\`
+
+\`\`\`mermaid
+pie
+"Cats" : 2
+"Dogs" : 3
+\`\`\`
+
+\`\`\`mermaid
+classDiagram
+Animal <|-- Cat
+\`\`\`
+
+\`\`\`mermaid
+stateDiagram-v2
+[*] --> Idle
+Idle --> [*]
+\`\`\`
+
+\`\`\`mermaid
+gantt
+title Plan
+dateFormat YYYY-MM-DD
+section Work
+Task :a, 2024-01-01, 1d
+\`\`\`
+
+\`\`\`mermaid
+mindmap
+  root((Hello))
+    child
+\`\`\`
+
+\`\`\`mermaid
+flowchart LR
+A@{ img: "/mermaid-probe-image.png", label: "image" }
+\`\`\`
+
+\`\`\`mermaid
+journey
+  title Day
+  section Morning
+  Wake: 5: Me
+\`\`\`
+
+\`\`\`mermaid
+erDiagram
+  CUSTOMER ||--o{ ORDER : places
+\`\`\`
+
+\`\`\`mermaid
+xychart-beta
+  x-axis [A, B]
+  y-axis 0 --> 10
+  bar [1, 2]
+\`\`\`
+
+\`\`\`mermaid
+journey
+  section <img src=/mermaid-probe-image.png onerror=malicious()>
+  Wake: 5: Me
+\`\`\`
+
+\`\`\`mermaid
+journey
+  section &#x3c;img src=/mermaid-probe-image.png&#x3e;
+  Wake: 5: Me
+\`\`\`
+
+\`\`\`mermaid
+sequenceDiagram
+participant A
+properties A: {"icon":"/mermaid-probe-image.png"}
+A->>A: Hi
+\`\`\``
+      return { ...base, turns: base.turns.map((turn, index) => index === 1 ? { ...turn, content: source } : turn) }
+    }
     if (search === 'ledger-actions') {
       // two wordless agent turns in a row, so the built app shows the one model-actions block
       // a run of thinking and tool work collapses into.
@@ -828,7 +924,7 @@ function DefaultTranscriptApp({ theme }) {
   // object. The demo has no host sidebar, so `host` is carried but renders nothing here.
   const [sidebarLayout, setSidebarLayout] = useState({ outline: true, filters: true, host: true })
   // the local app owns the header row: the publish bar (status, one action, more) and its popup.
-  const publish = usePublishFlow()
+  const publish = usePublishFlow(vm)
   return (
     <>
       <TranscriptViewer
@@ -838,12 +934,13 @@ function DefaultTranscriptApp({ theme }) {
         showTail={false}
         showOutcome={false}
         showSearchTrigger
-        presentation={ledger ? 'ledger' : undefined}
+        presentation={ledger ? 'ledger' : 'classic'}
         initialPosition={search === 'ledger-reading' && /^\d+$/.test(new URLSearchParams(window.location.search).get('turn') ?? '') ? { kind: 'turn', turnIndex: Number(new URLSearchParams(window.location.search).get('turn')) } : undefined}
         sidebarLayout={ledger ? sidebarLayout : undefined}
         onSidebarLayoutChange={ledger ? setSidebarLayout : undefined}
         onZenChange={ledger ? () => {} : undefined}
         headerActions={publish.bar}
+        utilityActions={publish.utility}
         openTools={openTools}
         onOpenToolsChange={setOpenTools}
         graphSlot={({ viewModel: gvm, activeTurn, onSelectTurn }) => (
@@ -851,6 +948,7 @@ function DefaultTranscriptApp({ theme }) {
         )}
       />
       {publish.dialog}
+      {publish.toast}
     </>
   )
 }

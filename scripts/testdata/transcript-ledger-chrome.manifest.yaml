@@ -2,7 +2,7 @@
 # protection. The gate (scripts/transcript-ledger-chrome.test.mjs) asserts each family's names
 # equal these lists exactly, and that every row's `kind` matches its name here. Membership is
 # asserted, never a bare count; a name keeps its meaning.
-requiredDefaultsCase: classic with no props keeps the scrubber and no ledger chrome
+requiredDefaultsCase: omitted presentation uses ledger chrome
 requiredCaseNames:
   - classic keeps the scrubber when a subtitle is supplied
   - an explicit classic presentation keeps the classic chrome
@@ -11,7 +11,7 @@ requiredCaseNames:
   - ledger renders the supplied subtitle under the title
   - ledger leaves the other tab outlines on the classic rails
 requiredCaseKinds:
-  classic with no props keeps the scrubber and no ledger chrome: classic
+  omitted presentation uses ledger chrome: ledger
   classic keeps the scrubber when a subtitle is supplied: classic
   an explicit classic presentation keeps the classic chrome: classic
   an unknown presentation value falls back to classic: classic
@@ -66,7 +66,7 @@ mutations:
     file: src/ui/transcript/TranscriptViewer.jsx
     find: "                  {ledger ? ("
     replace: "                  {true ? ("
-    expectedDiagnostic: "classic with no props keeps the scrubber and no ledger chrome: minimap must be absent"
+    expectedDiagnostic: "an explicit classic presentation keeps the classic chrome: minimap must be absent"
   - name: the subtitle is dropped
     file: src/ui/transcript/TranscriptViewer.jsx
     find: "{subtitle != null && <div className=\"txn-sub\">{subtitle}</div>}"
@@ -81,7 +81,7 @@ mutations:
     file: src/ui/transcript/OutlineRail.jsx
     find: "if (tab === 'trace' && presentation === 'ledger') {"
     replace: "if (tab === 'trace') {"
-    expectedDiagnostic: "classic with no props keeps the scrubber and no ledger chrome: rail-waterfall must be present"
+    expectedDiagnostic: "an explicit classic presentation keeps the classic chrome: rail-waterfall must be present"
   - name: the minimap loses its slider role
     file: src/ui/transcript/Minimap.jsx
     find: "role=\"slider\""

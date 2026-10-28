@@ -194,12 +194,12 @@ mutations:
     expectedDiagnostic: "the block header must read"
   - name: the ledger keeps the classic tool rows
     file: src/ui/transcript/TurnCard.jsx
-    find: "  const workBlock = ledger && turn.role !== 'system' && !suppressWork && (hasWork || modelActions?.length) ? ("
+    find: "  const workBlock = ledger && !suppressWork && (hasWork || modelActions?.length) ? ("
     replace: "  const workBlock = false && (hasWork || modelActions?.length) ? ("
     expectedDiagnostic: "the turn with tools must carry one model-actions block"
   - name: the panel ignores a tool's open state
     file: src/ui/transcript/WorkGroup.jsx
-    find: "                  showChevron={false}\n                  open={expandAll || !!openTools[tool.id]}"
+    find: "                  showChevron={false}\n                  open={expandAll || !!openTools[toolStateKey(turn.index, tool)]}"
     replace: "                  showChevron={false}\n                  open={false}"
     expectedDiagnostic: "ledger tool rows open and close: the clicked row must stay open"
   - name: the system row ignores its disclosure

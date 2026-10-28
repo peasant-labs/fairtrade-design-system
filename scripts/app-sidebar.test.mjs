@@ -76,7 +76,21 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     selected.length = 0
     const storage = installStorage(row.storage ?? {}, { throws: row.kind === 'throwing-storage' })
     try {
-      if (row.kind === 'items') {
+      if (row.kind === 'viewport-frame') {
+        const node = (label) => React.createElement('div', null, label)
+        const mounted = await mount(React.createElement(sidebar.AppSidebarLayout, {
+          viewport: true, mainAs: 'main', mainId: row.expected.mainId,
+          sidebar: node('navigation'), topBar: node(row.expected.topBar), notice: node(row.expected.notice),
+        }, node(row.expected.body)))
+        const root = mounted.container
+        const frame = root.querySelector('.asb-layout-viewport')
+        const main = root.querySelector(`main#${row.expected.mainId}`)
+        report.check(!!frame, `${name}: viewport frame must be marked`)
+        report.check(!!main && main.textContent.includes(row.expected.body), `${name}: body must be inside the named main`)
+        report.check(!!frame?.querySelector('.asb-topbar')?.textContent.includes(row.expected.topBar), `${name}: top bar must be budgeted`)
+        report.check(!!main?.querySelector('.asb-notice')?.textContent.includes(row.expected.notice), `${name}: notice must be budgeted in the main column`)
+        await mounted.unmount()
+      } else if (row.kind === 'items') {
         const mounted = await mount(React.createElement(AppSidebar, propsFor(row)))
         const root = mounted.container
         for (const expected of row.expected) {

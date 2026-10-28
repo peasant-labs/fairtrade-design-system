@@ -54,6 +54,14 @@ try {
       const turnMarkup = viewModel.turns.map((turn) => renderToStaticMarkup(React.createElement(TurnCard, { turn }))).join('')
       const turnDocument = new JSDOM(`<main>${turnMarkup}</main>`).window.document
       assert.equal(turnDocument.querySelectorAll('.txn-modelchange').length, testCase.expect.markerCount, `${testCase.name}: markerCount`)
+      for (const [position, turn] of viewModel.turns.entries()) {
+        const ledger = new JSDOM(renderToStaticMarkup(React.createElement(TurnCard, { turn, presentation: 'ledger' }))).window.document
+        const marker = ledger.querySelector('.txn-modelchange')
+        const before = testCase.expect.changedFrom[position]
+        const after = testCase.expect.effectiveModels[position]
+        const suffix = (id) => id.split('/').at(-1)
+        assert.equal(marker?.textContent ?? null, before && after ? `model changed: ${suffix(before)} → to ${suffix(after)}` : null, `${testCase.name}: ledger transition at original turn ${turn.index}`)
+      }
       for (const content of testCase.payload.turns.filter((turn) => testCase.expect.indices.includes(turn.index)).map((turn) => turn.content)) {
         assert.ok(turnDocument.body.textContent.includes(content), `${testCase.name}: content ${content}`)
       }
@@ -105,6 +113,24 @@ async function assertMountedContract(TranscriptApp, caseName, expected) {
   try {
     await act(async () => { root.render(React.createElement(TranscriptApp, { theme: 'dark' })) })
     const document = dom.window.document
+    assert.ok(document.querySelector('.txn-app.txn-ledger'), `${caseName}: default ledger presentation`)
+    assert.ok(document.querySelector('.txn-meta')?.textContent.includes(expected.startingModel), `${caseName}: ledger starting model`)
+    const ledgerAssistants = [...document.querySelectorAll('.txn-turn.asst .txn-turnhead')]
+    assert.equal(ledgerAssistants.length, expected.topLevelAssistantCount, `${caseName}: ledger assistant inventory`)
+    assert.ok(ledgerAssistants.every((head) => head.querySelector('.txn-rolelabel')?.textContent.trim() === expected.speaker), `${caseName}: ledger assistant speaker`)
+    assert.ok(ledgerAssistants.every((head) => head.querySelector(`.txn-roleico [role="img"][aria-label="${expected.providerLabel}"]:not([aria-hidden="true"])`)), `${caseName}: ledger accessible provider mark`)
+    const ledgerMarkers = [...document.querySelectorAll('.txn-modelchange')]
+    assert.equal(ledgerMarkers.length, expected.markerCount, `${caseName}: ledger exact marker inventory`)
+    assert.equal(ledgerMarkers[0]?.textContent.trim(), expected.markerText, `${caseName}: ledger exact marker text`)
+    assert.equal(Number(ledgerMarkers[0]?.closest('[data-turn]')?.getAttribute('data-turn')), expected.markerTurn, `${caseName}: ledger original marker turn`)
+    assert.equal(document.querySelectorAll('.txn-turnmodel').length, 0, `${caseName}: ledger does not add per-turn models`)
+
+    // The classic demo is a separate production path: its sticky model and per-turn
+    // attribution must remain covered without imposing that chrome on ledger.
+    await act(async () => { root.render(null) })
+    dom.window.history.replaceState(null, '', '/transcript?transcript=classic')
+    await act(async () => { root.render(React.createElement(TranscriptApp, { theme: 'dark' })) })
+    assert.ok(!document.querySelector('.txn-app.txn-ledger'), `${caseName}: explicit classic presentation`)
     const stream = dom.window.document.querySelector('.txn-stream')
     Object.defineProperty(stream, 'clientHeight', { configurable: true, value: expected.viewportHeight })
     const turnOffsets = new Map(expected.turnOffsets.map((offset, index) => [index, offset]))
@@ -155,7 +181,7 @@ function validateFixtures(manifestValue, corpusValue) {
     assert.equal(testCase.expect.indices.length, testCase.expect.effectiveModels.length, `${testCase.name}: expected model count`)
     assert.equal(testCase.expect.indices.length, testCase.expect.changedFrom.length, `${testCase.name}: expected change count`)
     if (testCase.expect.mounted) {
-      exactFields(testCase.expect.mounted, ['turnOffsets', 'viewportHeight', 'beforeBoundaryScrollTop', 'afterBoundaryScrollTop', 'stickyModels', 'topLevelAssistantCount', 'speaker', 'providerLabel', 'modelNodes', 'unattributedRole', 'markerCount', 'markerText', 'harnessText', 'forbiddenModelSentinels'], `${testCase.name}.expect.mounted`)
+      exactFields(testCase.expect.mounted, ['startingModel', 'markerTurn', 'turnOffsets', 'viewportHeight', 'beforeBoundaryScrollTop', 'afterBoundaryScrollTop', 'stickyModels', 'topLevelAssistantCount', 'speaker', 'providerLabel', 'modelNodes', 'unattributedRole', 'markerCount', 'markerText', 'harnessText', 'forbiddenModelSentinels'], `${testCase.name}.expect.mounted`)
       assert.equal(testCase.expect.mounted.turnOffsets.length, 9, `${testCase.name}: mounted turn offset inventory`)
       assert.equal(testCase.expect.mounted.stickyModels.length, 2, `${testCase.name}: mounted sticky model boundary inventory`)
       assert.equal(testCase.expect.mounted.modelNodes.length, 7, `${testCase.name}: mounted model-node inventory`)

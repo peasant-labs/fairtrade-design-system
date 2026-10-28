@@ -79,6 +79,7 @@ cases:
   - name: transcript turn totals and phases agree
     module: /src/mockups/inuse/TranscriptApp.jsx
     component: default
+    query: '?transcript=classic'
     probes:
       - {selector: '.txn-app', text: 9 turns, absent: 8 turns}
       - {selector: '.rng', text: turns 1–3, absent: turns 0–2}
@@ -103,9 +104,8 @@ cases:
     query: '?commons=transcript-detail'
     probes:
       - {selector: '.txn-app', text: Port the transcript canvas into the shared package, absent: Fix flaky ingest test}
-      - {selector: '.txn-app .subtask-foot', text: returned to claude}
-      - {selector: '.txn-app .subtask-foot [data-brand="claude"]', count: 1}
-      - {selector: '.txn-app .subtask-foot .lucide-corner-down-right', count: 1}
+      - {selector: '.txn-app.txn-ledger', count: 1}
+      - {selector: '.txn-app .txn-rail-turn', count: 2}
   - name: direct publish success also sets published bar
     module: /src/mockups/inuse/TranscriptApp.jsx
     component: default
@@ -129,15 +129,20 @@ cases:
     probes:
       - {selector: '.pub-access-row', text: 'suggested, repo acme/ingest-api is linked'}
       - {selector: '.pub-picker-row', text: 'curated, waits for the owner’s approval'}
-  # the ledger presentation is opt-in: the default demo stays classic, and the query flag is the
-  # only way in, so a regression that flips either direction is caught here.
-  - name: transcript demo stays classic without the ledger flag
+  # The default demo and explicitly selected ledger use the same presentation.
+  - name: transcript demo defaults to ledger
     module: /src/mockups/inuse/TranscriptApp.jsx
     component: default
     probes:
+      - {selector: '.txn-app.txn-ledger', count: 1}
+      - {selector: '.txn-rail-turns', count: 1}
+  - name: transcript demo supports explicit classic
+    module: /src/mockups/inuse/TranscriptApp.jsx
+    component: default
+    query: '?transcript=classic'
+    probes:
       - {selector: '.txn-app', count: 1}
-      - {selector: '.txn-minimap', count: 0}
-      - {selector: '.txn-rail-turns', count: 0}
+      - {selector: '.txn-app.txn-ledger', count: 0}
   - name: transcript demo opts into the ledger presentation
     module: /src/mockups/inuse/TranscriptApp.jsx
     component: default

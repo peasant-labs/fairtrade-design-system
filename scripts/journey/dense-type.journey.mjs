@@ -92,7 +92,9 @@ function inspect({ row, mutation }) {
     const saved = el.style.cssText
     if (mutation) {
       el.style.setProperty('transition', 'none', 'important')
-      if (row.reflowMutation === 'zero-width') {
+      if (mutation === 'paragraph-gap') {
+        el.style.setProperty('margin-top', '0', 'important')
+      } else if (row.reflowMutation === 'zero-width') {
         el.style.setProperty('flex', '0 0 0px', 'important')
         el.style.setProperty('max-width', '0px', 'important')
       } else if (row.reflowMutation === 'overlay') {
@@ -112,7 +114,10 @@ function inspect({ row, mutation }) {
       const family = getComputedStyle(document.documentElement).getPropertyValue(row.familyToken).trim().split(',')[0].replace(/["']/g, '')
       if (!cs.fontFamily.includes(family)) errors.push(`wrong family ${cs.fontFamily}`)
     }
-    if (row.paragraphGap && Math.abs(parseFloat(cs.marginTop) - parseFloat(cs.lineHeight)) > 1) errors.push('paragraph gap is not one line')
+    if (row.paragraphGap && el.previousElementSibling?.matches('.txn-md-prose')) {
+      const gap = box.top - el.previousElementSibling.getBoundingClientRect().bottom
+      if (Math.abs(parseFloat(cs.marginTop) - parseFloat(cs.lineHeight)) > 1 || Math.abs(gap - parseFloat(cs.lineHeight)) > 1) errors.push('paragraph gap is not one line')
+    }
     if (row.headingGap && parseFloat(cs.marginTop) < 2 * parseFloat(cs.fontSize) - 1) errors.push('heading gap is less than two em')
     if (row.reflow && (box.width <= 0 || box.right > el.parentElement.getBoundingClientRect().right + 1 || el.scrollWidth > el.clientWidth + 1)) errors.push('dense row overflows')
     if (row.reflowMutation === 'overlay' && box.top < document.querySelector('.txn-body-grid').getBoundingClientRect().bottom - 1) errors.push('footer overlaps reading content')
@@ -142,6 +147,9 @@ test('dense text, reflow and disclosure on the built product', async ({ page }, 
       for (const row of rows) {
         expect(await page.evaluate(inspect, { row }), `${row.name} at ${width}/${theme}`).toEqual([])
         expect((await page.evaluate(inspect, { row, mutation: true })).length, row.mutation).toBeGreaterThan(0)
+        if (row.name === 'adjacent transcript paragraphs') {
+          expect(await page.evaluate(inspect, { row, mutation: 'paragraph-gap' }), 'margin-only mutation must trigger the gap check').toContain('paragraph gap is not one line')
+        }
         observations.push({ name: row.name, width, theme, computed: await page.locator(row.selector).evaluateAll(elements => elements.filter(el => el.getClientRects().length).map(el => {
           const style = getComputedStyle(el)
           return { fontSize: style.fontSize, fontFamily: style.fontFamily, lineHeight: style.lineHeight, marginTop: style.marginTop, clientWidth: el.clientWidth, scrollWidth: el.scrollWidth }
@@ -159,6 +167,7 @@ test('dense text, reflow and disclosure on the built product', async ({ page }, 
         await marker.evaluate(el => el.style.textTransform = 'lowercase')
         expect(await marker.evaluate(el => getComputedStyle(el).textTransform), spec.case.mutation).not.toBe('none')
         await marker.evaluate((el, text) => { el.style.removeProperty('text-transform'); el.textContent = text }, original)
+        await page.goto(`${origin}/?fb=off&app=transcript&transcript=classic&theme=${theme}#inuse`, { waitUntil: 'networkidle' })
         const disclosure = page.locator('.txn-turn-disclosure').first()
         const bodyId = await disclosure.getAttribute('aria-controls')
         const body = page.locator(`[id="${bodyId}"]`)

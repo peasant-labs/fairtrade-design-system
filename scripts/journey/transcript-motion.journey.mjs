@@ -65,18 +65,31 @@ for (const motion of spec.motion) for (const row of spec.railCases) {
         const animations = el.getAnimations({ subtree: true })
         for (const a of animations) a.pause()
         const duration = animation.effect.getTiming().duration
+        const geometry = () => {
+          const paneRect = pane.getBoundingClientRect()
+          const headRect = pane.querySelector('.txn-rail-head').getBoundingClientRect()
+          const controlRect = pane.querySelector('.txn-rail-collapse').getBoundingClientRect()
+          const centerRect = el.querySelector('.txn-center').getBoundingClientRect()
+          return { track: read(), paneLeft: paneRect.left, paneRight: paneRect.right, paneWidth: paneRect.width, headLeft: headRect.left, headRight: headRect.right, controlLeft: controlRect.left, controlRight: controlRect.right, centerLeft: centerRect.left, centerRight: centerRect.right, railLayer: Number(getComputedStyle(pane).zIndex), stripLayer: Number.parseInt(getComputedStyle(collapsed).zIndex) || 0 }
+        }
         for (const a of animations) a.currentTime = 0
         const start = read()
+        const startFrame = geometry()
         for (const a of animations) a.currentTime = duration / 2
         const middle = read()
         const opacity = Number(getComputedStyle(pane).opacity)
         const painted = getComputedStyle(pane).display !== 'none'
+        const body = pane.querySelector('.txn-rail-body')
+        const bodyWidth = body.getBoundingClientRect().width
+        const clipWidth = pane.getBoundingClientRect().width
+        const frame = geometry()
         for (const a of animations) a.currentTime = duration * .99
         const end = read()
+        const endFrame = geometry()
         const easing = animation.effect.getTiming().easing
         const expectedEasing = getComputedStyle(el).getPropertyValue('--ease-in-out').trim()
         for (const a of animations) a.play()
-        return { before, firstFrame, start, middle, end, opacity, painted, easing, expectedEasing, animations: animations.length }
+        return { before, firstFrame, start, middle, end, opacity, painted, bodyWidth, clipWidth, startFrame, frame, endFrame, easing, expectedEasing, animations: animations.length }
       }, { side: row.side, open })
       await info.attach(`${open ? 'expanding' : 'collapsing'}-sidebar`, { body: JSON.stringify(sample), contentType: 'application/json' })
       if (motion === 'no-preference') {
@@ -90,8 +103,17 @@ for (const motion of spec.motion) for (const row of spec.railCases) {
         expect(Math.abs(sample.start - sample.before)).toBeLessThanOrEqual(1)
         expect(sample.middle).toBeGreaterThan(Math.min(sample.start, sample.end))
         expect(sample.middle).toBeLessThan(Math.max(sample.start, sample.end))
-        expect(sample.opacity).toBeGreaterThan(0)
-        expect(sample.opacity).toBeLessThan(1)
+        expect(sample.opacity, 'rail content must not fade during furl or unfurl').toBe(1)
+        expect(sample.bodyWidth, 'content keeps its expanded width while clipped').toBeGreaterThan(sample.clipWidth)
+        for (const frame of [sample.startFrame, sample.frame, sample.endFrame]) {
+          expect(frame.railLayer, 'the moving rail must paint over the stationary strip').toBeGreaterThan(frame.stripLayer)
+          expect(Math.abs(frame.paneWidth - frame.track), 'the frame follows the animated grid track').toBeLessThanOrEqual(1)
+          expect(Math.abs((row.side === 'left' ? frame.paneRight - frame.centerLeft : frame.paneLeft - frame.centerRight))).toBeLessThanOrEqual(1)
+          expect(Math.abs(frame.headLeft - frame.paneLeft)).toBeLessThanOrEqual(1)
+          expect(Math.abs(frame.headRight - frame.paneRight)).toBeLessThanOrEqual(1)
+        }
+        expect(sample.frame.controlLeft).toBeGreaterThanOrEqual(sample.frame.paneLeft)
+        expect(sample.frame.controlRight).toBeLessThanOrEqual(sample.frame.paneRight)
         expect(sample.painted, 'closing contents must remain painted for their exit').toBe(true)
         const curve = value => value.match(/-?\d*\.?\d+/g).map(Number)
         expect(curve(sample.easing)).toEqual(curve(sample.expectedEasing))

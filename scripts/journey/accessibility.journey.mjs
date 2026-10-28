@@ -117,6 +117,8 @@ for (const surface of spec.surfaces) for (const width of spec.widths) for (const
       await page.keyboard.press('Enter')
       await expect(tree.locator('[role="treeitem"][tabindex="0"]')).toHaveAttribute('aria-selected','true')
     } else if (surface.keyboard === 'turn') {
+      // Ledger is scanned above; classic separately retains the keyboard disclosure contract.
+      await page.goto(`${origin}/?fb=off&app=transcript&transcript=classic&theme=${theme}#inuse`)
       const disclosure = page.locator('.txn-turn-disclosure').first()
       await disclosure.focus()
       await disclosure.press('Enter')

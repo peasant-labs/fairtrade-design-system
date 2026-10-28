@@ -9,7 +9,7 @@
    same loader, so a manifest mutation reaches it too.
    Cases: scripts/testdata/transcript-viewer-format.yaml (+ .manifest.yaml).
    Run: pnpm test:transcript-viewer-format; mutations: pnpm test:transcript-viewer-format:mutations. */
-import { loadFixturePair, withMountedSource, createReport } from './mounted-parts.mjs'
+import { loadFixturePair, withMountedSource, click, createReport } from './mounted-parts.mjs'
 import { walkCss } from './css-source.mjs'
 
 const FIXTURE = 'scripts/testdata/transcript-viewer-format.yaml'
@@ -27,10 +27,12 @@ const shown = (node) => {
   return text(copy)
 }
 
-await withMountedSource(async ({ load, mount, React }) => {
+await withMountedSource(async ({ load, mount, React, window }) => {
   const { adaptTranscript } = await load('/src/ui/transcript/adapter.js')
   const { default: TranscriptViewer } = await load('/src/ui/transcript/TranscriptViewer.jsx')
   const { default: Thinking } = await load('/src/ui/transcript/Thinking.jsx')
+  const { UnverifiedPullRequests } = await load('/src/ui/index.js')
+  const { normalizeTranscriptInitialPosition, transcriptInitialPositionToken } = await load('/src/ui/transcript/initial-position.js')
   const vm = adaptTranscript(fixture.payload)
   const viewer = (props) => React.createElement(TranscriptViewer, { viewModel: vm, capabilities: CAPABILITIES, ...props })
 
@@ -71,6 +73,64 @@ await withMountedSource(async ({ load, mount, React }) => {
       const items = row.breadcrumb.map((item) => [...(trail ?? mounted.container).querySelectorAll('a, span')].find((node) => text(node) === item.label && node.children.length === 0))
       const crumbs = items.map((node) => ({ tag: node?.tagName ?? null, href: node?.getAttribute('href') ?? null, current: node?.getAttribute('aria-current') ?? null }))
       report.check(same(crumbs, row.expected), `${name}: crumbs must be ${JSON.stringify(row.expected)}, received ${JSON.stringify(crumbs)}`)
+      await mounted.unmount()
+    } else if (row.kind === 'crumb-context') {
+      const mounted = await mount(viewer({ breadcrumbContext: row.breadcrumbContext }))
+      const trail = mounted.container.querySelector('nav[aria-label="breadcrumb"]')
+      const links = [...trail.querySelectorAll('a')].map((node) => ({ label: text(node), href: node.getAttribute('href') }))
+      const current = trail.querySelector('[aria-current="page"]')
+      report.check(same(links, row.breadcrumbContext), `${name}: ancestor links must be preserved`)
+      report.check(text(current) === row.title, `${name}: current crumb must be ${JSON.stringify(row.title)}, received ${JSON.stringify(text(current))}`)
+      await mounted.unmount()
+    } else if (row.kind === 'unverified-pulls') {
+      const selected = []
+      const mounted = await mount(React.createElement(UnverifiedPullRequests, { pullRequests: row.pullRequests, onSourceSelect: (source) => selected.push(source) }))
+      const links = [...mounted.container.querySelectorAll('a')]
+      report.check(links.length === 1 && links[0].href === row.pullRequests[0].url, `${name}: only the canonical github URL may be linked`)
+      report.check(text(mounted.container).includes('unverified pull requests') && text(mounted.container).includes('not been verified'), `${name}: evidence must be identified as unverified`)
+      await mounted.act(() => click(window, mounted.container.querySelector('button')))
+      report.check(same(selected, [row.pullRequests[0].source]), `${name}: selection must preserve the exact sparse source locator`)
+      await mounted.unmount()
+      const empty = await mount(React.createElement(UnverifiedPullRequests, { pullRequests: [], onSourceSelect: () => {} }))
+      report.check(empty.container.childElementCount === 0, `${name}: an empty list must render nothing`)
+      await empty.unmount()
+    } else if (row.kind === 'source-normalizer') {
+      report.check(same(normalizeTranscriptInitialPosition(row.valid), row.valid), `${name}: a valid source must preserve all coordinates`)
+      let rejected = false
+      try { normalizeTranscriptInitialPosition(row.invalid) } catch { rejected = true }
+      report.check(rejected, `${name}: an invalid call index must be rejected`)
+      report.check(transcriptInitialPositionToken('session', row.valid) !== transcriptInitialPositionToken('session', { ...row.valid, toolCallIndex: 2 }), `${name}: a changed call index must rearm the request`)
+    } else if (row.kind === 'source-jump') {
+      const sourcePayload = structuredClone(fixture.sourcePayload)
+      if (row.variant === 'duplicate-turn') sourcePayload.turns.push({ index: 42, role: 'assistant', content: 'Another ambiguous turn.' })
+      if (row.variant === 'duplicate-id') sourcePayload.turns[1].toolCalls.forEach((tool) => { tool.id = 'repeated' })
+      if (row.variant === 'unique-id') sourcePayload.turns[1].toolCalls[1].id = 'exact-id'
+      if (row.variant === 'user-role') sourcePayload.turns[1].role = 'user'
+      if (row.variant === 'system-role') sourcePayload.turns[1].role = 'system'
+      const sourceVM = adaptTranscript(sourcePayload)
+      const filterChanges = []
+      const SourceViewer = ({ overrideFilters }) => {
+        const [tab, setTab] = React.useState('highlights')
+        const [, rerenderHost] = React.useState(0)
+        return React.createElement(TranscriptViewer, { viewModel: sourceVM, capabilities: CAPABILITIES, activeTab: tab, onTabChange: setTab, initialPosition: row.position, ...(row.filters ? { filters: structuredClone(overrideFilters ?? row.filters), onFiltersChange: (next) => filterChanges.push(next), onOpenToolsChange: () => rerenderHost(n => n + 1) } : {}) })
+      }
+      const mounted = await mount(React.createElement(SourceViewer))
+      await mounted.settle(30)
+      const open = [...mounted.container.querySelectorAll('.txn-toolcall')].filter((node) => node.querySelector('button')?.getAttribute('aria-expanded') === 'true')
+      if (row.expectedOpen === 'none') report.check(open.length === 0, `${name}: no call may open for an absent or inconsistent source`)
+      else {
+        report.check(open.length === 1 && text(open[0]).includes('printf second'), `${name}: only the second recorded command must open`)
+        report.check(open.length === 1 && text(open[0]).includes('second-result'), `${name}: the matching recorded result must be shown`)
+        report.check(!!mounted.container.querySelector('[role="tab"][aria-selected="true"]') && text(mounted.container.querySelector('[role="tab"][aria-selected="true"]')).includes('full trace'), `${name}: source navigation must switch to the trace`)
+        if (row.filters) {
+          report.check(filterChanges.length === 0, `${name}: revealing evidence must not rewrite persisted filters`)
+          report.check(mounted.container.querySelectorAll('.txn-toolcall').length === 1, `${name}: unrelated filtered calls must stay hidden`)
+          const changed = structuredClone(row.filters)
+          changed.views.compact = false
+          await mounted.rerender(React.createElement(SourceViewer, { overrideFilters: changed }))
+          report.check(mounted.container.querySelectorAll('.txn-toolcall').length === 0, `${name}: a later filter change must end the temporary reveal`)
+        }
+      }
       await mounted.unmount()
     } else if (row.kind === 'filters-rail') {
       for (const [tab, want] of Object.entries(row.tabs)) {

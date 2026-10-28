@@ -2,6 +2,7 @@
 # equal this list exactly, as a set, and parts-mutations.mjs proves each production mutation below
 # turns the gate red for the named reason.
 requiredCaseNames:
+  - viewport frame budgets host slots
   - items render as links and buttons
   - a button item reports its id
   - group labels and landmarks

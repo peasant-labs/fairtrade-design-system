@@ -8,7 +8,7 @@ import {
   GitCommitHorizontal, List, Network, Eye,
   Filter as FilterIcon, FileSearch, Sparkles, Flag, Play, RefreshCw, RotateCcw,
   CornerDownRight, Check, X, PanelLeftClose, PanelLeftOpen,
-  PanelRightClose, PanelRightOpen,
+  PanelRightClose, PanelRightOpen, Menu as MenuIcon,
 } from 'lucide-react'
 import ProviderIcon from '../ProviderIcon.jsx'
 import { formatDurationMins, formatDurationMs } from './time.js'
@@ -16,6 +16,7 @@ import { TOOL_GROUPS } from './view-model.js'
 import { categoryCounts, projectTurn } from './filters.js'
 import { actionGroups } from './action-groups.js'
 import { turnAtReadingLine } from './scroll-position.js'
+import useReaderWidthAnchor from './useReaderWidthAnchor.js'
 import TurnCard from './TurnCard.jsx'
 import Collapsible from './Collapsible.jsx'
 import TranscriptContext from './TranscriptContext.jsx'
@@ -33,6 +34,7 @@ import { transcriptInitialPositionReadiness } from './initial-position.js'
 import { transcriptTitle } from './title.js'
 import { Term } from '../Explainer.jsx'
 import Tooltip from '../Tooltip.jsx'
+import { toolStateKey } from './tool-state-key.js'
 
 /* ───────────────────────────────────────────────────────────────────────────
    TranscriptViewer — the composite single-transcript surface (the headline)
@@ -60,12 +62,11 @@ import Tooltip from '../Tooltip.jsx'
    them between turns from the cooked `session.git.commits` (render-when-present),
    anchored to a turn when the cooked commit carries one, else clustered at the end.
 
-   PRESENTATION: `classic` (the default) is the report-style surface. `ledger` keeps
+   PRESENTATION: `classic` is the report-style surface. `ledger` (the default) keeps
    the same state, callbacks and gating but swaps the chrome: a subtitle under the
    title, a title + visible-turns minimap in the pinned trace header instead of the
    provider/model + scrubber, and user-turn task cards in the left rail instead of the
-   duration waterfall. Absent the prop nothing changes, so a host that never opts in
-   renders exactly what it rendered before.
+   duration waterfall.
    ─────────────────────────────────────────────────────────────────────────── */
 
 /** @typedef {import('./state-capabilities.js').TranscriptViewerProps} TranscriptViewerProps */
@@ -176,6 +177,12 @@ const DEFAULT_FILTERS = Object.freeze({
   checkpoint: 'all',
 })
 
+// Controlled hosts may recreate equivalent filter objects on every render.
+const filterFingerprint = (filters) => JSON.stringify([
+  ...['categories', 'toolGroups', 'tags', 'views'].map((key) => Object.entries(filters[key] ?? {}).sort(([a], [b]) => a.localeCompare(b))),
+  filters.checkpoint,
+])
+
 /* ── between-turn markers (lifted from the mockup's inline trace markup so the .txn-* CSS matches
    exactly; the composite draws them, not the per-turn TurnCard) ─────────────────────────────── */
 
@@ -273,21 +280,27 @@ export default function TranscriptViewer({
   moreOpen: moreOpenProp,
   onMoreOpenChange,
   breadcrumb,
+  breadcrumbContext,
+  beforeHeader,
   LinkComponent,
   renderTurnPanel,
   renderTurnActions,
   anchorHref,
   headerActions,
+  utilityActions,
   streamPrelude,
   showTail = false,
   showOutcome = true,
   showSearchTrigger = false,
   footer,
-  presentation = 'classic',
+  presentation = 'ledger',
   subtitle,
   pullRequests,
   headingLevel,
 }) {
+  if (breadcrumb != null && breadcrumbContext != null) {
+    throw new TypeError('TranscriptViewer cannot use breadcrumb and breadcrumbContext together; pass either a complete breadcrumb or ancestor context, not both.')
+  }
   // the transcript's title is the page's h1 when the host mounts the viewer as the whole page; the
   // phases and the turns move up one level with it
   const pageLevel = pageHeadingLevel(headingLevel, 'TranscriptViewer')
@@ -326,6 +339,63 @@ export default function TranscriptViewer({
   // the action-menu disclosures are view-state too (controllable; default CLOSED).
   const [shareOpen, setShareOpen] = useControllable(shareOpenProp, onShareOpenChange, false)
   const [moreOpen, setMoreOpen] = useControllable(moreOpenProp, onMoreOpenChange, false)
+  // Mobile overlays are transient and never update the persisted desktop rail layout.
+  const [mobile, setMobile] = useState(false)
+  const [mobileToolsOpen, setMobileToolsOpen] = useState(false)
+  const [mobileDrawer, setMobileDrawer] = useState(null)
+  const [exitingMobileDrawer, setExitingMobileDrawer] = useState(null)
+  const mobileDialogRef = useRef(null)
+  const mobileOpenerRef = useRef(null)
+  const mobileOutlineRef = useRef(null)
+  const mobileFiltersRef = useRef(null)
+  const mobileToolsRef = useRef(null)
+  const mobileDrawerId = useId()
+  const closeMobileDrawer = useCallback(() => {
+    setExitingMobileDrawer(mobileDrawer)
+    setMobileDrawer(null)
+    requestAnimationFrame(() => mobileOpenerRef.current?.focus())
+  }, [mobileDrawer])
+  useEffect(() => {
+    const dialog = mobileDialogRef.current
+    if (!dialog) return
+    if (mobileDrawer && !dialog.open) { setExitingMobileDrawer(null); dialog.showModal() }
+    if (!mobileDrawer && dialog.open) {
+      dialog.close()
+    }
+  }, [mobileDrawer])
+  useEffect(() => {
+    if (mobileDrawer || !exitingMobileDrawer) return
+    let cancelled = false
+    const frame = requestAnimationFrame(() => {
+      const panel = mobileDialogRef.current?.querySelector('.txn-mobile-drawer-panel')
+      const animations = panel?.getAnimations().filter(a => a.transitionProperty === 'transform') ?? []
+      Promise.all(animations.map(a => a.finished.catch(() => {}))).then(() => { if (!cancelled) setExitingMobileDrawer(null) })
+    })
+    return () => { cancelled = true; cancelAnimationFrame(frame) }
+  }, [mobileDrawer, exitingMobileDrawer])
+  useEffect(() => {
+    const media = window.matchMedia?.('(min-width: 768px)')
+    if (!media) return
+    const onResize = () => { setMobile(!media.matches); if (media.matches) { setMobileDrawer(null); setMobileToolsOpen(false) } }
+    onResize()
+    media.addEventListener('change', onResize)
+    return () => media.removeEventListener('change', onResize)
+  }, [])
+  useEffect(() => { setMobileDrawer(null); setMobileToolsOpen(false) }, [vm?.session?.id])
+  useEffect(() => {
+    if (!mobileToolsOpen) return
+    const onKey = (event) => { if (event.key === 'Escape' && !event.defaultPrevented) { setMobileToolsOpen(false); mobileToolsRef.current?.focus() } }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [mobileToolsOpen])
+  useEffect(() => {
+    if (!mobile) return
+    const item = tabRefs.current[tab], strip = item?.parentElement
+    if (!item || !strip) return
+    const view = strip.getBoundingClientRect(), box = item.getBoundingClientRect()
+    if (box.left < view.left) strip.scrollLeft -= view.left - box.left
+    else if (box.right > view.right) strip.scrollLeft += box.right - view.right
+  }, [mobile, tab])
 
   /* ── the sidebar layout view model ──────────────────────────────────────────
      Openness is USER STATE, never a function of the reading width. `sidebarLayout`
@@ -508,9 +578,27 @@ export default function TranscriptViewer({
       annotationsByTurn: vm?.filterIndex?.annotationsByTurn ?? {},
       checkpointTurn: selCommit?.turn ?? null, // adapter-joined anchor; scopes only when present
     }
-    return turns.map((t) => projectTurn(t, filters, ctx)).filter((t) => t != null)
-  }, [turns, filters, commits, vm])
+    const sourceFiltersMatch = searchReveal?.sourceIndex != null && searchReveal.filterFingerprint === filterFingerprint(filters)
+    return turns.map((t) => {
+      const projected = projectTurn(t, filters, ctx)
+      // A deliberate source jump may temporarily reveal exactly its readable
+      // call without changing the reader's persisted filter choices. A later
+      // filter change or session switch ends that exception.
+      if (!sourceFiltersMatch || searchReveal.sessionId !== session.id || searchReveal.turn !== t.index || !t.sourceIndexUnique) return projected
+      const call = t.toolCalls?.find((tool) => tool.sourceIndex === searchReveal.sourceIndex)
+      if (!call || !call.sourceIdUnique || (searchReveal.toolCallId !== undefined && searchReveal.toolCallId !== call.id)) return projected
+      if (projected?.toolCalls?.some((tool) => tool.sourceIndex === call.sourceIndex)) return projected
+      const base = projected ?? { ...t, content: '', displayContent: '', thinking: undefined, toolCalls: [] }
+      return { ...base, toolCalls: [...(base.toolCalls ?? []), call].sort((a, b) => a.sourceIndex - b.sourceIndex) }
+    }).filter((t) => t != null)
+  }, [turns, filters, commits, vm, searchReveal, session.id])
   const actionLayout = useMemo(() => actionGroups(turns, visibleTurns), [turns, visibleTurns])
+  const readerAnchor = useReaderWidthAnchor({ readerPx, scrollRef, activeTurnRef, turnRefs, actionRefs, actionLayout, visibleTurns, ledger, sessionId: session.id, tab, viewMode, onSettle: () => { if (scrollRef.current) syncScrollChrome(scrollRef.current) } })
+  useEffect(() => {
+    readerDragRef.current = null
+    setReaderDragWidth(null)
+    return () => { readerDragRef.current = null }
+  }, [session.id, tab, viewMode])
 
   const readTraceReadingSnapshot = useCallback(() => {
     const sc = scrollRef.current
@@ -602,6 +690,21 @@ export default function TranscriptViewer({
   }, [captureTraceReadingPosition, requestTraceReadingPosition, setTab])
 
   const applyInitialPosition = useCallback((position) => {
+    if (position.kind === 'tool-call') {
+      const owners = turns.filter(turn => turn.index === position.turnIndex)
+      const owner = owners[0]
+      const tool = owner?.toolCalls?.find(call => call.sourceIndex === position.toolCallIndex)
+      if (owners.length !== 1 || !owner.sourceIndexUnique || !tool || !tool.sourceIdUnique || (position.toolCallId !== undefined && position.toolCallId !== tool.id)) return 'discarded'
+      const key = toolStateKey(owner.index, tool)
+      if (!tool.id && turns.some(turn => turn.toolCalls?.some(call => call.id === key))) return 'discarded'
+      if (tab !== 'trace') { skipTraceRestoreRef.current = true; setTab('trace'); return 'pending' }
+      if (viewMode !== 'list') { setViewMode('list'); return 'pending' }
+      if (!scrollRef.current) return 'pending'
+      selectTurn(owner.index)
+      setOpenTools(previous => ({ ...previous, [key]: true }))
+      setSearchReveal({ turn: owner.index, where: `source:${position.toolCallIndex}`, sourceIndex: position.toolCallIndex, toolCallId: position.toolCallId, sessionId: session.id, filterFingerprint: filterFingerprint(filters), select: false, focus: true, sequence: ++revealSequence.current })
+      return 'applied'
+    }
     const sc = scrollRef.current
     const el = position.kind === 'turn' ? turnRefs.current[position.turnIndex] : null
     const result = transcriptInitialPositionReadiness(position, {
@@ -625,7 +728,7 @@ export default function TranscriptViewer({
     else el.scrollIntoView({ block: 'start', behavior: 'auto' })
     latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()
     return 'applied'
-  }, [readTraceReadingSnapshot, tab, turns, viewMode, visibleTurns, ledger, actionLayout])
+  }, [readTraceReadingSnapshot, tab, turns, viewMode, visibleTurns, ledger, actionLayout, setTab, setViewMode, setOpenTools, filters, session.id])
 
   const applyTraceReadingPosition = useCallback((position) => {
     const target = traceReadingPositionRef.current ?? traceReadingPosition
@@ -722,11 +825,13 @@ export default function TranscriptViewer({
 
   /* ── navigation + interactions (effects/handlers only; safe under static render) ── */
   function selectTurn(idx) {
+    readerAnchor.clear()
     activeTurnRef.current = idx
     navigationTargetRef.current = idx
     setActiveTurn(idx)
   }
   function releaseTurnNavigation() {
+    readerAnchor.clear()
     navigationTargetRef.current = null
   }
   function jumpTo(idx, { switchTab = true } = {}) {
@@ -825,6 +930,7 @@ export default function TranscriptViewer({
     const sc = scrollRef.current
     if (!sc) return
     latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()
+    if (readerAnchor.skipScroll(sc)) return
     syncScrollChrome(sc)
     // A requested turn may never reach the reading line at a scroll boundary. Keep that
     // selection through the smooth scroll; a real wheel, touch or scrollbar gesture releases it.
@@ -868,7 +974,16 @@ export default function TranscriptViewer({
     setReaderDragWidth(null)
     const released = typeof clientX === 'number' && clientX > 0 ? drag.startWidth + (clientX - drag.startX) * 2 : (readerPx ?? drag.startWidth)
     setReaderWidth(restingReaderWidth(released, drag.fullPx))
+    readerAnchor.finish()
   }
+  useEffect(() => {
+    const onBlur = () => {
+      if (readerDragRef.current) endReaderDrag()
+      else readerAnchor.clear()
+    }
+    window.addEventListener('blur', onBlur)
+    return () => window.removeEventListener('blur', onBlur)
+  })
   function remeasureReaderFull() {
     const full = measureReaderFull(scrollRef.current) ?? readerFullPx
     if (full !== readerFullPx) setReaderFullPx(full)
@@ -877,6 +992,7 @@ export default function TranscriptViewer({
   function onReaderPointerDown(e) {
     if (e.button !== 0 && e.pointerType !== 'touch') return
     const fullPx = remeasureReaderFull()
+    readerAnchor.begin()
     readerDragRef.current = { startX: e.clientX, startWidth: readerPxOf(readerStored, fullPx) ?? readerMaxPx(fullPx), fullPx }
     if (typeof e.currentTarget.setPointerCapture === 'function') {
       try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* synthetic pointer ids cannot be captured */ }
@@ -888,6 +1004,7 @@ export default function TranscriptViewer({
     /* a mouse move with no button held is a hover, not a drag: an interrupted press must not
        leave the next pass over the handle resizing the column. */
     if (e.pointerType !== 'touch' && e.buttons === 0) return
+    readerAnchor.ensure()
     const next = clampReaderPx(drag.startWidth + (e.clientX - drag.startX) * 2, drag.fullPx)
     setReaderDragWidth(next)
     setReaderWidth(next)
@@ -900,8 +1017,8 @@ export default function TranscriptViewer({
     }
     endReaderDrag(e.clientX)
   }
-  function onReaderPointerLeave() {
-    endReaderDrag()
+  function onReaderPointerLeave(e) {
+    if (!e.currentTarget.hasPointerCapture?.(e.pointerId)) endReaderDrag()
   }
   function onReaderLostPointerCapture() {
     endReaderDrag()
@@ -916,7 +1033,9 @@ export default function TranscriptViewer({
     else if (e.key === 'End') next = READER_FULL
     else return
     e.preventDefault()
+    readerAnchor.begin()
     setReaderWidth(next)
+    readerAnchor.finish()
   }
   const onTabKey = (e) => {
     const i = TAB_ORDER.indexOf(tab)
@@ -988,16 +1107,18 @@ export default function TranscriptViewer({
       const animations = sc.getAnimations?.({ subtree: true }).filter(animation => animation.effect?.target?.classList?.contains('txn-disclosure')) ?? []
       await Promise.allSettled(animations.map(animation => animation.finished))
       if (cancelled) return
-      const el = ledger && searchReveal.where !== 'body'
+      const sourceTarget = searchReveal.where.startsWith('source:')
+      const el = (ledger || sourceTarget) && searchReveal.where !== 'body'
         ? actionRefs.current.get(`${searchReveal.turn}:${searchReveal.where}`)
         : turnRefs.current[searchReveal.turn]
       if (!el || el.closest('[hidden], [inert]')) return
       const reduce = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
       const padding = Number.parseFloat(getComputedStyle(sc).scrollPaddingTop) || 12
-      const top = ledger && searchReveal.where !== 'body'
+      const top = (ledger || sourceTarget) && searchReveal.where !== 'body'
         ? sc.scrollTop + el.getBoundingClientRect().top - sc.getBoundingClientRect().top - padding
         : turnScrollTop(sc, el)
       sc.scrollTo({ top, behavior: !searchReveal.select || reduce ? 'auto' : 'smooth' })
+      if (searchReveal.focus) el.querySelector('button')?.focus({ preventScroll: true })
       if (searchReveal.select) selectTurn(searchReveal.turn)
     }
     const frame = requestAnimationFrame(scroll)
@@ -1039,11 +1160,11 @@ export default function TranscriptViewer({
   /* The default trail ends on the transcript itself, so it reads as the title, not an opaque id.
      A host-supplied breadcrumb still wins unchanged (it carries the host's own routes). */
   const derivedTrail = breadcrumb == null
-  const trail = breadcrumb ?? [
+  const trail = breadcrumb ?? (breadcrumbContext != null ? [...breadcrumbContext, { label: title }] : [
     { label: 'sessions', href: '#' },
     { label: session.project ?? 'session', href: '#' },
     { label: title },
-  ]
+  ])
 
   const tabHasFilters = tab === 'trace' || tab === 'highlights'
   const tabStrip = (
@@ -1081,10 +1202,44 @@ export default function TranscriptViewer({
     </div>
   )
 
+  const moreActions = (caps.canEdit || caps.canExport) && (
+            <div className="menu-anchor">
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm btn-icon menu-trigger"
+                aria-label="more actions"
+                aria-expanded={moreOpen}
+                aria-haspopup="menu"
+                onClick={() => { setMoreOpen((o) => !o); setShareOpen(false) }}
+              >
+                <MoreHorizontal size={14} aria-hidden="true" />
+              </button>
+              {moreOpen && (
+                <div className="menu-pop menu-float txn-more-pop" data-align="end" role="menu" aria-label="more actions">
+                  <ul className="menu-list">
+                    {caps.canEdit && (
+                      <li><button type="button" className="menu-item" role="menuitem" onClick={() => { setMoreOpen(false); callbacks.onEdit && callbacks.onEdit() }}><Pencil size={14} aria-hidden="true" /><span className="menu-text">edit</span></button></li>
+                    )}
+                    {caps.canExport && (
+                      <>
+                        {caps.canEdit && <li role="separator"><hr className="menu-sep" /></li>}
+                        <li className="menu-cap">download</li>
+                        {['json', 'jsonl', 'markdown'].map((fmt) => (
+                          <li key={fmt}><button type="button" className="menu-item" role="menuitem" onClick={() => { setMoreOpen(false); callbacks.onExport && callbacks.onExport(/** @type {'json'|'jsonl'|'markdown'} */ (fmt)) }}><Download size={14} aria-hidden="true" /><span className="menu-text">{fmt}</span></button></li>
+                        ))}
+                      </>
+                    )}
+                  </ul>
+                </div>
+              )}
+            </div>
+            )
+
   return (
     <div
       className={'txn-app' + (theme === 'light' ? ' txn-light' : '') + (ledger ? ' txn-ledger' : '') + (ledger && zen ? ' txn-zen' : '') + (heroCondensed ? ' txn-app-condensed' : '')}
       data-theme={theme}
+      data-host-visible={!zenActive && sidebarLayout.host ? 'true' : 'false'}
       style={ledger ? { '--txn-reader-width': readerPx != null ? `${readerPx}px` : '100%' } : undefined}
     >
       {/* The session views live in the bottom bar, which comes after the whole panel in DOM order.
@@ -1097,6 +1252,7 @@ export default function TranscriptViewer({
       >
         skip to session views
       </button>
+      {beforeHeader != null && <div className="txn-before-header">{beforeHeader}</div>}
       {/* ===================== HEADER ===================== */}
       <header className="txn-header" ref={headerRef}>
         <div className="txn-header-top">
@@ -1124,6 +1280,7 @@ export default function TranscriptViewer({
             {/* host session-level actions (attest etc.) lead the row — the
                 composite's fixed capability set stays the shared tail */}
             {headerActions}
+            {!mobile && utilityActions}
             {showTail && (<>
             <div className="menu-anchor">
               <button
@@ -1156,38 +1313,7 @@ export default function TranscriptViewer({
               )}
             </div>
 
-            {(caps.canEdit || caps.canExport) && (
-            <div className="menu-anchor">
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm btn-icon menu-trigger"
-                aria-label="more actions"
-                aria-expanded={moreOpen}
-                aria-haspopup="menu"
-                onClick={() => { setMoreOpen((o) => !o); setShareOpen(false) }}
-              >
-                <MoreHorizontal size={14} aria-hidden="true" />
-              </button>
-              {moreOpen && (
-                <div className="menu-pop menu-float txn-more-pop" data-align="end" role="menu" aria-label="more actions">
-                  <ul className="menu-list">
-                    {caps.canEdit && (
-                      <li><button type="button" className="menu-item" role="menuitem" onClick={() => { setMoreOpen(false); callbacks.onEdit && callbacks.onEdit() }}><Pencil size={14} aria-hidden="true" /><span className="menu-text">edit</span></button></li>
-                    )}
-                    {caps.canExport && (
-                      <>
-                        {caps.canEdit && <li role="separator"><hr className="menu-sep" /></li>}
-                        <li className="menu-cap">download</li>
-                        {['json', 'jsonl', 'markdown'].map((fmt) => (
-                          <li key={fmt}><button type="button" className="menu-item" role="menuitem" onClick={() => { setMoreOpen(false); callbacks.onExport && callbacks.onExport(/** @type {'json'|'jsonl'|'markdown'} */ (fmt)) }}><Download size={14} aria-hidden="true" /><span className="menu-text">{fmt}</span></button></li>
-                        ))}
-                      </>
-                    )}
-                  </ul>
-                </div>
-              )}
-            </div>
-            )}
+            {!mobile && moreActions}
             </>)}
           </div>
         </div>
@@ -1287,7 +1413,7 @@ export default function TranscriptViewer({
           </Collapsible>
 
         {/* CENTER */}
-        <section className="txn-center" role="tabpanel" id={`${tabsId}-panel`} aria-labelledby={`${tabsId}-${tab}`}>
+        <section className="txn-center" role="tabpanel" id={`${tabsId}-panel`} aria-labelledby={`${tabsId}-${tab}`} onClickCapture={() => { if (mobileToolsOpen) setMobileToolsOpen(false) }}>
           {tab === 'trace' && (
             <div className={'txn-trace' + (sticky && viewMode === 'list' ? ' txn-trace-pinned' : '')}>
               <Collapsible open={sticky && viewMode === 'list'} className="txn-sticky-disclosure">
@@ -1395,7 +1521,7 @@ export default function TranscriptViewer({
                             compact={filters.views.compact}
                             expandAll={filters.views.expandAll}
                             modelActions={actionRun}
-                            actionReveal={searchReveal && (ledger ? actionLayout.locations.get(searchReveal.turn)?.owner === t.index : searchReveal.turn === t.index) ? searchReveal : undefined}
+                            actionReveal={searchReveal && (ledger ? (actionLayout.locations.get(searchReveal.turn)?.owner ?? searchReveal.turn) === t.index : searchReveal.turn === t.index) ? searchReveal : undefined}
                             registerActionRef={registerActionRef}
                             suppressWork={suppressWork}
                           />
@@ -1618,6 +1744,31 @@ export default function TranscriptViewer({
       </div>
 
       {/* ===================== OVERLAYS ===================== */}
+      <dialog
+        id={mobileDrawerId}
+        ref={mobileDialogRef}
+        className="txn-mobile-drawer"
+        aria-label={mobileDrawer === 'outline' ? 'user turns' : 'filters'}
+        onTransitionEnd={(event) => { if (event.target === event.currentTarget && event.propertyName === 'display' && !mobileDrawer) setExitingMobileDrawer(null) }}
+        onCancel={(event) => { event.preventDefault(); closeMobileDrawer() }}
+        onClick={(event) => { if (event.target === event.currentTarget) closeMobileDrawer() }}
+      >
+        {(mobileDrawer || exitingMobileDrawer) && <div className="txn-mobile-drawer-panel" inert={!mobileDrawer} onTransitionEnd={(event) => { if (event.target === event.currentTarget && event.propertyName === 'transform' && !mobileDrawer) setExitingMobileDrawer(null) }}>
+          <div className="txn-mobile-drawer-head">
+            <button type="button" aria-pressed={mobileDrawer === 'outline'} onClick={() => { mobileOpenerRef.current = mobileToolsRef.current; if (mobileDrawer === 'outline') closeMobileDrawer(); else setMobileDrawer('outline') }}>user turns</button>
+            {tabHasFilters && <button type="button" aria-pressed={mobileDrawer === 'filters'} onClick={() => { mobileOpenerRef.current = mobileToolsRef.current; if (mobileDrawer === 'filters') closeMobileDrawer(); else setMobileDrawer('filters') }}>filters</button>}
+            <button type="button" aria-label="close drawer" onClick={closeMobileDrawer}><X size={14} aria-hidden="true" /></button>
+          </div>
+          <div className="txn-mobile-drawer-body">
+            {(mobileDrawer || exitingMobileDrawer) === 'outline'
+              ? <OutlineRail viewModel={vm} tab={tab} presentation={presentation} activeTurn={activeTurn} onJump={(idx) => { jumpTo(idx, { switchTab: false }); closeMobileDrawer() }} />
+              : <FiltersRail tab={tab} filters={filters} onFiltersChange={setFilters} counts={counts} checkpoints={commits} filtersActive={filtersActive}
+                onClear={() => setFilters({ ...DEFAULT_FILTERS, toolGroups: Object.fromEntries(TOOL_GROUPS.map((id) => [id, true])) })}
+                onJumpStart={() => { jumpTo(visibleTurns[0]?.index ?? 0, { switchTab: false }); closeMobileDrawer() }}
+                onJumpLatest={() => { jumpTo(visibleTurns[visibleTurns.length - 1]?.index ?? 0, { switchTab: false }); closeMobileDrawer() }} />}
+          </div>
+        </div>}
+      </dialog>
       {/* per-turn label popover — rendered ONLY when canLabel (capability-gated). */}
       {canLabel && labelFor != null && (
         <LabelPopover turnId={labelFor} current={savedLabels[labelFor]} onSave={saveLabel} onClose={() => setLabelFor(null)} />
@@ -1627,6 +1778,14 @@ export default function TranscriptViewer({
           and position as a smaller second one. The tab row never leaves — a touch screen has no
           keyboard, but it still needs to reach every view. */}
       <footer className="txn-footer">
+        <Collapsible open={mobile && mobileToolsOpen} keepMounted className="txn-mobile-utilities">
+        <div className="txn-mobile-controls">
+          {mobile && utilityActions}
+          {mobile && showTail && moreActions}
+          <button className="txn-mobile-rail-button" ref={mobileOutlineRef} type="button" aria-label="user turns" title="user turns" aria-controls={mobileDrawerId} aria-expanded={mobileDrawer === 'outline'} onClick={() => { mobileOpenerRef.current = mobileToolsRef.current; setMobileToolsOpen(false); setMobileDrawer('outline') }}><LayoutList size={14} aria-hidden="true" /></button>
+          {tabHasFilters && <button className="txn-mobile-rail-button" ref={mobileFiltersRef} type="button" aria-label="filters" title="filters" aria-controls={mobileDrawerId} aria-expanded={mobileDrawer === 'filters'} onClick={() => { mobileOpenerRef.current = mobileToolsRef.current; setMobileToolsOpen(false); setMobileDrawer('filters') }}><SlidersHorizontal size={14} aria-hidden="true" /></button>}
+        </div>
+        </Collapsible>
         <div className="txn-foot-tabs">
           {tabStrip}
           {showSearchTrigger && (
@@ -1641,6 +1800,7 @@ export default function TranscriptViewer({
               <kbd className="txn-search-key">⌘F</kbd>
             </button>
           )}
+          {mobile && <button ref={mobileToolsRef} type="button" className="txn-mobile-tools-toggle" aria-label="transcript tools" title="transcript tools" aria-expanded={mobileToolsOpen} onClick={() => setMobileToolsOpen(open => !open)}><MenuIcon size={14} aria-hidden="true" /></button>}
         </div>
         {(footerHints || footerProgress) && (
           <div className="txn-foot-meta">
