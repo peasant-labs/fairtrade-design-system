@@ -53,5 +53,17 @@ await withMountedSource(async ({ load, mount, React, window }) => {
     }
     await mounted.unmount()
   }
+  // Reader chrome changes must not reconstruct a still-open tool body. A new
+  // cooked tool object must nevertheless update the content immediately.
+  const ToolBody = (await load('/src/ui/transcript/ToolBody.jsx')).default
+  let reads = 0
+  const tool = { ...input.tool, get output() { reads++; return input.tool.output } }
+  const mounted = await mount(el(ToolBody, { tool }))
+  const initialReads = reads
+  await mounted.rerender(el(ToolBody, { tool }))
+  report.check(reads === initialReads, 'unchanged open tool body skips unrelated rerender')
+  await mounted.rerender(el(ToolBody, { tool: { ...input.tool, output: input.markdown } }))
+  report.check(mounted.container.textContent.includes(input.markdown), 'changed tool content updates the mounted body')
+  await mounted.unmount()
 })
 report.finish('graph and transcript production semantics')
