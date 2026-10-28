@@ -15,7 +15,7 @@ requiredNames:
 expectedStylesheetRules:
   - ".txn-app-condensed > .txn-header { padding-block: var(--sp-2); }"
   - ".txn-disclosure[hidden] { display: none; }"
-  - ".txn-header { transition: padding-block var(--dur-3) var(--ease-in-out); }"
+  - ".txn-header { transition: padding-block var(--dur-1) var(--ease-in-out); }"
 expectedLoaderMutationCount: 5
 requiredLoaderMutationNames:
   - condense manifest count drift is rejected

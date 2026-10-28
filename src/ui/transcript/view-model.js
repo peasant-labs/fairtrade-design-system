@@ -76,6 +76,8 @@
  *
  * @typedef {object} SessionVM
  * @property {string} id
+ * @property {number} [sourceIndex] original index in the source turn's tool calls
+ * @property {boolean} [sourceIdUnique] whether a nonempty ID is unambiguous in its partition
  * @property {import('./wire-types.js').Harness} harness
  * @property {string} startTime
  * @property {string} endTime
@@ -184,6 +186,7 @@ export const TOOL_GROUPS = Object.freeze([
  *
  * @typedef {object} TurnVM
  * @property {number} index
+ * @property {boolean} [sourceIndexUnique] whether this index is unambiguous in its partition
  * @property {string} [identity] partition-scoped stable rendering key
  * @property {string} [partition] main or earlier-N; main index navigation stays unchanged
  * @property {string} [sourceEntryRef]

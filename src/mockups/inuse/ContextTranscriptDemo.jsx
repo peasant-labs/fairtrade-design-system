@@ -85,7 +85,7 @@ export default function ContextTranscriptDemo({ theme }) {
     setTarget(nextTarget)
   }
 
-  return <TranscriptViewer key={vm.session.id} viewModel={vm} capabilities={capabilities} theme={theme} showTail={true}
+  return <TranscriptViewer key={vm.session.id} viewModel={vm} capabilities={capabilities} theme={theme} showTail={true} presentation="classic"
     initialPosition={saved.current.has(target ?? 'child') ? null : target && window.location.hash === '#turn-0' ? { kind: 'turn', turnIndex: 0 } : { kind: 'top' }}
     earlierHistoryOpen={earlierOpen} onEarlierHistoryOpenChange={setEarlierOpen}
     openTools={openTools} onOpenToolsChange={setOpenTools} search={search} onSearchChange={setSearch}

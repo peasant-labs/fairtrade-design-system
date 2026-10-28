@@ -8,6 +8,16 @@ requiredCaseNames:
   - a last crumb with an href is a link
   - a last crumb without an href is the current page
   - context retains the transcript title
+  - unverified evidence retains exact source
+  - sparse source opens the second empty-id call
+  - mismatched source id never opens a call
+  - absent source call never opens a call
+  - duplicate turn index never opens a call
+  - duplicate recorded id never opens a call
+  - exact recorded id opens its command
+  - source position validates its original coordinates
+  - source on a user turn opens its command
+  - source on a system turn opens its command
   - a tab without filters has no filters rail
   - the stylesheet keeps labels whole and lines unclipped
 

@@ -1999,6 +1999,12 @@
 @layer components {
   /* ---- shell: fill the host window, flex column, never grow the page ---- */
   .txn-app { position: relative; display: flex; flex-direction: column; height: 100%; min-height: 0; min-width: 0; background: var(--surface); color: var(--ink); overflow: hidden; }
+  .txn-before-header { flex: none; min-width: 0; }
+  .txn-unverified-pulls { margin-block: var(--sp-3); }
+  .txn-unverified-pulls-title { font-family: var(--font-mono); font-size: var(--fs-label); }
+  .txn-unverified-pulls p { margin-block: var(--sp-2); }
+  .txn-unverified-pulls ul { margin: 0; padding: 0; list-style: none; }
+  .txn-unverified-pulls li { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-3); }
 
   /* ---- header ---- */
   .txn-header { padding: var(--sp-4); border-bottom: var(--bd); background: var(--surface); flex: none; }
@@ -2010,7 +2016,7 @@
      the top of the trace. (user-ratified: the row stays; a full hide was rejected.) */
   .txn-app-condensed > .txn-header { padding-block: var(--sp-2); }
   @media (prefers-reduced-motion: no-preference) {
-    .txn-header { transition: padding-block var(--dur-3) var(--ease-in-out); }
+    .txn-header { transition: padding-block var(--dur-1) var(--ease-in-out); }
   }
   /* the condensed row must stay ONE line even on a phone: unwrapped, the breadcrumb and
      the actions stack to ~3 rows at 390px and give back almost all of the reclaimed
@@ -2068,6 +2074,7 @@
      engine (e.g. @xyflow, height:100%) resolves against a 0-height parent and collapses to 0px. */
   .txn-graphslot { flex: 1; min-height: 0; }
   .txn-sticky-disclosure { flex: none; }
+  .txn-header-details, .txn-sticky-disclosure { --txn-disclosure-duration: var(--dur-1); }
   .txn-sticky {
     box-sizing: border-box; height: var(--txn-sticky-h);
     display: flex; align-items: center; gap: var(--sp-3);

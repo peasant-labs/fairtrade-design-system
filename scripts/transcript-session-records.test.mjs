@@ -27,7 +27,7 @@ await withMountedSource(async ({ load, mount, React }) => {
     ...(row.harness ? { harness: row.harness } : {}),
     ...(row.turns ? { turns: row.turns, turnCount: row.turns.length } : {}),
   })
-  const viewer = (vm) => React.createElement(TranscriptViewer, { viewModel: vm, capabilities: CAPABILITIES })
+  const viewer = (vm) => React.createElement(TranscriptViewer, { viewModel: vm, capabilities: CAPABILITIES, presentation: 'classic' })
 
   for (const row of fixture.cases) {
     const name = row.name

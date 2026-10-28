@@ -33,6 +33,7 @@ import { transcriptInitialPositionReadiness } from './initial-position.js'
 import { transcriptTitle } from './title.js'
 import { Term } from '../Explainer.jsx'
 import Tooltip from '../Tooltip.jsx'
+import { toolStateKey } from './tool-state-key.js'
 
 /* ───────────────────────────────────────────────────────────────────────────
    TranscriptViewer — the composite single-transcript surface (the headline)
@@ -60,12 +61,11 @@ import Tooltip from '../Tooltip.jsx'
    them between turns from the cooked `session.git.commits` (render-when-present),
    anchored to a turn when the cooked commit carries one, else clustered at the end.
 
-   PRESENTATION: `classic` (the default) is the report-style surface. `ledger` keeps
+   PRESENTATION: `classic` is the report-style surface. `ledger` (the default) keeps
    the same state, callbacks and gating but swaps the chrome: a subtitle under the
    title, a title + visible-turns minimap in the pinned trace header instead of the
    provider/model + scrubber, and user-turn task cards in the left rail instead of the
-   duration waterfall. Absent the prop nothing changes, so a host that never opts in
-   renders exactly what it rendered before.
+   duration waterfall.
    ─────────────────────────────────────────────────────────────────────────── */
 
 /** @typedef {import('./state-capabilities.js').TranscriptViewerProps} TranscriptViewerProps */
@@ -274,6 +274,7 @@ export default function TranscriptViewer({
   onMoreOpenChange,
   breadcrumb,
   breadcrumbContext,
+  beforeHeader,
   LinkComponent,
   renderTurnPanel,
   renderTurnActions,
@@ -284,7 +285,7 @@ export default function TranscriptViewer({
   showOutcome = true,
   showSearchTrigger = false,
   footer,
-  presentation = 'classic',
+  presentation = 'ledger',
   subtitle,
   pullRequests,
   headingLevel,
@@ -606,6 +607,23 @@ export default function TranscriptViewer({
   }, [captureTraceReadingPosition, requestTraceReadingPosition, setTab])
 
   const applyInitialPosition = useCallback((position) => {
+    if (position.kind === 'tool-call') {
+      const owners = turns.filter(turn => turn.index === position.turnIndex)
+      const owner = owners[0]
+      const tool = owner?.toolCalls?.find(call => call.sourceIndex === position.toolCallIndex)
+      if (owners.length !== 1 || !owner.sourceIndexUnique || !tool || !tool.sourceIdUnique || (position.toolCallId !== undefined && position.toolCallId !== tool.id)) return 'discarded'
+      const key = toolStateKey(owner.index, tool)
+      if (!tool.id && turns.some(turn => turn.toolCalls?.some(call => call.id === key))) return 'discarded'
+      if (tab !== 'trace') { skipTraceRestoreRef.current = true; setTab('trace'); return 'pending' }
+      if (viewMode !== 'list') { setViewMode('list'); return 'pending' }
+      const visible = visibleTurns.find(turn => turn.index === owner.index)?.toolCalls?.some(call => call.sourceIndex === position.toolCallIndex)
+      if (!visible) return 'discarded'
+      if (!scrollRef.current) return 'pending'
+      selectTurn(owner.index)
+      setOpenTools(previous => ({ ...previous, [key]: true }))
+      setSearchReveal({ turn: owner.index, where: `source:${position.toolCallIndex}`, select: false, focus: true, sequence: ++revealSequence.current })
+      return 'applied'
+    }
     const sc = scrollRef.current
     const el = position.kind === 'turn' ? turnRefs.current[position.turnIndex] : null
     const result = transcriptInitialPositionReadiness(position, {
@@ -629,7 +647,7 @@ export default function TranscriptViewer({
     else el.scrollIntoView({ block: 'start', behavior: 'auto' })
     latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()
     return 'applied'
-  }, [readTraceReadingSnapshot, tab, turns, viewMode, visibleTurns, ledger, actionLayout])
+  }, [readTraceReadingSnapshot, tab, turns, viewMode, visibleTurns, ledger, actionLayout, setTab, setViewMode, setOpenTools])
 
   const applyTraceReadingPosition = useCallback((position) => {
     const target = traceReadingPositionRef.current ?? traceReadingPosition
@@ -992,16 +1010,18 @@ export default function TranscriptViewer({
       const animations = sc.getAnimations?.({ subtree: true }).filter(animation => animation.effect?.target?.classList?.contains('txn-disclosure')) ?? []
       await Promise.allSettled(animations.map(animation => animation.finished))
       if (cancelled) return
-      const el = ledger && searchReveal.where !== 'body'
+      const sourceTarget = searchReveal.where.startsWith('source:')
+      const el = (ledger || sourceTarget) && searchReveal.where !== 'body'
         ? actionRefs.current.get(`${searchReveal.turn}:${searchReveal.where}`)
         : turnRefs.current[searchReveal.turn]
       if (!el || el.closest('[hidden], [inert]')) return
       const reduce = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
       const padding = Number.parseFloat(getComputedStyle(sc).scrollPaddingTop) || 12
-      const top = ledger && searchReveal.where !== 'body'
+      const top = (ledger || sourceTarget) && searchReveal.where !== 'body'
         ? sc.scrollTop + el.getBoundingClientRect().top - sc.getBoundingClientRect().top - padding
         : turnScrollTop(sc, el)
       sc.scrollTo({ top, behavior: !searchReveal.select || reduce ? 'auto' : 'smooth' })
+      if (searchReveal.focus) el.querySelector('button')?.focus({ preventScroll: true })
       if (searchReveal.select) selectTurn(searchReveal.turn)
     }
     const frame = requestAnimationFrame(scroll)
@@ -1089,6 +1109,7 @@ export default function TranscriptViewer({
     <div
       className={'txn-app' + (theme === 'light' ? ' txn-light' : '') + (ledger ? ' txn-ledger' : '') + (ledger && zen ? ' txn-zen' : '') + (heroCondensed ? ' txn-app-condensed' : '')}
       data-theme={theme}
+      data-host-visible={!zenActive && sidebarLayout.host ? 'true' : 'false'}
       style={ledger ? { '--txn-reader-width': readerPx != null ? `${readerPx}px` : '100%' } : undefined}
     >
       {/* The session views live in the bottom bar, which comes after the whole panel in DOM order.
@@ -1101,6 +1122,7 @@ export default function TranscriptViewer({
       >
         skip to session views
       </button>
+      {beforeHeader != null && <div className="txn-before-header">{beforeHeader}</div>}
       {/* ===================== HEADER ===================== */}
       <header className="txn-header" ref={headerRef}>
         <div className="txn-header-top">
@@ -1399,7 +1421,7 @@ export default function TranscriptViewer({
                             compact={filters.views.compact}
                             expandAll={filters.views.expandAll}
                             modelActions={actionRun}
-                            actionReveal={searchReveal && (ledger ? actionLayout.locations.get(searchReveal.turn)?.owner === t.index : searchReveal.turn === t.index) ? searchReveal : undefined}
+                            actionReveal={searchReveal && (ledger ? (actionLayout.locations.get(searchReveal.turn)?.owner ?? searchReveal.turn) === t.index : searchReveal.turn === t.index) ? searchReveal : undefined}
                             registerActionRef={registerActionRef}
                             suppressWork={suppressWork}
                           />

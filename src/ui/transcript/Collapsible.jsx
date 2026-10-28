@@ -22,7 +22,7 @@ export default function Collapsible({ open, children, className = '', id, keepMo
     animationRef.current = null
     const allowed = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: no-preference)').matches
     const style = getComputedStyle(node)
-    const token = style.getPropertyValue('--dur-3').trim()
+    const token = style.getPropertyValue('--txn-disclosure-duration').trim() || style.getPropertyValue('--dur-3').trim()
     const duration = Number.parseFloat(token) * (token.endsWith('ms') ? 1 : 1000)
     if (!allowed || typeof node.animate !== 'function' || !Number.isFinite(duration) || duration <= 0) {
       setPresent(open)

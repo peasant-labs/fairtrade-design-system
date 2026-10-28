@@ -914,6 +914,12 @@ function cookRelationships(relationships, navigation) {
  * @param {readonly number[]} [visibleIndices]
  */
 function cookPartition(payload, completeTurns, nativeMetadata, partition, annotations, analytics, visibleIndices) {
+  const indexCounts = new Map()
+  const idCounts = new Map()
+  for (const turn of completeTurns) {
+    indexCounts.set(turn.index, (indexCounts.get(turn.index) ?? 0) + 1)
+    for (const call of turn.toolCalls ?? []) if (call.id) idCounts.set(call.id, (idCounts.get(call.id) ?? 0) + 1)
+  }
   const stickyModels = resolveStickyModels(completeTurns, payload.model)
   // session metadata records are not conversation, and an unknown time is no time at all
   const filteredTurns = (payload.harness === 'pi' ? completeTurns : prefilterTurns(completeTurns))
@@ -947,7 +953,7 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
   const positionOf = new Map(filteredTurns.map((turn, i) => [turn, i]))
   for (let p = 0; p < turns.length; p++) {
     const t = turns[p]
-    const toolCalls = (t.toolCalls ?? []).map(buildToolCallVM)
+    const toolCalls = (t.toolCalls ?? []).map((call, sourceIndex) => ({ ...buildToolCallVM(call), sourceIndex, sourceIdUnique: !call.id || idCounts.get(call.id) === 1 }))
     for (const tc of toolCalls) {
       tc.partition = partition
       const records = nativeMetadata?.filter(record => record.attachment?.turnIndex === t.index && record.attachment?.toolCallId === tc.id)
@@ -993,6 +999,7 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
     /** @type {TurnVM} */
     const turnVM = {
       index: t.index,
+      sourceIndexUnique: indexCounts.get(t.index) === 1,
       identity: `${partition}:${t.sourceEntryRef || t.index}`,
       partition,
       role: t.role,

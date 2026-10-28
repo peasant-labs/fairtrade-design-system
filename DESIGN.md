@@ -396,7 +396,7 @@ and italic 400.
 - **Code** (400, `--fs-body`, mono, `--lh-mono`, letter-spacing 0): code, logs, IDs and tool output
   each in its own horizontal scroller, never capped by the prose measure.
 
-**Ledger reading-pane exception (owner ruling).** The opt-in ledger presentation derives its
+**Ledger reading-pane exception (owner ruling).** The ledger presentation derives its
 reading column from the reader-width control (`--txn-reader-width`: any width from 600 CSS
 pixels to the stream's whole content width, up to the lane that holds the zen control, with no
 snaps) rather than a fixed `ch` cap, so prose follows the width the reader chose. Tables, code, diffs and

@@ -249,3 +249,6 @@ cases:
     kind: link-component
     props: {app: online, currentId: home, homeHref: /}
     expected: {hrefs: [/, /, 'https://docs.invalid/', 'https://online.invalid/collectives', /home, /c/eval-crowd, /docs], current: /home}
+  - name: viewport frame budgets host slots
+    kind: viewport-frame
+    expected: {mainId: transcript-main, topBar: top bar, notice: notice, body: transcript body}

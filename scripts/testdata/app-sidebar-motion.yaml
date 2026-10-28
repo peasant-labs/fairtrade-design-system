@@ -22,3 +22,7 @@ cases:
 motions:
   - {name: motion-allowed, value: no-preference}
   - {name: reduced, value: reduce}
+viewportCases:
+  - name: notice and zen stay within the viewport
+    story: in-use-appsidebar--transcript-viewport
+    viewport: {width: 1280, height: 633}

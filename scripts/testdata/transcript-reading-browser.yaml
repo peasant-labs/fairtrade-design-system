@@ -2,8 +2,10 @@
   "name": "overflowing user tasks and separated action destinations",
   "rationale": "24 real task cards overflow the rail; 32 distinct leading actions separate the owner and matched row by more than the reading viewport, without forced geometry.",
   "taskCount": 24,
+  "longTaskCount": 52,
   "leadingActions": 32,
   "lastResponseParagraphs": 12,
+  "unverified": {"owner": "example", "repo": "sample", "number": 42, "url": "https://github.com/example/sample/pull/42", "source": {"turnIndex": 3, "toolCallIndex": 0, "toolCallId": "target-gamma"}},
   "navigation": [
     {"name": "later prose tool destination", "query": "target-beta-output", "turn": 2, "kind": "tool", "command": "printf target-beta", "compact": false},
     {"name": "wordless tool destination in compact", "query": "target-gamma-output", "turn": 3, "kind": "tool", "command": "printf target-gamma", "compact": true},

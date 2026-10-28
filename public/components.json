@@ -50,6 +50,7 @@
       "doc": "@property {boolean} [soon] a place that does not exist yet: shown as text, aria-disabled, with a 'soon' note",
       "props": {},
       "stories": [
+        "TranscriptViewport",
         "AccountMenu",
         "AccountPicture",
         "Online",

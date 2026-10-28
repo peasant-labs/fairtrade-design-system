@@ -107,7 +107,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
 
   for (const row of fixture.cases) {
     if (row.kind === 'classic') {
-      const mounted = await mountViewer(undefined, { savedLabels: { 1: { outcome: 'good' } } })
+      const mounted = await mountViewer('classic', { savedLabels: { 1: { outcome: 'good' } } })
       const workPanels = mounted.container.querySelectorAll('.txn-work')
       report.check(workPanels.length === 0, `${row.name}: the classic surface must render no work panel, received ${workPanels.length}`)
       const rows = mounted.container.querySelectorAll('#turn-1 .txn-toolcall')
@@ -234,7 +234,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(!!firstWrap && firstWrap.querySelector('.txn-turn-rule') === null, `${row.name}: the ledger must draw no rule before the first turn`)
       for (const rule of rules) report.check(rule.tagName === 'HR' && rule.getAttribute('aria-hidden') === 'true', `${row.name}: each rule must be a decorative hr`)
       await ledgerMount.unmount()
-      const classicMount = await mountViewer(undefined)
+      const classicMount = await mountViewer('classic')
       report.check(classicMount.container.querySelectorAll('.txn-turn-rule').length === 0, `${row.name}: the classic surface must draw no role rules`)
       await classicMount.unmount()
     } else if (row.kind === 'ledger-disclosure') {

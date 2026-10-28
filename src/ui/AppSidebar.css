@@ -31,6 +31,14 @@
 /* the page frame: the sidebar column beside a main column that takes the rest */
 .asb-layout { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; align-content: start; min-height: 100dvh; }
 .asb-main { min-width: 0; }
+.asb-topbar { grid-column: 1 / -1; min-width: 0; }
+.asb-layout-viewport { height: 100dvh; min-height: 0; grid-template-rows: minmax(0, 1fr); align-items: stretch; align-content: stretch; overflow: hidden; }
+.asb-layout-viewport.asb-layout-has-topbar { grid-template-rows: auto minmax(0, 1fr); }
+.asb-layout-viewport > .asb-main { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.asb-layout-viewport > .asb-main > .asb-notice { flex: none; }
+.asb-layout-viewport > .asb-main > .txn-app { flex: 1 1 0; height: auto; }
+.asb-layout:has(> .asb-main .txn-app[data-host-visible="false"]) { grid-template-columns: minmax(0, 1fr); }
+.asb-layout:has(> .asb-main .txn-app[data-host-visible="false"]) > .asb { display: none; }
 
 /* one app page: the full width of the main column, the same padding on the left and the right.
    no max-width and no auto margins, so the gap beside the sidebar always equals the gap at the
@@ -377,6 +385,10 @@ button.asb-account { width: 100%; min-width: 0; margin: 0; border: 0; background
 /* ── narrow: a top bar, and the same nav as an opaque drawer ──────────── */
 @media (width < 768px) {
   .asb-layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
+  .asb-layout-viewport { grid-template-rows: auto minmax(0, 1fr); }
+  .asb-layout-viewport.asb-layout-has-topbar { grid-template-rows: auto auto minmax(0, 1fr); }
+  .asb-layout-viewport:has(> .asb-main .txn-app[data-host-visible="false"]) { grid-template-rows: minmax(0, 1fr); }
+  .asb-layout-viewport.asb-layout-has-topbar:has(> .asb-main .txn-app[data-host-visible="false"]) { grid-template-rows: auto minmax(0, 1fr); }
   .asb { position: sticky; top: 0; z-index: var(--z-nav); }
   .asb[data-drawer-open="true"] { z-index: var(--z-dialog); }
   .asb-bar {

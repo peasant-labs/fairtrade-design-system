@@ -240,8 +240,8 @@ const streamPreludeFixture = YAML.parse(
    disclosure open (shareOpen/moreOpen are controllable view-state) — that is how the static markup
    observes them; each menu item carries its label in a `menu-text` span. */
 {
-  const withLabel = composite({ viewModel: vm, capabilities: { ...allCaps, canLabel: true } })
-  const noLabel = composite({ viewModel: vm, capabilities: { ...allCaps, canLabel: false } })
+  const withLabel = composite({ viewModel: vm, presentation: 'classic', capabilities: { ...allCaps, canLabel: true } })
+  const noLabel = composite({ viewModel: vm, presentation: 'classic', capabilities: { ...allCaps, canLabel: false } })
   assert('CAP-label-on', 'canLabel:true wires the per-turn label affordance', withLabel.includes('txn-labelbtn'))
   assert('CAP-label-off', 'canLabel:false removes the label affordance, so onLabel can never fire', !noLabel.includes('txn-labelbtn'))
 
@@ -304,7 +304,7 @@ const streamPreludeFixture = YAML.parse(
 /* ── structural widening: TaskBoundary renders the cooked per-task churn/files stat ──── */
 {
   const vmTaskStat = { ...vm, tasks: [{ id: 't0', index: 1, prompt: 'Port the transcript canvas.', turnIndices: [0], durationMs: 300000, tools: 1, stat: '2 files · +316 −25' }] }
-  const out = composite({ viewModel: vmTaskStat, capabilities: allCaps })
+  const out = composite({ viewModel: vmTaskStat, capabilities: allCaps, presentation: 'classic' })
   assert('VIEWER-taskboundary-stat', 'TaskBoundary renders the cooked per-task churn/files stat in .txn-tb-meta', out.includes('txn-tb-meta') && out.includes('+316') && out.includes('2 files'))
 }
 

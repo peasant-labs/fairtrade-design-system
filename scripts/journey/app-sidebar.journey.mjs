@@ -8,7 +8,7 @@ import { loadFixturePair } from '../mounted-parts.mjs'
    the sidebar inside a landmark. region is a page-level rule, so axe scans the whole page and only
    the findings inside the sidebar count (the story's placeholder page is not a product surface).
    Cases: scripts/testdata/app-sidebar-motion.yaml (+ .manifest.yaml). */
-const { fixture } = loadFixturePair('scripts/testdata/app-sidebar-motion.yaml', 'scripts/testdata/app-sidebar-motion.manifest.yaml', { cases: 'requiredCaseNames', motions: 'requiredMotionNames' })
+const { fixture } = loadFixturePair('scripts/testdata/app-sidebar-motion.yaml', 'scripts/testdata/app-sidebar-motion.manifest.yaml', { cases: 'requiredCaseNames', motions: 'requiredMotionNames', viewportCases: 'requiredViewportCaseNames' })
 
 const settle = (page) => page.evaluate(async () => {
   await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)))
@@ -87,5 +87,45 @@ for (const motion of fixture.motions) for (const row of fixture.cases) {
       await expect(panel).toBeHidden()
       await expect(page.getByRole('button', { name: 'open the menu' })).toHaveAttribute('aria-expanded', 'false')
     }
+  })
+}
+
+for (const row of fixture.viewportCases) {
+  test(row.name, async ({ page }, info) => {
+    await page.setViewportSize(row.viewport)
+    await page.goto(`/iframe.html?id=${row.story}&viewMode=story&globals=theme:${info.project.name}`)
+    const stream = page.getByRole('region', { name: 'full trace turns' })
+    const footer = page.locator('.txn-footer')
+    await expect(stream).toBeVisible()
+    const bounds = async () => page.evaluate(() => {
+      const box = (selector) => document.querySelector(selector)?.getBoundingClientRect().toJSON() ?? null
+      return { frame: box('.asb-layout'), notice: box('.asb-notice'), stream: box('.txn-stream'), footer: box('.txn-footer'), height: innerHeight }
+    })
+    const withNotice = await bounds()
+    expect(withNotice.frame.bottom).toBeLessThanOrEqual(withNotice.height)
+    expect(withNotice.stream.top).toBeGreaterThanOrEqual(withNotice.notice.bottom)
+    expect(withNotice.footer.bottom).toBeLessThanOrEqual(withNotice.height)
+    await page.getByRole('button', { name: 'zen mode' }).click()
+    await expect(page.locator('.asb')).toBeHidden()
+    await page.getByRole('button', { name: 'zen mode' }).click()
+    await expect(page.locator('.asb')).toBeVisible()
+    await page.getByRole('switch', { name: 'compact mode' }).click()
+    await expect(page.locator('.txn-modelactions-head').first()).toHaveAttribute('aria-expanded', 'false')
+    await page.getByRole('tab', { name: /highlights/ }).click()
+    await page.getByRole('button', { name: 'view source' }).click()
+    await expect(page.getByRole('tab', { name: /full trace/ })).toHaveAttribute('aria-selected', 'true')
+    const source = page.locator('.txn-toolcall').filter({ hasText: 'printf target-gamma' })
+    await expect(source.locator('button').first()).toHaveAttribute('aria-expanded', 'true')
+    await expect(source).toContainText('target-gamma-output')
+    await expect(source.locator('button').first()).toBeFocused()
+    await page.getByRole('button', { name: 'dismiss notice' }).click()
+    await expect(page.locator('.asb-notice')).toHaveCount(0)
+    const withoutNotice = await bounds()
+    expect(withoutNotice.footer.bottom).toBeLessThanOrEqual(withoutNotice.height)
+    expect(withoutNotice.stream.height).toBeGreaterThan(withNotice.stream.height)
+    await stream.evaluate((node) => { node.scrollTop = node.scrollHeight })
+    await expect(footer).toBeVisible()
+    expect(await stream.evaluate((node) => Math.abs(node.scrollHeight - node.clientHeight - node.scrollTop))).toBeLessThanOrEqual(1)
+    expect(await footer.evaluate((node) => { const r = node.getBoundingClientRect(); return node.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)) })).toBe(true)
   })
 }

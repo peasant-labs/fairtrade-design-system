@@ -142,12 +142,12 @@ export function normalizeTranscriptInitialPosition(value) {
   }
   const dataFields = initialPositionDataMap(record, /** @type {string[]} */ (ownKeys))
   const kind = initialPositionKind(dataFields)
-  if (kind !== 'top' && kind !== 'turn') {
+  if (kind !== 'top' && kind !== 'turn' && kind !== 'tool-call') {
     throw invalidInitialPosition(`the kind ${safeDiagnosticValue(kind)} is unknown`, 'the position union is closed', "use kind 'top' or kind 'turn'")
   }
-  const allowed = kind === 'top' ? new Set(['kind', 'requestKey']) : new Set(['kind', 'turnIndex', 'requestKey'])
+  const allowed = kind === 'top' ? new Set(['kind', 'requestKey']) : kind === 'turn' ? new Set(['kind', 'turnIndex', 'requestKey']) : new Set(['kind', 'turnIndex', 'toolCallIndex', 'toolCallId', 'requestKey'])
   const extras = [...dataFields.keys()].filter((key) => !allowed.has(key))
-  const missing = kind === 'turn' && !dataFields.has('turnIndex') ? ['turnIndex'] : []
+  const missing = [...(kind !== 'top' && !dataFields.has('turnIndex') ? ['turnIndex'] : []), ...(kind === 'tool-call' && !dataFields.has('toolCallIndex') ? ['toolCallIndex'] : [])]
   if (extras.length || missing.length) {
     throw invalidInitialPosition(`the ${kind} position has an inexact key set (extra: ${extras.join(', ') || 'none'}; missing: ${missing.join(', ') || 'none'})`, 'unknown or missing fields would make host intent ambiguous', `use exactly ${[...allowed].join(', ')} with requestKey omitted when unnecessary`)
   }
@@ -161,6 +161,13 @@ export function normalizeTranscriptInitialPosition(value) {
   const turnIndex = dataFields.get('turnIndex')
   if (!Number.isSafeInteger(turnIndex) || /** @type {number} */ (turnIndex) < 0) {
     throw invalidInitialPosition(`turnIndex ${safeDiagnosticValue(turnIndex)} is not a safe nonnegative integer`, 'turn identities are sparse integer identities rather than array offsets or arbitrary numbers', 'supply the exact safe nonnegative turn identity from the transcript wire')
+  }
+  if (kind === 'tool-call') {
+    const toolCallIndex = dataFields.get('toolCallIndex')
+    const toolCallId = dataFields.get('toolCallId')
+    if (!Number.isSafeInteger(toolCallIndex) || /** @type {number} */ (toolCallIndex) < 0) throw invalidInitialPosition('toolCallIndex is invalid', 'the source must name an original nonnegative call index', 'supply the exact toolCallIndex from the source')
+    if (toolCallId !== undefined && (typeof toolCallId !== 'string' || toolCallId.length === 0)) throw invalidInitialPosition('toolCallId is invalid', 'an optional recorded ID must be a nonempty string', 'omit it when absent or supply the exact recorded ID')
+    return { kind, turnIndex: /** @type {number} */ (turnIndex), toolCallIndex: /** @type {number} */ (toolCallIndex), ...(toolCallId === undefined ? {} : { toolCallId: /** @type {string} */ (toolCallId) }), ...(requestKey === undefined ? {} : { requestKey: /** @type {string} */ (requestKey) }) }
   }
   return requestKey === undefined
     ? { kind: 'turn', turnIndex: /** @type {number} */ (turnIndex) }
@@ -212,10 +219,10 @@ export function resolveTranscriptInitialPosition(input) {
  * @returns {TranscriptInitialPositionResult}
  */
 export function transcriptInitialPositionReadiness(position, state) {
-  if (position.kind === 'turn' && !state.authoritativeTurnIndices.includes(position.turnIndex)) return 'discarded'
-  if (position.kind === 'turn' && !state.renderedTurnIndices.includes(position.turnIndex)) return 'pending'
+  if (position.kind !== 'top' && !state.authoritativeTurnIndices.includes(position.turnIndex)) return 'discarded'
+  if (position.kind !== 'top' && !state.renderedTurnIndices.includes(position.turnIndex)) return 'pending'
   if (!state.viewReady || !state.scrollerReady) return 'pending'
-  if (position.kind === 'turn' && !state.targetReady) return 'pending'
+  if (position.kind !== 'top' && !state.targetReady) return 'pending'
   return 'applied'
 }
 
@@ -229,7 +236,8 @@ export function transcriptInitialPositionToken(sessionId, position) {
   return JSON.stringify([
     sessionId ?? '',
     position.kind,
-    position.kind === 'turn' ? position.turnIndex : null,
+    position.kind !== 'top' ? position.turnIndex : null,
+    ...(position.kind === 'tool-call' ? [position.toolCallIndex, position.toolCallId ?? null] : []),
     position.requestKey ?? '',
   ])
 }

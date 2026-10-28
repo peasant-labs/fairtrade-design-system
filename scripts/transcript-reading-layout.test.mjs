@@ -285,6 +285,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       for (const pane of container.querySelectorAll('.txn-rail, .txn-rail-strip')) report.check(pane.hasAttribute('inert') && pane.getAttribute('aria-hidden') === 'true', `${row.name}: zen must remove all rail controls from keyboard and assistive technology`)
       report.check(container.querySelector('.txn-body-grid')?.getAttribute('data-zen') === 'true', `${row.name}: the body grid must report zen state`)
       report.check(container.querySelector('.txn-app')?.classList.contains('txn-zen'), `${row.name}: the root must carry txn-zen so the collapsed grid applies`)
+      report.check(container.querySelector('.txn-app')?.getAttribute('data-host-visible') === 'false', `${row.name}: the viewer must report the host sidebar hidden`)
       report.check(container.querySelector('.txn-zen-control')?.getAttribute('aria-pressed') === 'true', `${row.name}: the control must report pressed state`)
       report.check(container.querySelector('.txn-zen-control')?.getAttribute('aria-label') === 'zen mode', `${row.name}: the toggle must keep its stable name while pressed`)
       report.check(container.querySelector('.txn-zen-label')?.textContent?.trim() === 'zen', `${row.name}: the visible word must still read "zen" inside zen, never "exit zen"`)
@@ -300,6 +301,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       await mounted.settle()
       report.check(zenValues.length === 2 && zenValues[0] === true && zenValues[1] === false, `${row.name}: zen must report true then false, received ${JSON.stringify(zenValues)}`)
       report.check(same(layouts[layouts.length - 1], layoutOf(false, true, true)), `${row.name}: leaving zen must restore {outline:false,filters:true,host:true}, received ${JSON.stringify(layouts[layouts.length - 1])}`)
+      report.check(container.querySelector('.txn-app')?.getAttribute('data-host-visible') === 'true', `${row.name}: the restored host sidebar must be visible`)
       const state = railState(container)
       report.check(!state.outline && state.outlineStrip, `${row.name}: the collapsed outline must come back as its strip`)
       report.check(state.filters && !state.filtersStrip, `${row.name}: the open filters rail must come back expanded`)
@@ -457,7 +459,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(!!handleOf(container) && handleOf(container).closest('.txn-header') === null, `${row.name}: the one width control is the reader handle, outside the header`)
       await mounted.unmount()
     } else if (row.kind === 'classic-only') {
-      const mounted = await mountViewer({ presentation: undefined })
+      const mounted = await mountViewer({ presentation: 'classic' })
       const container = mounted.container
       const app = container.querySelector('.txn-app')
       report.check(!!app && !app.classList.contains('txn-ledger'), `${row.name}: the mount must be the classic surface`)
@@ -469,7 +471,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(!!container.querySelector('.txn-rail-left') && !!container.querySelector('.txn-rail-right'), `${row.name}: classic keeps both rails`)
       await mounted.unmount()
     } else if (row.kind === 'classic-zen') {
-      const mounted = await mountViewer({ presentation: undefined, zen: true })
+      const mounted = await mountViewer({ presentation: 'classic', zen: true })
       const container = mounted.container
       const app = container.querySelector('.txn-app')
       report.check(!app?.classList.contains('txn-zen'), `${row.name}: a zen request must not add the zen class to classic`)

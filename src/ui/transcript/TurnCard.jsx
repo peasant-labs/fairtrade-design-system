@@ -12,6 +12,7 @@ import UsageDisclosure from './UsageDisclosure.jsx'
 import { Term } from '../Explainer.jsx'
 import { formatRelative as formatRelativeTime, isKnownTime } from './time.js'
 import { formatCount } from '../format.js'
+import { toolStateKey } from './tool-state-key.js'
 
 /* TurnCard — one transcript turn, lifted verbatim from the canonical mockup
    (src/mockups/inuse/TranscriptApp.jsx:541). DUMB: it renders a cooked `TurnVM`
@@ -224,10 +225,11 @@ export default function TurnCard({
       {turn.toolCalls && !ledger && (
         turn.toolCalls.map((t) => (
           <ToolCall
-            key={t.id}
+            key={toolStateKey(turn.index, t)}
             tool={t}
-            open={expandAll || !!openTools[t.id]}
-            onToggle={() => toggleTool(t.id)}
+            actionRef={el => { registerActionRef?.(turn.index, t.id, el); if (t.sourceIndex != null) registerActionRef?.(turn.index, `source:${t.sourceIndex}`, el) }}
+            open={expandAll || !!openTools[toolStateKey(turn.index, t)]}
+            onToggle={() => toggleTool(toolStateKey(turn.index, t))}
           />
         ))
       )}
@@ -237,10 +239,10 @@ export default function TurnCard({
   /* A ledger turn's work is its own block after the card: the prose ends the turn, and the tool
      and thinking lines follow as a separate group rather than a footer inside it. */
   const hasWork = !!(turn.toolCalls?.length || turn.thinking)
-  const workBlock = ledger && turn.role !== 'system' && !suppressWork && (hasWork || modelActions?.length) ? (
+  const workBlock = ledger && !suppressWork && (hasWork || modelActions?.length) ? (
     <div className="txn-turnwork">
-      {modelActions?.length ? (
-        <ModelActions turns={modelActions} openTools={openTools} onToggle={toggleTool} expandAll={expandAll} compact={compact} reveal={actionReveal} registerActionRef={registerActionRef} />
+      {modelActions?.length || turn.role === 'user' || turn.role === 'system' ? (
+        <ModelActions turns={modelActions?.length ? modelActions : [turn]} openTools={openTools} onToggle={toggleTool} expandAll={expandAll} compact={compact} reveal={actionReveal} registerActionRef={registerActionRef} />
       ) : turn.toolCalls?.length ? (
         <TranscriptWorkGroup
           tools={turn.toolCalls}
@@ -289,6 +291,7 @@ export default function TurnCard({
             revealRequest={revealRequest}
             actions={<>{anchorButton}{renderActions ? renderActions(turn) : null}</>}
           />
+          {workBlock}
         </>
       ) : (
         <>

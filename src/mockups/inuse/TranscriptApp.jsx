@@ -838,7 +838,7 @@ function DefaultTranscriptApp({ theme }) {
         showTail={false}
         showOutcome={false}
         showSearchTrigger
-        presentation={ledger ? 'ledger' : undefined}
+        presentation={ledger ? 'ledger' : 'classic'}
         initialPosition={search === 'ledger-reading' && /^\d+$/.test(new URLSearchParams(window.location.search).get('turn') ?? '') ? { kind: 'turn', turnIndex: Number(new URLSearchParams(window.location.search).get('turn')) } : undefined}
         sidebarLayout={ledger ? sidebarLayout : undefined}
         onSidebarLayoutChange={ledger ? setSidebarLayout : undefined}

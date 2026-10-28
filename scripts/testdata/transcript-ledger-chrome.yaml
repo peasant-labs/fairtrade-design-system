@@ -19,17 +19,17 @@
 # `kind` is the semantic family each row exercises. It is pinned by the manifest's
 # requiredCaseKinds map, so re-pointing a case at a cheaper family fails even when names match.
 
-# No presentation prop at all: the classic surface, unchanged.
+# No presentation prop at all: the ledger surface.
 defaultsCase:
-  name: classic with no props keeps the scrubber and no ledger chrome
-  kind: classic
-  present: [sticky-bar, scrubber, sticky-provider, sticky-model, rail-waterfall, task-boundary]
-  absent: [ledger-root, subtitle, sticky-title, minimap, rail-turns, rail-outline]
+  name: omitted presentation uses ledger chrome
+  kind: ledger
+  present: [ledger-root, sticky-bar, minimap, rail-turns]
+  absent: [sticky-title, subtitle, scrubber, sticky-provider, sticky-model, rail-waterfall, rail-outline, task-boundary]
 
 cases:
   - name: classic keeps the scrubber when a subtitle is supplied
     kind: classic
-    props: {subtitle: true}
+    props: {presentation: classic, subtitle: true}
     present: [subtitle, sticky-bar, scrubber, sticky-provider, sticky-model, rail-waterfall, task-boundary]
     absent: [ledger-root, sticky-title, minimap, rail-turns, rail-outline]
   - name: an explicit classic presentation keeps the classic chrome

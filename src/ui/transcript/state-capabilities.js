@@ -41,8 +41,8 @@
 /** The optional theme; defaults to `dark` when unset. @typedef {'dark' | 'light'} Theme */
 
 /**
- * How the composite presents: `classic` (the default bordered-turn reading surface) or
- * `ledger` (the opt-in reading-first surface: role-led turns with one grouped work panel,
+ * How the composite presents: `classic` (the bordered-turn reading surface) or
+ * `ledger` (the default reading-first surface: role-led turns with one grouped work panel,
  * system turns as single rows, and the ledger chrome). @typedef {'classic' | 'ledger'} Presentation
  */
 
@@ -140,7 +140,7 @@
  * This is deliberately separate from `activeTurn`, which represents ongoing
  * selection while the user reads or navigates the transcript.
  *
- * @typedef {{kind: 'top', requestKey?: string} | {kind: 'turn', turnIndex: number, requestKey?: string}} TranscriptInitialPosition
+ * @typedef {{kind: 'top', requestKey?: string} | {kind: 'turn', turnIndex: number, requestKey?: string} | {kind: 'tool-call', turnIndex: number, toolCallIndex: number, toolCallId?: string, requestKey?: string}} TranscriptInitialPosition
  */
 
 /**
@@ -189,6 +189,7 @@
  * @property {boolean} [moreOpen]                                      more action-menu disclosure (default closed)
  * @property {(open: boolean) => void} [onMoreOpenChange]
  * @property {import('react').ElementType} [LinkComponent]            router link for crumb items (e.g. next/link); defaults to 'a'
+ * @property {import('react').ReactNode} [beforeHeader]                in-flow content before the session header
  * @property {(turn: import('./view-model.js').TurnVM) => unknown} [renderTurnPanel]  host per-turn extension rendered under each turn card
  * @property {(turn: import('./view-model.js').TurnVM) => unknown} [renderTurnActions]  host-owned per-turn actions; replaces the built-in label affordance (hosts with typed label models keep their own popovers)
  * @property {(turnIndex: number) => string} [anchorHref]              host permalink for a turn's copy-anchor action; a root-relative return is absolutized against the page origin. Omitted, the demo copies its bare '#turn-N' placeholder
@@ -199,7 +200,7 @@
  * @property {boolean} [showSearchTrigger]                             default false: render a `search transcript` button at the end of the session views in the bottom bar that opens search exactly as ⌘F does; independent of `showTail`
  * @property {{ hints?: boolean, progress?: boolean }} [footer]      default omitted: both stay off. `hints` renders the shortcut line, `progress` the visible-turn position counter, in the bottom bar beside the session views. A host opts in per part, so a reading surface can stay quiet without losing the views. The shortcut hint is keyboard-only, so it leaves a coarse pointer below the phone breakpoint; the counter exists only on the trace view in list mode with a visible turn. The session views themselves live in the bottom bar, after the panel in DOM order, which is why the viewer opens with a `skip to session views` control
  * @property {1|2} [headingLevel]                                      default 2: the transcript's title is an h2 in a host page; 1 when the host mounts the viewer as the whole page, so the title is the page's h1 and the phase and turn headings move up one level
- * @property {Presentation} [presentation]                            chrome presentation; defaults to 'classic'. `ledger` adds a subtitle slot, swaps the pinned header's provider/model + scrubber for the title + visible-turns minimap (the turns currently in view), and renders user-turn task cards in the left rail; it also rebuilds every turn as a role-led line (square role well, the role word, the turn number, the time, and the copy anchor) with prose first and one grouped work panel over the turn's tool calls, collapses a system turn to a single compact row. In that head the built-in collapse control, label affordance, model name, error chip, token badge, and saved-label chip are intentionally hidden for now, while a host's own `renderTurnActions` and `renderTurnPanel` keep rendering on every role. Omitting it renders the classic surface unchanged, and an unrecognized runtime value fails closed to classic
+ * @property {Presentation} [presentation]                            chrome presentation; defaults to 'ledger'. `classic` retains the report-style surface. An unrecognized runtime value fails closed to classic.
  * @property {import('react').ReactNode} [subtitle]                    optional deck under the session title; rendered in either presentation when supplied
  * @property {unknown} [pullRequests]                                  host-owned node rendered under the meta row (a pull request list and its own "show all" control); omitted renders nothing
  */
