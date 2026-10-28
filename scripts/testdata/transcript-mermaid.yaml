@@ -9,6 +9,14 @@ accepted:
       participant A as Alice
       participant B as Bob
       A->>B: Hello Bob
+  - name: pie
+    source: |-
+      pie
+      "dogs" : 3
+  - name: class
+    source: |-
+      classDiagram
+      Animal <|-- Cat
 rejected:
   - name: directive
     source: |-
@@ -40,7 +48,7 @@ rejected:
       flowchart LR
       A --> B
       style A fill:red
-  - name: image
+  - name: html-image
     source: |-
       flowchart LR
       A@{ img: "https://evil.example/a.png" }
@@ -49,10 +57,6 @@ rejected:
       flowchart LR
       A --> B
       click A call malicious()
-  - name: unsupported
-    source: |-
-      pie
-      "dogs" : 3
 badSvg:
   - name: script
     svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><script/></svg>'
@@ -64,7 +68,9 @@ badSvg:
     svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path onload="alert(1)"/></svg>'
   - name: external-reference
     svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path marker-end="url(https://evil.example/a)"/></svg>'
-  - name: duplicate-id
-    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><g id="x"/><g id="x"/></svg>'
+  - name: missing-reference
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path marker-end="url(#missing)"/></svg>'
   - name: external-style
     svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path style="fill:url(https://evil.example/a)"/></svg>'
+  - name: hostile-html-fallback
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><switch><foreignObject x="0" y="0" width="1" height="1"><div xmlns="http://www.w3.org/1999/xhtml"><script/></div></foreignObject><text>label</text></switch></svg>'

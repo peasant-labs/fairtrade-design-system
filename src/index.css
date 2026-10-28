@@ -4010,3 +4010,8 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 .txn-mermaid-stage svg path, .txn-mermaid-stage svg line, .txn-mermaid-stage svg polyline { stroke: var(--ink-2); fill: none; }
 .txn-mermaid-stage svg rect, .txn-mermaid-stage svg circle, .txn-mermaid-stage svg polygon { fill: var(--surface-2); stroke: var(--ink-2); }
 .txn-mermaid-stage svg marker path { fill: var(--ink-2); stroke: var(--ink-2); }
+
+.txn-mermaid-stage svg .pieCircle { fill: var(--surface-2); stroke: var(--ink-2); }
+.txn-mermaid-stage svg .pieCircle:nth-of-type(even) { fill: var(--ink-4); }
+
+.txn-mermaid-stage svg switch > text { text-anchor: middle; }

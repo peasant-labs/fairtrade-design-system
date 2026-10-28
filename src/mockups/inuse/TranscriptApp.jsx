@@ -787,6 +787,42 @@ A->>B: Hello Bob
 flowchart LR
 A --> B
 click A "https://evil.example"
+\`\`\`
+
+\`\`\`mermaid
+pie
+"Cats" : 2
+"Dogs" : 3
+\`\`\`
+
+\`\`\`mermaid
+classDiagram
+Animal <|-- Cat
+\`\`\`
+
+\`\`\`mermaid
+stateDiagram-v2
+[*] --> Idle
+Idle --> [*]
+\`\`\`
+
+\`\`\`mermaid
+gantt
+title Plan
+dateFormat YYYY-MM-DD
+section Work
+Task :a, 2024-01-01, 1d
+\`\`\`
+
+\`\`\`mermaid
+mindmap
+  root((Hello))
+    child
+\`\`\`
+
+\`\`\`mermaid
+flowchart LR
+A@{ img: "/mermaid-probe-image.png", label: "image" }
 \`\`\``
       return { ...base, turns: base.turns.map((turn, index) => index === 1 ? { ...turn, content: source } : turn) }
     }

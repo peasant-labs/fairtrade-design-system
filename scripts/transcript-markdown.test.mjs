@@ -229,17 +229,18 @@ const sourceModule = await viteServer.ssrLoadModule('/src/ui/transcript/mermaidS
 const svgModule = await viteServer.ssrLoadModule('/src/ui/transcript/mermaidSvg.jsx')
 globalThis.DOMParser = importDom.window.DOMParser
 for (const row of mermaidFixtures.accepted) {
-  assert(`mermaid-accept-${row.name}`, `${row.name}: canonical subset is accepted`, typeof sourceModule.canonicalMermaid(row.source) === 'string')
+  assert(`mermaid-accept-${row.name}`, `${row.name}: source is eligible for Mermaid parsing`, sourceModule.safeMermaidSource(row.source) === true)
 }
 for (const row of mermaidFixtures.rejected) {
-  assert(`mermaid-reject-${row.name}`, `${row.name}: unsafe or unsupported source never reaches the compiler`, sourceModule.canonicalMermaid(row.source) === null)
+  assert(`mermaid-reject-${row.name}`, `${row.name}: unsafe or unsupported source never reaches the compiler`, sourceModule.safeMermaidSource(row.source) === false)
 }
 for (const row of mermaidFixtures.badSvg) {
   let rejected = false
   try { svgModule.mermaidSvg(row.svg, 'test') } catch { rejected = true }
   assert(`mermaid-svg-${row.name}`, `${row.name}: unsafe SVG is rejected`, rejected)
 }
-assert('mermaid-oversize', 'oversized source is rejected before compilation', sourceModule.canonicalMermaid('x'.repeat(8193)) === null)
+assert('mermaid-model-image', 'native model with image nodes is rejected', !sourceModule.safeMermaidModel({ db: { getVertices: () => new Map([['A', { img: '/image.png' }]]) } }))
+assert('mermaid-oversize', 'oversized source is rejected before compilation', sourceModule.safeMermaidSource('x'.repeat(8193)) === false)
 
 if (viteServer) await viteServer.close()
 const failures = results.filter((result) => !result.ok)

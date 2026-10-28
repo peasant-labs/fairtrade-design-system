@@ -74,17 +74,23 @@ test('transcript real overflow user rail follows reading in both directions', as
 
 test('mermaid diagrams stay local, readable and inert', async ({ page }, info) => {
   const requests = []
-  page.on('request', request => { if (request.url().includes('evil.example')) requests.push(request.url()) })
+  page.on('request', request => { if (request.url().includes('evil.example') || request.url().includes('mermaid-probe-image')) requests.push(request.url()) })
   await page.addInitScript(() => { window.malicious = () => { window.__maliciousCalled = true } })
   await page.setViewportSize({ width: 390, height: 844 })
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
   await page.goto(`${origin}/?app=transcript&transcript=mermaid-reading&fb=off&theme=${info.project.name}#inuse`)
   const diagrams = page.locator('.txn-mermaid')
-  await expect(diagrams).toHaveCount(3)
+  await expect(diagrams).toHaveCount(9)
   for (let i = 0; i < 2; i++) {
     await diagrams.nth(i).getByRole('button', { name: 'view diagram' }).click()
     await expect(diagrams.nth(i).locator('svg')).toBeVisible()
   }
+  for (let i = 3; i < 8; i++) {
+    await diagrams.nth(i).getByRole('button', { name: 'view diagram' }).click()
+    await expect(diagrams.nth(i).locator('svg')).toBeVisible()
+  }
+  await diagrams.nth(8).getByRole('button', { name: 'view diagram' }).click()
+  await expect(diagrams.nth(8).getByRole('status')).toContainText('diagram unavailable')
   await diagrams.nth(2).getByRole('button', { name: 'view diagram' }).click()
   await expect(diagrams.nth(2).getByRole('status')).toContainText('not supported')
   expect(requests).toEqual([])
