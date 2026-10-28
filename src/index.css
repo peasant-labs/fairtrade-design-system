@@ -3995,3 +3995,18 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 /* with the handle gone the ledger stream needs no trailing lane: the reader takes the page inset
    and the phone stops paying for a control it cannot use. */
 @media (width < 768px) { .txn-ledger .txn-stream { padding-inline: var(--sp-4); } }
+
+/* Mermaid charts remain inside the reading column, including wide diagrams. */
+.txn-mermaid { min-width: 0; max-width: 100%; border: 1px solid var(--rule-strong); background: var(--surface); }
+.txn-mermaid-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--sp-2); padding: var(--sp-2); border-bottom: 1px solid var(--rule-strong); color: var(--ink-3); font-family: var(--font-mono); }
+.txn-mermaid-toolbar div { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.txn-mermaid-toolbar button { color: var(--ink); background: transparent; border: 1px solid var(--rule-strong); cursor: pointer; font: inherit; }
+.txn-mermaid-toolbar button[aria-pressed="true"] { color: var(--amber-bright); }
+.txn-mermaid-source, .txn-mermaid-stage { margin: 0; padding: var(--sp-3); overflow: auto; max-width: 100%; }
+.txn-mermaid-source, .txn-mermaid-source code { text-transform: none; }
+.txn-mermaid-stage svg { display: block; max-width: none; color: var(--ink); font-family: var(--font-body); font-size: 16px; }
+.txn-mermaid-stage svg text, .txn-mermaid-stage svg tspan { fill: var(--ink); font-family: var(--font-body); font-size: var(--fs-body); text-transform: none; }
+.txn-mermaid-stage svg .node text { text-anchor: middle; }
+.txn-mermaid-stage svg path, .txn-mermaid-stage svg line, .txn-mermaid-stage svg polyline { stroke: var(--ink-2); fill: none; }
+.txn-mermaid-stage svg rect, .txn-mermaid-stage svg circle, .txn-mermaid-stage svg polygon { fill: var(--surface-2); stroke: var(--ink-2); }
+.txn-mermaid-stage svg marker path { fill: var(--ink-2); stroke: var(--ink-2); }

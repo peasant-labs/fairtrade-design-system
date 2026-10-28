@@ -223,6 +223,24 @@ try {
   assert('mounted-inuse-render', `in-use TranscriptApp must render its production path without throwing (${error instanceof Error ? error.message : String(error)})`, false)
 }
 
+// The compiler boundary and SVG conversion share the same source used by the mounted renderer.
+const mermaidFixtures = YAML.parse(readFileSync(resolve(ROOT, 'scripts/testdata/transcript-mermaid.yaml'), 'utf8'))
+const sourceModule = await viteServer.ssrLoadModule('/src/ui/transcript/mermaidSource.js')
+const svgModule = await viteServer.ssrLoadModule('/src/ui/transcript/mermaidSvg.jsx')
+globalThis.DOMParser = importDom.window.DOMParser
+for (const row of mermaidFixtures.accepted) {
+  assert(`mermaid-accept-${row.name}`, `${row.name}: canonical subset is accepted`, typeof sourceModule.canonicalMermaid(row.source) === 'string')
+}
+for (const row of mermaidFixtures.rejected) {
+  assert(`mermaid-reject-${row.name}`, `${row.name}: unsafe or unsupported source never reaches the compiler`, sourceModule.canonicalMermaid(row.source) === null)
+}
+for (const row of mermaidFixtures.badSvg) {
+  let rejected = false
+  try { svgModule.mermaidSvg(row.svg, 'test') } catch { rejected = true }
+  assert(`mermaid-svg-${row.name}`, `${row.name}: unsafe SVG is rejected`, rejected)
+}
+assert('mermaid-oversize', 'oversized source is rejected before compilation', sourceModule.canonicalMermaid('x'.repeat(8193)) === null)
+
 if (viteServer) await viteServer.close()
 const failures = results.filter((result) => !result.ok)
 for (const result of results) console.log((result.ok ? 'PASS ' : 'FAIL ') + result.id + ' — ' + result.description)

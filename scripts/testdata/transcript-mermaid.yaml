@@ -1,0 +1,70 @@
+accepted:
+  - name: flowchart
+    source: |-
+      flowchart LR
+      A[Source Case] --> B[Destination]
+  - name: sequence
+    source: |-
+      sequenceDiagram
+      participant A as Alice
+      participant B as Bob
+      A->>B: Hello Bob
+rejected:
+  - name: directive
+    source: |-
+      %%{init: {"securityLevel": "loose"}}%%
+      flowchart LR
+      A --> B
+  - name: frontmatter
+    source: |-
+      ---
+      config: evil
+      ---
+      flowchart LR
+      A --> B
+  - name: link
+    source: |-
+      flowchart LR
+      A --> B
+      click A "https://evil.example"
+  - name: html
+    source: |-
+      flowchart LR
+      A[<img src=https://evil.example>] --> B
+  - name: entity
+    source: |-
+      flowchart LR
+      A[&#60;script&#62;] --> B
+  - name: styling
+    source: |-
+      flowchart LR
+      A --> B
+      style A fill:red
+  - name: image
+    source: |-
+      flowchart LR
+      A@{ img: "https://evil.example/a.png" }
+  - name: callback
+    source: |-
+      flowchart LR
+      A --> B
+      click A call malicious()
+  - name: unsupported
+    source: |-
+      pie
+      "dogs" : 3
+badSvg:
+  - name: script
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><script/></svg>'
+  - name: foreign-object
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><foreignObject/></svg>'
+  - name: image
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><image href="https://evil.example"/></svg>'
+  - name: event
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path onload="alert(1)"/></svg>'
+  - name: external-reference
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path marker-end="url(https://evil.example/a)"/></svg>'
+  - name: duplicate-id
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><g id="x"/><g id="x"/></svg>'
+  - name: external-style
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path style="fill:url(https://evil.example/a)"/></svg>'

@@ -768,6 +768,28 @@ function DefaultTranscriptApp({ theme }) {
     if (search === 'ledger-reading') return adaptTranscript(readingPayload())
     if (search === 'pi') return adaptTranscript(piPayload)
     const base = buildMockupVM()
+    if (search === 'mermaid-reading') {
+      const source = `Mermaid chart examples.
+
+\`\`\`mermaid
+flowchart LR
+A[Source Case] --> B[Destination]
+\`\`\`
+
+\`\`\`mermaid
+sequenceDiagram
+participant A as Alice
+participant B as Bob
+A->>B: Hello Bob
+\`\`\`
+
+\`\`\`mermaid
+flowchart LR
+A --> B
+click A "https://evil.example"
+\`\`\``
+      return { ...base, turns: base.turns.map((turn, index) => index === 1 ? { ...turn, content: source } : turn) }
+    }
     if (search === 'ledger-actions') {
       // two wordless agent turns in a row, so the built app shows the one model-actions block
       // a run of thinking and tool work collapses into.

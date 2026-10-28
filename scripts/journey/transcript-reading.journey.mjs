@@ -71,3 +71,34 @@ test('transcript real overflow user rail follows reading in both directions', as
     await expect(stream).toBeFocused()
   }
 })
+
+test('mermaid diagrams stay local, readable and inert', async ({ page }, info) => {
+  const requests = []
+  page.on('request', request => { if (request.url().includes('evil.example')) requests.push(request.url()) })
+  await page.addInitScript(() => { window.malicious = () => { window.__maliciousCalled = true } })
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+  await page.goto(`${origin}/?app=transcript&transcript=mermaid-reading&fb=off&theme=${info.project.name}#inuse`)
+  const diagrams = page.locator('.txn-mermaid')
+  await expect(diagrams).toHaveCount(3)
+  for (let i = 0; i < 2; i++) {
+    await diagrams.nth(i).getByRole('button', { name: 'view diagram' }).click()
+    await expect(diagrams.nth(i).locator('svg')).toBeVisible()
+  }
+  await diagrams.nth(2).getByRole('button', { name: 'view diagram' }).click()
+  await expect(diagrams.nth(2).getByRole('status')).toContainText('not supported')
+  expect(requests).toEqual([])
+  expect(await page.evaluate(() => window.__maliciousCalled === true)).toBe(false)
+  const ids = await page.locator('.txn-mermaid-stage svg [id]').evaluateAll(els => els.map(el => el.id))
+  expect(new Set(ids).size).toBe(ids.length)
+  const fontSize = await diagrams.first().locator('svg text').first().evaluate(el => getComputedStyle(el).fontSize)
+  expect(parseFloat(fontSize)).toBeGreaterThanOrEqual(16)
+  const stage = diagrams.first().locator('.txn-mermaid-stage')
+  expect(await stage.evaluate(el => el.scrollWidth > el.clientWidth)).toBe(true)
+  await stage.evaluate(el => { el.scrollLeft = el.scrollWidth })
+  expect(await stage.evaluate(el => el.scrollLeft)).toBeGreaterThan(0)
+  await diagrams.first().getByRole('button', { name: 'copy source' }).click()
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('flowchart LR\nA[Source Case] --> B[Destination]\n')
+  await diagrams.first().getByRole('button', { name: 'view source' }).click()
+  await expect(diagrams.first().locator('pre')).toContainText('A[Source Case] --> B[Destination]')
+})
