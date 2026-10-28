@@ -164,6 +164,9 @@ const css = stylesheet('src/index.css')
   report.check(!!thinkingBox && thinkingBox.includes('border: var(--bd);') && thinkingBox.includes('background: var(--canvas);'), 'the work summary and the tool rows share one inline edge: the thinking text must sit in the same box as tool output')
 }
 
+// Do not start a Vite server and mount the viewer if the independent CSS checks already failed.
+report.failIfAny()
+
 /* ── mounted behaviour ────────────────────────────────────────────────────────── */
 const CAPABILITIES = { canEdit: false, canLabel: false, canContribute: false, canChangeVisibility: false, canExport: false }
 

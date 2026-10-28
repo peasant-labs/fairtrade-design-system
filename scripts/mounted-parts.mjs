@@ -176,11 +176,14 @@ export function createReport(gate) {
       checks += 1
       if (!passed) failures.push(message)
     },
-    finish(summary) {
+    failIfAny() {
       if (failures.length > 0) {
         console.error(`${gate} failed:\n- ${failures.join('\n- ')}`)
         process.exit(1)
       }
+    },
+    finish(summary) {
+      this.failIfAny()
       console.log(`${gate}: ${checks} checks passed; ${summary}`)
     },
   }
