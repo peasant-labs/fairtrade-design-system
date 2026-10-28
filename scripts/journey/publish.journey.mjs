@@ -160,7 +160,11 @@ for (const row of spec.cases) {
 
     // Hold only the menu's scheduled focus frame. Discrete React key events still
     // commit normally, so Escape is tested before the real handoff can run.
-    const menu = page.locator('#inuse .pub-bar .menu-trigger').first()
+    const viewer = page.locator('#inuse .txn-app')
+    const mobile = row.width < 768
+    if (mobile) await viewer.locator('.txn-footer').getByRole('button', { name: 'transcript tools', exact: true }).click()
+    const menu = viewer.locator(mobile ? '.txn-footer' : '.txn-header').getByRole('button', { name: 'more', exact: true })
+    await expect(menu).toBeVisible()
     await menu.focus()
     await page.evaluate(() => {
       window.__publishFrames = { request: window.requestAnimationFrame, cancel: window.cancelAnimationFrame, queue: new Map(), next: 1 }
@@ -170,6 +174,9 @@ for (const row of spec.cases) {
     try {
       await menu.press('ArrowDown')
       await expect(menu).toHaveAttribute('aria-expanded', 'true')
+      const actions = viewer.getByRole('menu', { name: 'more', exact: true })
+      await expect(actions.getByRole('menuitem', { name: 'copy as markdown' })).toBeVisible()
+      await expect(actions.getByRole('menuitem', { name: 'copy link' })).toBeVisible()
       await expect(menu).toBeFocused()
       await menu.press('Escape')
       await expect(menu).toHaveAttribute('aria-expanded', 'false')
