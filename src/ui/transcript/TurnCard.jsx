@@ -161,11 +161,7 @@ export default function TurnCard({
             </Term>
           )}
           {anchorButton}
-          {renderActions ? renderActions(turn) : onLabel && (
-            <button type="button" className="txn-labelbtn" onClick={() => onLabel(turn.index)}>
-              label
-            </button>
-          )}
+          {renderActions ? renderActions(turn) : null}
         </>
       ) : (
         <>

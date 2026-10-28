@@ -113,20 +113,28 @@ export const Default = {
   args: { viewModel, capabilities: fullCaps, callbacks: { onLabel: fn() } },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
-    // state default → the trace tab is active and the turn cards render.
     expect(canvas.getAllByText('#1').length).toBeGreaterThan(0)
-    // canLabel:true → the per-turn label affordance is wired.
+    // Turn labelling is intentionally absent in the ledger presentation.
+    expect(canvas.queryByRole('button', { name: 'label', exact: true })).toBeNull()
+    const turn = canvasElement.querySelector('#turn-1 .txn-turn')
+    await userEvent.click(turn)
+    expect(turn).toHaveClass('txn-active')
+    expect(within(turn).getByRole('button', { name: 'copy link to turn 1a' })).toBeVisible()
+    expect(args.callbacks.onLabel).not.toHaveBeenCalled()
+  },
+}
+
+export const ClassicLabel = {
+  args: { viewModel, capabilities: fullCaps, presentation: 'classic', callbacks: { onLabel: fn() } },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    expect(canvas.getAllByText('#1').length).toBeGreaterThan(0)
     expect(canvas.getAllByText('label').length).toBeGreaterThan(0)
     await userEvent.click(within(canvasElement.querySelector('#turn-0')).getByRole('button', { name: 'label', exact: true }))
     expect(canvas.getByText('label turn 0')).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'save label' }))
     expect(args.callbacks.onLabel).toHaveBeenCalledWith(0, { outcome: 'neutral', flag: '' })
   },
-}
-
-export const ClassicLabel = {
-  args: { viewModel, capabilities: fullCaps, presentation: 'classic', callbacks: { onLabel: fn() } },
-  play: Default.play,
 }
 
 // a host's trail, as online passes it for a transcript opened from a collective: with room on the row
