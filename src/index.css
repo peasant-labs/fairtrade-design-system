@@ -2613,6 +2613,7 @@
   .txn-search-input { flex: 1; min-width: 0; height: 100%; background: transparent; border: 0; outline: none; color: var(--ink); font-family: var(--font-body); font-size: var(--fs-body); }
   .txn-search-input::placeholder { color: var(--ink-4); }
   .txn-search-count { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); flex: none; }
+  .txn-search-estimate { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); flex: none; }
   .txn-search-highlights { position: fixed; inset: 0; pointer-events: none; z-index: var(--z-nav); }
   .txn-search-highlight { position: fixed; }
   .txn-search-highlight.is-current { outline: var(--stroke-emphasis) solid; outline-offset: var(--stroke-hairline); }

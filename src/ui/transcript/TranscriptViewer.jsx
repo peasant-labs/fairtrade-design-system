@@ -1144,12 +1144,12 @@ export default function TranscriptViewer({
         setSelectedSearchRange(match ?? null)
       }
       if (match) {
-        // The hit can be outside a code block's horizontal viewport even when its row is visible.
+        // Bring the text into every inner scrolling viewport before positioning the outer stream.
         for (let ancestor = match.startContainer.parentElement; ancestor && ancestor !== sc; ancestor = ancestor.parentElement) {
           const style = getComputedStyle(ancestor)
-          if (!/(auto|scroll)/.test(style.overflowX) || ancestor.scrollWidth <= ancestor.clientWidth) continue
-          const hit = match.getBoundingClientRect(), box = ancestor.getBoundingClientRect()
-          if (hit.left < box.left || hit.right > box.right) ancestor.scrollLeft += hit.left - box.left - ancestor.clientWidth * 0.4
+          const hit = match.getClientRects()[0] ?? match.getBoundingClientRect(), box = ancestor.getBoundingClientRect()
+          if (/(auto|scroll)/.test(style.overflowX) && ancestor.scrollWidth > ancestor.clientWidth && (hit.left < box.left || hit.right > box.right)) ancestor.scrollLeft += hit.left - box.left - ancestor.clientWidth * 0.4
+          if (/(auto|scroll)/.test(style.overflowY) && ancestor.scrollHeight > ancestor.clientHeight && (hit.top < box.top || hit.bottom > box.bottom)) ancestor.scrollTop += hit.top - box.top - ancestor.clientHeight * 0.4
         }
       }
       const top = match
@@ -1414,6 +1414,7 @@ export default function TranscriptViewer({
             aria-label="search transcript"
           />
           <span className="txn-search-count tnum" role="status" aria-live="polite" aria-label={matches.length ? `match ${Math.min(matchIdx, matches.length - 1) + 1} of ${matches.length}` : undefined}>{matches.length ? `${Math.min(matchIdx, matches.length - 1) + 1}/${matches.length}` : '0 matches'}</span>
+          {query.trim() && <abbr className="txn-search-estimate" title="Search uses source text. Counts can change when sections open, and rendered-only text may not be found." aria-label="source search; counts can change when sections open and rendered-only text may not be found">approx.</abbr>}
           {searchUnrendered && matches.length > 0 && <span className="txn-search-unrendered" role="status">match in source, not visible in rendered content</span>}
           <button type="button" className="txn-search-nav" aria-label="previous match" disabled={!matches.length} onClick={() => navigateSearch(-1)}><ChevronUp size={14} aria-hidden="true" /></button>
           <button type="button" className="txn-search-nav" aria-label="next match" disabled={!matches.length} onClick={() => navigateSearch(1)}><ChevronDown size={14} aria-hidden="true" /></button>

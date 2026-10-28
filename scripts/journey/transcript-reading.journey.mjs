@@ -513,6 +513,49 @@ test('search reveals a hit beyond the code block horizontal viewport', async ({ 
   }, fixture.searchHorizontal)).toBe(true)
   await expect(page.locator('.txn-search-highlight.is-current')).toHaveCount(1)
 })
+test('search reveals and tracks a deeply scrolled tool output', async ({ page }, info) => {
+  const row = fixture.searchNested
+  await open(page, info.project.name)
+  await page.locator('.txn-stream').focus(); await page.keyboard.press('Control+f')
+  const input = page.getByRole('textbox', { name: 'search transcript' })
+  await input.fill(row.query)
+  await expect(page.locator('.txn-search-estimate')).toHaveText('approx.')
+  await expect(page.getByLabel('source search; counts can change when sections open and rendered-only text may not be found')).toBeVisible()
+  const tool = page.locator('.txn-toolcall').filter({ has: page.locator('.path', { hasText: row.id }) })
+  await expect(tool.locator('button').first()).toHaveAttribute('aria-expanded', 'true')
+  // A focusable pre has no implicit textbox role.
+  const code = tool.locator('pre.txn-code')
+  await expect.poll(() => code.evaluate(el => el.scrollTop)).toBeGreaterThan(0)
+  await expect.poll(() => code.evaluate(el => el.scrollLeft)).toBeGreaterThan(0)
+  const position = () => code.evaluate((el, query) => {
+    const node = el.firstChild, at = node.data.indexOf(query), range = document.createRange()
+    range.setStart(node, at); range.setEnd(node, at + query.length)
+    const r = range.getBoundingClientRect(), c = el.getBoundingClientRect(), stream = el.closest('.txn-stream').getBoundingClientRect()
+    const mark = document.querySelector('.txn-search-highlight.is-current')?.getBoundingClientRect()
+    return { inside: r.top >= c.top && r.bottom <= c.bottom && r.left >= c.left && r.right <= c.right && r.top >= stream.top && r.bottom <= stream.bottom, aligned: !!mark && Math.abs(mark.top - r.top) < 2 && Math.abs(mark.left - r.left) < 2 }
+  }, row.query)
+  await expect.poll(async () => { const p = await position(); return p.inside && p.aligned }).toBe(true)
+  await expect(input).toBeFocused()
+  const saved = await code.evaluate(el => ({ top: el.scrollTop, left: el.scrollLeft }))
+  for (const axis of ['top', 'left']) {
+    await code.evaluate((el, axis) => { if (axis === 'top') el.scrollTop = 0; else el.scrollLeft = 0 }, axis)
+    await expect(page.locator('.txn-search-highlight.is-current')).toHaveCount(0)
+    await code.evaluate((el, saved) => { el.scrollTop = saved.top; el.scrollLeft = saved.left }, saved)
+    await expect.poll(async () => { const p = await position(); return p.inside && p.aligned }).toBe(true)
+  }
+  const contrast = await code.evaluate(el => {
+    const mark = document.querySelector('.txn-search-highlight.is-current'), style = getComputedStyle(el), highlight = getComputedStyle(mark)
+    const canvas = document.createElement('canvas'), ctx = canvas.getContext('2d', { willReadFrequently: true }); canvas.width = 1; canvas.height = 1
+    const sample = color => { ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = color; ctx.fillRect(0, 0, 1, 1); return [...ctx.getImageData(0, 0, 1, 1).data].slice(0, 3) }
+    const ink = sample(style.color)
+    ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = style.backgroundColor; ctx.fillRect(0, 0, 1, 1); ctx.fillStyle = highlight.backgroundColor; ctx.fillRect(0, 0, 1, 1)
+    const bg = [...ctx.getImageData(0, 0, 1, 1).data].slice(0, 3)
+    const luminance = rgb => rgb.map(v => v / 255).map(v => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4).reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0)
+    const values = [luminance(ink), luminance(bg)].sort((a, b) => a - b)
+    return (values[1] + 0.05) / (values[0] + 0.05)
+  })
+  expect(contrast).toBeGreaterThanOrEqual(4.5)
+})
 test('selected search highlight has a non-colour marker and readable contrast', async ({ page }, info) => {
   await open(page, info.project.name)
   await page.locator('.txn-stream').focus(); await page.keyboard.press('Control+f')

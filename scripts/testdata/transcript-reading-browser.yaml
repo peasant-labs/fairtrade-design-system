@@ -20,6 +20,7 @@
   "searchSourceOnly": "**source-only markup evidence**",
   "searchMixed": {"text": "[label](needle-token) visible needle-token", "query": "needle-token"},
   "searchHorizontal": "terminal_search_needle",
+  "searchNested": {"id": "deep-output", "query": "nested_output_needle", "lines": 100, "prefixRepeat": 20},
   "searchFrequent": {"query": "response", "repeat": 1000, "minimum": 1000, "scrollStep": 100, "maxFrameMs": 1000},
   "searchRepeated": {"query": "repeated reading needle", "turn": 50, "paragraphs": [3, 21]},
   "width": [

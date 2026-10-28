@@ -12,6 +12,22 @@ export default function SearchHighlights({ scrollRef, query, enabled, revision, 
     let frame = 0
     let dirty = true
     let groups = []
+    const innerScrolled = new Set()
+    const measureBins = (block, ranges) => {
+      const origin = block.getBoundingClientRect()
+      const bins = []
+      for (let i = 0; i < ranges.length; i += 64) {
+        const batch = ranges.slice(i, i + 64)
+        let left = Infinity, right = -Infinity, top = Infinity, bottom = -Infinity
+        for (const range of batch) {
+          const rect = range.getBoundingClientRect()
+          left = Math.min(left, rect.left - origin.left); right = Math.max(right, rect.right - origin.left)
+          top = Math.min(top, rect.top - origin.top); bottom = Math.max(bottom, rect.bottom - origin.top)
+        }
+        bins.push({ ranges: batch, left, right, top, bottom })
+      }
+      return bins
+    }
     const update = () => {
       cancelAnimationFrame(frame)
       frame = requestAnimationFrame(() => {
@@ -25,24 +41,15 @@ export default function SearchHighlights({ scrollRef, query, enabled, revision, 
               if (!byBlock.has(block)) byBlock.set(block, [])
               byBlock.get(block).push(range)
             }
-            return [...byBlock].map(([block, ranges]) => {
-              const origin = block.getBoundingClientRect()
-              const bins = []
-              for (let i = 0; i < ranges.length; i += 64) {
-                const batch = ranges.slice(i, i + 64)
-                let left = Infinity, right = -Infinity, top = Infinity, bottom = -Infinity
-                for (const range of batch) {
-                  const rect = range.getBoundingClientRect()
-                  left = Math.min(left, rect.left - origin.left); right = Math.max(right, rect.right - origin.left)
-                  top = Math.min(top, rect.top - origin.top); bottom = Math.max(bottom, rect.bottom - origin.top)
-                }
-                bins.push({ ranges: batch, left, right, top, bottom })
-              }
-              return { block, bins }
-            })
+            return [...byBlock].map(([block, ranges]) => ({ block, ranges, bins: measureBins(block, ranges) }))
           })
           dirty = false
+        } else if (innerScrolled.size) {
+          for (const group of groups) {
+            if ([...innerScrolled].some(el => el.contains(group.block) || group.block.contains(el))) group.bins = measureBins(group.block, group.ranges)
+          }
         }
+        innerScrolled.clear()
         const color = getComputedStyle(sc).getPropertyValue('--amber-fill').trim()
         const outline = getComputedStyle(sc).getPropertyValue('--ink-strong').trim()
         const boxes = []
@@ -78,9 +85,10 @@ export default function SearchHighlights({ scrollRef, query, enabled, revision, 
     if (app) observer.observe(app, { attributes: true, attributeFilter: ['class', 'data-theme', 'style'] })
     const resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => { dirty = true; update() })
     resize?.observe(sc)
-    window.addEventListener('scroll', update, true)
+    const onScroll = event => { if (event.target instanceof Node && event.target !== sc && sc.contains(event.target)) innerScrolled.add(event.target); update() }
+    window.addEventListener('scroll', onScroll, true)
     window.addEventListener('resize', update)
-    return () => { observer.disconnect(); resize?.disconnect(); window.removeEventListener('scroll', update, true); window.removeEventListener('resize', update); cancelAnimationFrame(frame) }
+    return () => { observer.disconnect(); resize?.disconnect(); window.removeEventListener('scroll', onScroll, true); window.removeEventListener('resize', update); cancelAnimationFrame(frame) }
   }, [scrollRef, query, enabled, revision, selected])
   if (typeof document === 'undefined' || !enabled) return null
   return createPortal(<div className="txn-search-highlights" aria-hidden="true">{rects.map(({ current, ...rect }, index) => <span className={'txn-search-highlight' + (current ? ' is-current' : '')} key={index} style={rect} />)}</div>, document.body)
