@@ -36,10 +36,15 @@ assertKindMap(fixture.interactions, manifest.requiredInteractionKinds, FIXTURE)
 
 const LAYOUT_KEYS = ['outline', 'filters', 'host']
 const RAIL_KEYS = ['outline', 'filters']
-const SNAPS = fixture.snaps
-if (!Array.isArray(SNAPS) || SNAPS.length !== 3) throw new Error(`${FIXTURE}: snaps must list the three supported widths`)
-if (SNAPS[0] !== 600 || SNAPS[1] !== 840 || SNAPS[2] !== 936) throw new Error(`${FIXTURE}: snaps must be 600/840/936, received ${JSON.stringify(SNAPS)}`)
-if (fixture.defaultWidth !== SNAPS[1]) throw new Error(`${FIXTURE}: defaultWidth must be the middle snap`)
+const MIN = fixture.minWidth
+const STEP = fixture.step
+if (MIN !== 600 || STEP !== 40 || fixture.defaultWidth !== 840) throw new Error(`${FIXTURE}: the width range must start at 600, step by 40 and default to 840`)
+/* jsdom lays nothing out, so the gate gives the stream a content width for `full` to measure */
+const FULL = fixture.streamWidth
+const RESIZED = fixture.resizedStreamWidth
+if (!(FULL > fixture.defaultWidth + 2 * STEP) || !(RESIZED > fixture.defaultWidth) || RESIZED === FULL) throw new Error(`${FIXTURE}: streamWidth and resizedStreamWidth must be distinct widths wider than the default`)
+/** a stored width's pixels under the stubbed stream */
+const px = (width) => (width === 'full' ? FULL : width)
 
 for (const row of [fixture.defaultsCase, ...fixture.layoutCases]) {
   assertFields(row, ['name', 'kind', 'layout', 'open'], `${FIXTURE} ${row.name}`, ['alias'])
@@ -104,6 +109,7 @@ const css = stylesheet('src/index.css')
   const gutter = ruleAt(css, '.txn-ledger .txn-stream {')
   report.check(!!gutter && gutter.includes('padding-inline: calc(var(--txn-zen-size) + var(--sp-4));'), 'the zen control never covers the reader: the ledger stream must reserve the control\'s inline-end gutter')
   const column = ruleAt(css, '.txn-turnwrap-ledger {')
+  report.check(/@media \(prefers-reduced-motion: no-preference\) \{\s+\.txn-turn\.txn-turn-ledger \{ transition: background var\(--dur-1\); \}\s+\}/.test(css), 'the turn hover must fade in and out using the short duration, only when motion is allowed')
   report.check(!!column && column.includes('margin-inline: auto;'), 'the zen control never covers the reader: the reader column must be right-aligned inside the remaining space')
   const handle = ruleAt(css, '.txn-reader-handle {\n  position: absolute;')
   report.check(!!handle && handle.includes('transform: translate(0, -50%);'), 'the width handle never covers the text edge: the handle must be drawn fully outside the measure')
@@ -148,6 +154,14 @@ const css = stylesheet('src/index.css')
   }
   const ledgerCount = ruleAt(css, '.txn-ledger .txn-work-head .txn-work-count {')
   report.check(!!ledgerCount && ledgerCount.includes('padding-inline-start: 0;'), 'the work summary starts at the reading edge: the ledger drops the tool-name offset')
+  /* an open row in an action block draws no rule under its head, tool or thinking alike */
+  const toolBody = ruleAt(css, '.txn-modelactions-rows .txn-tcbody {')
+  report.check(!!toolBody && toolBody.includes('border-top: 0;'), 'the work summary and the tool rows share one inline edge: an open tool row in a block must draw no rule under its head')
+  /* an open thinking row is an inset with no border of its own; its text sits in an output box */
+  const thinkingBody = ruleAt(css, '.txn-thinking-body {')
+  report.check(!!thinkingBody && !thinkingBody.includes('border'), 'the work summary and the tool rows share one inline edge: an open thinking row must draw no rule under its head')
+  const thinkingBox = ruleAt(css, '.txn-thinking-box {')
+  report.check(!!thinkingBox && thinkingBox.includes('border: var(--bd);') && thinkingBox.includes('background: var(--canvas);'), 'the work summary and the tool rows share one inline edge: the thinking text must sit in the same box as tool output')
 }
 
 /* ── mounted behaviour ────────────────────────────────────────────────────────── */
@@ -157,6 +171,11 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   const { adaptTranscript } = await load('/src/ui/transcript/adapter.js')
   const { default: TranscriptViewer } = await load('/src/ui/transcript/TranscriptViewer.jsx')
   const vm = adaptTranscript(fixture.payload)
+  let streamWidth = FULL
+  Object.defineProperty(window.HTMLElement.prototype, 'clientWidth', {
+    configurable: true,
+    get() { return this.classList?.contains('txn-stream') ? streamWidth : 0 },
+  })
   if (vm.turns.length !== 6 || vm.tasks.length !== 2) throw new Error(`${FIXTURE}: the payload must cook to 6 turns and 2 tasks`)
   const toolsTurn = vm.turns.find((turn) => turn.index === 1)
   const tools = toolsTurn?.toolCalls ?? []
@@ -165,10 +184,10 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   const baseProps = { viewModel: vm, capabilities: CAPABILITIES, presentation: 'ledger' }
   const mountViewer = (props = {}) => mount(React.createElement(TranscriptViewer, { ...baseProps, ...props }))
   const railState = (container) => ({
-    outline: !!container.querySelector('.txn-rail-left'),
-    filters: !!container.querySelector('.txn-rail-right'),
-    outlineStrip: !!container.querySelector('.txn-rail-strip-left'),
-    filtersStrip: !!container.querySelector('.txn-rail-strip-right'),
+    outline: !!container.querySelector('.txn-rail-left:not([hidden])'),
+    filters: !!container.querySelector('.txn-rail-right:not([hidden])'),
+    outlineStrip: !!container.querySelector('.txn-rail-strip-left:not([hidden])'),
+    filtersStrip: !!container.querySelector('.txn-rail-strip-right:not([hidden])'),
   })
   /** mount a host-controlled viewer so every emitted layout is both observable and applied. */
   const mountControlled = ({ layout, zen = false, onLayout, onZen, props = {} }) => {
@@ -193,6 +212,9 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       const open = row.open.includes(rail)
       report.check(state[key] === open, `${row.name}: the ${rail} rail must be ${open ? 'open' : 'collapsed'}, received ${JSON.stringify(state)}`)
       report.check(state[rail === 'outline' ? 'outlineStrip' : 'filtersStrip'] === !open, `${row.name}: the ${rail} rail must render ${open ? 'no strip' : 'its strip'}`)
+    }
+    for (const pane of container.querySelectorAll('.txn-rail, .txn-rail-strip')) {
+      report.check(pane.getAttribute('aria-hidden') === String(pane.hidden) && pane.hasAttribute('inert') === pane.hidden, `${row.name}: a hidden rail pane must be inert and absent from the accessibility tree`)
     }
     report.check(container.querySelector('.txn-rail-left .txn-host-sidebar, .txn-host-sidebar') === null, `${row.name}: the viewer must never render the host-owned sidebar`)
   }
@@ -234,7 +256,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       }
       await mounted.act(() => click(window, container.querySelector('.txn-rail-left .txn-rail-collapse')))
       expectEmit(layoutOf(false, true, true), 'the outline collapse')
-      report.check(!!container.querySelector('.txn-rail-strip-left') && !container.querySelector('.txn-rail-left'), `${row.name}: the outline collapse must render its strip`)
+      report.check(!!container.querySelector('.txn-rail-strip-left:not([hidden])') && !container.querySelector('.txn-rail-left:not([hidden])'), `${row.name}: the outline collapse must render its strip`)
+      report.check(container.querySelector('.txn-rail-strip-left .txn-rail-reopen') === window.document.activeElement, `${row.name}: focus must follow the outline collapse control`)
       await mounted.act(() => click(window, container.querySelector('.txn-rail-strip-left .txn-rail-reopen')))
       expectEmit(layoutOf(true, true, true), 'the outline reopen strip')
       await mounted.act(() => click(window, container.querySelector('.txn-rail-right .txn-rail-collapse')))
@@ -258,7 +281,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       await mounted.settle()
       report.check(zenValues.length === 1 && zenValues[0] === true, `${row.name}: entering zen must emit onZenChange(true), received ${JSON.stringify(zenValues)}`)
       report.check(same(layouts[0], layoutOf(false, false, false)), `${row.name}: entering zen must collapse every rail, received ${JSON.stringify(layouts[0])}`)
-      report.check(container.querySelectorAll('.txn-rail').length === 0 && container.querySelectorAll('.txn-rail-strip').length === 0, `${row.name}: zen must leave no rail and no strip`)
+      report.check(container.querySelectorAll('.txn-rail:not([hidden]), .txn-rail-strip:not([hidden])').length === 0, `${row.name}: zen must leave no visible rail and no strip`)
+      for (const pane of container.querySelectorAll('.txn-rail, .txn-rail-strip')) report.check(pane.hasAttribute('inert') && pane.getAttribute('aria-hidden') === 'true', `${row.name}: zen must remove all rail controls from keyboard and assistive technology`)
       report.check(container.querySelector('.txn-body-grid')?.getAttribute('data-zen') === 'true', `${row.name}: the body grid must report zen state`)
       report.check(container.querySelector('.txn-app')?.classList.contains('txn-zen'), `${row.name}: the root must carry txn-zen so the collapsed grid applies`)
       report.check(container.querySelector('.txn-zen-control')?.getAttribute('aria-pressed') === 'true', `${row.name}: the control must report pressed state`)
@@ -305,8 +329,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(container.querySelectorAll('.txn-rail-strip').length === 2, `${row.name}: the fixture must start with both strips mounted`)
       await mounted.act(() => click(window, container.querySelector('.txn-zen-control')))
       await mounted.settle()
-      report.check(container.querySelectorAll('.txn-rail-strip').length === 0, `${row.name}: zen must hide both reopen strips`)
-      report.check(container.querySelector('.txn-rail-strip-left') === null && container.querySelector('.txn-rail-strip-right') === null, `${row.name}: neither strip may survive zen`)
+      report.check(container.querySelectorAll('.txn-rail-strip:not([hidden])').length === 0, `${row.name}: zen must hide both reopen strips`)
+      report.check(container.querySelector('.txn-rail-strip-left').hidden && container.querySelector('.txn-rail-strip-right').hidden, `${row.name}: neither strip may remain visible in zen`)
       await mounted.unmount()
     } else if (row.kind === 'zen-placement') {
       /* where the control LIVES, not where it is painted: jsdom lays nothing out, so the
@@ -332,8 +356,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       const handle = handleOf(container)
       report.check(!!handle, `${row.name}: the ledger reader must render the width handle`)
       report.check(handle?.getAttribute('aria-orientation') === 'vertical', `${row.name}: the handle must be a vertical separator`)
-      report.check(handle?.getAttribute('aria-valuemin') === String(SNAPS[0]), `${row.name}: aria-valuemin must be ${SNAPS[0]}`)
-      report.check(handle?.getAttribute('aria-valuemax') === String(SNAPS[2]), `${row.name}: aria-valuemax must be ${SNAPS[2]}`)
+      report.check(handle?.getAttribute('aria-valuemin') === String(MIN), `${row.name}: aria-valuemin must be ${MIN}`)
+      report.check(handle?.getAttribute('aria-valuemax') === String(FULL), `${row.name}: aria-valuemax must be the measured full width ${FULL}, received ${handle?.getAttribute('aria-valuemax')}`)
       report.check(handle?.getAttribute('aria-valuenow') === String(fixture.defaultWidth), `${row.name}: the width must start at ${fixture.defaultWidth}`)
       report.check(rootWidthOf(container) === fixture.defaultWidth, `${row.name}: the root must carry the reader width custom property, received ${rootWidthOf(container)}`)
       const press = (type, clientX, buttons = type === 'pointerup' ? 0 : 1) => handle.dispatchEvent(new window.PointerEvent(type, { bubbles: true, cancelable: true, button: 0, buttons, clientX, clientY: 12, pointerId: 1, pointerType: 'mouse' }))
@@ -341,14 +365,15 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       await mounted.act(() => press('pointermove', 420))
       report.check(widthOf(container) === 880, `${row.name}: a 20px drag must widen the column live to 880, received ${widthOf(container)}`)
       await mounted.act(() => press('pointerup', 420))
-      report.check(widthOf(container) === fixture.defaultWidth, `${row.name}: releasing at 880 must snap back to ${fixture.defaultWidth}, received ${widthOf(container)}`)
+      report.check(widthOf(container) === 880, `${row.name}: releasing at 880 must keep 880, with no snap, received ${widthOf(container)}`)
       await mounted.act(() => press('pointerdown', 400))
       await mounted.act(() => press('pointermove', 560))
-      report.check(widthOf(container) === SNAPS[2], `${row.name}: a long drag must clamp at ${SNAPS[2]}, received ${widthOf(container)}`)
+      report.check(widthOf(container) === FULL, `${row.name}: a long drag must clamp at the full width ${FULL}, received ${widthOf(container)}`)
       await mounted.act(() => press('pointerup', 560))
-      report.check(widthOf(container) === SNAPS[2], `${row.name}: releasing past the end must rest at ${SNAPS[2]}, received ${widthOf(container)}`)
-      report.check(same(widths.slice(0, 4), [880, fixture.defaultWidth, SNAPS[2], SNAPS[2]]), `${row.name}: the host must hear every width change, received ${JSON.stringify(widths)}`)
-      report.check(rootWidthOf(container) === SNAPS[2], `${row.name}: the root must follow the released width, received ${rootWidthOf(container)}`)
+      report.check(widthOf(container) === FULL, `${row.name}: releasing past the end must rest at full, received ${widthOf(container)}`)
+      report.check(handle?.getAttribute('aria-valuetext') === 'full width', `${row.name}: the full snap must be announced as full width, received ${JSON.stringify(handle?.getAttribute('aria-valuetext'))}`)
+      report.check(same(widths.slice(0, 4), [880, 880, FULL, 'full']), `${row.name}: the host must hear every width change, received ${JSON.stringify(widths)}`)
+      report.check(rootWidthOf(container) === FULL, `${row.name}: the root must follow the released width, received ${rootWidthOf(container)}`)
       await mounted.unmount()
     } else if (row.kind === 'width-keys') {
       const widths = []
@@ -361,15 +386,18 @@ await withMountedSource(async ({ load, mount, window, React }) => {
         report.check(prevented, `${row.name}: ${key} must prevent the page default`)
         report.check(widthOf(container) === expected, `${row.name}: ${key} must rest at ${expected}, received ${widthOf(container)}`)
       }
-      await step('ArrowRight', SNAPS[2])
-      await step('ArrowLeft', SNAPS[1])
-      await step('ArrowLeft', SNAPS[0])
-      await step('ArrowLeft', SNAPS[0])
-      await step('End', SNAPS[2])
-      await step('Home', SNAPS[0])
-      await step('ArrowUp', SNAPS[1])
-      await step('ArrowDown', SNAPS[0])
-      report.check(widths[0] === SNAPS[2] && widths.at(-1) === SNAPS[0], `${row.name}: the host must hear every keyboard snap, received ${JSON.stringify(widths)}`)
+      const start = fixture.defaultWidth
+      await step('ArrowRight', start + STEP)
+      await step('ArrowLeft', start)
+      await step('Home', MIN)
+      await step('ArrowLeft', MIN)
+      await step('ArrowUp', MIN + STEP)
+      await step('End', FULL)
+      report.check(handle.getAttribute('aria-valuetext') === 'full width', `${row.name}: End must announce full width`)
+      await step('ArrowRight', FULL)
+      await step('ArrowDown', FULL - STEP)
+      await step('ArrowRight', FULL)
+      report.check(same(widths, [start + STEP, start, MIN, MIN, MIN + STEP, 'full', 'full', FULL - STEP, 'full']), `${row.name}: the host must hear every keyboard snap, received ${JSON.stringify(widths)}`)
       await mounted.unmount()
     } else if (row.kind === 'width-rails') {
       const layouts = []
@@ -382,9 +410,9 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       await mounted.act(() => press('pointerdown', 400))
       await mounted.act(() => press('pointermove', 560))
       await mounted.act(() => press('pointerup', 560))
-      report.check(widthOf(container) === SNAPS[2], `${row.name}: the drag must reach ${SNAPS[2]}, received ${widthOf(container)}`)
+      report.check(widthOf(container) === FULL, `${row.name}: the drag must reach the full width ${FULL}, received ${widthOf(container)}`)
       await mounted.act(() => keydown(window, handle, 'Home'))
-      report.check(widthOf(container) === SNAPS[0], `${row.name}: the keyboard must tighten to ${SNAPS[0]}, received ${widthOf(container)}`)
+      report.check(widthOf(container) === MIN, `${row.name}: the keyboard must tighten to ${MIN}, received ${widthOf(container)}`)
       report.check(layouts.length === 0, `${row.name}: a width change must not emit a sidebar layout, received ${JSON.stringify(layouts)}`)
       const end = railState(container)
       report.check(same(start, end), `${row.name}: neither rail may fold when the width changes, received ${JSON.stringify(end)}`)
@@ -392,13 +420,10 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     } else if (row.kind === 'work-grid') {
       const mounted = await mountViewer()
       const container = mounted.container
-      const panel = container.querySelector('.txn-work')
-      report.check(!!panel, `${row.name}: the turn with tools must render the work panel`)
-      report.check(!!panel?.querySelector('.txn-work-head'), `${row.name}: the panel names the work on one line`)
-      const panelToggle = panel?.querySelector('.txn-work-toggle')
-      if (panelToggle) await mounted.act(() => click(window, panelToggle))
-      await mounted.settle()
-      const rows = [...(panel?.querySelectorAll('.txn-work-rows .txn-tc-head') ?? [])]
+      const panel = container.querySelector('.txn-modelactions')
+      report.check(!!panel, `${row.name}: the turn with tools must render the model-actions block`)
+      report.check(!!panel?.querySelector('.txn-modelactions-head'), `${row.name}: the block names the work on one line`)
+      const rows = [...(panel?.querySelectorAll('.txn-modelactions-rows .txn-tc-head') ?? [])]
       report.check(rows.length === tools.length, `${row.name}: the panel must hold all ${tools.length} tool rows, received ${rows.length}`)
       for (const rowButton of rows) await mounted.act(() => click(window, rowButton))
       await mounted.settle()
@@ -406,7 +431,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(bodies.length === 2, `${row.name}: opening both rows must reveal both bodies, received ${bodies.length}`)
       report.check(bodies.some((body) => body.querySelector('.txn-term')), `${row.name}: the bash body must render its output`)
       report.check(bodies.some((body) => body.querySelector('.txn-diff')), `${row.name}: the edit body must render its diff`)
-      report.check(!!container.querySelector('.txn-work .txn-tc-head') && !!container.querySelector('.txn-work .txn-tcbody'), `${row.name}: both the rows and their bodies must sit inside the work panel`)
+      report.check(!!panel.querySelector('.txn-tc-head') && !!panel.querySelector('.txn-tcbody'), `${row.name}: both the rows and their bodies must sit inside the block`)
       await mounted.unmount()
     } else if (row.kind === 'strip-width') {
       const mounted = await mountControlled({ layout: layoutOf(false, false, true) })
@@ -462,20 +487,33 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(widthOf(container) === 880, `${row.name}: the armed drag must move, received ${widthOf(container)}`)
       await mounted.act(() => press('lostpointercapture', 420))
       await mounted.act(() => press('pointermove', 520))
-      report.check(widthOf(container) === fixture.defaultWidth, `${row.name}: a move after a lost capture must not resize, received ${widthOf(container)}`)
+      report.check(widthOf(container) === 880, `${row.name}: a move after a lost capture must not resize, received ${widthOf(container)}`)
       await mounted.act(() => press('pointerdown', 400))
       await mounted.act(() => press('pointermove', 520, 0))
-      report.check(widthOf(container) === fixture.defaultWidth, `${row.name}: a mouse move with no button held must not resize, received ${widthOf(container)}`)
+      report.check(widthOf(container) === 880, `${row.name}: a mouse move with no button held must not resize, received ${widthOf(container)}`)
       const leave = () => handle.dispatchEvent(new window.PointerEvent('pointerout', { bubbles: true, cancelable: true, button: 0, buttons: 0, clientX: 520, clientY: 12, pointerId: 1, pointerType: 'mouse', relatedTarget: window.document.body }))
       await mounted.act(() => leave())
       await mounted.act(() => press('pointermove', 560))
-      report.check(widthOf(container) === fixture.defaultWidth, `${row.name}: a move after the pointer leaves must not resize, received ${widthOf(container)}`)
+      report.check(widthOf(container) === 880, `${row.name}: a move after the pointer leaves must not resize, received ${widthOf(container)}`)
       await mounted.unmount()
     } else if (row.kind === 'width-controlled') {
       const mounted = await mountViewer({ readerWidth: row.readerWidth })
       const container = mounted.container
-      report.check(widthOf(container) === row.expected, `${row.name}: the supplied width must normalise to ${row.expected}, received ${widthOf(container)}`)
-      report.check(rootWidthOf(container) === row.expected, `${row.name}: the root property must carry the normalised width, received ${rootWidthOf(container)}`)
+      report.check(widthOf(container) === px(row.expected), `${row.name}: the supplied width must normalise to ${row.expected}, received ${widthOf(container)}`)
+      report.check(rootWidthOf(container) === px(row.expected), `${row.name}: the root property must carry the normalised width, received ${rootWidthOf(container)}`)
+      await mounted.unmount()
+    } else if (row.kind === 'width-full-follows') {
+      /* a reader resting at full follows the space it has: a resize re-measures the stream */
+      const mounted = await mountViewer({ readerWidth: 'full' })
+      const container = mounted.container
+      report.check(widthOf(container) === FULL, `${row.name}: full must start at the measured width ${FULL}, received ${widthOf(container)}`)
+      streamWidth = RESIZED
+      await mounted.act(() => window.dispatchEvent(new window.Event('resize')))
+      await mounted.settle()
+      report.check(widthOf(container) === RESIZED, `${row.name}: full must follow the stream to ${RESIZED}, received ${widthOf(container)}`)
+      report.check(rootWidthOf(container) === RESIZED, `${row.name}: the root property must follow the resize, received ${rootWidthOf(container)}`)
+      report.check(handleOf(container)?.getAttribute('aria-valuemax') === String(RESIZED), `${row.name}: the range must end at the new full width`)
+      streamWidth = FULL
       await mounted.unmount()
     } else if (row.kind === 'footer-tabs') {
       const mounted = await mountViewer()

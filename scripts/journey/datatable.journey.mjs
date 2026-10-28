@@ -69,6 +69,9 @@ for (const row of spec.mountedRows) {
     if (row.kind === 'toolbar') {
       for (const width of spec.consumerWidths) {
         await page.setViewportSize({ width, height: 900 })
+        // A viewport command can resolve before the resize has rendered. Let the
+        // new frame paint, then read all related boxes in the same layout snapshot.
+        await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
         const search = page.getByRole('searchbox', { name: 'search rows', exact: true })
         const label = page.locator('.tbl-tools > label')
         await expect(search).toHaveAccessibleName('search rows')
@@ -83,13 +86,19 @@ for (const row of spec.mountedRows) {
         expect(cue.font).toBeGreaterThanOrEqual(14)
         expect(cue.family).toContain('Atkinson Hyperlegible Mono')
         if (width <= 720) {
-          const labelBounds = await label.boundingBox()
-          const inputBounds = await search.boundingBox()
-          const filterBounds = await page.locator('.tbl-filters summary').boundingBox()
+          const { labelBounds, inputBounds, filterBounds } = await page.locator('.tbl-tools').evaluate(element => ({
+            labelBounds: element.querySelector('label').getBoundingClientRect().toJSON(),
+            inputBounds: element.querySelector('input').getBoundingClientRect().toJSON(),
+            filterBounds: element.querySelector('.tbl-filters summary').getBoundingClientRect().toJSON(),
+          }))
           expect(labelBounds.y + labelBounds.height).toBeLessThanOrEqual(inputBounds.y)
           expect(inputBounds.y).toBe(filterBounds.y)
           expect(labelBounds.x).toBeGreaterThanOrEqual(0)
           expect(labelBounds.x + labelBounds.width).toBeLessThanOrEqual(width)
+          expect(inputBounds.x).toBeGreaterThanOrEqual(0)
+          expect(inputBounds.right).toBeLessThanOrEqual(width)
+          expect(filterBounds.x).toBeGreaterThanOrEqual(0)
+          expect(filterBounds.right).toBeLessThanOrEqual(width)
         }
         await search.fill('Ledger')
         await expect(page.locator('.tbl-footer [role=status]')).toHaveText('showing 2 of 2')

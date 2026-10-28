@@ -7,7 +7,7 @@ import Markdown from './Markdown.jsx'
 import Thinking from './Thinking.jsx'
 import ToolCall from './ToolCall.jsx'
 import TranscriptSystemRow from './SystemRow.jsx'
-import TranscriptWorkGroup from './WorkGroup.jsx'
+import TranscriptWorkGroup, { ModelActions } from './WorkGroup.jsx'
 import UsageDisclosure from './UsageDisclosure.jsx'
 import { Term } from '../Explainer.jsx'
 import { formatRelative as formatRelativeTime, isKnownTime } from './time.js'
@@ -45,6 +45,7 @@ function turnTimeLabel(ts) {
  * @param {object} props
  * @param {TurnVM} [props.turn]
  * @param {boolean} [props.active]
+ * @param {(turnIndex: number) => void} [props.onSelect] select the prose card without scrolling
  * @param {Record<string, boolean>} [props.openTools]   tool id → open?
  * @param {(id: string) => void} [props.toggleTool]
  * @param {(turnIndex: number) => void} [props.onCopyAnchor]
@@ -70,6 +71,7 @@ function turnTimeLabel(ts) {
 export default function TurnCard({
   turn,
   active = false,
+  onSelect,
   openTools = {},
   toggleTool = () => {},
   onCopyAnchor = () => {},
@@ -82,6 +84,10 @@ export default function TurnCard({
   expandAll = false,
   revealRequest = 0,
   headingLevel = 4,
+  modelActions,
+  actionReveal,
+  registerActionRef,
+  suppressWork = false,
   presentation = 'classic',
 }) {
   const TurnHeading = `h${Math.min(6, Math.max(1, headingLevel))}`
@@ -213,7 +219,7 @@ export default function TurnCard({
         </div>
       )}
       <Markdown text={turn.displayContent ?? turn.content} />
-      {!ledger && turn.thinking && <Thinking block={turn.thinking} />}
+      {!ledger && turn.thinking && <Thinking block={turn.thinking} revealRequest={actionReveal?.where === 'thinking' ? actionReveal.sequence : 0} />}
       <UsageDisclosure usage={turn.usage} />
       {turn.toolCalls && !ledger && (
         turn.toolCalls.map((t) => (
@@ -230,9 +236,12 @@ export default function TurnCard({
 
   /* A ledger turn's work is its own block after the card: the prose ends the turn, and the tool
      and thinking lines follow as a separate group rather than a footer inside it. */
-  const workBlock = ledger && turn.role !== 'system' && (turn.toolCalls?.length || turn.thinking) ? (
+  const hasWork = !!(turn.toolCalls?.length || turn.thinking)
+  const workBlock = ledger && turn.role !== 'system' && !suppressWork && (hasWork || modelActions?.length) ? (
     <div className="txn-turnwork">
-      {turn.toolCalls?.length ? (
+      {modelActions?.length ? (
+        <ModelActions turns={modelActions} openTools={openTools} onToggle={toggleTool} expandAll={expandAll} compact={compact} reveal={actionReveal} registerActionRef={registerActionRef} />
+      ) : turn.toolCalls?.length ? (
         <TranscriptWorkGroup
           tools={turn.toolCalls}
           thinking={turn.thinking}
@@ -311,7 +320,10 @@ export default function TurnCard({
             </>
           ) : (
             <>
-              <div className={cardClass}>
+              <div className={cardClass}
+                onClick={ledger && onSelect ? () => onSelect(turn.index) : undefined}
+                onFocus={ledger && onSelect ? () => onSelect(turn.index) : undefined}
+              >
                 {head}
                 <div id={bodyId} hidden={!expanded}>{body}</div>
               </div>

@@ -1,0 +1,4 @@
+requiredNames: [session title, session title on phone, action list, command output, thinking output]
+requiredMotion: [no-preference, reduce]
+requiredRailNames: [user turns sidebar, filters sidebar]
+requiredShellNames: [coordinated title and timeline on desktop, coordinated title and timeline on phone]

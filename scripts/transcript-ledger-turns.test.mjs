@@ -12,13 +12,17 @@
    mutations: node scripts/parts-mutations.mjs scripts/transcript-ledger-turns.test.mjs
    scripts/testdata/transcript-ledger-turns.manifest.yaml */
 import { loadFixturePair, assertExactNames, assertFields, withMountedSource, click, createReport } from './mounted-parts.mjs'
-import { workSummary, workCountLabel, workMetaLabel } from '../src/ui/transcript/work-summary.js'
+import { workSummary, workCountLabel, workMetaLabel, workActionsLabel } from '../src/ui/transcript/work-summary.js'
 
 const FIXTURE = 'scripts/testdata/transcript-ledger-turns.yaml'
 const MANIFEST = 'scripts/testdata/transcript-ledger-turns.manifest.yaml'
 const { fixture, manifest } = loadFixturePair(FIXTURE, MANIFEST, {
   summaryCases: 'requiredSummaryNames',
+  thinkingDurationCases: 'requiredThinkingDurationNames',
   cases: 'requiredCaseNames',
+})
+const { fixture: ownership } = loadFixturePair('scripts/testdata/transcript-action-ownership.yaml', 'scripts/testdata/transcript-action-ownership.manifest.yaml', {
+  groups: 'requiredGroupNames', disclosures: 'requiredDisclosureNames', filters: 'requiredFilterNames', navigation: 'requiredNavigationNames', initial: 'requiredInitialNames',
 })
 
 /* the fixture's behaviour axis is pinned too: a case cannot be re-pointed at a cheaper assertion
@@ -32,11 +36,11 @@ assertExactNames(
 /* every summary row lists every expected field, so a new count cannot slip in unasserted. */
 const SUMMARY_FIELDS = ['calls', 'commands', 'files', 'edits', 'failed', 'durationMs']
 for (const row of fixture.summaryCases) {
-  assertFields(row, ['name', 'tools', 'expected', 'countLabel', 'metaLabel'], `${FIXTURE} ${row.name}`)
+  assertFields(row, ['name', 'tools', 'expected', 'countLabel', 'metaLabel', 'actionsLabel'], `${FIXTURE} ${row.name}`)
   assertExactNames(Object.keys(row.expected), SUMMARY_FIELDS, `${FIXTURE} ${row.name} expected`)
 }
-for (const row of fixture.cases) assertFields(row, ['name', 'kind'], `${FIXTURE} ${row.name}`, ['headingLevel', 'turn', 'preview', 'revealedTurn', 'closedTurn'])
-assertExactNames(Object.keys(fixture.mountedSummary), ['countLabel', 'metaLabel'], `${FIXTURE} mountedSummary`)
+for (const row of fixture.cases) assertFields(row, ['name', 'kind'], `${FIXTURE} ${row.name}`, ['headingLevel', 'turn', 'preview', 'revealedTurn', 'closedTurn', 'input', 'keyboardSteps', 'manualScrollExpected'])
+assertExactNames(Object.keys(fixture.mountedSummary), ['panel', 'grouped', 'afterUser'], `${FIXTURE} mountedSummary`)
 if (typeof fixture.revealQuery !== 'string' || fixture.revealQuery.length === 0) throw new Error(`${FIXTURE}: revealQuery must be a non-empty string`)
 
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
@@ -55,14 +59,24 @@ for (const row of fixture.summaryCases) {
   report.check(countLabel === row.countLabel, `${row.name}: count must read ${JSON.stringify(row.countLabel)}, received ${JSON.stringify(countLabel)}`)
   const metaLabel = workMetaLabel(summary)
   report.check(metaLabel === row.metaLabel, `${row.name}: meta must read ${JSON.stringify(row.metaLabel)}, received ${JSON.stringify(metaLabel)}`)
+  const actionsLabel = workActionsLabel(summary)
+  report.check(actionsLabel === row.actionsLabel, `${row.name}: the action block header must read ${JSON.stringify(row.actionsLabel)}, received ${JSON.stringify(actionsLabel)}`)
 }
+
+assertExactNames(Object.keys(fixture.mountedThinking), ['kind', 'words', 'duration'], `${FIXTURE} mountedThinking`)
+for (const row of fixture.thinkingDurationCases) assertFields(row, ['name', 'turn', 'expected'], `${FIXTURE} ${row.name}`, ['previous'])
 
 /* canLabel on, so the classic head's built-in label affordance exists to prove the ledger head drops it */
 const CAPABILITIES = { canEdit: false, canLabel: true, canContribute: false, canChangeVisibility: false, canExport: false }
 const HOST_ACTION = 'host action'
 
 await withMountedSource(async ({ load, mount, window, React }) => {
-  const { adaptTranscript } = await load('/src/ui/transcript/adapter.js')
+  const { adaptTranscript, thinkingDurationMs } = await load('/src/ui/transcript/adapter.js')
+  /* the thinking-time rule, through the loaded adapter so a mutation of it is the one under test */
+  for (const row of fixture.thinkingDurationCases) {
+    const actual = thinkingDurationMs(row.previous, row.turn) ?? null
+    report.check(actual === row.expected, `${row.name}: the thinking time must be ${JSON.stringify(row.expected)}, received ${JSON.stringify(actual)}`)
+  }
   const { default: TranscriptViewer } = await load('/src/ui/transcript/TranscriptViewer.jsx')
   const vm = adaptTranscript(fixture.payload)
   const toolsTurn = vm.turns.find((turn) => turn.index === 1)
@@ -109,32 +123,30 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       await mounted.unmount()
     } else if (row.kind === 'ledger-panel') {
       const mounted = await mountViewer('ledger')
-      const workPanels = mounted.container.querySelectorAll('.txn-work')
-      report.check(workPanels.length === 1, `${row.name}: exactly one work panel must render for the turn with tools, received ${workPanels.length}`)
-      const head = workPanels[0]?.querySelector('.txn-work-head')
-      report.check(!!head, `${row.name}: the ledger names the work in one summary line`)
-      report.check(text(head?.querySelector('.txn-work-count')) === fixture.mountedSummary.countLabel, `${row.name}: the count must read ${JSON.stringify(fixture.mountedSummary.countLabel)}`)
-      report.check(text(head?.querySelector('.txn-work-meta')) === fixture.mountedSummary.metaLabel, `${row.name}: the meta must read ${JSON.stringify(fixture.mountedSummary.metaLabel)}`)
+      const workPanels = [mounted.container.querySelector('#turn-1 .txn-modelactions')].filter(Boolean)
+      report.check(workPanels.length === 1, `${row.name}: the turn with tools must carry one model-actions block, received ${workPanels.length}`)
+      const head = workPanels[0]?.querySelector('.txn-modelactions-head')
+      report.check(!!head, `${row.name}: the block names the work in one line`)
+      const headText = text(head?.querySelector('.txn-modelactions-summary'))
+      report.check(headText === fixture.mountedSummary.panel, `${row.name}: the block header must read ${JSON.stringify(fixture.mountedSummary.panel)}, received ${JSON.stringify(headText)}`)
       report.check(head?.querySelector('.txn-tc-chev') === null, `${row.name}: the summary line carries no chevron`)
-      const toggle = workPanels[0]?.querySelector('.txn-work-toggle')
-      report.check(toggle?.getAttribute('aria-expanded') === 'false', `${row.name}: the summary line starts closed`)
-      report.check((workPanels[0]?.querySelectorAll('.txn-work-rows').length ?? 0) === 0, `${row.name}: a closed summary draws no rows`)
-      if (toggle) await mounted.act(() => click(window, toggle))
-      await mounted.settle()
-      const rows = workPanels[0]?.querySelectorAll('.txn-work-rows .txn-toolcall') ?? []
-      report.check(rows.length === tools.length, `${row.name}: the open panel must hold all ${tools.length} tool rows, received ${rows.length}`)
+      const toggle = workPanels[0]?.querySelector('.txn-modelactions-head')
+      report.check(toggle?.getAttribute('aria-expanded') === 'true', `${row.name}: the action list starts expanded`)
+      report.check(workPanels[0]?.querySelector('.txn-tcbody, .txn-thinking-body') === null, `${row.name}: showing the list must not open action contents`)
+      const rows = workPanels[0]?.querySelectorAll('.txn-modelactions-rows .txn-toolcall') ?? []
+      report.check(rows.length === tools.length, `${row.name}: the open block must hold all ${tools.length} tool rows, received ${rows.length}`)
       report.check(rows[0]?.querySelector('.txn-tc-chev') === null, `${row.name}: a ledger row carries no chevron`)
-      /* a child left open must not keep the panel open: the head closes and reopens it */
+      /* a child left open must not keep the block open: the head closes and reopens it */
       const firstRowButton = rows[0]?.querySelector('.txn-tc-head')
       if (firstRowButton) await mounted.act(() => click(window, firstRowButton))
       await mounted.settle()
       report.check(!!workPanels[0]?.querySelector('.txn-tcbody'), `${row.name}: opening a child reveals its body`)
       if (toggle) await mounted.act(() => click(window, toggle))
       await mounted.settle()
-      report.check((workPanels[0]?.querySelectorAll('.txn-work-rows').length ?? 0) === 0, `${row.name}: the head must close a panel whose child is open`)
+      report.check(toggle?.getAttribute('aria-expanded') === 'false' && workPanels[0]?.querySelector('.txn-modelactions-rows')?.closest('[hidden]') != null, `${row.name}: the head must close a block whose child is open`)
       if (toggle) await mounted.act(() => click(window, toggle))
       await mounted.settle()
-      report.check((workPanels[0]?.querySelectorAll('.txn-work-rows').length ?? 0) === 1, `${row.name}: the head must reopen it after a close`)
+      report.check((workPanels[0]?.querySelectorAll('.txn-modelactions-rows').length ?? 0) === 1, `${row.name}: the head must reopen it after a close`)
       const article = mounted.container.querySelector('#turn-1.txn-turnwrap-ledger')
       report.check(!!article, `${row.name}: the turn wrapper must carry the ledger turn class`)
       report.check(!!article?.querySelector('.txn-turn.txn-turn-ledger'), `${row.name}: the ledger turn must drop the classic card, keeping the ledger card class`)
@@ -227,10 +239,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       await classicMount.unmount()
     } else if (row.kind === 'ledger-disclosure') {
       const mounted = await mountViewer('ledger')
-      const panel = mounted.container.querySelector('#turn-1 .txn-work')
-      const panelToggle = panel?.querySelector('.txn-work-toggle')
-      if (panelToggle) await mounted.act(() => click(window, panelToggle))
-      await mounted.settle()
+      const panel = mounted.container.querySelector('#turn-1 .txn-modelactions')
       const rowButton = panel?.querySelector('.txn-toolcall .txn-tc-head')
       report.check(!!rowButton, `${row.name}: the panel must draw a tool row`)
       report.check(rowButton?.getAttribute('aria-expanded') === 'false', `${row.name}: a tool row must start collapsed`)
@@ -239,10 +248,115 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       const open = panel?.querySelector('.txn-toolcall .txn-tc-head')
       report.check(open?.getAttribute('aria-expanded') === 'true', `${row.name}: the clicked row must stay open`)
       report.check(!!panel?.querySelector('.txn-toolcall .txn-tcbody'), `${row.name}: the clicked row must reveal its body`)
+      const input = panel?.querySelector('.txn-toolcall .txn-term')
+      report.check(text(input?.previousElementSibling) === 'input', `${row.name}: Bash must label its command input`)
+      report.check(text(input?.querySelector('.mono')) === row.input, `${row.name}: Bash input must preserve the recorded command`)
+      report.check(!!input && input.querySelector('svg') === null, `${row.name}: Bash input must contain no icon`)
+      report.check(text(input?.querySelector('.txn-term-prompt')) === '$', `${row.name}: Bash input keeps its dollar prompt`)
       if (open) await mounted.act(() => click(window, open))
       await mounted.settle()
       const closed = panel?.querySelector('.txn-toolcall .txn-tc-head')
       report.check(closed?.getAttribute('aria-expanded') === 'false', `${row.name}: clicking the open row must collapse it`)
+      await mounted.unmount()
+    } else if (row.kind === 'turn-keys') {
+      const selections = []
+      const mounted = await mountViewer('ledger', { onActiveTurnChange: index => selections.push(index) })
+      const container = mounted.container
+      const stream = container.querySelector('.txn-stream')
+      // A short scroller cannot align its last cards with the reading line. Its clamped
+      // scroll feedback must not replace the turn the reader explicitly requested.
+      Object.defineProperty(stream, 'clientHeight', { configurable: true, value: 300 })
+      Object.defineProperty(stream, 'scrollHeight', { configurable: true, value: 450 })
+      for (const el of container.querySelectorAll('.txn-stream [data-turn]')) {
+        Object.defineProperty(el, 'offsetTop', { configurable: true, value: Number(el.getAttribute('data-turn')) * 100 })
+      }
+      stream.scrollTo = ({ top }) => {
+        stream.scrollTop = Math.max(0, Math.min(150, top))
+        stream.dispatchEvent(new window.Event('scroll'))
+      }
+      for (const step of row.keyboardSteps) {
+        await mounted.act(() => {
+          for (const key of step.keys) window.dispatchEvent(new window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }))
+        })
+        await mounted.settle(20)
+        report.check(selections.at(-1) === step.expected, `${row.name}: the burst must select ${step.expected}, received ${selections.at(-1)}`)
+      }
+      await mounted.act(() => {
+        stream.dispatchEvent(new window.WheelEvent('wheel', { bubbles: true }))
+        stream.scrollTop = 0
+        stream.dispatchEvent(new window.Event('scroll'))
+      })
+      report.check(selections.at(-1) === row.manualScrollExpected, `${row.name}: manual scrolling must restore reading-line selection`)
+      await mounted.unmount()
+    } else if (row.kind === 'turn-selection') {
+      const selections = []
+      const mounted = await mountViewer('ledger', { onActiveTurnChange: (index) => selections.push(index) })
+      const container = mounted.container
+      const stream = container.querySelector('.txn-stream')
+      const before = stream.scrollTop
+      await mounted.act(() => click(window, container.querySelector(`#turn-${row.turn} .txn-body`)))
+      report.check(selections.at(-1) === row.turn, `${row.name}: clicking the prose must select its own turn`)
+      report.check(container.querySelectorAll('.txn-turn-ledger.txn-active').length === 1 && !!container.querySelector(`#turn-${row.turn} .txn-active`), `${row.name}: the amber active class must move to that one card`)
+      report.check(stream.scrollTop === before, `${row.name}: selecting a card must not jump the reader`)
+      const selectionCount = selections.length
+      const actionHead = container.querySelector('.txn-modelactions-head')
+      if (actionHead) await mounted.act(() => click(window, actionHead))
+      report.check(selections.length === selectionCount, `${row.name}: the action block must not select its hosting turn`)
+      const copy = container.querySelector('#turn-1 .txn-anchor')
+      await mounted.act(() => copy?.focus())
+      report.check(selections.at(-1) === 1, `${row.name}: focusing a card control must also select its turn`)
+      await mounted.unmount()
+    } else if (row.kind === 'compact-actions') {
+      const mounted = await mountViewer('ledger')
+      const container = mounted.container
+      const panel = () => container.querySelector('#turn-1 .txn-modelactions')
+      const list = () => panel()?.querySelector('.txn-modelactions-rows')
+      const compact = container.querySelector('[role="switch"][aria-label="compact mode"]')
+      report.check(!!list(), `${row.name}: the action list starts expanded`)
+      report.check(panel()?.querySelector('.txn-tcbody, .txn-thinking-body') === null, `${row.name}: action contents must start closed`)
+      // Hiding the list preserves independently chosen child disclosure state.
+      const firstAction = panel()?.querySelector('.txn-toolcall .txn-tc-head')
+      if (firstAction) await mounted.act(() => click(window, firstAction))
+      report.check(!!panel()?.querySelector('.txn-tcbody'), `${row.name}: opening one action must reveal its contents`)
+      await mounted.act(() => click(window, compact))
+      await mounted.settle()
+      report.check(list()?.closest('[hidden]') != null && panel()?.querySelector('.txn-modelactions-head')?.getAttribute('aria-expanded') === 'false', `${row.name}: compact mode must collapse the action list`)
+      const compactHead = panel()?.querySelector('.txn-modelactions-head')
+      if (compactHead) await mounted.act(() => click(window, compactHead))
+      await mounted.settle()
+      report.check(!!list() && list()?.closest('[hidden]') == null && firstAction?.getAttribute('aria-expanded') === 'true', `${row.name}: compact mode must still let the reader open just the list`)
+      await mounted.act(() => click(window, compact))
+      await mounted.settle()
+      report.check(!!list() && firstAction?.getAttribute('aria-expanded') === 'true', `${row.name}: leaving compact mode restores the list with the child's choice retained`)
+      const expandAll = container.querySelector('[role="switch"][aria-label="expand all tool calls"]')
+      await mounted.act(() => click(window, expandAll))
+      report.check(!!panel()?.querySelector('.txn-tcbody'), `${row.name}: expand all still opens action contents`)
+      await mounted.act(() => click(window, compact))
+      await mounted.settle()
+      report.check(list()?.closest('[hidden]') != null, `${row.name}: compact mode must collapse the list even with expand all enabled`)
+      await mounted.unmount()
+    } else if (row.kind === 'system-filter') {
+      const mounted = await mountViewer('ledger')
+      const container = mounted.container
+      const systemCheck = () => [...container.querySelectorAll('.txn-catlist .txn-checkrow')].find((el) => text(el.querySelector('.txn-cr-label')) === 'system')
+      const checkbox = () => systemCheck()?.querySelector('input[type="checkbox"]')
+      const visibleIndices = () => [...container.querySelectorAll('.txn-stream [data-turn]')].map((el) => Number(el.getAttribute('data-turn')))
+      const baseline = visibleIndices()
+      const systemTurns = vm.turns.filter((turn) => turn.role === 'system')
+      report.check(checkbox()?.checked === true, `${row.name}: system must start checked`)
+      report.check(text(systemCheck()?.querySelector('.txn-cr-count')) === String(systemTurns.length), `${row.name}: the badge must count system turns`)
+      if (checkbox()) await mounted.act(() => click(window, checkbox()))
+      await mounted.settle()
+      report.check(container.querySelector('.txn-stream .txn-systemrow') === null, `${row.name}: the unchecked system category must hide every system row`)
+      report.check(same(visibleIndices(), baseline.filter((index) => !systemTurns.some((turn) => turn.index === index))), `${row.name}: hiding system must preserve every other turn`)
+      report.check(text(container.querySelector('.txn-clear')) === 'clear (1)', `${row.name}: hiding system must count as one active filter`)
+      if (checkbox()) await mounted.act(() => click(window, checkbox()))
+      await mounted.settle()
+      report.check(same(visibleIndices(), baseline), `${row.name}: checking system must restore the original turn order`)
+      if (checkbox()) await mounted.act(() => click(window, checkbox()))
+      await mounted.act(() => click(window, container.querySelector('.txn-clear')))
+      await mounted.settle()
+      report.check(checkbox()?.checked === true && same(visibleIndices(), baseline), `${row.name}: clear must restore system turns and its checked state`)
       await mounted.unmount()
     } else if (row.kind === 'system') {
       const mounted = await mountViewer('ledger')
@@ -298,29 +412,54 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(!!article, `${row.name}: the tool turn must still mount`)
       report.check(article?.querySelector('.txn-turnhead-ledger') === null, `${row.name}: a turn with no words must draw no card head`)
       report.check(article?.querySelector('.txn-roleico') === null, `${row.name}: a turn with no words must draw no role well`)
-      report.check(!!article?.querySelector('.txn-work'), `${row.name}: its tool work must render as inline detail`)
-      report.check(!!article?.querySelector('.txn-work-head'), `${row.name}: the detail keeps its summary line`)
-      report.check(article?.querySelector('.txn-work-rows') === null, `${row.name}: the detail starts closed`)
+      /* its work folds into the block after the user turn's first prose turn, turn 3 */
+      report.check(article?.querySelector('.txn-modelactions, .txn-work') === null, `${row.name}: a wordless turn before the first prose turn draws no work of its own`)
+      const block = mounted.container.querySelector('#turn-3 .txn-modelactions')
+      report.check(!!block, `${row.name}: its work must render in the block after the first prose turn`)
+      report.check(!!block?.querySelector('.txn-modelactions-head'), `${row.name}: the block names the run`)
+      report.check(!!block?.querySelector('.txn-modelactions-rows'), `${row.name}: the action list starts expanded`)
       const heading = byId(mounted.container, article?.getAttribute('aria-labelledby'))
       report.check(!!heading && heading.classList.contains('txn-turn-heading'), `${row.name}: the article keeps its heading for assistive tech`)
       await mounted.unmount()
+    } else if (row.kind === 'model-actions') {
+      const grouped = adaptTranscript(ownership.payload)
+      const mounted = await mountViewer('ledger', { viewModel: grouped })
+      const container = mounted.container
+      report.check(container.querySelectorAll('.txn-work').length === 0, `${row.name}: no ledger turn keeps a work row of its own beside the block`)
+      for (const group of ownership.groups) {
+        const block = container.querySelector(`#turn-${group.owner} .txn-modelactions`)
+        report.check(!!block, `${row.name}: a user turn starts a new block; the user turn's block must sit after its first prose turn`)
+        const commands = [...(block?.querySelectorAll('.txn-toolcall .path') ?? [])].map(el => text(el))
+        report.check(same(commands, group.tools.map(id => `printf ${id}-command`)), `${row.name}: exact distinct action membership`)
+      }
+      report.check(!!container.querySelector('#turn-2 .txn-turnhead-ledger'), `${row.name}: the second prose turn keeps its card`)
+      await mounted.unmount()
     } else if (row.kind === 'thinking') {
       const mounted = await mountViewer('ledger')
-      const toggle = mounted.container.querySelector('#turn-4 .txn-thinking-toggle')
+      /* turn 4's thinking is part of its user turn's block, after turn 1 */
+      report.check(mounted.container.querySelector('#turn-4 .txn-thinking-toggle') === null, `${row.name}: the thinking turn draws no thinking line of its own`)
+      const toggle = mounted.container.querySelector('#turn-1 .txn-thinking-toggle')
       report.check(!!toggle, `${row.name}: a turn with thinking must keep its thinking disclosure`)
+      /* the thinking row has the tool-call shape: kind, word count, time */
+      report.check(toggle?.classList.contains('tc-head') && toggle?.closest('.txn-toolcall') === null, `${row.name}: thinking must use the tool-row head without counting as a tool call`)
+      report.check(text(toggle?.querySelector('.kind')) === fixture.mountedThinking.kind, `${row.name}: the row must name its kind ${JSON.stringify(fixture.mountedThinking.kind)}, received ${JSON.stringify(text(toggle?.querySelector('.kind')))}`)
+      report.check(!!toggle?.querySelector('.kind svg'), `${row.name}: the row must lead with its kind icon`)
+      report.check(text(toggle?.querySelector('.path')) === fixture.mountedThinking.words, `${row.name}: the row must list ${JSON.stringify(fixture.mountedThinking.words)}, received ${JSON.stringify(text(toggle?.querySelector('.path')))}`)
+      report.check(text(toggle?.querySelector('.right .txn-tc-dur')) === fixture.mountedThinking.duration, `${row.name}: the row must show the time spent ${JSON.stringify(fixture.mountedThinking.duration)}, received ${JSON.stringify(text(toggle?.querySelector('.right .txn-tc-dur')))}`)
       if (toggle) await mounted.act(() => click(window, toggle))
       await mounted.settle()
-      const body = mounted.container.querySelector('#turn-4 .txn-thinking-body')
+      const body = mounted.container.querySelector('#turn-1 .txn-thinking-body')
+      report.check(!!body?.querySelector('.txn-thinking-box'), `${row.name}: opening Think must put its text in an output box`)
       report.check(/check the fixture/.test(text(body)), `${row.name}: opening the disclosure must reveal the thinking text, received ${JSON.stringify(text(body))}`)
       await mounted.unmount()
     } else if (row.kind === 'no-tools') {
       const mounted = await mountViewer('ledger')
-      const total = mounted.container.querySelectorAll('.txn-work').length
-      report.check(total === 1, `${row.name}: only the turn with tools carries a panel, received ${total}`)
+      const total = mounted.container.querySelectorAll('.txn-modelactions').length
+      report.check(total === 1, `${row.name}: the payload's one user turn carries one block, received ${total}`)
       for (const index of toolLessTurns) {
-        report.check(mounted.container.querySelector(`#turn-${index} .txn-work`) === null, `${row.name}: the tool-less turn ${index} must render no panel`)
+        report.check(mounted.container.querySelector(`#turn-${index} .txn-modelactions`) === null, `${row.name}: the tool-less turn ${index} must render no block`)
       }
-      report.check(!!mounted.container.querySelector('#turn-1 .txn-work'), `${row.name}: the turn with tools keeps its panel`)
+      report.check(!!mounted.container.querySelector('#turn-1 .txn-modelactions'), `${row.name}: the turn with tools keeps its block`)
       await mounted.unmount()
     } else {
       throw new Error(`${FIXTURE}: unknown case kind ${JSON.stringify(row.kind)}`)
@@ -329,3 +468,4 @@ await withMountedSource(async ({ load, mount, window, React }) => {
 })
 
 report.finish(`${fixture.summaryCases.length} summary rows and ${fixture.cases.length} mounted cases.`)
+await import('./transcript-action-ownership.test.mjs')

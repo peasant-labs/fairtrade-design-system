@@ -77,6 +77,8 @@ interactions:
     kind: rail-current
   - name: clicking a card selects its first turn
     kind: rail-jump
+  - name: the rail follows the reader to the current card
+    kind: rail-follows
   - name: the subtitle renders in both presentations
     kind: subtitle-modes
 

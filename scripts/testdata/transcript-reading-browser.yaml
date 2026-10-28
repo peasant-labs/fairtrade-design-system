@@ -1,0 +1,21 @@
+{
+  "name": "overflowing user tasks and separated action destinations",
+  "rationale": "24 real task cards overflow the rail; 32 distinct leading actions separate the owner and matched row by more than the reading viewport, without forced geometry.",
+  "taskCount": 24,
+  "leadingActions": 32,
+  "lastResponseParagraphs": 12,
+  "navigation": [
+    {"name": "later prose tool destination", "query": "target-beta-output", "turn": 2, "kind": "tool", "command": "printf target-beta", "compact": false},
+    {"name": "wordless tool destination in compact", "query": "target-gamma-output", "turn": 3, "kind": "tool", "command": "printf target-gamma", "compact": true},
+    {"name": "wordless Think destination in compact", "query": "target thinking evidence", "turn": 4, "kind": "thinking", "compact": true},
+    {"name": "ordinary prose destination stays original", "query": "Later distinct prose target", "turn": 2, "kind": "body", "compact": false}
+  ],
+  "initial": [
+    {"name": "wordless initial tool destination", "turn": 3, "command": "printf target-gamma", "kind": "tool"},
+    {"name": "wordless initial Think destination", "turn": 4, "kind": "thinking"}
+  ],
+  "rail": [
+    {"name": "deep reading brings the last user card into view", "turn": 49, "prompt": "Reading request 23"},
+    {"name": "reverse reading brings the first user card into view", "turn": 0, "prompt": "Reading request 0"}
+  ]
+}

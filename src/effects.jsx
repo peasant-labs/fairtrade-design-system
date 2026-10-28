@@ -12,7 +12,7 @@ function readVar(name, fallback) {
    <html data-theme> and redraws itself imperatively - no React render, no prop, so the page can stay static. */
 const themeSubs = new Set()
 let themeMO = null
-function onThemeChange(fn) {
+export function onThemeChange(fn) {
   themeSubs.add(fn)
   if (!themeMO && typeof MutationObserver === 'function' && typeof document !== 'undefined') {
     themeMO = new MutationObserver(() => { for (const f of themeSubs) f() })

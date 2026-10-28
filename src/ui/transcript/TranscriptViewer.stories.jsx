@@ -243,9 +243,11 @@ export const Ledger = {
     // the classic per-task identity chip would repeat the rail card and the turn head.
     expect(canvasElement.querySelector('.txn-taskboundary')).toBeNull()
     // the pinned header appears once the trace scrolls, with the title and one position slider.
-    // each turn with tools carries one work panel; the turn with two tools summarizes both.
-    await expect(canvasElement.querySelectorAll('.txn-work')).toHaveLength(4)
-    await expect(canvas.getByText('1 file, 1 edit')).toBeVisible()
+    // each user turn's actions share one block after its first prose turn; no turn keeps its own.
+    await expect(canvasElement.querySelectorAll('.txn-modelactions')).toHaveLength(2)
+    expect(canvasElement.querySelector('.txn-work')).toBeNull()
+    await expect(canvas.getByText('4 actions: 1 command, 1 file, 1 edit, 4.1s')).toBeVisible()
+    await expect(canvas.getByText('1 action: 1 file')).toBeVisible()
     // a system turn is a compact row, and its recorded text opens on request.
     const systemHead = canvasElement.querySelector('.txn-systemrow-head')
     await expect(systemHead).toHaveAttribute('aria-expanded', 'false')
@@ -288,10 +290,10 @@ function textLeft(element) {
 /** the rendered geometry the stylesheet rows can only describe: a strip's computed width and
     the work summary's left edge against the first tool name's. */
 async function assertReadingGeometry(canvasElement) {
-  const work = canvasElement.querySelector('.txn-work')
-  expect(work).not.toBeNull()
-  // the work block is its own row after the card, on the same reading edge as the prose.
-  const summary = work.querySelector('.txn-work-head .txn-work-count')
+  const block = canvasElement.querySelector('.txn-modelactions')
+  expect(block).not.toBeNull()
+  // the action block is its own row after the card, its counts on the same reading edge as the prose.
+  const summary = block.querySelector('.txn-modelactions-summary')
   expect(summary).not.toBeNull()
   const prose = canvasElement.querySelector('.txn-turnwrap-ledger .txn-body > .txn-md-prose')
   expect(prose).not.toBeNull()
@@ -304,19 +306,31 @@ async function readingLayoutPlay({ canvasElement }) {
   const canvas = within(canvasElement)
   const handle = canvas.getByRole('separator', { name: 'reading width' })
   expect(handle).toHaveAttribute('aria-valuemin', '600')
-  expect(handle).toHaveAttribute('aria-valuemax', '936')
-  expect(handle).toHaveAttribute('aria-valuenow', '840')
+  // the widest snap is the stream's whole content width, measured, not a fixed number.
+  const stream = canvasElement.querySelector('.txn-stream')
+  const streamStyle = getComputedStyle(stream)
+  const fullWidth = Math.floor(stream.clientWidth - parseFloat(streamStyle.paddingLeft) - parseFloat(streamStyle.paddingRight))
+  await waitFor(() => expect(handle).toHaveAttribute('aria-valuemax', String(Math.max(600, fullWidth))))
+  // the default 840 renders at the space it has when the stream is narrower than that.
+  expect(handle).toHaveAttribute('aria-valuenow', String(Math.max(600, Math.min(840, fullWidth))))
   expect(handle).toHaveAttribute('aria-orientation', 'vertical')
   expect(handle).toHaveAttribute('tabindex', '0')
   await assertReadingGeometry(canvasElement)
-  // the keyboard rests on the snaps, and the ends are reachable.
+  // there are no snaps: the arrows step by 40px, Home reaches the minimum and End reaches full.
   handle.focus()
-  await userEvent.keyboard('{ArrowRight}')
-  expect(handle).toHaveAttribute('aria-valuenow', '936')
-  await userEvent.keyboard('{ArrowLeft}{ArrowLeft}')
+  await userEvent.keyboard('{Home}')
   expect(handle).toHaveAttribute('aria-valuenow', '600')
+  await userEvent.keyboard('{ArrowRight}')
+  expect(handle).toHaveAttribute('aria-valuenow', String(Math.min(640, Number(handle.getAttribute('aria-valuemax')))))
   await userEvent.keyboard('{End}')
-  expect(handle).toHaveAttribute('aria-valuenow', '936')
+  expect(handle).toHaveAttribute('aria-valuetext', 'full width')
+  expect(handle).toHaveAttribute('aria-valuenow', handle.getAttribute('aria-valuemax'))
+  // at full the column runs to the stream's content edge, up to the zen lane.
+  const row = canvasElement.querySelector('.txn-ledger .txn-turnrow')
+  const contentRight = stream.getBoundingClientRect().right - parseFloat(streamStyle.paddingRight) - (stream.offsetWidth - stream.clientWidth)
+  expect(Math.abs(row.getBoundingClientRect().right - contentRight)).toBeLessThanOrEqual(2)
+  await userEvent.keyboard('{ArrowLeft}')
+  expect(handle).toHaveAttribute('aria-valuenow', String(Math.max(600, Number(handle.getAttribute('aria-valuemax')) - 40)))
   await userEvent.keyboard('{Home}')
   expect(handle).toHaveAttribute('aria-valuenow', '600')
   // collapse the outline, then change the width both ways: the strip must stay closed.

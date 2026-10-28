@@ -214,6 +214,8 @@ try {
         stickyTrail.push(!!container.querySelector('.txn-trace-pinned') || !!container.querySelector('.txn-sticky'))
         const condensedHeader = container.querySelector('.txn-app-condensed > .txn-header')
         const header = container.querySelector('.txn-header')
+        const details = header?.querySelector('.txn-header-details')
+        if (!details || details.getAttribute('aria-hidden') !== String(condensedTrail.at(-1)) || details.hasAttribute('inert') !== condensedTrail.at(-1)) throw new Error(`${fixture.name}: condensed invariant failed: header disclosure must hide its contents and remove them from keyboard focus while condensed`)
         if (!header) throw new Error(`${fixture.name}: session header must stay mounted after ${step}`)
         if (condensedTrail.at(-1) && !condensedHeader) throw new Error(`${fixture.name}: condensed invariant failed after ${step}; the condensed header must be the root's direct child`)
         if (condensedTrail.at(-1) && !container.querySelector('.txn-app-condensed > .txn-header .txn-header-top')) throw new Error(`${fixture.name}: condensed invariant failed after ${step}; the breadcrumb + actions row must stay mounted in the condensed header`)

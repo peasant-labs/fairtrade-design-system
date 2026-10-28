@@ -735,6 +735,7 @@ function buildMockupVM() {
 }
 
 import { piPayload } from './pi-fixture.js'
+import { readingPayload } from './reading-fixture.js'
 import { usePublishFlow } from './PublishFlowDemo.jsx'
 import ContextTranscriptDemo from './ContextTranscriptDemo.jsx'
 
@@ -762,10 +763,51 @@ function DefaultTranscriptApp({ theme }) {
   // `?transcript=ledger` reads the same demo session through the ledger presentation.
   // `?transcript=ledger-system` keeps that canonical session and appends one synthetic system
   // turn, so the built app renders the compact system row (the canonical demo has none).
-  const ledger = search === 'ledger' || search === 'ledger-system'
+  const ledger = search === 'ledger' || search === 'ledger-system' || search === 'ledger-actions' || search === 'ledger-reading'
   const vm = useMemo(() => {
+    if (search === 'ledger-reading') return adaptTranscript(readingPayload())
     if (search === 'pi') return adaptTranscript(piPayload)
     const base = buildMockupVM()
+    if (search === 'ledger-actions') {
+      // two wordless agent turns in a row, so the built app shows the one model-actions block
+      // a run of thinking and tool work collapses into.
+      const n = base.turns.length
+      const tool = base.turns.flatMap((turn) => turn.toolCalls ?? []).find(Boolean)
+      const turns = [
+        ...base.turns,
+        {
+          index: n,
+          role: 'assistant',
+          label: String(n + 1),
+          time: '1m ago',
+          content: '',
+          thinking: { text: 'The before GIF needs the fix absent, so record it from the worktree on main.\nKeep the same script and the same frame range.', words: 28 },
+          toolCalls: [],
+        },
+        {
+          index: n + 1,
+          role: 'assistant',
+          label: String(n + 2),
+          time: '30s ago',
+          content: '',
+          toolCalls: tool
+            ? [{
+                ...tool,
+                id: `${tool.id}-demo-actions`,
+                name: 'Bash',
+                group: 'bash',
+                preview: 'git diff --stat main...HEAD',
+                args: { command: 'git diff --stat main...HEAD' },
+                durationMs: 1200,
+                output: ' 3 files changed, 41 insertions(+), 12 deletions(-)',
+                exitCode: 0,
+                isError: false,
+              }]
+            : [],
+        },
+      ]
+      return { ...base, turns, session: { ...base.session, turnCount: turns.length } }
+    }
     if (search !== 'ledger-system') return base
     const turns = [
       ...base.turns,
@@ -797,6 +839,7 @@ function DefaultTranscriptApp({ theme }) {
         showOutcome={false}
         showSearchTrigger
         presentation={ledger ? 'ledger' : undefined}
+        initialPosition={search === 'ledger-reading' && /^\d+$/.test(new URLSearchParams(window.location.search).get('turn') ?? '') ? { kind: 'turn', turnIndex: Number(new URLSearchParams(window.location.search).get('turn')) } : undefined}
         sidebarLayout={ledger ? sidebarLayout : undefined}
         onSidebarLayoutChange={ledger ? setSidebarLayout : undefined}
         onZenChange={ledger ? () => {} : undefined}

@@ -90,6 +90,7 @@ async function assertMountedContract(TranscriptApp, caseName, expected) {
     HTMLElement: dom.window.HTMLElement,
     Element: dom.window.Element,
     Event: dom.window.Event,
+    getComputedStyle: dom.window.getComputedStyle.bind(dom.window),
     requestAnimationFrame: (callback) => setTimeout(callback, 0),
     IS_REACT_ACT_ENVIRONMENT: true,
   }

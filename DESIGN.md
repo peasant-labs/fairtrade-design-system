@@ -397,8 +397,9 @@ and italic 400.
   each in its own horizontal scroller, never capped by the prose measure.
 
 **Ledger reading-pane exception (owner ruling).** The opt-in ledger presentation derives its
-reading column from the reader-width control (`--txn-reader-width`: 600, 840 or 936 CSS pixels)
-rather than a fixed `ch` cap, so prose follows the width the reader chose. Tables, code, diffs and
+reading column from the reader-width control (`--txn-reader-width`: any width from 600 CSS
+pixels to the stream's whole content width, up to the lane that holds the zen control, with no
+snaps) rather than a fixed `ch` cap, so prose follows the width the reader chose. Tables, code, diffs and
 tool output keep their own measures and horizontal scrollers. This is the one documented exception
 to the reading-measure paragraph above; every classic surface keeps `--measure-prose` and
 `--measure-read`.

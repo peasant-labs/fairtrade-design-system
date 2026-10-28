@@ -102,6 +102,22 @@ export function workCountLabel(summary = {}) {
 }
 
 /**
+ * The ledger action block's header: "6 actions: 4 commands, 3 files, 1 edit, 29s". It counts the
+ * block's tool runs as actions, then the counted parts and the recorded duration; zero parts and
+ * an unrecorded duration are left out, so a block of searches reads "2 actions, 1.2s".
+ * @param {Partial<WorkSummary>} [summary]
+ * @returns {string}
+ */
+export function workActionsLabel(summary = {}) {
+  const parts = countedParts(summary)
+  const duration = formatDurationMs(summary.durationMs)
+  let label = plural(summary.calls ?? 0, 'action', 'actions')
+  if (parts.length > 0) label += ': ' + parts.join(', ')
+  if (duration) label += ', ' + duration
+  return label
+}
+
+/**
  * The panel's trailing meta: "8 calls, 1 failed, 29s". The failure count is omitted when zero and
  * the duration is omitted when nothing was recorded. The leading call count is omitted when the
  * count label already fell back to it (no commands, files or edits).

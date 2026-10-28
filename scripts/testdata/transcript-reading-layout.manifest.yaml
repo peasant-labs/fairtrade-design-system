@@ -21,8 +21,8 @@ requiredInteractionNames:
   - a width change while zen is on leaves the snapshot alone
   - the reopen strips are hidden while zen is on
   - the zen control sits inside the reader column
-  - dragging the handle changes the width and snaps on release
-  - the keyboard moves the width between its snaps
+  - dragging the handle rests the width where it is released
+  - the keyboard steps the width and reaches both ends
   - a width change never reopens a closed rail
   - the work summary and the tool rows share one inline edge
   - both collapsed rail strips are 32px
@@ -31,8 +31,11 @@ requiredInteractionNames:
   - classic renders none of the ledger reading layout
   - classic ignores a zen request and keeps its rails
   - an interrupted pointer drag does not resize later
-  - a controlled reader width above the range renders the widest snap
-  - a controlled reader width below the range renders the nearest snap
+  - a controlled reader width above the range renders the full width
+  - a controlled full reader width renders the measured stream width
+  - a reader at full follows the stream when it resizes
+  - a controlled reader width below the range renders the minimum
+  - a controlled reader width inside the range renders as given
   - a non-numeric controlled reader width falls back to the default width
   - the session views are the bottom bar's first row
   - the bottom bar never leaves the surface
@@ -47,8 +50,8 @@ requiredInteractionKinds:
   a width change while zen is on leaves the snapshot alone: zen-width
   the reopen strips are hidden while zen is on: zen-strips
   the zen control sits inside the reader column: zen-placement
-  dragging the handle changes the width and snaps on release: width-drag
-  the keyboard moves the width between its snaps: width-keys
+  dragging the handle rests the width where it is released: width-drag
+  the keyboard steps the width and reaches both ends: width-keys
   a width change never reopens a closed rail: width-rails
   the work summary and the tool rows share one inline edge: work-grid
   both collapsed rail strips are 32px: strip-width
@@ -57,8 +60,11 @@ requiredInteractionKinds:
   classic renders none of the ledger reading layout: classic-only
   classic ignores a zen request and keeps its rails: classic-zen
   an interrupted pointer drag does not resize later: width-drag-lifecycle
-  a controlled reader width above the range renders the widest snap: width-controlled
-  a controlled reader width below the range renders the nearest snap: width-controlled
+  a controlled reader width above the range renders the full width: width-controlled
+  a controlled full reader width renders the measured stream width: width-controlled
+  a reader at full follows the stream when it resizes: width-full-follows
+  a controlled reader width below the range renders the minimum: width-controlled
+  a controlled reader width inside the range renders as given: width-controlled
   a non-numeric controlled reader width falls back to the default width: width-controlled
   the session views are the bottom bar's first row: footer-tabs
   the bottom bar never leaves the surface: footer-visible
@@ -71,6 +77,11 @@ requiredInteractionKinds:
 # mutations the mounted harness applies; the five stylesheet rows are applied to the gate's
 # own stylesheet read, which mirrors the harness transform for a file read from disk.
 requiredMutationNames:
+  - the turn hover stops fading
+  - an open block row draws a rule again
+  - the handle snaps on release again
+  - the full width stops following the stream
+  - the full width is capped at the old widest snap
   - the width handler writes the rail state
   - zen does not snapshot the layout
   - zen does not restore the layout
@@ -90,10 +101,35 @@ requiredMutationNames:
   - graph mode never marks the bar
   - the sidebar cards lose their inset
 mutations:
+  - name: the turn hover stops fading
+    file: src/index.css
+    find: "  .txn-turn.txn-turn-ledger { transition: background var(--dur-1); }"
+    replace: "  .txn-turn.txn-turn-ledger { transition: none; }"
+    expectedDiagnostic: "the turn hover must fade in and out"
+  - name: an open block row draws a rule again
+    file: src/index.css
+    find: "  .txn-modelactions-rows .txn-tcbody { border-top: 0; }"
+    replace: "  .txn-modelactions-rows .txn-tcbody { border-top: var(--bd); }"
+    expectedDiagnostic: "an open tool row in a block must draw no rule under its head"
+  - name: the handle snaps on release again
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "    setReaderWidth(restingReaderWidth(released, drag.fullPx))"
+    replace: "    setReaderWidth(released < 720 ? 600 : 840)"
+    expectedDiagnostic: "releasing at 880 must keep 880"
+  - name: the full width stops following the stream
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "    window.addEventListener('resize', update)"
+    replace: "    void update"
+    expectedDiagnostic: "a reader at full follows the stream when it resizes: full must follow the stream"
+  - name: the full width is capped at the old widest snap
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "  return Math.max(READER_MIN, fullPx ?? DEFAULT_READER_WIDTH)"
+    replace: "  return Math.max(READER_MIN, Math.min(936, fullPx ?? DEFAULT_READER_WIDTH))"
+    expectedDiagnostic: "aria-valuemax must be the measured full width"
   - name: the width handler writes the rail state
     file: src/ui/transcript/TranscriptViewer.jsx
-    find: "    const next = clampReaderWidth(drag.startWidth + (e.clientX - drag.startX) * 2)"
-    replace: "    commitSidebarLayout({ outline: false })\n    const next = clampReaderWidth(drag.startWidth + (e.clientX - drag.startX) * 2)"
+    find: "    const next = clampReaderPx(drag.startWidth + (e.clientX - drag.startX) * 2, drag.fullPx)"
+    replace: "    commitSidebarLayout({ outline: false })\n    const next = clampReaderPx(drag.startWidth + (e.clientX - drag.startX) * 2, drag.fullPx)"
     expectedDiagnostic: "a width change never reopens a closed rail: a width change must not emit a sidebar layout"
   - name: zen does not snapshot the layout
     file: src/ui/transcript/TranscriptViewer.jsx
@@ -127,9 +163,9 @@ mutations:
     expectedDiagnostic: "the width handle never covers the text edge: the handle must be drawn fully outside the measure"
   - name: the controlled reader width is rendered raw
     file: src/ui/transcript/TranscriptViewer.jsx
-    find: "readerWidthProp === undefined ? rawReaderWidth : normaliseReaderWidth(rawReaderWidth)"
-    replace: "readerWidthProp === undefined ? rawReaderWidth : rawReaderWidth"
-    expectedDiagnostic: "a controlled reader width above the range renders the widest snap: the supplied width must normalise"
+    find: "  const readerPx = readerDragWidth ?? readerPxOf(readerStored, readerFullPx)"
+    replace: "  const readerPx = readerDragWidth ?? (readerStored === READER_FULL ? readerFullPx : readerStored)"
+    expectedDiagnostic: "a controlled reader width above the range renders the full width: the supplied width must normalise"
   - name: the last crumb is the session id again
     file: src/ui/transcript/TranscriptViewer.jsx
     find: "    { label: title },"

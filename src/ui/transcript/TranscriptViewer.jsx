@@ -14,8 +14,10 @@ import ProviderIcon from '../ProviderIcon.jsx'
 import { formatDurationMins, formatDurationMs } from './time.js'
 import { TOOL_GROUPS } from './view-model.js'
 import { categoryCounts, projectTurn } from './filters.js'
+import { actionGroups } from './action-groups.js'
 import { turnAtReadingLine } from './scroll-position.js'
 import TurnCard from './TurnCard.jsx'
+import Collapsible from './Collapsible.jsx'
 import TranscriptContext from './TranscriptContext.jsx'
 import { UsageScopes } from './UsageDisclosure.jsx'
 import DiffEntryCard from './DiffEntryCard.jsx'
@@ -95,29 +97,58 @@ function useControllable(value, onChange, defaultValue) {
 const STICKY_SCROLL_THRESHOLD = 56
 const HERO_RELEASE_SLACK = 24
 
-/* the reading column's snap widths, narrowest first; the drag handle clamps outside them
-   and snaps to the nearest one on release, so the reader can only rest at these widths.
-   Exported so a host offering its own width menu reuses the same closed set. */
-export const READER_SNAPS = Object.freeze([600, 840, 936])
+/* the reading column's width: any width from 600 to `full`, the whole content width of the
+   stream (up to the lane that holds the zen control and the handle). There are no snaps: a drag
+   rests wherever it is released, and the keyboard moves in READER_STEP increments. `full` is
+   measured, so it follows a window resize or a rail opening and closing; a width dragged to the
+   end is stored as `full` so it keeps following, while a narrower width stays the pixels chosen
+   and renders at the space it has when that space shrinks below it. */
+export const READER_FULL = 'full'
+const READER_MIN = 600
+const READER_STEP = 40
 const DEFAULT_READER_WIDTH = 840
 const DEFAULT_SIDEBAR_LAYOUT = Object.freeze({ outline: true, filters: true, host: true })
 
-/** clamp a width to the reader's supported range. */
-function clampReaderWidth(width) {
-  if (!Number.isFinite(width)) return DEFAULT_READER_WIDTH
-  return Math.max(READER_SNAPS[0], Math.min(READER_SNAPS[READER_SNAPS.length - 1], width))
+/** the widest the column can be: the measured full width, or the default before layout. */
+function readerMaxPx(fullPx) {
+  return Math.max(READER_MIN, fullPx ?? DEFAULT_READER_WIDTH)
 }
 
-/** the snap the reader rests at: the nearest supported width. */
-function nearestReaderSnap(width) {
-  const clamped = clampReaderWidth(width)
-  return READER_SNAPS.reduce((best, snap) => (Math.abs(snap - clamped) < Math.abs(best - clamped) ? snap : best), READER_SNAPS[0])
+/** clamp a pixel width to 600..full. Before layout only the minimum applies. */
+function clampReaderPx(px, fullPx) {
+  if (!Number.isFinite(px)) return DEFAULT_READER_WIDTH
+  return Math.max(READER_MIN, fullPx == null ? px : Math.min(readerMaxPx(fullPx), px))
 }
 
-/** the width a host-supplied readerWidth must render at: clamp the range, then snap. A
-    non-finite value falls back to the default through clampReaderWidth. */
+/** the pixel width a stored width renders at: `full` is the measured width (null before
+    layout); a number is clamped to the space it has. */
+function readerPxOf(width, fullPx) {
+  if (width === READER_FULL) return fullPx
+  return clampReaderPx(width, fullPx)
+}
+
+/** the width to store once a drag or a key lands: the end of the range is `full`, so it keeps
+    following the space; anything narrower is the pixels themselves. */
+function restingReaderWidth(px, fullPx) {
+  const clamped = clampReaderPx(px, fullPx)
+  return fullPx != null && clamped >= readerMaxPx(fullPx) ? READER_FULL : clamped
+}
+
+/** a host-supplied readerWidth: `full` stays full, a number is used as given (clamped when it
+    renders), and a non-finite value falls back to the default. */
 function normaliseReaderWidth(width) {
-  return nearestReaderSnap(width)
+  if (width === READER_FULL) return READER_FULL
+  return Number.isFinite(width) ? width : DEFAULT_READER_WIDTH
+}
+
+/** the stream's content width: its inner width less the inline padding that reserves the
+    control lanes. Null when nothing has been laid out (a server render, jsdom). */
+function measureReaderFull(stream) {
+  if (!stream) return null
+  const style = typeof getComputedStyle === 'function' ? getComputedStyle(stream) : null
+  const pad = (parseFloat(style?.paddingLeft) || 0) + (parseFloat(style?.paddingRight) || 0)
+  const width = Math.floor((stream.clientWidth || 0) - pad)
+  return width > 0 ? width : null
 }
 
 /* the five session views (count badges come off the cooked VM). */
@@ -138,7 +169,7 @@ const ANNOTATION_META = {
 
 /* the canonical default view-state (so the viewer "just works" unmanaged). */
 const DEFAULT_FILTERS = Object.freeze({
-  categories: { prompts: true, responses: true, thinking: true, toolcalls: true },
+  categories: { prompts: true, responses: true, thinking: true, toolcalls: true, system: true },
   toolGroups: Object.fromEntries(TOOL_GROUPS.map((id) => [id, true])),
   tags: { errors: false, retries: false, revert: false },
   views: { hidden: true, expandAll: false, compact: false },
@@ -278,11 +309,14 @@ export default function TranscriptViewer({
   /* zen is a ledger reading mode; a host that passes the prop to classic changes nothing. */
   const zenActive = ledger && zen
   const [rawReaderWidth, setReaderWidth] = useControllable(readerWidthProp, onReaderWidthChange, DEFAULT_READER_WIDTH)
-  /* the width the column and the separator actually report. A host-supplied readerWidth is
-     normalised ONCE at this boundary (clamped to 600..936 and snapped), never rendered raw; a
-     live drag keeps its own continuous, unsnapped preview so the column follows the pointer. */
+  /* the width the column and the separator actually report. A supplied readerWidth is
+     normalised ONCE at this boundary and clamped to 600..full when it renders, never drawn
+     raw; a live drag keeps its own pixel preview so the column follows the pointer.
+     `readerFullPx` is the measured full width; `readerPx` is what the column renders at. */
   const [readerDragWidth, setReaderDragWidth] = useState(null)
-  const readerWidth = readerDragWidth ?? (readerWidthProp === undefined ? rawReaderWidth : normaliseReaderWidth(rawReaderWidth))
+  const [readerFullPx, setReaderFullPx] = useState(null)
+  const readerStored = normaliseReaderWidth(rawReaderWidth)
+  const readerPx = readerDragWidth ?? readerPxOf(readerStored, readerFullPx)
   const [openTools, setOpenTools] = useControllable(openToolsProp, onOpenToolsChange, {})
   const [earlierHistoryOpen, setEarlierHistoryOpen] = useControllable(earlierHistoryOpenProp, onEarlierHistoryOpenChange, {})
   const [activeTurn, setActiveTurn] = useControllable(activeTurnProp, onActiveTurnChange, vm?.turns?.[0]?.index ?? 0)
@@ -377,12 +411,43 @@ export default function TranscriptViewer({
   const turns = vm?.turns ?? []
 
   const turnRefs = useRef({})
+  const actionRefs = useRef(new Map())
+  const revealSequence = useRef(0)
   const scrollRef = useRef(null)
   const headerRef = useRef(null)
   const heroHeightRef = useRef(0)
   const searchInputRef = useRef(null)
   const draggingRef = useRef(false)
   const readerDragRef = useRef(null)
+  const bodyGridRef = useRef(null)
+  const railFocusRef = useRef(null)
+  useLayoutEffect(() => {
+    const side = railFocusRef.current
+    if (!side) return
+    railFocusRef.current = null
+    const rail = bodyGridRef.current?.querySelector(`.txn-rail-${side}[aria-hidden="false"], .txn-rail-strip-${side}[aria-hidden="false"]`)
+    rail?.querySelector('.txn-rail-collapse, .txn-rail-reopen')?.focus({ preventScroll: true })
+  }, [leftRailOpen, rightRailOpen, zenActive])
+  const activeTurnRef = useRef(activeTurn)
+  const navigationTargetRef = useRef(null)
+  useLayoutEffect(() => { activeTurnRef.current = activeTurn }, [activeTurn])
+  useLayoutEffect(() => { navigationTargetRef.current = null }, [session.id])
+  /* keep the `full` snap's width current: the stream's content width changes with the window
+     and with every rail opening or closing, and a reader resting at full must follow it. */
+  useEffect(() => {
+    if (!ledger || tab !== 'trace' || viewMode !== 'list') return undefined
+    const stream = scrollRef.current
+    if (!stream) return undefined
+    const update = () => setReaderFullPx((prev) => measureReaderFull(stream) ?? prev)
+    update()
+    const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(update) : null
+    observer?.observe(stream)
+    window.addEventListener('resize', update)
+    return () => {
+      observer?.disconnect()
+      window.removeEventListener('resize', update)
+    }
+  }, [ledger, tab, viewMode])
   const tabRefs = useRef({})
   const traceReadingPositionIdRef = useRef(0)
   /** @type {import('react').MutableRefObject<TraceReadingSnapshot | null>} */
@@ -397,7 +462,16 @@ export default function TranscriptViewer({
     else delete turnRefs.current[id]
   }, [])
 
-  const toggleTool = (id) => setOpenTools({ ...openTools, [id]: !openTools[id] })
+  const toggleTool = (id) => setOpenTools(previous => ({ ...previous, [id]: !previous[id] }))
+  const registerActionRef = useCallback((turn, where, el) => {
+    const key = `${turn}:${where}`
+    if (el) actionRefs.current.set(key, el)
+    else actionRefs.current.delete(key)
+  }, [])
+  function revealAction(turn, where, { select = true } = {}) {
+    if (where !== 'body' && where !== 'thinking') setOpenTools(previous => ({ ...previous, [where]: true }))
+    setSearchReveal({ turn, where, select, sequence: ++revealSequence.current })
+  }
 
   /* ── cooked slices off the VM ───────────────────────────────────────────────── */
   const phases = vm?.analytics?.phases ?? []
@@ -436,6 +510,7 @@ export default function TranscriptViewer({
     }
     return turns.map((t) => projectTurn(t, filters, ctx)).filter((t) => t != null)
   }, [turns, filters, commits, vm])
+  const actionLayout = useMemo(() => actionGroups(turns, visibleTurns), [turns, visibleTurns])
 
   const readTraceReadingSnapshot = useCallback(() => {
     const sc = scrollRef.current
@@ -544,10 +619,13 @@ export default function TranscriptViewer({
       return 'applied'
     }
 
-    el.scrollIntoView({ block: 'start', behavior: 'auto' })
+    const projected = visibleTurns.find(turn => turn.index === position.turnIndex)
+    const location = ledger && !String(projected?.displayContent ?? projected?.content ?? '').trim() ? actionLayout.locations.get(position.turnIndex) : null
+    if (location) revealAction(position.turnIndex, location.where, { select: false })
+    else el.scrollIntoView({ block: 'start', behavior: 'auto' })
     latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()
     return 'applied'
-  }, [readTraceReadingSnapshot, tab, turns, viewMode, visibleTurns])
+  }, [readTraceReadingSnapshot, tab, turns, viewMode, visibleTurns, ledger, actionLayout])
 
   const applyTraceReadingPosition = useCallback((position) => {
     const target = traceReadingPositionRef.current ?? traceReadingPosition
@@ -610,6 +688,7 @@ export default function TranscriptViewer({
     (filters.categories.responses ? 0 : 1) +
     (filters.categories.thinking ? 0 : 1) +
     (filters.categories.toolcalls ? 0 : 1) +
+    (filters.categories.system === false ? 1 : 0) +
     (filters.tags.errors ? 1 : 0) +
     (filters.tags.retries ? 1 : 0) +
     (filters.tags.revert ? 1 : 0) +
@@ -622,6 +701,7 @@ export default function TranscriptViewer({
     const found = []
     for (const t of turns) {
       if ((t.content || '').toLowerCase().includes(q)) found.push({ turn: t.index, where: 'body' })
+      if ((t.thinking?.text || '').toLowerCase().includes(q)) found.push({ turn: t.index, where: 'thinking' })
       for (const tc of t.toolCalls || []) {
         const out = typeof tc.output === 'string' ? tc.output : tc.output != null ? JSON.stringify(tc.output) : ''
         const hay = [tc.preview, out].filter(Boolean).join(' ').toLowerCase()
@@ -641,15 +721,27 @@ export default function TranscriptViewer({
   const footerProgress = footer?.progress === true && tab === 'trace' && viewMode === 'list' && visibleTurns.length > 0
 
   /* ── navigation + interactions (effects/handlers only; safe under static render) ── */
+  function selectTurn(idx) {
+    activeTurnRef.current = idx
+    navigationTargetRef.current = idx
+    setActiveTurn(idx)
+  }
+  function releaseTurnNavigation() {
+    navigationTargetRef.current = null
+  }
   function jumpTo(idx, { switchTab = true } = {}) {
     if (switchTab && tab !== 'trace') {
       skipTraceRestoreRef.current = true
       setTab('trace')
     }
     setViewMode('list')
-    setActiveTurn(idx)
+    selectTurn(idx)
+    const projected = visibleTurns.find(turn => turn.index === idx)
+    const location = ledger && !String(projected?.displayContent ?? projected?.content ?? '').trim() ? actionLayout.locations.get(idx) : null
+    if (location) { revealAction(idx, location.where); return }
     if (typeof requestAnimationFrame === 'function') {
       requestAnimationFrame(() => {
+        if (navigationTargetRef.current !== idx) return
         const el = turnRefs.current[idx]
         const sc = scrollRef.current
         if (el && sc) {
@@ -660,10 +752,20 @@ export default function TranscriptViewer({
     }
   }
   function stepTurn(dir) {
-    const ids = visibleTurns.map((t) => t.index)
-    const cur = ids.indexOf(activeTurn)
+    const ids = (cardTurns.length ? cardTurns : visibleTurns).map((t) => t.index)
+    const cur = ids.indexOf(activeTurnRef.current)
+    if (cur < 0) {
+      // Search may select a wordless source whose actions render in another card.
+      // Step around that source in transcript order, never around its group owner.
+      const source = turns.findIndex(turn => turn.index === activeTurnRef.current)
+      const eligible = new Set(ids)
+      const candidates = dir > 0 ? turns.slice(source + 1) : turns.slice(0, source).reverse()
+      const next = candidates.find(turn => eligible.has(turn.index))?.index ?? ids[dir > 0 ? ids.length - 1 : 0]
+      if (next != null && next !== activeTurnRef.current) jumpTo(next, { switchTab: false })
+      return
+    }
     const next = Math.max(0, Math.min(ids.length - 1, cur + dir))
-    if (ids[next] != null) jumpTo(ids[next], { switchTab: false })
+    if (ids[next] != null && ids[next] !== activeTurnRef.current) jumpTo(ids[next], { switchTab: false })
   }
   function copyAnchor(idx) {
     setCopiedTurn(idx)
@@ -704,19 +806,31 @@ export default function TranscriptViewer({
     // release guard mid-flight. Using the full expanded height is deliberately
     // conservative (only the title + chips actually leave), which can never
     // reintroduce the clamp-flicker.
-    if (header && header.offsetHeight > 0 && !header.closest('.txn-app-condensed')) {
+    const headerMoving = header?.getAnimations?.({ subtree: true }).some(animation => animation.playState === 'running')
+    if (header && header.offsetHeight > 0 && !header.closest('.txn-app-condensed') && !headerMoving) {
       heroHeightRef.current = header.offsetHeight
     }
     const overflowAfterRelease = sc.scrollHeight - sc.clientHeight - heroHeightRef.current
     const focusInHeader = !!header && typeof document !== 'undefined' && header.contains(document.activeElement)
     setHeroHidden(pinned && !focusInHeader && overflowAfterRelease > STICKY_SCROLL_THRESHOLD + HERO_RELEASE_SLACK)
   }
+  /* A model-actions block is not a turn: only a turn that draws a card (prose, or the system
+     row) owns the reading position and the keyboard step. */
+  const cardTurns = useMemo(
+    () => visibleTurns.filter((t) => t.role === 'system' || String(t.displayContent ?? t.content ?? '').trim() !== ''),
+    [visibleTurns],
+  )
+
   function onScroll() {
     const sc = scrollRef.current
     if (!sc) return
     latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()
     syncScrollChrome(sc)
-    setActiveTurn(turnAtReadingLine(visibleTurns,
+    // A requested turn may never reach the reading line at a scroll boundary. Keep that
+    // selection through the smooth scroll; a real wheel, touch or scrollbar gesture releases it.
+    if (navigationTargetRef.current != null && visibleTurns.some(t => t.index === navigationTargetRef.current)) return
+    navigationTargetRef.current = null
+    setActiveTurn(turnAtReadingLine(cardTurns,
       index => turnRefs.current[index]?.offsetTop ?? Infinity,
       sc.scrollTop + sc.clientHeight * 0.4))
   }
@@ -740,22 +854,30 @@ export default function TranscriptViewer({
 
   /* ── reading width: the drag handle changes ONLY --txn-reader-width ───────────
      The column is centred, so the trailing edge moves half as far as the width: two
-     pixels of pointer travel per pixel of width. A drag adjusts live (clamped) and
-     snaps to 600/840/936 on release; the keyboard moves snap to snap. No handler here
-     reads or writes the sidebar layout. A press can end without a pointerup (capture
-     loss, the pointer leaving the handle, a window blur), so every end path clears the
-     drag and lands on a snap; a mouse move with no button held never resizes. */
+     pixels of pointer travel per pixel of width. A drag adjusts live (clamped to the
+     measured full width) and rests wherever it is released; the keyboard moves in
+     READER_STEP increments, Home to the minimum and End to full. No handler here reads or
+     writes the sidebar layout. A press can end without a pointerup (capture loss, the
+     pointer leaving the handle, a window blur), so every end path clears the drag and
+     keeps the width it reached; a mouse move with no button held never resizes. Each
+     press re-measures, so a drag never clamps to a stale width. */
   function endReaderDrag(clientX) {
     const drag = readerDragRef.current
     if (!drag) return
     readerDragRef.current = null
     setReaderDragWidth(null)
-    const released = typeof clientX === 'number' && clientX > 0 ? drag.startWidth + (clientX - drag.startX) * 2 : readerWidth
-    setReaderWidth(nearestReaderSnap(released))
+    const released = typeof clientX === 'number' && clientX > 0 ? drag.startWidth + (clientX - drag.startX) * 2 : (readerPx ?? drag.startWidth)
+    setReaderWidth(restingReaderWidth(released, drag.fullPx))
+  }
+  function remeasureReaderFull() {
+    const full = measureReaderFull(scrollRef.current) ?? readerFullPx
+    if (full !== readerFullPx) setReaderFullPx(full)
+    return full
   }
   function onReaderPointerDown(e) {
     if (e.button !== 0 && e.pointerType !== 'touch') return
-    readerDragRef.current = { startX: e.clientX, startWidth: readerWidth }
+    const fullPx = remeasureReaderFull()
+    readerDragRef.current = { startX: e.clientX, startWidth: readerPxOf(readerStored, fullPx) ?? readerMaxPx(fullPx), fullPx }
     if (typeof e.currentTarget.setPointerCapture === 'function') {
       try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* synthetic pointer ids cannot be captured */ }
     }
@@ -766,7 +888,7 @@ export default function TranscriptViewer({
     /* a mouse move with no button held is a hover, not a drag: an interrupted press must not
        leave the next pass over the handle resizing the column. */
     if (e.pointerType !== 'touch' && e.buttons === 0) return
-    const next = clampReaderWidth(drag.startWidth + (e.clientX - drag.startX) * 2)
+    const next = clampReaderPx(drag.startWidth + (e.clientX - drag.startX) * 2, drag.fullPx)
     setReaderDragWidth(next)
     setReaderWidth(next)
   }
@@ -785,12 +907,13 @@ export default function TranscriptViewer({
     endReaderDrag()
   }
   function onReaderKeyDown(e) {
-    const index = READER_SNAPS.indexOf(nearestReaderSnap(readerWidth))
+    const fullPx = remeasureReaderFull()
+    const current = readerPxOf(readerStored, fullPx) ?? readerMaxPx(fullPx)
     let next
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') next = READER_SNAPS[Math.max(0, index - 1)]
-    else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') next = READER_SNAPS[Math.min(READER_SNAPS.length - 1, index + 1)]
-    else if (e.key === 'Home') next = READER_SNAPS[0]
-    else if (e.key === 'End') next = READER_SNAPS[READER_SNAPS.length - 1]
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') next = restingReaderWidth(current - READER_STEP, fullPx)
+    else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') next = restingReaderWidth(current + READER_STEP, fullPx)
+    else if (e.key === 'Home') next = READER_MIN
+    else if (e.key === 'End') next = READER_FULL
     else return
     e.preventDefault()
     setReaderWidth(next)
@@ -826,6 +949,7 @@ export default function TranscriptViewer({
   /* cmd/ctrl+F search + j/k step (browser only; no-op under static render). */
   useEffect(() => {
     function onKey(e) {
+      if (e.defaultPrevented) return
       const mod = e.metaKey || e.ctrlKey
       if (mod && (e.key === 'f' || e.key === 'F')) {
         e.preventDefault(); openSearch(); return
@@ -834,6 +958,7 @@ export default function TranscriptViewer({
       const typing = ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName ?? '')
       if (searchOpen || typing || e.metaKey || e.ctrlKey || e.altKey) return
       if (tab !== 'trace' || viewMode !== 'list') return
+      if (['PageUp', 'PageDown', 'Home', 'End', ' '].includes(e.key)) releaseTurnNavigation()
       if (e.key === 'j' || e.key === 'ArrowDown') { e.preventDefault(); stepTurn(1) }
       else if (e.key === 'k' || e.key === 'ArrowUp') { e.preventDefault(); stepTurn(-1) }
     }
@@ -847,22 +972,38 @@ export default function TranscriptViewer({
   useLayoutEffect(() => {
     if (!searchOpen || matches.length === 0) return
     const m = matches[Math.min(matchIdx, matches.length - 1)]
-    setSearchReveal({ turn: m.turn, sequence: searchNavigation })
+    revealAction(m.turn, m.where)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchNavigation])
 
   /* The matching card opens in its layout effect before this scroll action. */
   useEffect(() => {
     if (!searchReveal) return
-    const el = turnRefs.current[searchReveal.turn]
-    const sc = scrollRef.current
-    if (el && sc) {
+    let cancelled = false
+    const scroll = async () => {
+      // Child layout effects reveal the list/output before measuring its actual row.
+      // Wait for their real disclosure motion so a far-down match ends on screen.
+      const sc = scrollRef.current
+      if (!sc) return
+      const animations = sc.getAnimations?.({ subtree: true }).filter(animation => animation.effect?.target?.classList?.contains('txn-disclosure')) ?? []
+      await Promise.allSettled(animations.map(animation => animation.finished))
+      if (cancelled) return
+      const el = ledger && searchReveal.where !== 'body'
+        ? actionRefs.current.get(`${searchReveal.turn}:${searchReveal.where}`)
+        : turnRefs.current[searchReveal.turn]
+      if (!el || el.closest('[hidden], [inert]')) return
       const reduce = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      sc.scrollTo({ top: turnScrollTop(sc, el), behavior: reduce ? 'auto' : 'smooth' })
-      setActiveTurn(searchReveal.turn)
+      const padding = Number.parseFloat(getComputedStyle(sc).scrollPaddingTop) || 12
+      const top = ledger && searchReveal.where !== 'body'
+        ? sc.scrollTop + el.getBoundingClientRect().top - sc.getBoundingClientRect().top - padding
+        : turnScrollTop(sc, el)
+      sc.scrollTo({ top, behavior: !searchReveal.select || reduce ? 'auto' : 'smooth' })
+      if (searchReveal.select) selectTurn(searchReveal.turn)
     }
+    const frame = requestAnimationFrame(scroll)
+    return () => { cancelled = true; cancelAnimationFrame(frame) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchReveal])
+  }, [searchReveal, ledger])
 
   /* files / diffs derived. */
   const sortedFiles = useMemo(() => {
@@ -944,7 +1085,7 @@ export default function TranscriptViewer({
     <div
       className={'txn-app' + (theme === 'light' ? ' txn-light' : '') + (ledger ? ' txn-ledger' : '') + (ledger && zen ? ' txn-zen' : '') + (heroCondensed ? ' txn-app-condensed' : '')}
       data-theme={theme}
-      style={ledger ? { '--txn-reader-width': `${readerWidth}px` } : undefined}
+      style={ledger ? { '--txn-reader-width': readerPx != null ? `${readerPx}px` : '100%' } : undefined}
     >
       {/* The session views live in the bottom bar, which comes after the whole panel in DOM order.
           This control keeps them one keystroke from the top of the viewer, and only shows itself
@@ -1051,6 +1192,7 @@ export default function TranscriptViewer({
           </div>
         </div>
 
+        <Collapsible open={!heroCondensed} keepMounted className="txn-header-details">
         <TitleHeading className="txn-title" title={title}>{title}</TitleHeading>
         {/* an optional one-line deck under the title (ledger reads it as the transcript's
             provenance line); render-when-supplied so classic is untouched. A div, not a
@@ -1084,6 +1226,7 @@ export default function TranscriptViewer({
         {/* host-owned pull request list: the host supplies the rows and any "show all" control;
             the composite only gives it a place under the meta row. */}
         {pullRequests != null && <div className="txn-prs">{pullRequests}</div>}
+        </Collapsible>
         <UsageScopes scopes={vm.usageScopes} />
       </header>
 
@@ -1117,37 +1260,37 @@ export default function TranscriptViewer({
           alone and the zen control is the one way back out. */}
       <div
         className="txn-body-grid"
+        ref={bodyGridRef}
         data-left-rail={zenActive ? 'none' : leftRailOpen ? 'open' : 'closed'}
         data-right-rail={zenActive ? 'none' : !tabHasFilters ? 'none' : rightRailOpen ? 'open' : 'closed'}
         data-zen={ledger ? (zenActive ? 'true' : 'false') : undefined}
       >
         {/* LEFT: outline */}
-        {!zenActive && (leftRailOpen ? (
-          <aside className="txn-rail txn-rail-left" aria-label="user turns outline">
+          <Collapsible as="aside" className="txn-rail txn-rail-left" aria-label="user turns outline"
+            open={!zenActive && leftRailOpen} keepMounted animateSize={false}>
             <div className="txn-rail-head">
-              <LayoutList size={14} aria-hidden="true" /> user turns
-              <button type="button" className="txn-rail-collapse" aria-label="collapse user turns outline" title="collapse" onClick={() => commitSidebarLayout({ outline: false })}>
+              <LayoutList size={14} aria-hidden="true" /> <span className="txn-rail-title">user turns</span>
+              <button type="button" className="txn-rail-collapse" aria-label="collapse user turns outline" title="collapse" onClick={() => { railFocusRef.current = 'left'; commitSidebarLayout({ outline: false }) }}>
                 <PanelLeftClose size={14} aria-hidden="true" />
               </button>
             </div>
             <div className="txn-rail-body" id="txn-rail-left-body">
               <OutlineRail viewModel={vm} tab={tab} presentation={presentation} activeTurn={activeTurn} onJump={(idx) => jumpTo(idx, { switchTab: false })} />
             </div>
-          </aside>
-        ) : (
-          <div className="txn-rail-strip txn-rail-strip-left">
-            <button type="button" className="txn-rail-reopen" aria-label="expand user turns outline" title="expand user turns" onClick={() => commitSidebarLayout({ outline: true })}>
+          </Collapsible>
+          <Collapsible className="txn-rail-strip txn-rail-strip-left"
+            open={!zenActive && !leftRailOpen} keepMounted animateSize={false}>
+            <button type="button" className="txn-rail-reopen" aria-label="expand user turns outline" title="expand user turns" onClick={() => { railFocusRef.current = 'left'; commitSidebarLayout({ outline: true }) }}>
               <PanelLeftOpen size={14} aria-hidden="true" />
               <span className="txn-rail-strip-label">user turns</span>
             </button>
-          </div>
-        ))}
+          </Collapsible>
 
         {/* CENTER */}
         <section className="txn-center" role="tabpanel" id={`${tabsId}-panel`} aria-labelledby={`${tabsId}-${tab}`}>
           {tab === 'trace' && (
             <div className={'txn-trace' + (sticky && viewMode === 'list' ? ' txn-trace-pinned' : '')}>
-              {sticky && viewMode === 'list' && (
+              <Collapsible open={sticky && viewMode === 'list'} className="txn-sticky-disclosure">
                 <div className="txn-sticky">
                   {ledger ? (
                     /* the pinned bar is the timeline alone: the title already sits in the
@@ -1165,7 +1308,7 @@ export default function TranscriptViewer({
                     </>
                   )}
                 </div>
-              )}
+              </Collapsible>
               <div className={"txn-trace-head" + (viewMode === 'graph' ? ' txn-trace-head-graph' : '')}>
                 <span className="txn-trace-count tnum">
                   {visibleTurns.length === turns.length ? `${turns.length} turns` : `${visibleTurns.length} of ${turns.length} turns`}
@@ -1186,7 +1329,9 @@ export default function TranscriptViewer({
                 </div>
               ) : (
                 <div className="txn-streamwrap">
-                  <div className="txn-stream" ref={scrollRef} role="region" aria-label="full trace turns" onFocusCapture={() => {
+                  <div className="txn-stream" ref={scrollRef} role="region" aria-label="full trace turns"
+                    onWheel={releaseTurnNavigation} onTouchStart={releaseTurnNavigation} onPointerDown={releaseTurnNavigation}
+                    onFocusCapture={() => {
                     const snapshot = readTraceReadingSnapshot()
                     if (snapshot) latestTraceReadingSnapshotRef.current = snapshot
                   }} onScroll={onScroll} tabIndex={0}>
@@ -1206,15 +1351,25 @@ export default function TranscriptViewer({
                     {visibleTurns.length === 0 && (
                       <div className="empty"><div className="ring"><FilterIcon size={20} aria-hidden="true" /></div><EmptyHeading>no turns to display</EmptyHeading><p>every turn is filtered out. clear a filter to bring them back.</p></div>
                     )}
-                    {visibleTurns.map((t, i) => {
+                    {(() => {
+                      /* In the ledger every action the model takes for one user turn shares one
+                         block. A user turn closes the group; system rows stay where they are and
+                         do not split it. The block sits after the group's first prose turn, or on
+                         its first turn with work when the group has no prose, and every other
+                         turn in the group draws no work of its own, so no action renders twice. */
+                      const groups = ledger ? actionLayout.groups : new Map()
+                      const foldedWork = ledger ? actionLayout.folded : new Set()
+                      return visibleTurns.map((t, i) => {
                       const prev = visibleTurns[i - 1]
+                      const actionRun = groups.get(t.index)
+                      const suppressWork = foldedWork.has(t.index)
                       const phase = phases.find((p) => t.index >= p.from && t.index <= p.to)
                       const prevPhase = prev ? phases.find((p) => prev.index >= p.from && prev.index <= p.to) : null
                       const showPhase = filters.views.hidden && phase && (!prevPhase || prevPhase.id !== phase.id)
                       const task = taskByFirstTurn.get(t.index)
                       const turnCommits = anchoredCommits.filter((c) => c.turn === t.index)
                       return (
-                        <div key={t.identity ?? t.index}>
+                        <div key={t.identity ?? t.index} className={ledger ? 'txn-turnrow' : undefined}>
                           {showPhase && <PhaseDivider phase={phase} heading={PhaseHeading} />}
                           {/* in ledger a faint rule marks where the role changes; classic gains none */}
                           {ledger && prev && prev.role !== t.role && <hr className="txn-turn-rule" aria-hidden="true" />}
@@ -1227,6 +1382,7 @@ export default function TranscriptViewer({
                             presentation={presentation}
                             turn={t}
                             active={activeTurn === t.index}
+                            onSelect={ledger ? selectTurn : undefined}
                             revealRequest={searchReveal?.turn === t.index ? searchReveal.sequence : 0}
                             openTools={openTools}
                             toggleTool={toggleTool}
@@ -1238,6 +1394,10 @@ export default function TranscriptViewer({
                             savedLabel={savedLabels[t.index]}
                             compact={filters.views.compact}
                             expandAll={filters.views.expandAll}
+                            modelActions={actionRun}
+                            actionReveal={searchReveal && (ledger ? actionLayout.locations.get(searchReveal.turn)?.owner === t.index : searchReveal.turn === t.index) ? searchReveal : undefined}
+                            registerActionRef={registerActionRef}
+                            suppressWork={suppressWork}
                           />
                           {/* host per-turn extension (touched-files panels etc.) —
                               rendered under the card, inside the turn's anchor block */}
@@ -1245,7 +1405,8 @@ export default function TranscriptViewer({
                           {turnCommits.map((c) => <CheckpointMarker key={c.hash} commit={c} />)}
                         </div>
                       )
-                    })}
+                    })
+                    })()}
                     {looseCommits.map((c) => <CheckpointMarker key={c.hash} commit={c} />)}
                   </div>
                 </div>
@@ -1258,10 +1419,10 @@ export default function TranscriptViewer({
                   role="separator"
                   aria-orientation="vertical"
                   aria-label="reading width"
-                  aria-valuemin={READER_SNAPS[0]}
-                  aria-valuemax={READER_SNAPS[READER_SNAPS.length - 1]}
-                  aria-valuenow={readerWidth}
-                  aria-valuetext={`${readerWidth} pixels wide`}
+                  aria-valuemin={READER_MIN}
+                  aria-valuemax={readerMaxPx(readerFullPx)}
+                  aria-valuenow={readerPx ?? readerMaxPx(readerFullPx)}
+                  aria-valuetext={readerDragWidth == null && readerStored === READER_FULL ? 'full width' : `${readerPx} pixels wide`}
                   tabIndex={0}
                   onPointerDown={onReaderPointerDown}
                   onPointerMove={onReaderPointerMove}
@@ -1424,12 +1585,12 @@ export default function TranscriptViewer({
         </section>
 
         {/* RIGHT: filters */}
-        {zenActive ? null : !tabHasFilters ? null : rightRailOpen ? (
-          <aside className="txn-rail txn-rail-right" aria-label="filters">
+          <Collapsible as="aside" className="txn-rail txn-rail-right" aria-label="filters"
+            open={!zenActive && tabHasFilters && rightRailOpen} keepMounted animateSize={false}>
             <div className="txn-rail-head">
-              <SlidersHorizontal size={14} aria-hidden="true" /> filters
+              <SlidersHorizontal size={14} aria-hidden="true" /> <span className="txn-rail-title">filters</span>
               {filtersActive > 0 && <span className="chipx-count unread tnum">{filtersActive}</span>}
-              <button type="button" className="txn-rail-collapse" aria-label="collapse filters" title="collapse" onClick={() => commitSidebarLayout({ filters: false })}>
+              <button type="button" className="txn-rail-collapse" aria-label="collapse filters" title="collapse" onClick={() => { railFocusRef.current = 'right'; commitSidebarLayout({ filters: false }) }}>
                 <PanelRightClose size={14} aria-hidden="true" />
               </button>
             </div>
@@ -1446,15 +1607,14 @@ export default function TranscriptViewer({
                 onJumpLatest={() => jumpTo(visibleTurns[visibleTurns.length - 1]?.index ?? 0, { switchTab: false })}
               />
             </div>
-          </aside>
-        ) : (
-          <div className="txn-rail-strip txn-rail-strip-right">
-            <button type="button" className="txn-rail-reopen" aria-label="expand filters" title="expand filters" onClick={() => commitSidebarLayout({ filters: true })}>
+          </Collapsible>
+          <Collapsible className="txn-rail-strip txn-rail-strip-right"
+            open={!zenActive && tabHasFilters && !rightRailOpen} keepMounted animateSize={false}>
+            <button type="button" className="txn-rail-reopen" aria-label="expand filters" title="expand filters" onClick={() => { railFocusRef.current = 'right'; commitSidebarLayout({ filters: true }) }}>
               <PanelRightOpen size={14} aria-hidden="true" />
               <span className="txn-rail-strip-label">filters{filtersActive > 0 ? <span className="chipx-count unread tnum">{filtersActive}</span> : null}</span>
             </button>
-          </div>
-        )}
+          </Collapsible>
       </div>
 
       {/* ===================== OVERLAYS ===================== */}

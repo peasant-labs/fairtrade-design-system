@@ -132,8 +132,11 @@ _acceptViewerProps({ viewModel: vm, capabilities: caps, sidebarLayout: { outline
 // @ts-expect-error — zen is the closed boolean toggle, not a mode string
 _acceptViewerProps({ viewModel: vm, capabilities: caps, zen: 'on' })
 
-// @ts-expect-error — readerWidth is a number, not the CSS string a host might persist
+// @ts-expect-error — readerWidth is a number or 'full', not the CSS string a host might persist
 _acceptViewerProps({ viewModel: vm, capabilities: caps, readerWidth: '840px' })
+
+// the measured full width is the one named snap
+_acceptViewerProps({ viewModel: vm, capabilities: caps, readerWidth: 'full' })
 
 /* the three negative pins use the typed-parameter call idiom (matching
    contract.type-test.js): the bad value is an ARGUMENT, so the `@ts-expect-error`

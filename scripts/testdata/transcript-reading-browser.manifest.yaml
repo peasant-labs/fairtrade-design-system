@@ -1,0 +1,11 @@
+requiredNavigationNames:
+  - later prose tool destination
+  - wordless tool destination in compact
+  - wordless Think destination in compact
+  - ordinary prose destination stays original
+requiredInitialNames:
+  - wordless initial tool destination
+  - wordless initial Think destination
+requiredRailNames:
+  - deep reading brings the last user card into view
+  - reverse reading brings the first user card into view

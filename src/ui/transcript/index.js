@@ -85,7 +85,7 @@ export { default as TranscriptOutcomeChip } from './OutcomeChip.jsx'
 /* the composite single-transcript surface + the view chrome it assembles (rails,
    scrubber, scorecard, label popover). The composite is the drop-in `TranscriptViewer`;
    the rest are exported for peasant/village shells that assemble their own layout. */
-export { default as TranscriptViewer, READER_SNAPS } from './TranscriptViewer.jsx'
+export { default as TranscriptViewer, READER_FULL } from './TranscriptViewer.jsx'
 export { default as TranscriptOutlineRail } from './OutlineRail.jsx'
 export { default as TranscriptFiltersRail } from './FiltersRail.jsx'
 export { default as TranscriptFilterSection } from './FilterSection.jsx'

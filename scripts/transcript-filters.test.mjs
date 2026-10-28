@@ -76,7 +76,7 @@ const check = (name, fn) => {
 
 check('each turn reports every kind it carries', () => {
   assert.deepEqual(TURNS.map((t) => kindsOf(t)), [
-    ['prompts'], ['responses'], ['thinking'], ['toolcalls'], ['toolcalls'], ['toolcalls'], [],
+    ['prompts'], ['responses'], ['thinking'], ['toolcalls'], ['toolcalls'], ['toolcalls'], ['system'],
     ['responses', 'thinking'], ['responses', 'toolcalls'], ['responses', 'toolcalls'],
   ])
 })
@@ -103,7 +103,7 @@ check('unchecking tool calls drops tool-only turns, not the text beside a call',
   assert.deepEqual(visible(withCategories({ toolcalls: false })), [0, 1, 2, 6, 7, 8, 9])
 })
 
-check('system turns survive every category being off', () => {
+check('system turns survive older filter state with the other categories off', () => {
   const none = withCategories({ prompts: false, responses: false, thinking: false, toolcalls: false })
   assert.deepEqual(visible(none), [6])
 })
@@ -115,7 +115,7 @@ check('a multi-part turn leaves only when every part it carries is unwanted', ()
 
 check('category counts are turn-based; a compound turn counts under each kind it carries', () => {
   const counts = categoryCounts(TURNS)
-  assert.deepEqual(counts, { prompts: 1, responses: 4, thinking: 2, toolcalls: 5 })
+  assert.deepEqual(counts, { prompts: 1, responses: 4, thinking: 2, toolcalls: 5, system: 1 })
 })
 
 /* ── categories act on parts inside a turn ───────────────────────────────────── */

@@ -74,7 +74,7 @@
  * `tags` gate semantic friction tags; `views` are display toggles; `checkpoint`
  * scopes the trace to a commit (`'all'` = unscoped).
  * @typedef {object} TranscriptFilters
- * @property {{ prompts: boolean, responses: boolean, thinking: boolean, toolcalls: boolean }} categories
+ * @property {{ prompts: boolean, responses: boolean, thinking: boolean, toolcalls: boolean, system?: boolean }} categories  system defaults to true when absent from saved or host-controlled state
  * @property {Partial<Record<import('./view-model.js').ToolGroup, boolean>>} toolGroups
  * @property {{ errors: boolean, retries: boolean, revert: boolean }} tags
  * @property {{ hidden: boolean, expandAll: boolean, compact: boolean }} views
@@ -165,8 +165,8 @@
  * @property {(layout: TranscriptSidebarLayout) => void} [onSidebarLayoutChange]  fires the FULL layout object on every explicit rail action and on zen entry and exit
  * @property {boolean} [zen]                                           ledger only: reading mode collapses both viewer rails to nothing (their strips leave too) and `host` reports false; ignored in classic; defaults false
  * @property {(zen: boolean) => void} [onZenChange]
- * @property {number} [readerWidth]                                    ledger only: the reader column width in CSS pixels. A supplied value is normalised at the boundary (clamped to 600..936 and snapped to the nearest of the exported `READER_SNAPS`), so the column and `aria-valuenow` always report a supported width; defaults 840
- * @property {(width: number) => void} [onReaderWidthChange]
+ * @property {number | 'full'} [readerWidth]                            ledger only: the reader column width in CSS pixels, or `'full'` (exported as `READER_FULL`), the stream's whole measured content width, which follows the space as it changes. There are no snaps: a supplied number renders clamped to 600..full, so the column and `aria-valuenow` always report a width the column can draw; defaults 840
+ * @property {(width: number | 'full') => void} [onReaderWidthChange]      a drag or a key reports pixel widths, and `'full'` once the column reaches the end
  * @property {boolean} [leftRailOpen]                                  alias for `sidebarLayout.outline`; when supplied it wins for that rail and still calls `onLeftRailOpenChange`
  * @property {(open: boolean) => void} [onLeftRailOpenChange]
  * @property {boolean} [rightRailOpen]                                 alias for `sidebarLayout.filters`; when supplied it wins for that rail and still calls `onRightRailOpenChange`

@@ -6,6 +6,7 @@
 
 requiredExceptionNames:
   - the transcript rails need more than the tablet token
+  - transcript rail motion complements the rail layout boundary
 
 requiredCaseNames:
   - the phone boundary

@@ -1,10 +1,14 @@
-import { useState } from 'react'
-import { ChevronDown, ChevronRight, Brain } from 'lucide-react'
+import { useLayoutEffect, useState } from 'react'
+import { Brain } from 'lucide-react'
+import { formatDurationMs } from './time.js'
+import Collapsible from './Collapsible.jsx'
 
-/* Thinking — the collapsible "thinking" disclosure for a turn. Lifted verbatim from the
-   canonical mockup (src/mockups/inuse/TranscriptApp.jsx:384). DUMB: it renders the cooked
-   `ThinkingVM` (text + a precomputed word count) the adapter extracted from the folded turn
-   content; it never parses wire. Absent thinking ⇒ the caller renders nothing. */
+/* Thinking — a turn's thinking as one row in the same shape as a tool call: the kind icon and
+   "Think" where a tool shows its name, the word count where a tool shows its argument, and the
+   time spent thinking where a tool shows its duration. The row opens on the thinking text. DUMB:
+   it renders the cooked `ThinkingVM` (text, a precomputed word count and, when the adapter could
+   derive it, the time spent) and never parses wire. Absent thinking ⇒ the caller renders nothing.
+   It is not a tool call, so it carries the row classes but never `txn-toolcall`. */
 
 /** @typedef {import('./view-model.js').ThinkingVM} ThinkingVM */
 
@@ -12,27 +16,34 @@ import { ChevronDown, ChevronRight, Brain } from 'lucide-react'
  * @param {object} props
  * @param {ThinkingVM} [props.block]   cooked thinking (e.g. `TurnVM.thinking`)
  */
-export default function Thinking({ block }) {
+export default function Thinking({ block, actionRef, revealRequest = 0 }) {
   const [open, setOpen] = useState(false)
+  useLayoutEffect(() => { if (revealRequest) setOpen(true) }, [revealRequest])
   if (!block) return null
+  const words = block.words ?? 0
+  const duration = formatDurationMs(block.durationMs)
   return (
-    <div className="txn-thinking">
+    <div className="toolcall txn-thinking" ref={actionRef}>
       <button
         type="button"
-        className="txn-thinking-toggle"
+        className="tc-head txn-tc-head txn-thinking-toggle"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
       >
-        {open ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}
-        <Brain size={14} aria-hidden="true" />
-        <i>thinking</i>
-        <span className="txn-thinking-wc"><span className="tnum">{block.words ?? 0}</span> {(block.words ?? 0) === 1 ? 'word' : 'words'}</span>
+        <span className="kind">
+          <Brain size={14} aria-hidden="true" />
+          <span>Think</span>
+        </span>
+        <span className="path txn-thinking-wc"><span className="tnum">{words}</span> {words === 1 ? 'word' : 'words'}</span>
+        <span className="right">
+          {duration && <span className="tnum txn-tc-dur">{duration}</span>}
+        </span>
       </button>
-      {open && (
+      <Collapsible open={open}>
         <div className="txn-thinking-body">
-          <em>{block.text}</em>
+          <div className="txn-thinking-box"><em>{block.text}</em></div>
         </div>
-      )}
+      </Collapsible>
     </div>
   )
 }
