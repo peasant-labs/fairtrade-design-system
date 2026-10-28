@@ -18,6 +18,9 @@
   "shortTaskCount": 1,
   "shortLeadingActions": 1,
   "searchSourceOnly": "**source-only markup evidence**",
+  "searchMixed": {"text": "[label](needle-token) visible needle-token", "query": "needle-token"},
+  "searchHorizontal": "terminal_search_needle",
+  "searchFrequent": {"query": "response", "repeat": 1000, "minimum": 1000, "scrollStep": 100, "maxFrameMs": 1000},
   "searchRepeated": {"query": "repeated reading needle", "turn": 50, "paragraphs": [3, 21]},
   "width": [
     {"name": "long assistant reading point survives keyboard reflow", "turn": 50, "paragraph": 6, "gesture": "keyboard", "motion": "reduce"},

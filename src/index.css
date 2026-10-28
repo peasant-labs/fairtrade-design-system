@@ -2614,7 +2614,8 @@
   .txn-search-input::placeholder { color: var(--ink-4); }
   .txn-search-count { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); flex: none; }
   .txn-search-highlights { position: fixed; inset: 0; pointer-events: none; z-index: var(--z-nav); }
-  .txn-search-highlight { position: fixed; opacity: .35; }
+  .txn-search-highlight { position: fixed; }
+  .txn-search-highlight.is-current { outline: var(--stroke-emphasis) solid; outline-offset: var(--stroke-hairline); }
   .txn-search-nav, .txn-search-x { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; flex: none; background: transparent; border: 1px solid transparent; color: var(--ink-3); cursor: pointer; }
   .txn-search-nav:hover, .txn-search-x:hover { color: var(--ink); border-color: var(--rule-strong); }
   .txn-search-nav:disabled { color: var(--ink-5); cursor: not-allowed; }

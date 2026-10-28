@@ -487,6 +487,71 @@ test('search identifies a source-only markdown match', async ({ page }, info) =>
   await expect(page.getByRole('status').filter({ hasText: 'match in source, not visible in rendered content' })).toBeVisible()
   await expect(page.locator('.txn-search-highlight')).toHaveCount(0)
 })
+test('source-only markdown occurrence does not displace the rendered occurrence', async ({ page }, info) => {
+  await open(page, info.project.name)
+  await page.locator('.txn-stream').focus(); await page.keyboard.press('Control+f')
+  await page.getByRole('textbox', { name: 'search transcript' }).fill(fixture.searchMixed.query)
+  await expect(page.locator('.txn-search-count')).toHaveText('1/2')
+  await expect(page.locator('.txn-search-highlight.is-current')).toHaveCount(1)
+  await expect(page.getByRole('status').filter({ hasText: 'match in source, not visible' })).toHaveCount(0)
+  await page.getByRole('button', { name: 'next match', exact: true }).click()
+  await expect(page.locator('.txn-search-count')).toHaveText('2/2')
+  await expect(page.getByRole('status').filter({ hasText: 'match in source, not visible' })).toBeVisible()
+  await expect(page.locator('.txn-search-highlight.is-current')).toHaveCount(0)
+})
+test('search reveals a hit beyond the code block horizontal viewport', async ({ page }, info) => {
+  await open(page, info.project.name)
+  await page.locator('.txn-stream').focus(); await page.keyboard.press('Control+f')
+  await page.getByRole('textbox', { name: 'search transcript' }).fill(fixture.searchHorizontal)
+  const code = page.locator('#turn-1 .txn-md-code-wrap')
+  await expect.poll(() => code.evaluate(el => el.scrollLeft)).toBeGreaterThan(0)
+  await expect.poll(() => code.evaluate((el, query) => {
+    const node = el.querySelector('code').firstChild, at = node.data.indexOf(query), range = document.createRange()
+    range.setStart(node, at); range.setEnd(node, at + query.length)
+    const r = range.getBoundingClientRect(), c = el.getBoundingClientRect()
+    return r.left >= c.left && r.right <= c.right
+  }, fixture.searchHorizontal)).toBe(true)
+  await expect(page.locator('.txn-search-highlight.is-current')).toHaveCount(1)
+})
+test('selected search highlight has a non-colour marker and readable contrast', async ({ page }, info) => {
+  await open(page, info.project.name)
+  await page.locator('.txn-stream').focus(); await page.keyboard.press('Control+f')
+  await page.getByRole('textbox', { name: 'search transcript' }).fill(fixture.navigation.find(item => item.kind === 'body').query)
+  const mark = page.locator('.txn-search-highlight.is-current')
+  await expect(mark).toHaveCount(1)
+  const result = await mark.evaluate(el => {
+    const markStyle = getComputedStyle(el), body = document.querySelector('#turn-2 .txn-body p'), style = getComputedStyle(body)
+    const canvas = document.createElement('canvas'), ctx = canvas.getContext('2d', { willReadFrequently: true })
+    canvas.width = 1; canvas.height = 1
+    const sample = color => { ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = color; ctx.fillRect(0, 0, 1, 1); return [...ctx.getImageData(0, 0, 1, 1).data].slice(0, 3) }
+    const ink = sample(style.color)
+    ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = style.getPropertyValue('--canvas'); ctx.fillRect(0, 0, 1, 1); ctx.fillStyle = markStyle.backgroundColor; ctx.fillRect(0, 0, 1, 1)
+    const background = [...ctx.getImageData(0, 0, 1, 1).data].slice(0, 3)
+    const luminance = rgb => rgb.map(v => v / 255).map(v => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4).reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0)
+    const values = [luminance(ink), luminance(background)].sort((a, b) => a - b)
+    return { ratio: (values[1] + 0.05) / (values[0] + 0.05), outline: markStyle.outlineStyle, width: parseFloat(markStyle.outlineWidth) }
+  })
+  expect(result.outline).toBe('solid'); expect(result.width).toBeGreaterThan(0); expect(result.ratio).toBeGreaterThanOrEqual(4.5)
+})
+test('frequent search culls offscreen highlights during scrolling', async ({ page }, info) => {
+  const row = fixture.searchFrequent
+  await open(page, info.project.name)
+  await page.locator('.txn-stream').focus(); await page.keyboard.press('Control+f')
+  await page.getByRole('textbox', { name: 'search transcript' }).fill(row.query)
+  const count = Number((await page.locator('.txn-search-count').innerText()).split('/')[1])
+  expect(count).toBeGreaterThan(row.minimum)
+  const elapsed = await page.locator('.txn-stream').evaluate(async (el, step) => {
+    el.scrollTop = el.scrollHeight - el.clientHeight - step * 2
+    await new Promise(requestAnimationFrame); await new Promise(requestAnimationFrame)
+    const start = performance.now(); el.scrollTop += step
+    await new Promise(requestAnimationFrame); await new Promise(requestAnimationFrame)
+    return performance.now() - start
+  }, row.scrollStep)
+  await expect.poll(() => page.locator('.txn-search-highlight').count()).toBeGreaterThan(0)
+  expect(await page.locator('.txn-search-highlight').count()).toBeLessThan(count)
+  expect(elapsed).toBeLessThan(row.maxFrameMs)
+  await info.attach('search-scroll-frame', { body: JSON.stringify({ matches: count, elapsedMs: elapsed }), contentType: 'application/json' })
+})
 test('search highlights without the CSS Highlight API and leaves the host registry alone', async ({ page }, info) => {
   await page.addInitScript(() => { Object.defineProperty(CSS, 'highlights', { configurable: true, value: undefined }) })
   await open(page, info.project.name)

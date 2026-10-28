@@ -474,6 +474,8 @@ export default function TranscriptViewer({
   const [searchNavigation, setSearchNavigation] = useState(0)
   const [searchReveal, setSearchReveal] = useState(null)
   const [searchUnrendered, setSearchUnrendered] = useState(false)
+  const [searchMeasurements, setSearchMeasurements] = useState({ query: '', sections: {} })
+  const [selectedSearchRange, setSelectedSearchRange] = useState(null)
   const [diffMode, setDiffMode] = useState('file')
   const [diffGroupsOpen, setDiffGroupsOpen] = useState({}) // path -> open? (default open)
   const [fileSort, setFileSort] = useState({ key: 'path', dir: 'asc' })
@@ -482,6 +484,10 @@ export default function TranscriptViewer({
 
   const session = vm?.session ?? {}
   const turns = vm?.turns ?? []
+  useEffect(() => {
+    setSearchMeasurements({ query: '', sections: {} })
+    setSelectedSearchRange(null)
+  }, [turns, session.id])
 
   const turnRefs = useRef({})
   const actionRefs = useRef(new Map())
@@ -541,12 +547,12 @@ export default function TranscriptViewer({
     if (el) actionRefs.current.set(key, el)
     else actionRefs.current.delete(key)
   }, [])
-  function revealAction(turn, where, { select = true, search = false, occurrence = 0 } = {}) {
+  function revealAction(turn, where, { select = true, search = false, occurrence = 0, sourceOnly = false } = {}) {
     if (where !== 'body' && where !== 'thinking') {
       const call = turns.find(item => item.index === turn)?.toolCalls?.find(tool => tool.id === where || `source:${tool.sourceIndex}` === where)
       if (call) setOpenTools(previous => ({ ...previous, [toolStateKey(turn, call)]: true }))
     }
-    setSearchReveal({ turn, where, select, search, occurrence, sequence: ++revealSequence.current })
+    setSearchReveal({ turn, where, select, search, occurrence, sourceOnly, sequence: ++revealSequence.current })
   }
 
   /* ── cooked slices off the VM ───────────────────────────────────────────────── */
@@ -808,8 +814,13 @@ export default function TranscriptViewer({
     if (!query.trim()) return []
     const found = []
     const append = (turn, where, text) => {
-      let occurrence = 0
-      for (const _match of text.matchAll(searchExpression(query))) found.push({ turn, where, occurrence: occurrence++ })
+      let raw = 0
+      for (const _match of text.matchAll(searchExpression(query))) raw++
+      if (!raw) return
+      const measured = searchMeasurements.query === query ? searchMeasurements.sections[`${turn}:${where}`] : undefined
+      const rendered = measured ?? raw
+      for (let occurrence = 0; occurrence < rendered; occurrence++) found.push({ turn, where, occurrence, sourceOnly: false })
+      if (measured !== undefined) for (let occurrence = 0; occurrence < Math.max(0, raw - rendered); occurrence++) found.push({ turn, where, occurrence, sourceOnly: true })
     }
     for (const t of visibleTurns) {
       append(t.index, 'body', t.displayContent ?? t.content ?? '')
@@ -821,7 +832,7 @@ export default function TranscriptViewer({
       }
     }
     return found
-  }, [query, visibleTurns])
+  }, [query, visibleTurns, searchMeasurements])
 
   const progress = useMemo(() => {
     const idx = visibleTurns.findIndex((t) => t.index === activeTurn)
@@ -1100,7 +1111,7 @@ export default function TranscriptViewer({
   useLayoutEffect(() => {
     if (!searchOpen || matches.length === 0) return
     const m = matches[Math.min(matchIdx, matches.length - 1)]
-    revealAction(m.turn, m.where, { search: true, occurrence: m.occurrence })
+    revealAction(m.turn, m.where, { search: true, occurrence: m.occurrence, sourceOnly: m.sourceOnly })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchNavigation])
 
@@ -1123,9 +1134,24 @@ export default function TranscriptViewer({
       if (!el || el.closest('[hidden], [inert]')) return
       const reduce = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
       const padding = Number.parseFloat(getComputedStyle(sc).scrollPaddingTop) || 12
-      const scope = searchReveal.where === 'body' ? el.querySelector('.txn-body') : el
-      const match = searchReveal.search ? renderedSearchRanges(scope, query)[searchReveal.occurrence] : null
-      if (searchReveal.search) setSearchUnrendered(!match)
+      const scope = searchReveal.where === 'body' ? el.querySelector('.txn-body') : searchReveal.where === 'thinking' ? el.querySelector('.txn-thinking-box') : el
+      const ranges = searchReveal.search ? renderedSearchRanges(scope, query) : []
+      const match = searchReveal.search && !searchReveal.sourceOnly ? ranges[searchReveal.occurrence] : null
+      if (searchReveal.search) {
+        const key = `${searchReveal.turn}:${searchReveal.where}`
+        setSearchMeasurements(previous => previous.query === query && previous.sections[key] === ranges.length ? previous : { query, sections: { ...(previous.query === query ? previous.sections : {}), [key]: ranges.length } })
+        setSearchUnrendered(!match)
+        setSelectedSearchRange(match ?? null)
+      }
+      if (match) {
+        // The hit can be outside a code block's horizontal viewport even when its row is visible.
+        for (let ancestor = match.startContainer.parentElement; ancestor && ancestor !== sc; ancestor = ancestor.parentElement) {
+          const style = getComputedStyle(ancestor)
+          if (!/(auto|scroll)/.test(style.overflowX) || ancestor.scrollWidth <= ancestor.clientWidth) continue
+          const hit = match.getBoundingClientRect(), box = ancestor.getBoundingClientRect()
+          if (hit.left < box.left || hit.right > box.right) ancestor.scrollLeft += hit.left - box.left - ancestor.clientWidth * 0.4
+        }
+      }
       const top = match
         ? sc.scrollTop + match.getBoundingClientRect().top - sc.getBoundingClientRect().top - sc.clientHeight * 0.4
         : (ledger || sourceTarget || searchReveal.search) && searchReveal.where !== 'body'
@@ -1256,7 +1282,7 @@ export default function TranscriptViewer({
       data-host-visible={!zenActive && sidebarLayout.host ? 'true' : 'false'}
       style={ledger ? { '--txn-reader-width': readerPx != null ? `${readerPx}px` : '100%' } : undefined}
     >
-      <SearchHighlights scrollRef={scrollRef} query={query} enabled={searchOpen && tab === 'trace' && viewMode === 'list'} revision={visibleTurns} />
+      <SearchHighlights scrollRef={scrollRef} query={query} enabled={searchOpen && tab === 'trace' && viewMode === 'list'} revision={visibleTurns} selected={selectedSearchRange} />
       {/* The session views live in the bottom bar, which comes after the whole panel in DOM order.
           This control keeps them one keystroke from the top of the viewer, and only shows itself
           while focused. */}
@@ -1380,7 +1406,7 @@ export default function TranscriptViewer({
             className="txn-search-input"
             placeholder="search across turns, tool args, and results…"
             value={query}
-            onChange={(e) => { setSearchUnrendered(false); setQuery(e.target.value); setMatchIdx(0); setSearchNavigation(sequence => sequence + 1) }}
+            onChange={(e) => { setSelectedSearchRange(null); setSearchUnrendered(false); setQuery(e.target.value); setMatchIdx(0); setSearchNavigation(sequence => sequence + 1) }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') { e.preventDefault(); navigateSearch(e.shiftKey ? -1 : 1) }
               if (e.key === 'Escape') setSearchOpen(false)
