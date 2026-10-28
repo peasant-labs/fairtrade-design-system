@@ -2,13 +2,15 @@
   "name": "overflowing user tasks and separated action destinations",
   "rationale": "24 real task cards overflow the rail; 32 distinct leading actions separate the owner and matched row by more than the reading viewport, without forced geometry.",
   "taskCount": 24,
+  "shortTaskCount": 1,
+  "shortLeadingActions": 1,
   "leadingActions": 32,
   "lastResponseParagraphs": 12,
   "longCode": "very_long_synthetic_identifier_for_local_code_scroll_very_long_synthetic_identifier_for_local_code_scroll_very_long_synthetic_identifier_for_local_code_scroll",
   "longTitle": "SyntheticLongTranscriptTitleWithoutSpacesForNarrowViewportSyntheticLongTranscriptTitleWithoutSpacesForNarrowViewportSyntheticLongTranscriptTitleWithoutSpaces",
   "mobile": [
-    {"name": "narrow portrait", "width": 320, "height": 720, "motion": "reduce"},
-    {"name": "phone landscape", "width": 720, "height": 390, "motion": "no-preference"}
+    {"name": "narrow portrait", "width": 320, "height": 720, "motion": "reduce", "footerMaxHeight": 52},
+    {"name": "phone landscape", "width": 720, "height": 390, "motion": "no-preference", "footerMaxHeight": 52}
   ],
   "navigation": [
     {"name": "later prose tool destination", "query": "target-beta-output", "turn": 2, "kind": "tool", "command": "printf target-beta", "compact": false},

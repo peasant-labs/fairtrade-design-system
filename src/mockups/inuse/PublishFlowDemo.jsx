@@ -90,13 +90,13 @@ export function usePublishFlow(viewModel) {
     .filter((item) => !query.trim() || item.name.toLowerCase().includes(query.trim().toLowerCase()))
 
   const barNode = (
-    <PublishBar
+    <><PublishBar
       state={bar}
       collectives={readers.length}
       newTurns={6}
       collective="Acme Platform"
       onAction={open}
-    />
+    /><span role="status">{copied}</span></>
   )
   const utilityNode = <>
     <button type="button" className="btn btn-secondary btn-sm btn-icon" aria-label="copy transcript" onClick={copyTranscript}><Copy size={14} aria-hidden="true" /></button>
@@ -104,7 +104,6 @@ export function usePublishFlow(viewModel) {
       { label: 'copy as markdown', icon: Copy, onSelect: copyTranscript },
       { label: 'copy link', icon: LinkIcon, onSelect: copyLink },
     ]} />
-    <span role="status">{copied}</span>
   </>
   const dialogNode = (
     <PublishDialog

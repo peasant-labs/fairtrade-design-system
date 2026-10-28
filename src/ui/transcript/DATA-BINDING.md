@@ -83,7 +83,7 @@ the rest; each default keeps the long-standing header.
 | prop | default | effect |
 |---|---|---|
 | `showTail` | `false` | hosts explicitly opt in with `showTail={true}` to retain the legacy `share` (including capability-gated `contribute`) and `more actions` menus after `headerActions`. By default a host owns publish and overflow through `headerActions`. The opt-in `more actions` menu renders only when `canEdit` or `canExport` gives it an item. |
-| `utilityActions` | omitted | host secondary actions render beside primary header actions on desktop and in the bottom bar on phones. Primary actions remain in `headerActions` at every width. |
+| `utilityActions` | omitted | host secondary actions render beside primary header actions on desktop and in the bottom bar on phones. Supply compact icon controls here; place status messages with `headerActions` so feedback does not expand the phone toolbar. Primary actions remain in `headerActions` at every width. |
 | `showOutcome` | `true` | renders the outcome chip when `session.outcome` is present. `false` hides it without touching the cooked outcome. |
 | `showSearchTrigger` | `false` | renders a `search transcript` button with its `⌘F` hint at the end of the session views in the bottom bar. It opens the search bar exactly as the shortcut does, and it stays when `showTail` is `false`. |
 | `footer` | omitted | `{ hints, progress }`, both off by default. `hints` renders the `⌘f search, j/k step turns` line and `progress` the visible-turn position counter, in the bottom bar beside the session views. A host opts in per part. The hint leaves a coarse pointer below the phone breakpoint, since it names keys a touch screen does not have; the counter exists only on the trace view in list mode. |

@@ -763,9 +763,9 @@ function DefaultTranscriptApp({ theme }) {
   // `?transcript=ledger` reads the same demo session through the ledger presentation.
   // `?transcript=ledger-system` keeps that canonical session and appends one synthetic system
   // turn, so the built app renders the compact system row (the canonical demo has none).
-  const ledger = search === 'ledger' || search === 'ledger-system' || search === 'ledger-actions' || search === 'ledger-reading'
+  const ledger = search === 'ledger' || search === 'ledger-system' || search === 'ledger-actions' || search === 'ledger-reading' || search === 'ledger-reading-short'
   const vm = useMemo(() => {
-    if (search === 'ledger-reading') return adaptTranscript(readingPayload())
+    if (search === 'ledger-reading' || search === 'ledger-reading-short') return adaptTranscript(readingPayload({ short: search === 'ledger-reading-short' }))
     if (search === 'pi') return adaptTranscript(piPayload)
     const base = buildMockupVM()
     if (search === 'ledger-actions') {

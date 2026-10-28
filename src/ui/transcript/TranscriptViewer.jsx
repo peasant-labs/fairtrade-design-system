@@ -338,6 +338,7 @@ export default function TranscriptViewer({
   const mobileOpenerRef = useRef(null)
   const mobileOutlineRef = useRef(null)
   const mobileFiltersRef = useRef(null)
+  const mobileViewsRef = useRef(null)
   const mobileDrawerId = useId()
   const closeMobileDrawer = useCallback(() => {
     setMobileDrawer(null)
@@ -1158,7 +1159,7 @@ export default function TranscriptViewer({
       <button
         type="button"
         className="txn-skip"
-        onClick={() => { const target = tabRefs.current[tab]; if (target) target.focus() }}
+        onClick={() => { const target = mobile ? mobileViewsRef.current : tabRefs.current[tab]; if (target) target.focus() }}
       >
         skip to session views
       </button>
@@ -1322,7 +1323,7 @@ export default function TranscriptViewer({
           </Collapsible>
 
         {/* CENTER */}
-        <section className="txn-center" role="tabpanel" id={`${tabsId}-panel`} aria-labelledby={`${tabsId}-${tab}`}>
+        <section className="txn-center" role="tabpanel" id={`${tabsId}-panel`} aria-labelledby={mobile ? undefined : `${tabsId}-${tab}`} aria-label={mobile ? TAB_LABEL[tab] : undefined}>
           {tab === 'trace' && (
             <div className={'txn-trace' + (sticky && viewMode === 'list' ? ' txn-trace-pinned' : '')}>
               <Collapsible open={sticky && viewMode === 'list'} className="txn-sticky-disclosure">
@@ -1689,12 +1690,14 @@ export default function TranscriptViewer({
         <div className="txn-mobile-controls">
           {mobile && utilityActions}
           {mobile && showTail && moreActions}
-          <button ref={mobileOutlineRef} type="button" aria-controls={mobileDrawerId} aria-expanded={mobileDrawer === 'outline'} onClick={(event) => { mobileOpenerRef.current = event.currentTarget; setMobileDrawer('outline') }}><LayoutList size={14} aria-hidden="true" /> user turns</button>
-          {tabHasFilters && <button ref={mobileFiltersRef} type="button" aria-controls={mobileDrawerId} aria-expanded={mobileDrawer === 'filters'} onClick={(event) => { mobileOpenerRef.current = event.currentTarget; setMobileDrawer('filters') }}><SlidersHorizontal size={14} aria-hidden="true" /> filters</button>}
+          <button className="txn-mobile-rail-button" ref={mobileOutlineRef} type="button" aria-label="user turns" title="user turns" aria-controls={mobileDrawerId} aria-expanded={mobileDrawer === 'outline'} onClick={(event) => { mobileOpenerRef.current = event.currentTarget; setMobileDrawer('outline') }}><LayoutList size={14} aria-hidden="true" /></button>
+          {tabHasFilters && <button className="txn-mobile-rail-button" ref={mobileFiltersRef} type="button" aria-label="filters" title="filters" aria-controls={mobileDrawerId} aria-expanded={mobileDrawer === 'filters'} onClick={(event) => { mobileOpenerRef.current = event.currentTarget; setMobileDrawer('filters') }}><SlidersHorizontal size={14} aria-hidden="true" /></button>}
+          {mobile && <select ref={mobileViewsRef} className="txn-mobile-views" aria-label="session views" aria-controls={`${tabsId}-panel`} title="session views" value={tab} onChange={(event) => selectTab(event.target.value)}>{TAB_ORDER.map((id) => <option key={id} value={id}>{id === 'trace' ? 'trace' : TAB_LABEL[id]}</option>)}</select>}
+          {mobile && showSearchTrigger && <button type="button" className="txn-mobile-rail-button" aria-label="search transcript" title="search transcript" aria-keyshortcuts="Meta+F Control+F" onClick={openSearch}><Search size={14} aria-hidden="true" /></button>}
         </div>
         <div className="txn-foot-tabs">
-          {tabStrip}
-          {showSearchTrigger && (
+          {!mobile && tabStrip}
+          {!mobile && showSearchTrigger && (
             <button
               type="button"
               className="btn btn-secondary txn-search-trigger"
