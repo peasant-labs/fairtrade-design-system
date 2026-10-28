@@ -19,14 +19,16 @@ function restoreRange(a) {
   return false
 }
 
-export default function useReaderWidthAnchor({ readerPx, scrollRef, activeTurnRef, turnRefs, actionRefs, actionLayout, visibleTurns, ledger, sessionId, tab, viewMode }) {
+export default function useReaderWidthAnchor({ readerPx, scrollRef, activeTurnRef, turnRefs, actionRefs, actionLayout, visibleTurns, ledger, sessionId, tab, viewMode, onSettle }) {
   const anchor = useRef(null)
   const frame = useRef(null)
   const expectedScroll = useRef(null)
   const finishing = useRef(false)
+  const reconciled = useRef(false)
   function clear() {
     anchor.current = null
     finishing.current = false
+    reconciled.current = false
     expectedScroll.current = null
     if (frame.current != null) cancelAnimationFrame(frame.current)
     frame.current = null
@@ -88,7 +90,11 @@ export default function useReaderWidthAnchor({ readerPx, scrollRef, activeTurnRe
     compensate()
     const header = scrollRef.current?.closest('.txn-app')?.querySelector('.txn-header')
     const moving = header?.getAnimations?.({ subtree: true }).some(a => a.playState === 'running' && Number.isFinite(a.effect?.getComputedTiming().endTime))
-    if (finishing.current && !moving) { clear(); return }
+    if (finishing.current && !moving) {
+      if (reconciled.current) { clear(); return }
+      reconciled.current = true
+      onSettle()
+    }
     frame.current = requestAnimationFrame(tick)
   }
   function schedule() { if (anchor.current && frame.current == null) frame.current = requestAnimationFrame(tick) }
@@ -99,8 +105,8 @@ export default function useReaderWidthAnchor({ readerPx, scrollRef, activeTurnRe
   }, [sessionId, tab, viewMode])
   function skipScroll(stream) {
     if (expectedScroll.current != null && Math.abs(stream.scrollTop - expectedScroll.current) < 1) { expectedScroll.current = null; return true }
-    expectedScroll.current = null
-    return !!anchor.current
+    if (anchor.current) clear()
+    return false
   }
   function ensure() { if (!anchor.current) begin() }
   return { begin, ensure, finish, clear, skipScroll }

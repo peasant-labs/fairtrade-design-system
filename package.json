@@ -244,6 +244,7 @@
     "@peasant-labs/schema": "0.29.1",
     "@tanstack/react-table": "^8.21.3",
     "lucide-react": "^1.18.0",
+    "mermaid": "12.2.0",
     "react-markdown": "10.1.0",
     "recharts": "^3.8.1",
     "remark-breaks": "4.0.0",

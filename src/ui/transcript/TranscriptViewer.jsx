@@ -579,7 +579,7 @@ export default function TranscriptViewer({
     }).filter((t) => t != null)
   }, [turns, filters, commits, vm, searchReveal, session.id])
   const actionLayout = useMemo(() => actionGroups(turns, visibleTurns), [turns, visibleTurns])
-  const readerAnchor = useReaderWidthAnchor({ readerPx, scrollRef, activeTurnRef, turnRefs, actionRefs, actionLayout, visibleTurns, ledger, sessionId: session.id, tab, viewMode })
+  const readerAnchor = useReaderWidthAnchor({ readerPx, scrollRef, activeTurnRef, turnRefs, actionRefs, actionLayout, visibleTurns, ledger, sessionId: session.id, tab, viewMode, onSettle: () => { if (scrollRef.current) syncScrollChrome(scrollRef.current) } })
   useEffect(() => {
     readerDragRef.current = null
     setReaderDragWidth(null)

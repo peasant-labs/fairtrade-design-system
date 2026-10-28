@@ -21,3 +21,6 @@ requiredWidthActionNames:
   - folded action retains its visible source
 requiredMovingHeaderNames:
   - resize during header exchange
+requiredWidthLifecycleNames:
+  - wheel interrupts active resize
+  - short trace stays expanded at top

@@ -768,6 +768,102 @@ function DefaultTranscriptApp({ theme }) {
     if (search === 'ledger-reading' || search === 'ledger-reading-short') return adaptTranscript(readingPayload({ short: search === 'ledger-reading-short' }))
     if (search === 'pi') return adaptTranscript(piPayload)
     const base = buildMockupVM()
+    if (search === 'mermaid-reading') {
+      const source = `Mermaid chart examples.
+
+\`\`\`mermaid
+flowchart LR
+A[Source Case] --> B[Destination]
+\`\`\`
+
+\`\`\`mermaid
+sequenceDiagram
+participant A as Alice
+participant B as Bob
+A->>B: Hello Bob
+\`\`\`
+
+\`\`\`mermaid
+flowchart LR
+A --> B
+click A "https://evil.example"
+\`\`\`
+
+\`\`\`mermaid
+pie
+"Cats" : 2
+"Dogs" : 3
+\`\`\`
+
+\`\`\`mermaid
+classDiagram
+Animal <|-- Cat
+\`\`\`
+
+\`\`\`mermaid
+stateDiagram-v2
+[*] --> Idle
+Idle --> [*]
+\`\`\`
+
+\`\`\`mermaid
+gantt
+title Plan
+dateFormat YYYY-MM-DD
+section Work
+Task :a, 2024-01-01, 1d
+\`\`\`
+
+\`\`\`mermaid
+mindmap
+  root((Hello))
+    child
+\`\`\`
+
+\`\`\`mermaid
+flowchart LR
+A@{ img: "/mermaid-probe-image.png", label: "image" }
+\`\`\`
+
+\`\`\`mermaid
+journey
+  title Day
+  section Morning
+  Wake: 5: Me
+\`\`\`
+
+\`\`\`mermaid
+erDiagram
+  CUSTOMER ||--o{ ORDER : places
+\`\`\`
+
+\`\`\`mermaid
+xychart-beta
+  x-axis [A, B]
+  y-axis 0 --> 10
+  bar [1, 2]
+\`\`\`
+
+\`\`\`mermaid
+journey
+  section <img src=/mermaid-probe-image.png onerror=malicious()>
+  Wake: 5: Me
+\`\`\`
+
+\`\`\`mermaid
+journey
+  section &#x3c;img src=/mermaid-probe-image.png&#x3e;
+  Wake: 5: Me
+\`\`\`
+
+\`\`\`mermaid
+sequenceDiagram
+participant A
+properties A: {"icon":"/mermaid-probe-image.png"}
+A->>A: Hi
+\`\`\``
+      return { ...base, turns: base.turns.map((turn, index) => index === 1 ? { ...turn, content: source } : turn) }
+    }
     if (search === 'ledger-actions') {
       // two wordless agent turns in a row, so the built app shows the one model-actions block
       // a run of thinking and tool work collapses into.

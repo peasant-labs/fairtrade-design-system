@@ -1,5 +1,6 @@
-expectedCaseCount: 5
+expectedCaseCount: 6
 requiredNames:
+  - mermaid-source-available-before-render
   - rich-gfm-structures
   - preserves-every-prose-newline
   - hostile-content-stays-inert

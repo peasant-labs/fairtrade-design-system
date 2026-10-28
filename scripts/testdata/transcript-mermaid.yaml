@@ -1,0 +1,82 @@
+accepted:
+  - name: flowchart
+    source: |-
+      flowchart LR
+      A[Source Case] --> B[Destination]
+  - name: sequence
+    source: |-
+      sequenceDiagram
+      participant A as Alice
+      participant B as Bob
+      A->>B: Hello Bob
+  - name: pie
+    source: |-
+      pie
+      "dogs" : 3
+  - name: class
+    source: |-
+      classDiagram
+      Animal <|-- Cat
+rejected:
+  - name: prototype-metadata
+    source: |-
+      sequenceDiagram
+      participant A@{ "__proto__": {"icon": "/mermaid-probe-image.png"} }
+  - name: directive
+    source: |-
+      %%{init: {"securityLevel": "loose"}}%%
+      flowchart LR
+      A --> B
+  - name: frontmatter
+    source: |-
+      ---
+      config: evil
+      ---
+      flowchart LR
+      A --> B
+  - name: link
+    source: |-
+      flowchart LR
+      A --> B
+      click A "https://evil.example"
+  - name: html
+    source: |-
+      flowchart LR
+      A[<img src=https://evil.example>] --> B
+  - name: entity
+    source: |-
+      flowchart LR
+      A[&#60;script&#62;] --> B
+  - name: styling
+    source: |-
+      flowchart LR
+      A --> B
+      style A fill:red
+  - name: html-image
+    source: |-
+      flowchart LR
+      A@{ img: "https://evil.example/a.png" }
+  - name: callback
+    source: |-
+      flowchart LR
+      A --> B
+      click A call malicious()
+badSvg:
+  - name: script
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><script/></svg>'
+  - name: foreign-object
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><foreignObject/></svg>'
+  - name: image
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><image href="https://evil.example"/></svg>'
+  - name: event
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path onload="alert(1)"/></svg>'
+  - name: external-reference
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path marker-end="url(https://evil.example/a)"/></svg>'
+  - name: missing-reference
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path marker-end="url(#missing)"/></svg>'
+  - name: external-style
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path style="fill:url(https://evil.example/a)"/></svg>'
+  - name: hostile-html-fallback
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><switch><foreignObject x="0" y="0" width="1" height="1"><div xmlns="http://www.w3.org/1999/xhtml"><script/></div></foreignObject><text>label</text></switch></svg>'
+  - name: prototype-icon-model
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path style="fill:url(//evil.example/a)"/></svg>'

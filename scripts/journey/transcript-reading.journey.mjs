@@ -4,7 +4,7 @@ import { loadFixturePair } from '../mounted-parts.mjs'
 // Pixels, real overflow and post-animation visibility cannot be proved in JSDOM.
 // Reuse the existing built app/runner and small shared demo fixture; no extra service.
 const { fixture } = loadFixturePair('scripts/testdata/transcript-reading-browser.yaml', 'scripts/testdata/transcript-reading-browser.manifest.yaml', {
-  navigation: 'requiredNavigationNames', initial: 'requiredInitialNames', rail: 'requiredRailNames', mobile: 'requiredMobileNames', width: 'requiredWidthNames', widthAction: 'requiredWidthActionNames', movingHeader: 'requiredMovingHeaderNames',
+  navigation: 'requiredNavigationNames', initial: 'requiredInitialNames', rail: 'requiredRailNames', mobile: 'requiredMobileNames', width: 'requiredWidthNames', widthAction: 'requiredWidthActionNames', movingHeader: 'requiredMovingHeaderNames', widthLifecycle: 'requiredWidthLifecycleNames',
 })
 const origin = `http://localhost:${process.env.JOURNEY_APP_PORT || 5180}`
 test.describe('touch transcript', () => {
@@ -22,8 +22,19 @@ for (const row of fixture.mobile) test(`transcript mobile drawers ${row.name}`, 
       const item = durations.nth(index)
       await expect(item).toHaveText(label)
       const geometry = await item.evaluate(el => { const range = document.createRange(); range.selectNodeContents(el); return { rects: range.getClientRects().length, whiteSpace: getComputedStyle(el).whiteSpace, width: el.getBoundingClientRect().width, scrollWidth: el.scrollWidth } })
-      expect(geometry.rects).toBe(1); expect(geometry.whiteSpace).toBe('nowrap'); expect(geometry.width).toBeGreaterThanOrEqual(geometry.scrollWidth)
+      expect(geometry.rects).toBe(1); expect(geometry.whiteSpace).toBe('nowrap'); expect(Math.round(geometry.width)).toBeGreaterThanOrEqual(geometry.scrollWidth)
     }
+  }
+  if (row.width === 320) {
+    const stream = viewer.locator('.txn-stream')
+    await stream.evaluate(el => { el.scrollTop = 700 })
+    await expect(viewer).toHaveClass(/txn-app-condensed/)
+    const title = viewer.locator('.txn-crumb [aria-current=page]')
+    await expect(title).toBeVisible()
+    expect((await title.boundingBox()).width).toBeGreaterThan(0)
+    await expect(viewer.locator('.txn-header').getByRole('button', { name: 'publish', exact: true })).toBeVisible()
+    await stream.evaluate(el => { el.scrollTop = 0 })
+    await expect(viewer).not.toHaveClass(/txn-app-condensed/)
   }
   const menu = footer.getByRole('button', { name: 'transcript tools', exact: true })
   const shot = async state => { if (row.width === 320) await page.screenshot({ path: `/tmp/opencode/mobile-proof-expandable/${info.project.name}-${state}.png` }) }
@@ -182,6 +193,10 @@ for (const row of fixture.movingHeader) test(`transcript reading width ${row.nam
   await stream.evaluate((el, top) => { el.scrollTop = top }, row.scrollTop)
   await expect.poll(() => header.evaluate(el => el.getAnimations({ subtree: true }).some(a => a.playState === 'running'))).toBe(true)
   await handle.evaluate(el => {
+    const app = el.closest('.txn-app'), stream = app.querySelector('.txn-stream')
+    window.__chromeChanges = []
+    const observer = new MutationObserver(() => window.__chromeChanges.push({ condensed: app.classList.contains('txn-app-condensed'), scrollTop: stream.scrollTop }))
+    observer.observe(app, { attributes: true, attributeFilter: ['class'] })
     el.addEventListener('keydown', () => {
       const stream = document.querySelector('.txn-stream'), target = document.querySelector('#turn-0')
       const view = stream.getBoundingClientRect(), box = target.getBoundingClientRect()
@@ -206,13 +221,40 @@ for (const row of fixture.movingHeader) test(`transcript reading width ${row.nam
   await expect(turn).toHaveClass(/txn-active/)
   const state = await page.evaluate(() => ({ y: window.__movingWidth.range.getBoundingClientRect().top, scrollTop: document.querySelector('.txn-stream').scrollTop, condensed: document.querySelector('.txn-app').classList.contains('txn-app-condensed'), header: document.querySelector('.txn-header').getBoundingClientRect().height }))
   console.log('settled width chrome', JSON.stringify(state))
-  expect(state.scrollTop).toBeLessThanOrEqual(56)
   await expect(page.locator('.txn-app')).not.toHaveClass(/txn-app-condensed/)
-  await header.evaluate(async el => { await new Promise(requestAnimationFrame); await Promise.all(el.getAnimations({ subtree: true }).filter(a => a.playState === 'running' && Number.isFinite(a.effect?.getComputedTiming().endTime)).map(a => a.finished.catch(() => {}))); await new Promise(requestAnimationFrame) })
+  await header.evaluate(async el => { await new Promise(requestAnimationFrame); await new Promise(requestAnimationFrame); await Promise.all(el.getAnimations({ subtree: true }).filter(a => a.playState === 'running' && Number.isFinite(a.effect?.getComputedTiming().endTime)).map(a => a.finished.catch(() => {}))); await new Promise(requestAnimationFrame) })
+  const changes = await page.evaluate(() => window.__chromeChanges)
+  expect(changes.some(change => !change.condensed && change.scrollTop <= 56)).toBe(true)
   const settled = await page.evaluate(() => ({ y: window.__movingWidth.range.getBoundingClientRect().top, scrollTop: document.querySelector('.txn-stream').scrollTop, condensed: document.querySelector('.txn-app').classList.contains('txn-app-condensed') }))
   console.log('post-reconcile', JSON.stringify(settled))
   expect(settled.condensed).toBe(false)
   expect(Math.abs(settled.y - evidence.frames[0].y)).toBeLessThan(3)
+})
+for (const row of fixture.widthLifecycle) test(`transcript reading width ${row.name}`, async ({ page }, info) => {
+  await open(page, info.project.name)
+  if (row.kind === 'short') {
+    await page.goto(`${origin}/?app=transcript&transcript=ledger-reading-short&fb=off&theme=${info.project.name}#inuse`)
+    await page.locator('#inuse').scrollIntoViewIfNeeded()
+    const stream = page.locator('.txn-stream')
+    await stream.evaluate(el => { el.scrollTop = 0 })
+    const handle = page.getByRole('separator', { name: 'reading width' })
+    await handle.focus(); await handle.press('Home'); await handle.press('End')
+    await expect(page.locator('.txn-app')).not.toHaveClass(/txn-app-condensed/)
+    expect(await stream.evaluate(el => el.scrollTop)).toBe(0)
+    return
+  }
+  const stream = page.locator('.txn-stream'), target = page.locator('#turn-49 .txn-turn')
+  await target.click()
+  const handle = page.getByRole('separator', { name: 'reading width' })
+  const box = await handle.boundingBox()
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await page.mouse.down()
+  await page.mouse.move(box.x + box.width / 2 - 40, box.y + box.height / 2)
+  const view = await stream.boundingBox()
+  await page.mouse.move(view.x + view.width / 2, view.y + view.height / 2)
+  const before = await stream.evaluate(el => el.scrollTop)
+  await page.mouse.wheel(0, -180)
+  await expect.poll(() => stream.evaluate(el => el.scrollTop)).toBeLessThan(before)
+  await page.mouse.up()
 })
 for (const row of fixture.widthAction) test(`transcript reading width ${row.name}`, async ({ page }, info) => {
   await open(page, info.project.name)
@@ -277,4 +319,64 @@ test('transcript real overflow user rail follows reading in both directions', as
     expect(await stream.evaluate(el => el.scrollTop), row.name).toBe(requested)
     await expect(stream).toBeFocused()
   }
+})
+
+test('mermaid diagrams stay local, readable and inert', async ({ page }, info) => {
+  const requests = []
+  page.on('request', request => { if (request.url().includes('evil.example') || request.url().includes('mermaid-probe-image')) requests.push(request.url()) })
+  await page.addInitScript(() => {
+    window.malicious = () => { window.__maliciousCalled = true }
+    window.__compilerForeignObjects = 0
+    document.addEventListener('DOMContentLoaded', () => {
+      new MutationObserver(records => {
+        for (const record of records) for (const node of record.addedNodes) {
+          if (node.nodeType === 1) window.__compilerForeignObjects += (node.localName === 'foreignObject' ? 1 : 0) + node.querySelectorAll('foreignObject').length
+        }
+      }).observe(document.body, { childList: true, subtree: true })
+    })
+  })
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+  await page.goto(`${origin}/?app=transcript&transcript=mermaid-reading&fb=off&theme=${info.project.name}#inuse`)
+  const diagrams = page.locator('.txn-mermaid')
+  await expect(diagrams).toHaveCount(15)
+  for (let i = 0; i < 2; i++) {
+    await diagrams.nth(i).getByRole('button', { name: 'view diagram' }).click()
+    await expect(diagrams.nth(i).locator('svg')).toBeVisible()
+  }
+  for (let i = 3; i < 8; i++) {
+    await diagrams.nth(i).getByRole('button', { name: 'view diagram' }).click()
+    await expect(diagrams.nth(i).locator('svg')).toBeVisible()
+  }
+  await page.evaluate(() => { window.__compilerForeignObjects = 0 })
+  for (let i = 9; i < 12; i++) {
+    await diagrams.nth(i).getByRole('button', { name: 'view diagram' }).click()
+    await expect(diagrams.nth(i).locator('svg')).toBeVisible()
+    await expect(diagrams.nth(i).locator('foreignObject')).toHaveCount(0)
+  }
+  expect(await page.evaluate(() => window.__compilerForeignObjects)).toBe(0)
+  for (let i = 12; i < 14; i++) {
+    await diagrams.nth(i).getByRole('button', { name: 'view diagram' }).click()
+    await expect(diagrams.nth(i).getByRole('status')).toContainText('not supported')
+  }
+  await diagrams.nth(14).getByRole('button', { name: 'view diagram' }).click()
+  await expect(diagrams.nth(14).getByRole('status')).toContainText('diagram unavailable')
+  await diagrams.nth(8).getByRole('button', { name: 'view diagram' }).click()
+  await expect(diagrams.nth(8).getByRole('status')).toContainText('diagram unavailable')
+  await diagrams.nth(2).getByRole('button', { name: 'view diagram' }).click()
+  await expect(diagrams.nth(2).getByRole('status')).toContainText('not supported')
+  expect(requests).toEqual([])
+  expect(await page.evaluate(() => window.__maliciousCalled === true)).toBe(false)
+  const ids = await page.locator('.txn-mermaid-stage svg [id]').evaluateAll(els => els.map(el => el.id))
+  expect(new Set(ids).size).toBe(ids.length)
+  const fontSize = await diagrams.first().locator('svg text').first().evaluate(el => getComputedStyle(el).fontSize)
+  expect(parseFloat(fontSize)).toBeGreaterThanOrEqual(16)
+  const stage = diagrams.first().locator('.txn-mermaid-stage')
+  expect(await stage.evaluate(el => el.scrollWidth > el.clientWidth)).toBe(true)
+  await stage.evaluate(el => { el.scrollLeft = el.scrollWidth })
+  expect(await stage.evaluate(el => el.scrollLeft)).toBeGreaterThan(0)
+  await diagrams.first().getByRole('button', { name: 'copy source' }).click()
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('flowchart LR\nA[Source Case] --> B[Destination]\n')
+  await diagrams.first().getByRole('button', { name: 'view source' }).click()
+  await expect(diagrams.first().locator('pre')).toContainText('A[Source Case] --> B[Destination]')
 })

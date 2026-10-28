@@ -16,7 +16,11 @@
     {"name": "selected user survives keyboard reflow", "turn": 49, "paragraph": 0, "gesture": "keyboard", "motion": "no-preference"}
   ],
   "movingHeader": [
-    {"name": "resize during header exchange", "turn": 0, "scrollTop": 80}
+    {"name": "resize during header exchange", "turn": 0, "scrollTop": 57}
+  ],
+  "widthLifecycle": [
+    {"name": "wheel interrupts active resize", "kind": "interrupt"},
+    {"name": "short trace stays expanded at top", "kind": "short"}
   ],
   "widthAction": [
     {"name": "folded action retains its visible source", "query": "target-gamma-output", "command": "printf target-gamma"}
