@@ -18,6 +18,11 @@
   "movingHeader": [
     {"name": "resize during header exchange", "turn": 0, "scrollTop": 57}
   ],
+  "drawerMotion": [
+    {"name": "filters drawer enters and exits", "drawer": "filters", "motion": "no-preference"},
+    {"name": "user turns drawer enters and exits", "drawer": "user turns", "motion": "no-preference"},
+    {"name": "drawer respects reduced motion", "drawer": "filters", "motion": "reduce"}
+  ],
   "widthLifecycle": [
     {"name": "wheel interrupts active resize", "kind": "interrupt"},
     {"name": "short trace stays expanded at top", "kind": "short"},

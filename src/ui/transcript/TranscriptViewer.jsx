@@ -343,6 +343,7 @@ export default function TranscriptViewer({
   const [mobile, setMobile] = useState(false)
   const [mobileToolsOpen, setMobileToolsOpen] = useState(false)
   const [mobileDrawer, setMobileDrawer] = useState(null)
+  const [exitingMobileDrawer, setExitingMobileDrawer] = useState(null)
   const mobileDialogRef = useRef(null)
   const mobileOpenerRef = useRef(null)
   const mobileOutlineRef = useRef(null)
@@ -350,15 +351,28 @@ export default function TranscriptViewer({
   const mobileToolsRef = useRef(null)
   const mobileDrawerId = useId()
   const closeMobileDrawer = useCallback(() => {
+    setExitingMobileDrawer(mobileDrawer)
     setMobileDrawer(null)
     requestAnimationFrame(() => mobileOpenerRef.current?.focus())
-  }, [])
+  }, [mobileDrawer])
   useEffect(() => {
     const dialog = mobileDialogRef.current
     if (!dialog) return
-    if (mobileDrawer && !dialog.open) dialog.showModal()
-    if (!mobileDrawer && dialog.open) dialog.close()
+    if (mobileDrawer && !dialog.open) { setExitingMobileDrawer(null); dialog.showModal() }
+    if (!mobileDrawer && dialog.open) {
+      dialog.close()
+    }
   }, [mobileDrawer])
+  useEffect(() => {
+    if (mobileDrawer || !exitingMobileDrawer) return
+    let cancelled = false
+    const frame = requestAnimationFrame(() => {
+      const panel = mobileDialogRef.current?.querySelector('.txn-mobile-drawer-panel')
+      const animations = panel?.getAnimations().filter(a => a.transitionProperty === 'transform') ?? []
+      Promise.all(animations.map(a => a.finished.catch(() => {}))).then(() => { if (!cancelled) setExitingMobileDrawer(null) })
+    })
+    return () => { cancelled = true; cancelAnimationFrame(frame) }
+  }, [mobileDrawer, exitingMobileDrawer])
   useEffect(() => {
     const media = window.matchMedia?.('(min-width: 768px)')
     if (!media) return
@@ -1735,17 +1749,18 @@ export default function TranscriptViewer({
         ref={mobileDialogRef}
         className="txn-mobile-drawer"
         aria-label={mobileDrawer === 'outline' ? 'user turns' : 'filters'}
+        onTransitionEnd={(event) => { if (event.target === event.currentTarget && event.propertyName === 'display' && !mobileDrawer) setExitingMobileDrawer(null) }}
         onCancel={(event) => { event.preventDefault(); closeMobileDrawer() }}
         onClick={(event) => { if (event.target === event.currentTarget) closeMobileDrawer() }}
       >
-        {mobileDrawer && <div className="txn-mobile-drawer-panel">
+        {(mobileDrawer || exitingMobileDrawer) && <div className="txn-mobile-drawer-panel" inert={!mobileDrawer} onTransitionEnd={(event) => { if (event.target === event.currentTarget && event.propertyName === 'transform' && !mobileDrawer) setExitingMobileDrawer(null) }}>
           <div className="txn-mobile-drawer-head">
             <button type="button" aria-pressed={mobileDrawer === 'outline'} onClick={() => { mobileOpenerRef.current = mobileToolsRef.current; if (mobileDrawer === 'outline') closeMobileDrawer(); else setMobileDrawer('outline') }}>user turns</button>
             {tabHasFilters && <button type="button" aria-pressed={mobileDrawer === 'filters'} onClick={() => { mobileOpenerRef.current = mobileToolsRef.current; if (mobileDrawer === 'filters') closeMobileDrawer(); else setMobileDrawer('filters') }}>filters</button>}
             <button type="button" aria-label="close drawer" onClick={closeMobileDrawer}><X size={14} aria-hidden="true" /></button>
           </div>
           <div className="txn-mobile-drawer-body">
-            {mobileDrawer === 'outline'
+            {(mobileDrawer || exitingMobileDrawer) === 'outline'
               ? <OutlineRail viewModel={vm} tab={tab} presentation={presentation} activeTurn={activeTurn} onJump={(idx) => { jumpTo(idx, { switchTab: false }); closeMobileDrawer() }} />
               : <FiltersRail tab={tab} filters={filters} onFiltersChange={setFilters} counts={counts} checkpoints={commits} filtersActive={filtersActive}
                 onClear={() => setFilters({ ...DEFAULT_FILTERS, toolGroups: Object.fromEntries(TOOL_GROUPS.map((id) => [id, true])) })}

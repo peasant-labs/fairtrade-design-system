@@ -26,3 +26,7 @@ requiredWidthLifecycleNames:
   - short trace stays expanded at top
   - long trace width drag at top
   - keyboard scroll interrupts captured resize
+requiredDrawerMotionNames:
+  - filters drawer enters and exits
+  - user turns drawer enters and exits
+  - drawer respects reduced motion

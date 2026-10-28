@@ -4,7 +4,7 @@ import { loadFixturePair } from '../mounted-parts.mjs'
 // Pixels, real overflow and post-animation visibility cannot be proved in JSDOM.
 // Reuse the existing built app/runner and small shared demo fixture; no extra service.
 const { fixture } = loadFixturePair('scripts/testdata/transcript-reading-browser.yaml', 'scripts/testdata/transcript-reading-browser.manifest.yaml', {
-  navigation: 'requiredNavigationNames', initial: 'requiredInitialNames', rail: 'requiredRailNames', mobile: 'requiredMobileNames', width: 'requiredWidthNames', widthAction: 'requiredWidthActionNames', movingHeader: 'requiredMovingHeaderNames', widthLifecycle: 'requiredWidthLifecycleNames',
+  navigation: 'requiredNavigationNames', initial: 'requiredInitialNames', rail: 'requiredRailNames', mobile: 'requiredMobileNames', width: 'requiredWidthNames', widthAction: 'requiredWidthActionNames', movingHeader: 'requiredMovingHeaderNames', widthLifecycle: 'requiredWidthLifecycleNames', drawerMotion: 'requiredDrawerMotionNames',
 })
 const origin = `http://localhost:${process.env.JOURNEY_APP_PORT || 5180}`
 test.describe('touch transcript', () => {
@@ -94,6 +94,44 @@ for (const row of fixture.mobile) test(`transcript mobile drawers ${row.name}`, 
   await expect(menu).toHaveAttribute('aria-expanded', 'false')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
 })
+})
+for (const row of fixture.drawerMotion) test(`transcript drawer motion ${row.name}`, async ({ page }, info) => {
+  await page.setViewportSize({ width: 320, height: 720 })
+  await page.emulateMedia({ reducedMotion: row.motion })
+  await page.goto(`${origin}/?app=transcript&transcript=ledger-reading&fb=off&theme=${info.project.name}#inuse`)
+  await page.locator('#inuse').scrollIntoViewIfNeeded()
+  const viewer = page.locator('.txn-app'), footer = viewer.locator('.txn-footer'), stream = viewer.locator('.txn-stream')
+  const scroll = await stream.evaluate(el => el.scrollTop)
+  const menu = footer.getByRole('button', { name: 'transcript tools' })
+  await menu.click(); await footer.getByRole('button', { name: row.drawer, exact: true }).click()
+  const dialog = viewer.locator('.txn-mobile-drawer'), panel = dialog.locator('.txn-mobile-drawer-panel')
+  await expect(dialog).toHaveAttribute('open', '')
+  if (row.motion === 'no-preference') {
+    const entrance = await panel.evaluate(el => el.getAnimations().some(a => a.transitionProperty === 'transform'))
+    expect(entrance).toBe(true)
+    const middle = await panel.evaluate(el => { const a = el.getAnimations().find(item => item.transitionProperty === 'transform'); a.pause(); a.currentTime = a.effect.getTiming().duration / 2; const x = new DOMMatrix(getComputedStyle(el).transform).m41; a.play(); return { x, width: el.getBoundingClientRect().width } })
+    expect(middle.x).toBeLessThan(0); expect(middle.x).toBeGreaterThan(-middle.width)
+    await panel.evaluate(async el => { await Promise.all(el.getAnimations().map(a => a.finished.catch(() => {}))) })
+  } else expect(await panel.evaluate(el => el.getAnimations().length)).toBe(0)
+  await dialog.getByRole('button', { name: 'close drawer' }).click()
+  await expect(menu).toBeFocused()
+  await expect(dialog).not.toHaveAttribute('open', '')
+  if (row.motion === 'no-preference') {
+    expect(await panel.evaluate(el => el.inert)).toBe(true)
+    expect(await panel.evaluate(el => el.getAnimations().some(a => a.transitionProperty === 'transform'))).toBe(true)
+    const middle = await panel.evaluate(el => { const a = el.getAnimations().find(item => item.transitionProperty === 'transform'); a.pause(); a.currentTime = a.effect.getTiming().duration / 2; const x = new DOMMatrix(getComputedStyle(el).transform).m41; a.play(); return { x, width: el.getBoundingClientRect().width } })
+    expect(middle.x).toBeLessThan(0); expect(middle.x).toBeGreaterThan(-middle.width)
+    await panel.evaluate(async el => { await Promise.all(el.getAnimations().map(a => a.finished.catch(() => {}))) })
+  }
+  await expect(panel).toHaveCount(0)
+  await menu.click(); await footer.getByRole('button', { name: row.drawer, exact: true }).click()
+  await expect(dialog).toHaveAttribute('open', '')
+  const other = row.drawer === 'filters' ? 'user turns' : 'filters'
+  await dialog.getByRole('button', { name: other, exact: true }).click()
+  await expect(dialog).toHaveAttribute('aria-label', other)
+  await page.keyboard.press('Escape')
+  await expect(menu).toBeFocused()
+  expect(await stream.evaluate(el => el.scrollTop)).toBe(scroll)
 })
 const open = async (page, theme, turn) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
