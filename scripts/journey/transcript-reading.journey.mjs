@@ -416,13 +416,18 @@ for (const row of fixture.navigation) test(`transcript rendered navigation ${row
   const target = action(page, row)
   if (row.kind !== 'body') await expect(target.locator('button').first()).toHaveAttribute('aria-expanded', 'true')
   // Inspect the real range, not the containing card: a long card can be on screen while its hit is not.
-  await expect.poll(() => page.evaluate(query => [...(CSS.highlights.get('txn-search-match') ?? [])].some(range => range.toString().toLowerCase() === query.toLowerCase()), row.query)).toBe(true)
+  await expect.poll(() => page.locator('.txn-search-highlight').count()).toBeGreaterThan(0)
   await expect.poll(() => target.evaluate((el, query) => {
-    const range = [...(CSS.highlights.get('txn-search-match') ?? [])].find(item => el.contains(item.startContainer) && item.toString().toLowerCase() === query.toLowerCase())
-    if (!range) return false
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+    let node
+    while ((node = walker.nextNode()) && !node.data.toLowerCase().includes(query.toLowerCase())) {}
+    if (!node) return false
+    const range = document.createRange(), at = node.data.toLowerCase().indexOf(query.toLowerCase())
+    range.setStart(node, at); range.setEnd(node, at + query.length)
     const stream = el.closest('.txn-stream'), r = range.getBoundingClientRect(), s = stream.getBoundingClientRect()
     const unclamped = stream.scrollTop > 1 && stream.scrollTop < stream.scrollHeight - stream.clientHeight - 1
-    return r.top >= s.top && r.top < s.bottom && (!unclamped || Math.abs((r.top - s.top) / stream.clientHeight - 0.4) < 0.05)
+    const painted = [...document.querySelectorAll('.txn-search-highlight')].some(mark => { const m = mark.getBoundingClientRect(); return Math.abs(m.top - r.top) < 2 && Math.abs(m.left - r.left) < 2 })
+    return painted && r.top >= s.top && r.top < s.bottom && (!unclamped || Math.abs((r.top - s.top) / stream.clientHeight - 0.4) < 0.05)
   }, row.query)).toBe(true)
   await expect.poll(async () => { const m = await inside(target); return m.shown && m.top >= m.viewTop - 1 && m.top < m.viewBottom }).toBe(true)
   if (row.kind !== 'body') {
@@ -438,7 +443,7 @@ for (const row of fixture.navigation) test(`transcript rendered navigation ${row
   }
   expect(await page.locator(`#turn-${row.turn}`).count()).toBe(1)
   await page.getByRole('button', { name: 'close search', exact: true }).click()
-  await expect.poll(() => page.evaluate(() => CSS.highlights.get('txn-search-match')?.size ?? 0)).toBe(0)
+  await expect(page.locator('.txn-search-highlight')).toHaveCount(0)
   await info.attach('rendered-destination', { body: JSON.stringify(await inside(target)), contentType: 'application/json' })
 })
 test('search excludes filtered thinking and restores it without changing the filter', async ({ page }, info) => {
@@ -455,7 +460,7 @@ test('search excludes filtered thinking and restores it without changing the fil
   await expect(page.locator('.txn-search-count')).toHaveText('1/1')
   await page.getByRole('button', { name: 'next match', exact: true }).click()
   await expect(page.locator('.txn-thinking-toggle')).toHaveAttribute('aria-expanded', 'true')
-  await expect.poll(() => page.evaluate(query => [...(CSS.highlights.get('txn-search-match') ?? [])].some(range => range.toString().includes(query)), row.query)).toBe(true)
+  await expect.poll(() => page.locator('.txn-search-highlight').count()).toBeGreaterThan(0)
 })
 test('search identifies a source-only markdown match', async ({ page }, info) => {
   await open(page, info.project.name)
@@ -464,7 +469,46 @@ test('search identifies a source-only markdown match', async ({ page }, info) =>
   await page.getByRole('textbox', { name: 'search transcript' }).fill(fixture.searchSourceOnly)
   await expect(page.locator('.txn-search-count')).toHaveText('1/1')
   await expect(page.getByRole('status').filter({ hasText: 'match in source, not visible in rendered content' })).toBeVisible()
-  await expect.poll(() => page.evaluate(() => CSS.highlights.get('txn-search-match')?.size ?? 0)).toBe(0)
+  await expect(page.locator('.txn-search-highlight')).toHaveCount(0)
+})
+test('search highlights without the CSS Highlight API and leaves the host registry alone', async ({ page }, info) => {
+  await page.addInitScript(() => { Object.defineProperty(CSS, 'highlights', { configurable: true, value: undefined }) })
+  await open(page, info.project.name)
+  await page.locator('.txn-stream').focus(); await page.keyboard.press('Control+f')
+  await page.getByRole('textbox', { name: 'search transcript' }).fill(fixture.navigation.find(item => item.kind === 'body').query)
+  await expect.poll(() => page.locator('.txn-search-highlight').count()).toBeGreaterThan(0)
+  await expect(page.locator('.txn-search-highlights')).toHaveAttribute('aria-hidden', 'true')
+  await page.getByRole('button', { name: 'close search' }).click()
+  await expect(page.locator('.txn-search-highlight')).toHaveCount(0)
+})
+test('search does not replace a host custom highlight', async ({ page }, info) => {
+  await open(page, info.project.name)
+  await page.evaluate(() => { const range = document.createRange(); range.selectNodeContents(document.querySelector('#inuse')); CSS.highlights.set('txn-search-match', new Highlight(range)) })
+  await page.locator('.txn-stream').focus(); await page.keyboard.press('Control+f')
+  await page.getByRole('textbox', { name: 'search transcript' }).fill(fixture.navigation.find(item => item.kind === 'body').query)
+  await expect.poll(() => page.locator('.txn-search-highlight').count()).toBeGreaterThan(0)
+  await page.getByRole('button', { name: 'close search' }).click()
+  expect(await page.evaluate(() => CSS.highlights.get('txn-search-match')?.size)).toBe(1)
+})
+test('search navigates repeated occurrences in one long section', async ({ page }, info) => {
+  const row = fixture.searchRepeated
+  await open(page, info.project.name)
+  await page.locator('.txn-stream').focus(); await page.keyboard.press('Control+f')
+  await page.getByRole('textbox', { name: 'search transcript' }).fill(row.query)
+  await expect(page.locator('.txn-search-count')).toHaveText('1/2')
+  const paragraphs = page.locator(`#turn-${row.turn} .txn-body p`)
+  const position = n => paragraphs.nth(n - 1).evaluate(el => { const s = el.closest('.txn-stream'); return (el.getBoundingClientRect().top - s.getBoundingClientRect().top) / s.clientHeight })
+  await expect.poll(() => position(row.paragraphs[0])).toBeGreaterThan(0.2)
+  await expect.poll(() => position(row.paragraphs[0])).toBeLessThan(0.6)
+  await page.getByRole('button', { name: 'next match', exact: true }).click()
+  await expect(page.locator('.txn-search-count')).toHaveText('2/2')
+  await expect.poll(() => position(row.paragraphs[1])).toBeGreaterThan(0.2)
+  await expect.poll(() => position(row.paragraphs[1])).toBeLessThan(0.6)
+  await expect.poll(() => page.locator('.txn-search-highlight').count()).toBeGreaterThan(0)
+  await page.getByRole('button', { name: 'previous match', exact: true }).click()
+  await expect(page.locator('.txn-search-count')).toHaveText('1/2')
+  await expect.poll(() => position(row.paragraphs[0])).toBeGreaterThan(0.2)
+  await expect.poll(() => position(row.paragraphs[0])).toBeLessThan(0.6)
 })
 for (const row of fixture.initial) test(`transcript rendered initial ${row.name}`, async ({ page }, info) => {
   await open(page, info.project.name, row.turn)

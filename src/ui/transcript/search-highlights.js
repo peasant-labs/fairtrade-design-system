@@ -1,21 +1,11 @@
-// CSS Custom Highlights paint DOM ranges without changing React's DOM or interpreting transcript HTML.
-// Keep each mounted viewer's ranges separate even though the browser registry is document-wide.
-const viewers = new Map()
-
-export function setSearchHighlights(owner, ranges) {
-  if (ranges.length) viewers.set(owner, ranges)
-  else viewers.delete(owner)
-  if (typeof CSS === 'undefined' || !CSS.highlights || typeof Highlight === 'undefined') return
-  if (!viewers.size) { CSS.highlights.delete('txn-search-match'); return }
-  const highlight = new Highlight()
-  for (const ranges of viewers.values()) for (const range of ranges) highlight.add(range)
-  CSS.highlights.set('txn-search-match', highlight)
+export function searchExpression(query) {
+  return new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'giu')
 }
 
 // Join inline text within a block, but never join unrelated paragraphs or controls.
 export function renderedSearchRanges(root, query) {
   if (!root || !query.trim()) return []
-  const needle = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'giu')
+  const needle = searchExpression(query)
   const walker = root.ownerDocument.createTreeWalker(root, NodeFilter.SHOW_TEXT)
   const groups = new Map()
   const ranges = []

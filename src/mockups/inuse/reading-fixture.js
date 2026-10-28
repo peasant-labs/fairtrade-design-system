@@ -15,7 +15,7 @@ export function readingPayload({ short = false, taskCount = short ? spec.shortTa
   for (let task = 1; task < taskCount; task++) {
     turns.push({ index: turns.length, role: 'user', content: `Reading request ${task}` })
     const paragraphs = task === taskCount - 1 ? spec.lastResponseParagraphs : 1
-    turns.push({ index: turns.length, role: 'assistant', content: Array.from({ length: paragraphs }, (_, paragraph) => `Response for reading request ${task}, paragraph ${paragraph + 1}. This distinct response keeps the real transcript long enough to read and navigate in both directions.`).join('\n\n') })
+    turns.push({ index: turns.length, role: 'assistant', content: Array.from({ length: paragraphs }, (_, paragraph) => `Response for reading request ${task}, paragraph ${paragraph + 1}. This distinct response keeps the real transcript long enough to read and navigate in both directions.${task === taskCount - 1 && spec.searchRepeated.paragraphs.includes(paragraph + 1) ? ` ${spec.searchRepeated.query}` : ''}`).join('\n\n') })
   }
   return { id: 'reading-destinations', title: spec.longTitle, harness: 'claude-code', turns }
 }

@@ -10,6 +10,7 @@
   "shortTaskCount": 1,
   "shortLeadingActions": 1,
   "searchSourceOnly": "**source-only markup evidence**",
+  "searchRepeated": {"query": "repeated reading needle", "turn": 50, "paragraphs": [3, 21]},
   "width": [
     {"name": "long assistant reading point survives keyboard reflow", "turn": 50, "paragraph": 6, "gesture": "keyboard", "motion": "reduce"},
     {"name": "long assistant reading point survives pointer reversal", "turn": 50, "paragraph": 6, "gesture": "pointer", "motion": "no-preference"},
