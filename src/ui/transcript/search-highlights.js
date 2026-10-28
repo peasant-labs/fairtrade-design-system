@@ -6,7 +6,9 @@ export function searchExpression(query) {
 export function renderedSearchRanges(root, query) {
   if (!root || !query.trim()) return []
   const needle = searchExpression(query)
-  const walker = root.ownerDocument.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+  const doc = root.ownerDocument
+  // Detached documents may not have a browsing context; SHOW_TEXT is the DOM-standard bit 4.
+  const walker = doc.createTreeWalker(root, doc.defaultView?.NodeFilter?.SHOW_TEXT ?? 4)
   const groups = new Map()
   const ranges = []
   while (walker.nextNode()) {

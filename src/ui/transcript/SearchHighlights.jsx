@@ -85,7 +85,7 @@ export default function SearchHighlights({ scrollRef, query, enabled, revision, 
     if (app) observer.observe(app, { attributes: true, attributeFilter: ['class', 'data-theme', 'style'] })
     const resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => { dirty = true; update() })
     resize?.observe(sc)
-    const onScroll = event => { if (event.target instanceof Node && event.target !== sc && sc.contains(event.target)) innerScrolled.add(event.target); update() }
+    const onScroll = event => { if (event.target?.nodeType && event.target !== sc && sc.contains(event.target)) innerScrolled.add(event.target); update() }
     window.addEventListener('scroll', onScroll, true)
     window.addEventListener('resize', update)
     return () => { observer.disconnect(); resize?.disconnect(); window.removeEventListener('scroll', onScroll, true); window.removeEventListener('resize', update); cancelAnimationFrame(frame) }
