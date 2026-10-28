@@ -852,6 +852,7 @@ function DefaultTranscriptApp({ theme }) {
         )}
       />
       {publish.dialog}
+      {publish.toast}
     </>
   )
 }

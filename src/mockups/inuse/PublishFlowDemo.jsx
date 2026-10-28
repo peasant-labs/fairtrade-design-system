@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Copy, Link as LinkIcon, MoreHorizontal } from 'lucide-react'
-import { Menu, PublishBar, PublishDialog, PUBLISH_DIALOG_STATES, PUBLISH_STATES, RedactionCategory } from '../../ui'
+import { Menu, PublishBar, PublishDialog, Toast, PUBLISH_DIALOG_STATES, PUBLISH_STATES, RedactionCategory } from '../../ui'
 
 /* The host side of the publish flow for the in-use transcript demo. It stands in for peasant: it
    owns the state, fakes the sign-in, the scan and the publish with short timers, and hands the
@@ -47,14 +47,15 @@ function initial() {
 /** returns the bar for the header row and the popup to render beside the viewer */
 export function usePublishFlow(viewModel) {
   const [copied, setCopied] = useState('')
-  const copyTranscript = () => {
+  const copiedTimer = useRef(null)
+  useEffect(() => () => clearTimeout(copiedTimer.current), [])
+  const announce = (message) => { setCopied(message); clearTimeout(copiedTimer.current); copiedTimer.current = setTimeout(() => setCopied(''), 1800) }
+  const copyTranscript = async () => {
     const text = (viewModel?.turns ?? []).map(turn => `${turn.role}: ${turn.content ?? ''}`).join('\n\n')
-    void navigator.clipboard?.writeText(text)
-    setCopied('transcript copied')
+    try { if (!navigator.clipboard) return; await navigator.clipboard.writeText(text); announce('transcript copied') } catch { /* denied clipboard writes must not report success */ }
   }
-  const copyLink = () => {
-    void navigator.clipboard?.writeText(window.location.href)
-    setCopied('link copied')
+  const copyLink = async () => {
+    try { if (!navigator.clipboard) return; await navigator.clipboard.writeText(window.location.href); announce('link copied') } catch { /* denied clipboard writes must not report success */ }
   }
   const start = useRef(initial()).current
   const [bar, setBar] = useState(start.bar)
@@ -90,13 +91,13 @@ export function usePublishFlow(viewModel) {
     .filter((item) => !query.trim() || item.name.toLowerCase().includes(query.trim().toLowerCase()))
 
   const barNode = (
-    <><PublishBar
+    <PublishBar
       state={bar}
       collectives={readers.length}
       newTurns={6}
       collective="Acme Platform"
       onAction={open}
-    /><span role="status">{copied}</span></>
+    />
   )
   const utilityNode = <>
     <button type="button" className="btn btn-secondary btn-sm btn-icon" aria-label="copy transcript" onClick={copyTranscript}><Copy size={14} aria-hidden="true" /></button>
@@ -140,7 +141,7 @@ export function usePublishFlow(viewModel) {
       done={{ ...DONE, collectives: readers, pending }}
     />
   )
-  return { bar: barNode, utility: utilityNode, dialog: dialogNode }
+  return { bar: barNode, utility: utilityNode, dialog: dialogNode, toast: copied ? <Toast className="txn-copy-toast" title={copied} /> : null }
 }
 
 function summarizeChange(access) {

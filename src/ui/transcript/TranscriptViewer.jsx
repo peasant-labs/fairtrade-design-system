@@ -8,7 +8,7 @@ import {
   GitCommitHorizontal, List, Network, Eye,
   Filter as FilterIcon, FileSearch, Sparkles, Flag, Play, RefreshCw, RotateCcw,
   CornerDownRight, Check, X, PanelLeftClose, PanelLeftOpen,
-  PanelRightClose, PanelRightOpen,
+  PanelRightClose, PanelRightOpen, Menu as MenuIcon,
 } from 'lucide-react'
 import ProviderIcon from '../ProviderIcon.jsx'
 import { formatDurationMins, formatDurationMs } from './time.js'
@@ -333,12 +333,13 @@ export default function TranscriptViewer({
   const [moreOpen, setMoreOpen] = useControllable(moreOpenProp, onMoreOpenChange, false)
   // Mobile overlays are transient and never update the persisted desktop rail layout.
   const [mobile, setMobile] = useState(false)
+  const [mobileToolsOpen, setMobileToolsOpen] = useState(false)
   const [mobileDrawer, setMobileDrawer] = useState(null)
   const mobileDialogRef = useRef(null)
   const mobileOpenerRef = useRef(null)
   const mobileOutlineRef = useRef(null)
   const mobileFiltersRef = useRef(null)
-  const mobileViewsRef = useRef(null)
+  const mobileToolsRef = useRef(null)
   const mobileDrawerId = useId()
   const closeMobileDrawer = useCallback(() => {
     setMobileDrawer(null)
@@ -353,12 +354,26 @@ export default function TranscriptViewer({
   useEffect(() => {
     const media = window.matchMedia?.('(min-width: 768px)')
     if (!media) return
-    const onResize = () => { setMobile(!media.matches); if (media.matches) setMobileDrawer(null) }
+    const onResize = () => { setMobile(!media.matches); if (media.matches) { setMobileDrawer(null); setMobileToolsOpen(false) } }
     onResize()
     media.addEventListener('change', onResize)
     return () => media.removeEventListener('change', onResize)
   }, [])
-  useEffect(() => { setMobileDrawer(null) }, [vm?.session?.id])
+  useEffect(() => { setMobileDrawer(null); setMobileToolsOpen(false) }, [vm?.session?.id])
+  useEffect(() => {
+    if (!mobileToolsOpen) return
+    const onKey = (event) => { if (event.key === 'Escape' && !event.defaultPrevented) { setMobileToolsOpen(false); mobileToolsRef.current?.focus() } }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [mobileToolsOpen])
+  useEffect(() => {
+    if (!mobile) return
+    const item = tabRefs.current[tab], strip = item?.parentElement
+    if (!item || !strip) return
+    const view = strip.getBoundingClientRect(), box = item.getBoundingClientRect()
+    if (box.left < view.left) strip.scrollLeft -= view.left - box.left
+    else if (box.right > view.right) strip.scrollLeft += box.right - view.right
+  }, [mobile, tab])
 
   /* ── the sidebar layout view model ──────────────────────────────────────────
      Openness is USER STATE, never a function of the reading width. `sidebarLayout`
@@ -1159,7 +1174,7 @@ export default function TranscriptViewer({
       <button
         type="button"
         className="txn-skip"
-        onClick={() => { const target = mobile ? mobileViewsRef.current : tabRefs.current[tab]; if (target) target.focus() }}
+        onClick={() => { const target = tabRefs.current[tab]; if (target) target.focus() }}
       >
         skip to session views
       </button>
@@ -1323,7 +1338,7 @@ export default function TranscriptViewer({
           </Collapsible>
 
         {/* CENTER */}
-        <section className="txn-center" role="tabpanel" id={`${tabsId}-panel`} aria-labelledby={mobile ? undefined : `${tabsId}-${tab}`} aria-label={mobile ? TAB_LABEL[tab] : undefined}>
+        <section className="txn-center" role="tabpanel" id={`${tabsId}-panel`} aria-labelledby={`${tabsId}-${tab}`} onClickCapture={() => { if (mobileToolsOpen) setMobileToolsOpen(false) }}>
           {tab === 'trace' && (
             <div className={'txn-trace' + (sticky && viewMode === 'list' ? ' txn-trace-pinned' : '')}>
               <Collapsible open={sticky && viewMode === 'list'} className="txn-sticky-disclosure">
@@ -1664,8 +1679,8 @@ export default function TranscriptViewer({
       >
         {mobileDrawer && <div className="txn-mobile-drawer-panel">
           <div className="txn-mobile-drawer-head">
-            <button type="button" aria-pressed={mobileDrawer === 'outline'} onClick={() => { mobileOpenerRef.current = mobileOutlineRef.current; if (mobileDrawer === 'outline') closeMobileDrawer(); else setMobileDrawer('outline') }}>user turns</button>
-            {tabHasFilters && <button type="button" aria-pressed={mobileDrawer === 'filters'} onClick={() => { mobileOpenerRef.current = mobileFiltersRef.current; if (mobileDrawer === 'filters') closeMobileDrawer(); else setMobileDrawer('filters') }}>filters</button>}
+            <button type="button" aria-pressed={mobileDrawer === 'outline'} onClick={() => { mobileOpenerRef.current = mobileToolsRef.current; if (mobileDrawer === 'outline') closeMobileDrawer(); else setMobileDrawer('outline') }}>user turns</button>
+            {tabHasFilters && <button type="button" aria-pressed={mobileDrawer === 'filters'} onClick={() => { mobileOpenerRef.current = mobileToolsRef.current; if (mobileDrawer === 'filters') closeMobileDrawer(); else setMobileDrawer('filters') }}>filters</button>}
             <button type="button" aria-label="close drawer" onClick={closeMobileDrawer}><X size={14} aria-hidden="true" /></button>
           </div>
           <div className="txn-mobile-drawer-body">
@@ -1687,17 +1702,17 @@ export default function TranscriptViewer({
           and position as a smaller second one. The tab row never leaves — a touch screen has no
           keyboard, but it still needs to reach every view. */}
       <footer className="txn-footer">
+        <Collapsible open={mobile && mobileToolsOpen} keepMounted className="txn-mobile-utilities">
         <div className="txn-mobile-controls">
           {mobile && utilityActions}
           {mobile && showTail && moreActions}
-          <button className="txn-mobile-rail-button" ref={mobileOutlineRef} type="button" aria-label="user turns" title="user turns" aria-controls={mobileDrawerId} aria-expanded={mobileDrawer === 'outline'} onClick={(event) => { mobileOpenerRef.current = event.currentTarget; setMobileDrawer('outline') }}><LayoutList size={14} aria-hidden="true" /></button>
-          {tabHasFilters && <button className="txn-mobile-rail-button" ref={mobileFiltersRef} type="button" aria-label="filters" title="filters" aria-controls={mobileDrawerId} aria-expanded={mobileDrawer === 'filters'} onClick={(event) => { mobileOpenerRef.current = event.currentTarget; setMobileDrawer('filters') }}><SlidersHorizontal size={14} aria-hidden="true" /></button>}
-          {mobile && <select ref={mobileViewsRef} className="txn-mobile-views" aria-label="session views" aria-controls={`${tabsId}-panel`} title="session views" value={tab} onChange={(event) => selectTab(event.target.value)}>{TAB_ORDER.map((id) => <option key={id} value={id}>{id === 'trace' ? 'trace' : TAB_LABEL[id]}</option>)}</select>}
-          {mobile && showSearchTrigger && <button type="button" className="txn-mobile-rail-button" aria-label="search transcript" title="search transcript" aria-keyshortcuts="Meta+F Control+F" onClick={openSearch}><Search size={14} aria-hidden="true" /></button>}
+          <button className="txn-mobile-rail-button" ref={mobileOutlineRef} type="button" aria-label="user turns" title="user turns" aria-controls={mobileDrawerId} aria-expanded={mobileDrawer === 'outline'} onClick={() => { mobileOpenerRef.current = mobileToolsRef.current; setMobileToolsOpen(false); setMobileDrawer('outline') }}><LayoutList size={14} aria-hidden="true" /></button>
+          {tabHasFilters && <button className="txn-mobile-rail-button" ref={mobileFiltersRef} type="button" aria-label="filters" title="filters" aria-controls={mobileDrawerId} aria-expanded={mobileDrawer === 'filters'} onClick={() => { mobileOpenerRef.current = mobileToolsRef.current; setMobileToolsOpen(false); setMobileDrawer('filters') }}><SlidersHorizontal size={14} aria-hidden="true" /></button>}
         </div>
+        </Collapsible>
         <div className="txn-foot-tabs">
-          {!mobile && tabStrip}
-          {!mobile && showSearchTrigger && (
+          {tabStrip}
+          {showSearchTrigger && (
             <button
               type="button"
               className="btn btn-secondary txn-search-trigger"
@@ -1709,6 +1724,7 @@ export default function TranscriptViewer({
               <kbd className="txn-search-key">⌘F</kbd>
             </button>
           )}
+          {mobile && <button ref={mobileToolsRef} type="button" className="txn-mobile-tools-toggle" aria-label="transcript tools" title="transcript tools" aria-expanded={mobileToolsOpen} onClick={() => setMobileToolsOpen(open => !open)}><MenuIcon size={14} aria-hidden="true" /></button>}
         </div>
         {(footerHints || footerProgress) && (
           <div className="txn-foot-meta">
