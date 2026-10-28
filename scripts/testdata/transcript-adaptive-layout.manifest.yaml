@@ -1,0 +1,7 @@
+requiredCases:
+  - wide room for both rails
+  - intermediate room for one rail
+  - constrained reader
+  - phone drawer
+requiredThemes: [dark, light]
+requiredMotion: [reduce, no-preference]

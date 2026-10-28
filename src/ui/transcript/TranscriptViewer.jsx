@@ -150,7 +150,17 @@ function measureReaderFull(stream) {
   if (!stream) return null
   const style = typeof getComputedStyle === 'function' ? getComputedStyle(stream) : null
   const pad = (parseFloat(style?.paddingLeft) || 0) + (parseFloat(style?.paddingRight) || 0)
-  const width = Math.floor((stream.clientWidth || 0) - pad)
+  const grid = stream.closest('.txn-body-grid')
+  let width = (stream.clientWidth || 0) - pad
+  if (grid?.dataset.readerRoom === 'true') {
+    const sideWidth = side => {
+      const state = grid.dataset[`${side}Rail`]
+      if (state === 'none') return 0
+      return grid.querySelector(`.txn-rail${state === 'closed' ? '-strip' : ''}-${side}`)?.getBoundingClientRect().width ?? 0
+    }
+    width = grid.clientWidth - sideWidth('left') - sideWidth('right') - pad
+  }
+  width = Math.floor(width)
   return width > 0 ? width : null
 }
 
@@ -499,6 +509,30 @@ export default function TranscriptViewer({
   const draggingRef = useRef(false)
   const readerDragRef = useRef(null)
   const bodyGridRef = useRef(null)
+  const [readerRoom, setReaderRoom] = useState(false)
+  useLayoutEffect(() => {
+    const grid = bodyGridRef.current
+    if (!ledger || tab !== 'trace' || viewMode !== 'list' || !grid || readerStored === READER_FULL) { setReaderRoom(false); return undefined }
+    const update = () => {
+      const style = getComputedStyle(grid)
+      const measure = name => {
+        const probe = document.createElement('div')
+        probe.style.cssText = `position:absolute;visibility:hidden;width:var(${name});`
+        grid.appendChild(probe)
+        const width = probe.getBoundingClientRect().width
+        probe.remove()
+        return width
+      }
+      const rail = Math.max(measure('--txn-outline-w'), measure('--txn-filters-w'))
+      const lane = measure('--txn-reader-lane')
+      setReaderRoom(grid.clientWidth >= Math.max(READER_MIN, readerStored) + 2 * (rail + lane))
+    }
+    update()
+    const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(update) : null
+    observer?.observe(grid)
+    window.addEventListener('resize', update)
+    return () => { observer?.disconnect(); window.removeEventListener('resize', update) }
+  }, [ledger, readerStored, tab, viewMode])
   const railFocusRef = useRef(null)
   useLayoutEffect(() => {
     const side = railFocusRef.current
@@ -526,7 +560,7 @@ export default function TranscriptViewer({
       observer?.disconnect()
       window.removeEventListener('resize', update)
     }
-  }, [ledger, tab, viewMode])
+  }, [ledger, tab, viewMode, readerRoom, leftRailOpen, rightRailOpen])
   const tabRefs = useRef({})
   const traceReadingPositionIdRef = useRef(0)
   /** @type {import('react').MutableRefObject<TraceReadingSnapshot | null>} */
@@ -1433,6 +1467,8 @@ export default function TranscriptViewer({
         data-left-rail={zenActive ? 'none' : leftRailOpen ? 'open' : 'closed'}
         data-right-rail={zenActive ? 'none' : !tabHasFilters ? 'none' : rightRailOpen ? 'open' : 'closed'}
         data-zen={ledger ? (zenActive ? 'true' : 'false') : undefined}
+        data-reader-fixed={ledger && tab === 'trace' && viewMode === 'list' && readerStored !== READER_FULL ? 'true' : undefined}
+        data-reader-room={ledger && readerRoom && !zenActive ? 'true' : undefined}
       >
         {/* LEFT: outline */}
           <Collapsible as="aside" className="txn-rail txn-rail-left" aria-label="user turns outline"

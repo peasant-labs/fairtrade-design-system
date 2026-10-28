@@ -1,0 +1,7 @@
+cases:
+  - {name: wide room for both rails, width: 1920, behavior: stable}
+  - {name: intermediate room for one rail, width: 1440, behavior: intermediate}
+  - {name: constrained reader, width: 1100, behavior: shrink}
+  - {name: phone drawer, width: 390, behavior: drawer}
+themes: [dark, light]
+motion: [reduce, no-preference]

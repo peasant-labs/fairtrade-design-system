@@ -2126,13 +2126,32 @@
     grid-template-columns: var(--txn-outline-w) minmax(0, 1fr) var(--txn-filters-w);
   }
   /* the narrower collapsed strip belongs to the ledger reading layout only; classic keeps 40px. */
-  .txn-ledger .txn-body-grid { --txn-rail-strip-w: var(--sp-6); }
+  .txn-ledger .txn-body-grid { --txn-rail-strip-w: var(--sp-6); --txn-reader-lane: calc(var(--target-comfortable) + var(--sp-4)); }
+  .txn-ledger .txn-body-grid { --txn-left-space: var(--txn-outline-w); --txn-right-space: var(--txn-filters-w); }
+  .txn-ledger .txn-body-grid[data-left-rail="closed"] { --txn-left-space: var(--txn-rail-strip-w); }
+  .txn-ledger .txn-body-grid[data-right-rail="closed"] { --txn-right-space: var(--txn-rail-strip-w); }
+  .txn-ledger .txn-body-grid[data-right-rail="none"] { --txn-right-space: 0px; }
   .txn-body-grid[data-left-rail="closed"] { grid-template-columns: var(--txn-rail-strip-w) minmax(0, 1fr) var(--txn-filters-w); }
   .txn-body-grid[data-right-rail="closed"] { grid-template-columns: var(--txn-outline-w) minmax(0, 1fr) var(--txn-rail-strip-w); }
   .txn-body-grid[data-left-rail="closed"][data-right-rail="closed"] { grid-template-columns: var(--txn-rail-strip-w) minmax(0, 1fr) var(--txn-rail-strip-w); }
   /* a tab without filters has no right rail at all, so the centre takes its room */
   .txn-body-grid[data-right-rail="none"] { grid-template-columns: var(--txn-outline-w) minmax(0, 1fr) 0; }
   .txn-body-grid[data-left-rail="closed"][data-right-rail="none"] { grid-template-columns: var(--txn-rail-strip-w) minmax(0, 1fr) 0; }
+  /* Reserve symmetric space only when the chosen fixed measure and both rails fit.
+     The rail contents can then move without resizing or reflowing the reader. */
+  @media (width >= 1080px) {
+    .txn-ledger .txn-body-grid[data-reader-room="true"] {
+      grid-template-columns: var(--txn-filters-w) minmax(0, 1fr) var(--txn-filters-w);
+      transition-property: none; overflow: clip;
+    }
+    .txn-body-grid[data-reader-room="true"] .txn-rail-left { width: var(--txn-outline-w); justify-self: start; }
+    .txn-body-grid[data-reader-room="true"] .txn-rail-right { width: var(--txn-filters-w); justify-self: end; }
+    .txn-body-grid[data-reader-room="true"] .txn-rail[aria-hidden="true"] { transform: translateX(-100%); }
+    .txn-body-grid[data-reader-room="true"] .txn-rail-right[aria-hidden="true"] { transform: translateX(100%); }
+    @media (prefers-reduced-motion: no-preference) {
+      .txn-body-grid[data-reader-room="true"] .txn-rail { transition: transform var(--dur-3) var(--ease-in-out); }
+    }
+  }
   /* Keep three tracks, including zero-width hidden rails, so width and content move once.
      Expanded and collapsed controls share a cell without replacing the DOM. */
   .txn-center { grid-column: 2; grid-row: 1; }
@@ -4054,6 +4073,18 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 /* the reader centres in the space it actually has, so the reserved control lane is mirrored on
    the leading side; otherwise the column sits left of centre by half the lane. */
 .txn-ledger .txn-stream { padding-inline: calc(var(--txn-zen-size) + var(--sp-4)); }
+
+/* Fixed measures prefer the viewer's centre, clamped to the space between the rails.
+   Full width deliberately retains the original stream-centred behaviour. */
+@media (width >= 1080px) {
+  .txn-ledger .txn-body-grid[data-reader-fixed="true"]:not([data-reader-room="true"]):not([data-zen="true"]) :is(.txn-turnwrap-ledger, .txn-turn-rule, .txn-phase, .txn-turnrow) {
+    margin-inline-start: clamp(0px, calc((100% - min(100%, var(--txn-reader-width)) + var(--txn-right-space) - var(--txn-left-space)) / 2), calc(100% - min(100%, var(--txn-reader-width))));
+    margin-inline-end: 0;
+  }
+  .txn-ledger .txn-body-grid[data-reader-fixed="true"]:not([data-reader-room="true"]):not([data-zen="true"]) .txn-reader-handle {
+    inset-inline-start: clamp(var(--sp-4), calc(50% + (var(--txn-reader-width) / 2) + (var(--txn-right-space) - var(--txn-left-space)) / 2), calc(100% - var(--sp-5)));
+  }
+}
 
 /* the reading-width handle leaves the phone viewport: the reader is viewport-bound there, so
    there is no column edge to grab. Declared after the ledger block so the base absolute rule
