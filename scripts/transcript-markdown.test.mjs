@@ -195,6 +195,9 @@ for (const testCase of fixtures.cases) {
   }
 }
 
+// Markdown mutations exercise the complete Markdown corpus above. The unrelated demo and
+// Mermaid probes below create additional Vite/DOM environments and cannot detect these mutations.
+if (!mutation) {
 /* Mount the canonical in-use demo, not a hand-built view model, so the shipped fixture is checked
    through TranscriptApp -> buildWire -> adaptTranscript -> TranscriptViewer -> TurnCard ->
    TranscriptMarkdown. The marker locates the existing turn that owns the structured body; all
@@ -284,6 +287,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     else delete globalThis.DOMParser
   }
 })
+}
 
 if (viteServer) await viteServer.close()
 const failures = results.filter((result) => !result.ok)

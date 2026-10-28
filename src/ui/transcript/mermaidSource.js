@@ -1,7 +1,11 @@
 /* Mermaid owns the grammar. This small preflight rejects active content and configuration,
    not diagram types. The parsed model is also checked before the renderer touches the DOM. */
 export function safeMermaidSource(source) {
-  return typeof source === 'string' && source.length <= 8192 && !/(?:^\s*---\s*$|%%\s*\{|<\s*\/?[a-z!][^>]*>|&(?:#\d+|#x[\da-f]+|[a-z]+);|(?:https?:|data:|javascript:|file:|\/\/)|\b(?:click|callback)\s|\burl\s*\(|!\s*\[|[\"'](?:__proto__|constructor|prototype)[\"']\s*:|\b(?:fa|fab|fas|far):|\b(?:classDef|style|linkStyle)\s)/im.test(source)
+  if (typeof source !== 'string' || source.length > 8192) return false
+  // Only attribute-free line breaks are inert. Keep all other tags visible to
+  // the existing rejection rule; a space avoids joining adjacent tokens.
+  const inspected = source.replace(/<br\s*\/?>/gi, ' ')
+  return !/(?:^\s*---\s*$|%%\s*\{|<\s*\/?[a-z!][^>]*>|&(?:#\d+|#x[\da-f]+|[a-z]+);|(?:https?:|data:|javascript:|file:|\/\/)|\b(?:click|callback)\s|\burl\s*\(|!\s*\[|[\"'](?:__proto__|constructor|prototype)[\"']\s*:|\b(?:fa|fab|fas|far):|\b(?:classDef|style|linkStyle)\s)/im.test(inspected)
 }
 
 /* Flowchart image nodes are loaded by Mermaid's live renderer before SVG is returned.

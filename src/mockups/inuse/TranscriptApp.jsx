@@ -861,6 +861,11 @@ sequenceDiagram
 participant A
 properties A: {"icon":"/mermaid-probe-image.png"}
 A->>A: Hi
+\`\`\`
+
+\`\`\`mermaid
+flowchart LR
+A["First<br/>Second"] --> B["Third<br>Fourth"]
 \`\`\``
       return { ...base, turns: base.turns.map((turn, index) => index === 1 ? { ...turn, content: source } : turn) }
     }

@@ -4,6 +4,10 @@ rerender:
     second: "flowchart LR\nA[Second] --> B[End]"
     unsafe: "flowchart LR\nA --> B\nclick A \"https://evil.example\""
 accepted:
+  - name: flowchart-linebreaks
+    source: |-
+      flowchart LR
+      A["First<br/>Second"] --> B["Third<br>Fourth"]
   - name: flowchart
     source: |-
       flowchart LR
@@ -23,6 +27,12 @@ accepted:
       classDiagram
       Animal <|-- Cat
 rejected:
+  - name: linebreak-event
+    source: 'flowchart LR\nA["First<br onload=alert(1)>Second"] --> B'
+  - name: linebreak-followed-by-script
+    source: 'flowchart LR\nA["First<br/><script>alert(1)</script>"] --> B'
+  - name: linebreak-attribute
+    source: 'flowchart LR\nA["First<br/ onload=alert(1)>Second"] --> B'
   - name: prototype-metadata
     source: |-
       sequenceDiagram

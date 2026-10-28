@@ -27,7 +27,7 @@ for (const mutation of manifest.mutations) {
   })
   if (result.status === 0) throw new Error(`${mutation.name}: the isolated production mutation survived the fixture gate`)
   const output = `${result.stdout}\n${result.stderr}`
-  if (!output.includes(mutation.expectedError)) throw new Error(`${mutation.name}: gate failed for an unrelated reason; expected ${mutation.expectedError}, received ${output.trim()}`)
+  if (!output.includes(mutation.expectedError)) throw new Error(`${mutation.name}: gate failed for an unrelated reason; expected ${mutation.expectedError}; child status=${result.status}, signal=${result.signal}, spawn error=${result.error?.stack ?? 'none'}; output: ${output.trim()}`)
   if (source !== readFileSync(sourcePath, 'utf8')) throw new Error(`${mutation.name}: mutation changed the checked-out production source`)
 }
 

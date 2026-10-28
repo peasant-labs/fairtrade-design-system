@@ -431,7 +431,7 @@ test('mermaid diagrams stay local, readable and inert', async ({ page }, info) =
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
   await page.goto(`${origin}/?app=transcript&transcript=mermaid-reading&fb=off&theme=${info.project.name}#inuse`)
   const diagrams = page.locator('.txn-mermaid')
-  await expect(diagrams).toHaveCount(15)
+  await expect(diagrams).toHaveCount(16)
   for (const button of await diagrams.first().locator('.txn-mermaid-toolbar button').all()) {
     const box = await button.boundingBox()
     expect(box.width).toBeGreaterThanOrEqual(36)
@@ -458,6 +458,10 @@ test('mermaid diagrams stay local, readable and inert', async ({ page }, info) =
   }
   await diagrams.nth(14).getByRole('button', { name: 'view diagram' }).click()
   await expect(diagrams.nth(14).getByRole('status')).toContainText('diagram unavailable')
+  await diagrams.nth(15).getByRole('button', { name: 'view diagram' }).click()
+  await expect(diagrams.nth(15).locator('.txn-mermaid-stage svg')).toBeVisible()
+  await expect(diagrams.nth(15).locator('.txn-mermaid-stage')).toContainText('First')
+  await expect(diagrams.nth(15).locator('.txn-mermaid-stage')).toContainText('Second')
   await diagrams.nth(8).getByRole('button', { name: 'view diagram' }).click()
   await expect(diagrams.nth(8).getByRole('status')).toContainText('diagram unavailable')
   await diagrams.nth(2).getByRole('button', { name: 'view diagram' }).click()
