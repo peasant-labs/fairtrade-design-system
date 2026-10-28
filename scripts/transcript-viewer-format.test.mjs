@@ -72,6 +72,14 @@ await withMountedSource(async ({ load, mount, React }) => {
       const crumbs = items.map((node) => ({ tag: node?.tagName ?? null, href: node?.getAttribute('href') ?? null, current: node?.getAttribute('aria-current') ?? null }))
       report.check(same(crumbs, row.expected), `${name}: crumbs must be ${JSON.stringify(row.expected)}, received ${JSON.stringify(crumbs)}`)
       await mounted.unmount()
+    } else if (row.kind === 'crumb-context') {
+      const mounted = await mount(viewer({ breadcrumbContext: row.breadcrumbContext }))
+      const trail = mounted.container.querySelector('nav[aria-label="breadcrumb"]')
+      const links = [...trail.querySelectorAll('a')].map((node) => ({ label: text(node), href: node.getAttribute('href') }))
+      const current = trail.querySelector('[aria-current="page"]')
+      report.check(same(links, row.breadcrumbContext), `${name}: ancestor links must be preserved`)
+      report.check(text(current) === row.title, `${name}: current crumb must be ${JSON.stringify(row.title)}, received ${JSON.stringify(text(current))}`)
+      await mounted.unmount()
     } else if (row.kind === 'filters-rail') {
       for (const [tab, want] of Object.entries(row.tabs)) {
         const mounted = await mount(viewer({ activeTab: tab }))

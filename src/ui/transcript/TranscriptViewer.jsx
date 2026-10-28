@@ -273,6 +273,7 @@ export default function TranscriptViewer({
   moreOpen: moreOpenProp,
   onMoreOpenChange,
   breadcrumb,
+  breadcrumbContext,
   LinkComponent,
   renderTurnPanel,
   renderTurnActions,
@@ -288,6 +289,9 @@ export default function TranscriptViewer({
   pullRequests,
   headingLevel,
 }) {
+  if (breadcrumb != null && breadcrumbContext != null) {
+    throw new TypeError('TranscriptViewer cannot use breadcrumb and breadcrumbContext together; pass either a complete breadcrumb or ancestor context, not both.')
+  }
   // the transcript's title is the page's h1 when the host mounts the viewer as the whole page; the
   // phases and the turns move up one level with it
   const pageLevel = pageHeadingLevel(headingLevel, 'TranscriptViewer')
@@ -1039,11 +1043,11 @@ export default function TranscriptViewer({
   /* The default trail ends on the transcript itself, so it reads as the title, not an opaque id.
      A host-supplied breadcrumb still wins unchanged (it carries the host's own routes). */
   const derivedTrail = breadcrumb == null
-  const trail = breadcrumb ?? [
+  const trail = breadcrumb ?? (breadcrumbContext != null ? [...breadcrumbContext, { label: title }] : [
     { label: 'sessions', href: '#' },
     { label: session.project ?? 'session', href: '#' },
     { label: title },
-  ]
+  ])
 
   const tabHasFilters = tab === 'trace' || tab === 'highlights'
   const tabStrip = (

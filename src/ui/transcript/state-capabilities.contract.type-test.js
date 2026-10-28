@@ -43,6 +43,12 @@ const caps = {
    works" unmanaged with only the two required props. */
 /** @type {TranscriptViewerProps} */
 const minimal = { viewModel: vm, capabilities: caps }
+
+/** @type {TranscriptViewerProps} */
+const contextualTrail = { viewModel: vm, capabilities: caps, breadcrumbContext: [{ label: 'collectives', href: '/collectives' }] }
+/** @type {TranscriptViewerProps} */
+// @ts-expect-error — a full breadcrumb and ancestor context cannot both be provided
+const ambiguousTrail = { viewModel: vm, capabilities: caps, breadcrumb: [], breadcrumbContext: [] }
 void minimal
 
 /* ── (2) POSITIVE: fully-controlled props compile ────────────────────────────────

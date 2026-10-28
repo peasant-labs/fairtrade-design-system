@@ -7,6 +7,7 @@ requiredCaseNames:
   - a model change names models and draws an arrow
   - a last crumb with an href is a link
   - a last crumb without an href is the current page
+  - context retains the transcript title
   - a tab without filters has no filters rail
   - the stylesheet keeps labels whole and lines unclipped
 

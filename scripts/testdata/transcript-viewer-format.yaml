@@ -57,6 +57,12 @@ cases:
       - {label: home, href: /}
       - {label: viewer-format}
     expected: [{tag: A, href: /, current: null}, {tag: SPAN, href: null, current: page}]
+  - name: context retains the transcript title
+    kind: crumb-context
+    breadcrumbContext:
+      - {label: collectives, href: /collectives}
+      - {label: EnCUCA, href: /collectives/encuca}
+    title: Rename the upload helpers.
   - name: a tab without filters has no filters rail
     kind: filters-rail
     tabs:

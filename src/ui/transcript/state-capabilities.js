@@ -151,7 +151,7 @@
  * pair whose `onChange?` half sits beside it (React's controlled-component
  * convention): pass neither ⇒ internal default; pass both ⇒ fully controlled.
  *
- * @typedef {object} TranscriptViewerProps
+ * @typedef {object} TranscriptViewerBaseProps
  * @property {import('./view-model.js').TranscriptViewModel} viewModel   the cooked VM (the adapter's output)
  * @property {ViewerCapabilities} capabilities                          REQUIRED — no default
  * @property {ViewerCallbacks} [callbacks]
@@ -188,7 +188,6 @@
  * @property {(open: boolean) => void} [onShareOpenChange]
  * @property {boolean} [moreOpen]                                      more action-menu disclosure (default closed)
  * @property {(open: boolean) => void} [onMoreOpenChange]
- * @property {BreadcrumbItem[]} [breadcrumb]                           host-routable trail; omit for the demo's static crumb
  * @property {import('react').ElementType} [LinkComponent]            router link for crumb items (e.g. next/link); defaults to 'a'
  * @property {(turn: import('./view-model.js').TurnVM) => unknown} [renderTurnPanel]  host per-turn extension rendered under each turn card
  * @property {(turn: import('./view-model.js').TurnVM) => unknown} [renderTurnActions]  host-owned per-turn actions; replaces the built-in label affordance (hosts with typed label models keep their own popovers)
@@ -203,6 +202,11 @@
  * @property {Presentation} [presentation]                            chrome presentation; defaults to 'classic'. `ledger` adds a subtitle slot, swaps the pinned header's provider/model + scrubber for the title + visible-turns minimap (the turns currently in view), and renders user-turn task cards in the left rail; it also rebuilds every turn as a role-led line (square role well, the role word, the turn number, the time, and the copy anchor) with prose first and one grouped work panel over the turn's tool calls, collapses a system turn to a single compact row. In that head the built-in collapse control, label affordance, model name, error chip, token badge, and saved-label chip are intentionally hidden for now, while a host's own `renderTurnActions` and `renderTurnPanel` keep rendering on every role. Omitting it renders the classic surface unchanged, and an unrecognized runtime value fails closed to classic
  * @property {import('react').ReactNode} [subtitle]                    optional deck under the session title; rendered in either presentation when supplied
  * @property {unknown} [pullRequests]                                  host-owned node rendered under the meta row (a pull request list and its own "show all" control); omitted renders nothing
+ */
+
+/**
+ * The full legacy trail and the ancestor-only context are alternative contracts.
+ * @typedef {TranscriptViewerBaseProps & ({breadcrumb?: BreadcrumbItem[], breadcrumbContext?: never} | {breadcrumb?: never, breadcrumbContext?: BreadcrumbItem[]})} TranscriptViewerProps
  */
 
 /**
