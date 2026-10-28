@@ -235,6 +235,8 @@ cases:
       changedFrom: [null, null, anthropic/claude-fable-5, null, null]
       markerCount: 1
       mounted:
+        startingModel: anthropic/claude-fable-5
+        markerTurn: 4
         turnOffsets: [0, 100, 200, 300, 400, 500, 600, 700, 800]
         viewportHeight: 400
         beforeBoundaryScrollTop: 100
