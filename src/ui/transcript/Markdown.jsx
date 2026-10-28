@@ -132,7 +132,7 @@ const markdownComponents = {
  * @param {string} [props.text]   the cooked markdown body (e.g. `TurnVM.content`)
  * @param {string} [props.source] a source alias for the cooked markdown body
  */
-function Markdown({ text, source }) {
+export default function Markdown({ text, source }) {
   const value = typeof text === 'string' ? text : typeof source === 'string' ? source : ''
 
   return (
@@ -150,4 +150,4 @@ function Markdown({ text, source }) {
 
 // Reader chrome changes frequently while the transcript text stays unchanged.
 // Avoid reparsing every mounted turn on width, rail and scroll updates.
-export default memo(Markdown)
+export const MemoMarkdown = memo(Markdown)

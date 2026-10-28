@@ -180,7 +180,7 @@ function DefaultBody({ tool }) {
  * @param {object} props
  * @param {ToolCallVM} [props.tool]
  */
-function ToolBody({ tool }) {
+export default function ToolBody({ tool }) {
   if (!tool) return null
   if (tool.pending) return <DefaultBody tool={tool} />
   switch (tool.group) {
@@ -203,4 +203,4 @@ function ToolBody({ tool }) {
 
 // An open tool can contain hundreds of diff rows. Reader chrome updates do not
 // change its cooked tool value, so keep its body out of those renders.
-export default memo(ToolBody)
+export const MemoToolBody = memo(ToolBody)

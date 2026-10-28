@@ -11,7 +11,7 @@ import {
   ListChecks,
   Wrench,
 } from 'lucide-react'
-import ToolBody from './ToolBody.jsx'
+import { MemoToolBody as ToolBody } from './ToolBody.jsx'
 import UsageDisclosure from './UsageDisclosure.jsx'
 import { formatDurationMs } from './time.js'
 import Collapsible from './Collapsible.jsx'

@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronRight, Wrench } from 'lucide-react'
 import { useId, useLayoutEffect, useState } from 'react'
-import Markdown from './Markdown.jsx'
+import { MemoMarkdown as Markdown } from './Markdown.jsx'
 import { plainTextPreview } from './plain-text.js'
 import { formatRelative, isKnownTime } from './time.js'
 

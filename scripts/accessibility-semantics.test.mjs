@@ -55,7 +55,7 @@ await withMountedSource(async ({ load, mount, React, window }) => {
   }
   // Reader chrome changes must not reconstruct a still-open tool body. A new
   // cooked tool object must nevertheless update the content immediately.
-  const ToolBody = (await load('/src/ui/transcript/ToolBody.jsx')).default
+  const ToolBody = (await load('/src/ui/transcript/ToolBody.jsx')).MemoToolBody
   let reads = 0
   const tool = { ...input.tool, get output() { reads++; return input.tool.output } }
   const mounted = await mount(el(ToolBody, { tool }))
@@ -65,5 +65,11 @@ await withMountedSource(async ({ load, mount, React, window }) => {
   await mounted.rerender(el(ToolBody, { tool: { ...input.tool, output: input.markdown } }))
   report.check(mounted.container.textContent.includes(input.markdown), 'changed tool content updates the mounted body')
   await mounted.unmount()
+  const Markdown = (await load('/src/ui/transcript/Markdown.jsx')).MemoMarkdown
+  report.check(Markdown.$$typeof === Symbol.for('react.memo'), 'viewer markdown retains its memoized boundary')
+  const markdown = await mount(el(Markdown, { text: input.markdown }))
+  await markdown.rerender(el(Markdown, { text: input.tool.output }))
+  report.check(markdown.container.textContent.includes(input.tool.output), 'changed markdown text updates the mounted body')
+  await markdown.unmount()
 })
 report.finish('graph and transcript production semantics')
