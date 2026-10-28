@@ -401,6 +401,9 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       await step('ArrowRight', FULL)
       report.check(same(widths, [start + STEP, start, MIN, MIN, MIN + STEP, 'full', 'full', FULL - STEP, 'full']), `${row.name}: the host must hear every keyboard snap, received ${JSON.stringify(widths)}`)
       await mounted.unmount()
+    } else if (row.kind === 'width-transition') {
+      const block = ruleAt(css, '.txn-ledger :is(.txn-turnwrap-ledger, .txn-turnrow, .txn-turn-rule, .txn-phase) {')
+      report.check(!!block && block.includes('transition-property: none;'), `${row.name}: width boxes must not inherit an implicit all-property transition`)
     } else if (row.kind === 'width-rails') {
       const layouts = []
       const mounted = await mountControlled({ layout: layoutOf(true, true, true), onLayout: (next) => layouts.push(next) })

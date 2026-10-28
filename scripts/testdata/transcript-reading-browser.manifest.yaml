@@ -12,3 +12,12 @@ requiredRailNames:
 requiredMobileNames:
   - narrow portrait
   - phone landscape
+requiredWidthNames:
+  - long assistant reading point survives keyboard reflow
+  - long assistant reading point survives pointer reversal
+  - long assistant reading point survives cancelled drag
+  - selected user survives keyboard reflow
+requiredWidthActionNames:
+  - folded action retains its visible source
+requiredMovingHeaderNames:
+  - resize during header exchange

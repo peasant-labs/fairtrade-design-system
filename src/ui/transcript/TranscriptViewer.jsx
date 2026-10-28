@@ -16,6 +16,7 @@ import { TOOL_GROUPS } from './view-model.js'
 import { categoryCounts, projectTurn } from './filters.js'
 import { actionGroups } from './action-groups.js'
 import { turnAtReadingLine } from './scroll-position.js'
+import useReaderWidthAnchor from './useReaderWidthAnchor.js'
 import TurnCard from './TurnCard.jsx'
 import Collapsible from './Collapsible.jsx'
 import TranscriptContext from './TranscriptContext.jsx'
@@ -578,6 +579,12 @@ export default function TranscriptViewer({
     }).filter((t) => t != null)
   }, [turns, filters, commits, vm, searchReveal, session.id])
   const actionLayout = useMemo(() => actionGroups(turns, visibleTurns), [turns, visibleTurns])
+  const readerAnchor = useReaderWidthAnchor({ readerPx, scrollRef, activeTurnRef, turnRefs, actionRefs, actionLayout, visibleTurns, ledger, sessionId: session.id, tab, viewMode })
+  useEffect(() => {
+    readerDragRef.current = null
+    setReaderDragWidth(null)
+    return () => { readerDragRef.current = null }
+  }, [session.id, tab, viewMode])
 
   const readTraceReadingSnapshot = useCallback(() => {
     const sc = scrollRef.current
@@ -804,11 +811,13 @@ export default function TranscriptViewer({
 
   /* ── navigation + interactions (effects/handlers only; safe under static render) ── */
   function selectTurn(idx) {
+    readerAnchor.clear()
     activeTurnRef.current = idx
     navigationTargetRef.current = idx
     setActiveTurn(idx)
   }
   function releaseTurnNavigation() {
+    readerAnchor.clear()
     navigationTargetRef.current = null
   }
   function jumpTo(idx, { switchTab = true } = {}) {
@@ -907,6 +916,7 @@ export default function TranscriptViewer({
     const sc = scrollRef.current
     if (!sc) return
     latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()
+    if (readerAnchor.skipScroll(sc)) return
     syncScrollChrome(sc)
     // A requested turn may never reach the reading line at a scroll boundary. Keep that
     // selection through the smooth scroll; a real wheel, touch or scrollbar gesture releases it.
@@ -950,7 +960,16 @@ export default function TranscriptViewer({
     setReaderDragWidth(null)
     const released = typeof clientX === 'number' && clientX > 0 ? drag.startWidth + (clientX - drag.startX) * 2 : (readerPx ?? drag.startWidth)
     setReaderWidth(restingReaderWidth(released, drag.fullPx))
+    readerAnchor.finish()
   }
+  useEffect(() => {
+    const onBlur = () => {
+      if (readerDragRef.current) endReaderDrag()
+      else readerAnchor.clear()
+    }
+    window.addEventListener('blur', onBlur)
+    return () => window.removeEventListener('blur', onBlur)
+  })
   function remeasureReaderFull() {
     const full = measureReaderFull(scrollRef.current) ?? readerFullPx
     if (full !== readerFullPx) setReaderFullPx(full)
@@ -959,6 +978,7 @@ export default function TranscriptViewer({
   function onReaderPointerDown(e) {
     if (e.button !== 0 && e.pointerType !== 'touch') return
     const fullPx = remeasureReaderFull()
+    readerAnchor.begin()
     readerDragRef.current = { startX: e.clientX, startWidth: readerPxOf(readerStored, fullPx) ?? readerMaxPx(fullPx), fullPx }
     if (typeof e.currentTarget.setPointerCapture === 'function') {
       try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* synthetic pointer ids cannot be captured */ }
@@ -970,6 +990,7 @@ export default function TranscriptViewer({
     /* a mouse move with no button held is a hover, not a drag: an interrupted press must not
        leave the next pass over the handle resizing the column. */
     if (e.pointerType !== 'touch' && e.buttons === 0) return
+    readerAnchor.ensure()
     const next = clampReaderPx(drag.startWidth + (e.clientX - drag.startX) * 2, drag.fullPx)
     setReaderDragWidth(next)
     setReaderWidth(next)
@@ -998,7 +1019,9 @@ export default function TranscriptViewer({
     else if (e.key === 'End') next = READER_FULL
     else return
     e.preventDefault()
+    readerAnchor.begin()
     setReaderWidth(next)
+    readerAnchor.finish()
   }
   const onTabKey = (e) => {
     const i = TAB_ORDER.indexOf(tab)

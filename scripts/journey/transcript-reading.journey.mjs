@@ -4,7 +4,7 @@ import { loadFixturePair } from '../mounted-parts.mjs'
 // Pixels, real overflow and post-animation visibility cannot be proved in JSDOM.
 // Reuse the existing built app/runner and small shared demo fixture; no extra service.
 const { fixture } = loadFixturePair('scripts/testdata/transcript-reading-browser.yaml', 'scripts/testdata/transcript-reading-browser.manifest.yaml', {
-  navigation: 'requiredNavigationNames', initial: 'requiredInitialNames', rail: 'requiredRailNames', mobile: 'requiredMobileNames',
+  navigation: 'requiredNavigationNames', initial: 'requiredInitialNames', rail: 'requiredRailNames', mobile: 'requiredMobileNames', width: 'requiredWidthNames', widthAction: 'requiredWidthActionNames', movingHeader: 'requiredMovingHeaderNames',
 })
 const origin = `http://localhost:${process.env.JOURNEY_APP_PORT || 5180}`
 test.describe('touch transcript', () => {
@@ -88,6 +88,132 @@ const inside = locator => locator.evaluate(el => {
   const stream = el.closest('.txn-stream')
   const box = el.getBoundingClientRect(), view = stream.getBoundingClientRect()
   return { top: box.top, bottom: box.bottom, viewTop: view.top, viewBottom: view.bottom, shown: !el.closest('[hidden], [inert]') }
+})
+for (const row of fixture.width) test(`transcript reading width ${row.name}`, async ({ page }, info) => {
+  await page.emulateMedia({ reducedMotion: row.motion })
+  await open(page, info.project.name)
+  const stream = page.locator('.txn-stream')
+  const paragraph = page.locator(`#turn-${row.turn} .txn-body p`).nth(row.paragraph)
+  await paragraph.click()
+  await paragraph.evaluate(el => {
+    const stream = el.closest('.txn-stream')
+    stream.scrollTop += el.getBoundingClientRect().top - stream.getBoundingClientRect().top - stream.clientHeight * 0.4
+  })
+  await expect.poll(() => paragraph.evaluate(el => {
+    const r = el.getBoundingClientRect(), s = el.closest('.txn-stream').getBoundingClientRect()
+    return r.top > s.top && r.top < s.bottom
+  })).toBe(true)
+  await expect(page.locator(`#turn-${row.turn} .txn-turn`)).toHaveClass(/txn-active/)
+  if (row.turn === 50) {
+    const geometry = await page.locator(`#turn-${row.turn}`).evaluate(el => {
+      const box = el.getBoundingClientRect(), view = el.closest('.txn-stream').getBoundingClientRect()
+      return { top: box.top, bottom: box.bottom, viewTop: view.top, viewBottom: view.bottom }
+    })
+    expect(geometry.top).toBeLessThan(geometry.viewTop)
+    expect(geometry.bottom).toBeGreaterThan(geometry.viewBottom)
+  }
+  const handle = page.getByRole('separator', { name: 'reading width' })
+  await handle.evaluate(el => el.focus({ preventScroll: true }))
+  // Wait for the actual finite header transitions already triggered by selection.
+  await page.locator('.txn-header').evaluate(async el => {
+    await new Promise(requestAnimationFrame)
+    const running = el.getAnimations({ subtree: true }).filter(a => a.playState === 'running' && Number.isFinite(a.effect?.getComputedTiming().endTime))
+    let timer
+    try { await Promise.race([Promise.all(running.map(a => a.finished.catch(() => {}))), new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('header transitions did not settle within 2s')), 2000) })]) } finally { clearTimeout(timer) }
+  })
+  const initial = await paragraph.evaluate(el => {
+    const target = el.closest('.txn-turnwrap'), stream = el.closest('.txn-stream')
+    const view = stream.getBoundingClientRect(), box = target.getBoundingClientRect()
+    const y = Math.max(Math.max(view.top, box.top) + 1, Math.min(Math.min(view.bottom, box.bottom) - 1, view.top + view.height * 0.4))
+    const left = Math.max(view.left, box.left), right = Math.min(view.right, box.right)
+    const pos = document.caretPositionFromPoint(left + (right - left) * 0.5, y)
+    if (!pos || pos.offsetNode.nodeType !== Node.TEXT_NODE || !target.contains(pos.offsetNode)) throw new Error('no visible text point in selected source')
+    const range = document.createRange()
+    range.setStart(pos.offsetNode, pos.offset)
+    range.collapse(true)
+    window.__readerTestRange = range
+    return range.getBoundingClientRect().top
+  })
+  const positions = [{ event: 'before', y: initial }]
+  if (process.env.READER_WIDTH_PROOF_DIR && row.gesture === 'keyboard' && row.turn === 50) await page.screenshot({ path: `${process.env.READER_WIDTH_PROOF_DIR}/${info.project.name}-before.png` })
+  const check = async () => {
+    const point = await page.evaluate(() => window.__readerTestRange.getBoundingClientRect().top)
+    positions.push({ event: 'width update', y: point, scrollTop: await stream.evaluate(el => el.scrollTop) })
+    expect(Math.abs(point - initial)).toBeLessThan(3)
+    await expect(page.locator(`#turn-${row.turn} .txn-turn`)).toHaveClass(/txn-active/)
+  }
+  if (row.gesture === 'keyboard') {
+    for (const key of ['Home', 'ArrowRight', 'ArrowLeft', 'End']) {
+      await page.keyboard.press(key); await check()
+      if (key === 'Home' && process.env.READER_WIDTH_PROOF_DIR && row.turn === 50) await page.screenshot({ path: `${process.env.READER_WIDTH_PROOF_DIR}/${info.project.name}-after.png` })
+    }
+  } else {
+    const box = await handle.boundingBox(), x = box.x + box.width / 2, y = box.y + box.height / 2
+    await page.mouse.move(x, y); await page.mouse.down()
+    for (const dx of [-60, -30, -70]) { await page.mouse.move(x + dx, y); await check() }
+    if (row.gesture === 'cancel') await handle.dispatchEvent('pointercancel', { pointerId: 1, pointerType: 'mouse', button: 0 })
+    await page.mouse.up(); await check()
+  }
+  const beforeScroll = await stream.evaluate(el => el.scrollTop)
+  const streamBox = await stream.boundingBox()
+  await page.mouse.move(streamBox.x + streamBox.width / 2, streamBox.y + streamBox.height / 2)
+  await page.mouse.wheel(0, -180)
+  await expect.poll(() => stream.evaluate(el => el.scrollTop)).toBeLessThan(beforeScroll)
+  await info.attach('reader-position', { body: JSON.stringify(positions), contentType: 'application/json' })
+})
+for (const row of fixture.movingHeader) test(`transcript reading width ${row.name}`, async ({ page }, info) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await open(page, info.project.name)
+  const stream = page.locator('.txn-stream'), header = page.locator('.txn-header')
+  const turn = page.locator(`#turn-${row.turn} .txn-turn`)
+  await turn.click()
+  await expect(turn).toHaveClass(/txn-active/)
+  const handle = page.getByRole('separator', { name: 'reading width' })
+  await handle.evaluate(el => el.focus({ preventScroll: true }))
+  await stream.evaluate((el, top) => { el.scrollTop = top }, row.scrollTop)
+  await expect.poll(() => header.evaluate(el => el.getAnimations({ subtree: true }).some(a => a.playState === 'running'))).toBe(true)
+  await handle.evaluate(el => {
+    el.addEventListener('keydown', () => {
+      const stream = document.querySelector('.txn-stream'), target = document.querySelector('#turn-0')
+      const view = stream.getBoundingClientRect(), box = target.getBoundingClientRect()
+      const y = Math.max(Math.max(view.top, box.top) + 1, Math.min(Math.min(view.bottom, box.bottom) - 1, view.top + view.height * 0.4))
+      const pos = document.caretPositionFromPoint((Math.max(view.left, box.left) + Math.min(view.right, box.right)) / 2, y)
+      if (!pos || pos.offsetNode.nodeType !== Node.TEXT_NODE || !target.contains(pos.offsetNode)) throw new Error('no visible selected text at gesture start')
+      const range = document.createRange(); range.setStart(pos.offsetNode, pos.offset); range.collapse(true)
+      window.__movingWidth = { range, frames: [], running: document.querySelector('.txn-header').getAnimations({ subtree: true }).some(a => a.playState === 'running') }
+      const record = () => window.__movingWidth.frames.push({ y: range.getBoundingClientRect().top, streamTop: stream.getBoundingClientRect().top })
+      record()
+      const sample = () => { setTimeout(() => { record(); if (document.querySelector('.txn-header').getAnimations({ subtree: true }).some(a => a.playState === 'running')) requestAnimationFrame(sample) }, 0) }
+      requestAnimationFrame(sample)
+    }, { capture: true, once: true })
+  })
+  await handle.press('Home')
+  await header.evaluate(async el => { await Promise.all(el.getAnimations({ subtree: true }).filter(a => a.playState === 'running' && Number.isFinite(a.effect?.getComputedTiming().endTime)).map(a => a.finished.catch(() => {}))); await new Promise(requestAnimationFrame) })
+  const evidence = await page.evaluate(() => ({ running: window.__movingWidth.running, frames: window.__movingWidth.frames }))
+  await info.attach('moving-header-position', { body: JSON.stringify(evidence), contentType: 'application/json' })
+  expect(evidence.running).toBe(true)
+  expect(evidence.frames.length).toBeGreaterThan(1)
+  for (const frame of evidence.frames) expect(Math.abs(frame.y - evidence.frames[0].y)).toBeLessThan(3)
+  await expect(turn).toHaveClass(/txn-active/)
+  const box = await stream.boundingBox()
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.wheel(0, -200)
+  await expect.poll(() => stream.evaluate(el => el.scrollTop)).toBe(0)
+  await expect(page.locator('.txn-app')).not.toHaveClass(/txn-app-condensed/)
+})
+for (const row of fixture.widthAction) test(`transcript reading width ${row.name}`, async ({ page }, info) => {
+  await open(page, info.project.name)
+  await page.locator('.txn-stream').focus()
+  await page.keyboard.press('Control+f')
+  await page.getByRole('textbox', { name: 'search transcript' }).fill(row.query)
+  const target = page.locator('.txn-toolcall').filter({ has: page.locator('.path', { hasText: row.command }) })
+  await expect(target.locator('button').first()).toHaveAttribute('aria-expanded', 'true')
+  await expect.poll(async () => { const m = await inside(target); return m.shown && m.top >= m.viewTop && m.top < m.viewBottom }).toBe(true)
+  const handle = page.getByRole('separator', { name: 'reading width' })
+  await handle.evaluate(el => el.focus({ preventScroll: true }))
+  const before = await target.evaluate(el => el.getBoundingClientRect().top)
+  await page.keyboard.press('Home')
+  expect(Math.abs(await target.evaluate(el => el.getBoundingClientRect().top) - before)).toBeLessThan(3)
 })
 for (const row of fixture.navigation) test(`transcript rendered navigation ${row.name}`, async ({ page }, info) => {
   await open(page, info.project.name)

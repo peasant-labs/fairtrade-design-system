@@ -56,6 +56,8 @@ interactions:
     kind: width-drag
   - name: the keyboard steps the width and reaches both ends
     kind: width-keys
+  - name: reader width changes do not queue implicit transitions
+    kind: width-transition
   - name: a width change never reopens a closed rail
     kind: width-rails
   - name: the work summary and the tool rows share one inline edge

@@ -23,6 +23,7 @@ requiredInteractionNames:
   - the zen control sits inside the reader column
   - dragging the handle rests the width where it is released
   - the keyboard steps the width and reaches both ends
+  - reader width changes do not queue implicit transitions
   - a width change never reopens a closed rail
   - the work summary and the tool rows share one inline edge
   - both collapsed rail strips are 32px
@@ -52,6 +53,7 @@ requiredInteractionKinds:
   the zen control sits inside the reader column: zen-placement
   dragging the handle rests the width where it is released: width-drag
   the keyboard steps the width and reaches both ends: width-keys
+  reader width changes do not queue implicit transitions: width-transition
   a width change never reopens a closed rail: width-rails
   the work summary and the tool rows share one inline edge: work-grid
   both collapsed rail strips are 32px: strip-width
