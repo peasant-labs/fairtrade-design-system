@@ -31,6 +31,22 @@ for (const row of fixture.cases) for (const motion of fixture.motion) {
     const grid = page.locator('.txn-body-grid')
     const reader = page.locator('.txn-turnwrap-ledger').first()
     const rect = async () => { const r = await reader.boundingBox(); return { x: r.x, width: r.width } }
+    if (row.behavior === 'boundary') {
+      const left = page.locator('.txn-rail-left')
+      const right = page.locator('.txn-rail-right')
+      if (row.rails) {
+        await expect(left).toBeVisible()
+        await expect(right).toBeVisible()
+        await expect(page.getByRole('button', { name: 'zen mode' })).toBeVisible()
+      } else {
+        await expect(left).toBeHidden()
+        await expect(right).toBeHidden()
+        await expect(page.getByRole('button', { name: 'zen mode' })).toBeHidden()
+        const r = await rect(), g = await grid.boundingBox()
+        expect(Math.abs(r.x + r.width / 2 - (g.x + g.width / 2)), 'reader stays centered without rails').toBeLessThan(1)
+      }
+      return
+    }
     const available = () => grid.evaluate(el => {
       const stream = el.querySelector('.txn-stream'), style = getComputedStyle(stream)
       const box = stream.getBoundingClientRect()

@@ -2139,7 +2139,7 @@
   .txn-body-grid[data-left-rail="closed"][data-right-rail="none"] { grid-template-columns: var(--txn-rail-strip-w) minmax(0, 1fr) 0; }
   /* Reserve symmetric space only when the chosen fixed measure and both rails fit.
      The rail contents can then move without resizing or reflowing the reader. */
-  @media (width >= 1080px) {
+  @media (width >= 1024px) {
     .txn-ledger .txn-body-grid[data-reader-room="true"] {
       grid-template-columns: var(--txn-filters-w) minmax(0, 1fr) var(--txn-filters-w);
       transition-property: none; overflow: clip;
@@ -2699,6 +2699,9 @@
    column at the tablet token widths (1024-1079), so the rails are dropped below 1080px rather than
    at the 1024px token. scripts/testdata/breakpoints.yaml records the exception and its reason. ---- */
 @media (width < 1080px) {
+  /* No rail occupies space in this band, including on an unusually wide host. */
+  .txn-ledger .txn-body-grid[data-reader-fixed="true"] { --txn-left-space: 0px; --txn-right-space: 0px; }
+  .txn-ledger .txn-body-grid[data-reader-room="true"] { grid-template-columns: 0 minmax(0, 1fr) 0; }
   /* single column regardless of collapse state; the rails + their collapsed strips both drop here. */
   .txn-body-grid,
   .txn-body-grid[data-left-rail="closed"],
@@ -4076,7 +4079,7 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 
 /* Fixed measures prefer the viewer's centre, clamped to the space between the rails.
    Full width deliberately retains the original stream-centred behaviour. */
-@media (width >= 1080px) {
+@media (width >= 1024px) {
   .txn-ledger .txn-body-grid[data-reader-fixed="true"]:not([data-reader-room="true"]):not([data-zen="true"]) :is(.txn-turnwrap-ledger, .txn-turn-rule, .txn-phase, .txn-turnrow) {
     margin-inline-start: clamp(0px, calc((100% - min(100%, var(--txn-reader-width)) + var(--txn-right-space) - var(--txn-left-space)) / 2), calc(100% - min(100%, var(--txn-reader-width))));
     margin-inline-end: 0;
