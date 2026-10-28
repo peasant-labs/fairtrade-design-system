@@ -866,6 +866,23 @@ A->>A: Hi
 \`\`\`mermaid
 flowchart LR
 A["First<br/>Second"] --> B["Third<br>Fourth"]
+\`\`\`
+
+\`\`\`mermaid
+flowchart TD
+    A["Color panel: CMYK sliders<br/>apply_values(v)"] --> B["set_color(rgb)<br/>tools.foreground = sRGB"]
+    B --> C{"remember_cmyk?"}
+    C -->|"no (before #9037)"| D["sRGB only"]
+    C -->|"yes (after #9037)"| E["cmyk_picks: rgb to C,M,Y,K"]
+    D --> F["edit.fill: color_source"]
+    E --> F
+    F --> G{"picked_cmyk(rgb)?"}
+    G -->|"hit"| H["Source::Cmyk<br/>rgba + inks"]
+    G -->|"miss"| I["Source::Color<br/>rgba only"]
+    H --> J["encode_color<br/>CMYK target: write inks"]
+    I --> K["from_rgba_into<br/>rgb_to_cmyk(doc profile)"]
+    J --> L["exact C0 M0 Y0 K100"]
+    K --> M["rich black, profile-dependent<br/>(report: 60/51/53/59)"]
 \`\`\``
       return { ...base, turns: base.turns.map((turn, index) => index === 1 ? { ...turn, content: source } : turn) }
     }

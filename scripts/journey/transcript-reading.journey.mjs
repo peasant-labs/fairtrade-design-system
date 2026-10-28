@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test'
+import { readFileSync } from 'node:fs'
+import YAML from 'yaml'
 import { loadFixturePair } from '../mounted-parts.mjs'
 
 // Pixels, real overflow and post-animation visibility cannot be proved in JSDOM.
@@ -7,6 +9,7 @@ const { fixture } = loadFixturePair('scripts/testdata/transcript-reading-browser
   navigation: 'requiredNavigationNames', initial: 'requiredInitialNames', rail: 'requiredRailNames', mobile: 'requiredMobileNames', width: 'requiredWidthNames', widthAction: 'requiredWidthActionNames', movingHeader: 'requiredMovingHeaderNames', widthLifecycle: 'requiredWidthLifecycleNames', drawerMotion: 'requiredDrawerMotionNames',
 })
 const origin = `http://localhost:${process.env.JOURNEY_APP_PORT || 5180}`
+const cmykFlowchart = YAML.parse(readFileSync(new URL('../testdata/transcript-mermaid.yaml', import.meta.url), 'utf8')).accepted.find(row => row.name === 'cmyk-user-flowchart').source
 test.describe('touch transcript', () => {
 test.use({ hasTouch: true })
 for (const row of fixture.mobile) test(`transcript mobile drawers ${row.name}`, async ({ page }, info) => {
@@ -431,7 +434,7 @@ test('mermaid diagrams stay local, readable and inert', async ({ page }, info) =
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
   await page.goto(`${origin}/?app=transcript&transcript=mermaid-reading&fb=off&theme=${info.project.name}#inuse`)
   const diagrams = page.locator('.txn-mermaid')
-  await expect(diagrams).toHaveCount(16)
+  await expect(diagrams).toHaveCount(17)
   for (const button of await diagrams.first().locator('.txn-mermaid-toolbar button').all()) {
     const box = await button.boundingBox()
     expect(box.width).toBeGreaterThanOrEqual(36)
@@ -462,6 +465,11 @@ test('mermaid diagrams stay local, readable and inert', async ({ page }, info) =
   await expect(diagrams.nth(15).locator('.txn-mermaid-stage svg')).toBeVisible()
   await expect(diagrams.nth(15).locator('.txn-mermaid-stage')).toContainText('First')
   await expect(diagrams.nth(15).locator('.txn-mermaid-stage')).toContainText('Second')
+  await expect(diagrams.nth(16).locator('pre code')).toHaveText(`${cmykFlowchart}\n`)
+  await diagrams.nth(16).getByRole('button', { name: 'view diagram' }).click()
+  await expect(diagrams.nth(16).locator('.txn-mermaid-stage svg')).toBeVisible()
+  await expect(diagrams.nth(16).locator('.txn-mermaid-stage')).toContainText('apply_values(v)')
+  await expect(diagrams.nth(16).locator('.txn-mermaid-stage')).toContainText('60/51/53/59')
   await diagrams.nth(8).getByRole('button', { name: 'view diagram' }).click()
   await expect(diagrams.nth(8).getByRole('status')).toContainText('diagram unavailable')
   await diagrams.nth(2).getByRole('button', { name: 'view diagram' }).click()
