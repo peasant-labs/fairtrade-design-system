@@ -130,6 +130,42 @@ outlineCases:
     flagged: [3]
     outlines: 1
 
+# `foldedProseCase` mounts two prose turns that each took an action. The ledger folds both actions
+# into the first turn's group, but the second turn still draws its own card; flagging it draws the
+# card's one outline and no second one around its folded row.
+foldedProseCase:
+  name: a flagged prose turn whose work folds into an earlier group draws one outline
+  flagged: [2]
+  outlines: 1
+  payload:
+    id: integrity-folded-prose
+    harness: claude-code
+    startTime: '2026-09-20T10:00:00Z'
+    endTime: '2026-09-20T10:03:00Z'
+    durationMins: 3
+    totalTokens: 0
+    tokensIn: 0
+    tokensOut: 0
+    turnCount: 3
+    toolCallCount: 2
+    outcome: resolved
+    turns:
+      - {index: 0, role: user, content: 'read both files', timestamp: '2026-09-20T10:00:00Z', depth: 0}
+      - index: 1
+        role: assistant
+        content: 'reading the first file.'
+        timestamp: '2026-09-20T10:01:00Z'
+        depth: 0
+        toolCalls:
+          - {id: tc-a, name: Read, filePath: src/a.ts, arguments: '{"file_path":"src/a.ts"}', result: '"ok"', toolKind: read}
+      - index: 2
+        role: assistant
+        content: 'reading the second file.'
+        timestamp: '2026-09-20T10:02:00Z'
+        depth: 0
+        toolCalls:
+          - {id: tc-b, name: Read, filePath: src/b.ts, arguments: '{"file_path":"src/b.ts"}', result: '"ok"', toolKind: read}
+
 # `thinkingCase` mounts a thinking-only work group; the flagged turn inside it is marked.
 thinkingCase:
   name: a flagged turn in a thinking-only group is marked

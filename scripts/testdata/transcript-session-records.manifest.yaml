@@ -38,8 +38,8 @@ mutations:
     expectedDiagnostic: "the same text from another harness stays a turn: cooked turns"
   - name: an unknown turn time is kept
     file: src/ui/transcript/adapter.js
-    find: "    .map(withKnownTime)"
-    replace: ""
+    find: "      const copy = withKnownTime(turn)"
+    replace: "      const copy = turn"
     expectedDiagnostic: "an unknown turn time is dropped: cooked times"
   - name: an unknown session time is kept
     file: src/ui/transcript/adapter.js

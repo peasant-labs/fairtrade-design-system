@@ -67,6 +67,15 @@ function countedParts(summary = {}) {
 }
 
 /**
+ * True when a turn has words of its own, so it draws a card (a turn that is only work is inline detail).
+ * @param {{ displayContent?: unknown, content?: unknown } | null | undefined} turn
+ * @returns {boolean}
+ */
+export function turnHasProse(turn) {
+  return String(turn?.displayContent ?? turn?.content ?? '').trim().length > 0
+}
+
+/**
  * Summarize one turn's tool calls.
  * @param {ToolCallVM[]} [tools]
  * @returns {WorkSummary}

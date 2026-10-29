@@ -53,6 +53,7 @@ requiredInteractionKinds:
   integrity added after mount announces once: late-arrival
   an unflagged thinking-only group keeps its plain structure: plain-thinking
   integrity present at mount fills its status after mount: status-after-mount
+requiredFoldedProseCaseName: a flagged prose turn whose work folds into an earlier group draws one outline
 requiredThinkingCaseName: a flagged turn in a thinking-only group is marked
 
 requiredMutationNames:

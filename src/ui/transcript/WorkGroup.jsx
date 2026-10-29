@@ -2,7 +2,7 @@ import { useLayoutEffect, useId, useRef, useState } from 'react'
 import ToolCall from './ToolCall.jsx'
 import Thinking from './Thinking.jsx'
 import Collapsible from './Collapsible.jsx'
-import { workActionsLabel, workCountLabel, workMetaLabel, workSummary } from './work-summary.js'
+import { turnHasProse, workActionsLabel, workCountLabel, workMetaLabel, workSummary } from './work-summary.js'
 import { toolStateKey } from './tool-state-key.js'
 import { IntegrityMark } from './IntegrityBadge.jsx'
 import { INTEGRITY_COPY } from './integrity.js'
@@ -104,8 +104,10 @@ export function ModelActions({ turns = [], openTools = {}, onToggle = () => {}, 
     previous.current = { compact, expandAll, openTools, reveal }
   }, [compact, expandAll, openTools, reveal, tools])
   const label = workActionsLabel(workSummary(tools))
-  /* a turn whose own card carries the mark and the outline is not marked a second time in its row */
-  const isCard = (turn) => !!cardTurn && (cardTurn.identity ?? cardTurn.index) === (turn.identity ?? turn.index)
+  /* a turn whose own card carries the mark and the outline is not marked a second time in its row:
+     that is the card this group sits under, and every turn with words, whose card is drawn on its
+     own even when its actions are folded into an earlier turn's group */
+  const isCard = (turn) => (!!cardTurn && (cardTurn.identity ?? cardTurn.index) === (turn.identity ?? turn.index)) || turnHasProse(turn)
   const isFlagged = (turn) => flaggedPositions?.has(turn.sourcePosition) === true && !isCard(turn)
   const anyFlagged = turns.some(isFlagged)
   const rowClass = (turn) => 'txn-modelactions-turn' + (isFlagged(turn) ? ' is-flagged' : '')

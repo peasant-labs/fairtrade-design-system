@@ -17,6 +17,7 @@ const { fixture, manifest } = loadFixturePair(FIXTURE, MANIFEST, {
   outlineCases: 'requiredOutlineCaseNames',
   interactions: 'requiredInteractionNames',
 })
+if (fixture.foldedProseCase?.name !== manifest.requiredFoldedProseCaseName) throw new Error(`${FIXTURE}: foldedProseCase must be named ${JSON.stringify(manifest.requiredFoldedProseCaseName)}`)
 if (fixture.thinkingCase?.name !== manifest.requiredThinkingCaseName) throw new Error(`${FIXTURE}: thinkingCase must be named ${JSON.stringify(manifest.requiredThinkingCaseName)}`)
 
 /* a name alone does not protect a meaning: every row's kind is pinned by name too. */
@@ -165,6 +166,18 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     const edges = new Set()
     for (const selector of selectors) for (const node of mounted.container.querySelectorAll(selector)) edges.add(node)
     report.check(edges.size === row.outlines, `${row.name}: expected ${row.outlines} outlined elements, received ${edges.size} (${[...edges].map((node) => node.className).join(' | ')})`)
+    await mounted.unmount()
+  }
+
+  {
+    const { name, payload, flagged, outlines } = fixture.foldedProseCase
+    const foldedVm = adaptTranscript(payload)
+    const mounted = await mount(React.createElement(TranscriptViewer, { viewModel: foldedVm, capabilities: CAPABILITIES, presentation: 'ledger', integrity: { flagged_turns: flagged }, transcriptContentHash: SERVED_HASH, contentHash: SERVED_HASH }))
+    await mounted.settle(SETTLE_MS)
+    report.check(!!mounted.container.querySelector('#turn-1 .txn-modelactions'), `${name}: the fixture must fold turn 2's action into turn 1's group`)
+    const edges = new Set()
+    for (const selector of selectors) for (const node of mounted.container.querySelectorAll(selector)) edges.add(node)
+    report.check(edges.size === outlines, `${name}: expected ${outlines} outlined elements, received ${edges.size} (${[...edges].map((node) => node.className).join(' | ')})`)
     await mounted.unmount()
   }
 

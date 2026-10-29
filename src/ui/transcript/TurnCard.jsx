@@ -8,6 +8,7 @@ import Thinking from './Thinking.jsx'
 import ToolCall from './ToolCall.jsx'
 import TranscriptSystemRow from './SystemRow.jsx'
 import TranscriptWorkGroup, { ModelActions } from './WorkGroup.jsx'
+import { turnHasProse } from './work-summary.js'
 import UsageDisclosure from './UsageDisclosure.jsx'
 import { Term } from '../Explainer.jsx'
 import { formatRelative as formatRelativeTime, isKnownTime } from './time.js'
@@ -115,7 +116,7 @@ export default function TurnCard({
   const isEarlier = !!turn.partition && turn.partition !== 'main'
   /* Only a turn with words earns a card. An agent turn that is only thinking or tool work is
      inline detail: no role line, no number, no time, just its lines under the previous turn. */
-  const hasProse = String(turn.displayContent ?? turn.content ?? '').trim().length > 0
+  const hasProse = turnHasProse(turn)
   const ledgerDetail = ledger && !isUser && !hasProse
   const timeLabel = turn.time || turnTimeLabel(turn.timestamp)
   const isSub = !!turn.depth && turn.depth > 0
