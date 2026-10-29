@@ -1,0 +1,99 @@
+# Required-NAME and required-KIND manifest for transcript-integrity-viewer.yaml: deletion
+# protection. The gate (scripts/transcript-integrity-viewer.test.mjs) asserts each family's names
+# equal these lists exactly and that every row's `kind` matches its name here.
+requiredCaseNames:
+  - no integrity renders nothing
+  - malformed integrity renders nothing
+  - ledger flagged with matching hash marks listed turns
+  - classic flagged with matching hash marks listed turns
+  - different hashes draw the badge only
+  - different hashes draw the badge only in classic
+  - sticky flag with no turns draws the badge only
+  - a filtered-out flagged turn leaves only the badge
+  - a hidden tool category leaves only the badge
+  - earlier history is never marked
+  - condensed header keeps the badge
+  - zen keeps the badge
+requiredCaseKinds:
+  no integrity renders nothing: ledger
+  malformed integrity renders nothing: ledger
+  ledger flagged with matching hash marks listed turns: ledger
+  classic flagged with matching hash marks listed turns: classic
+  different hashes draw the badge only: ledger
+  different hashes draw the badge only in classic: classic
+  sticky flag with no turns draws the badge only: ledger
+  a filtered-out flagged turn leaves only the badge: ledger
+  a hidden tool category leaves only the badge: ledger
+  earlier history is never marked: ledger
+  condensed header keeps the badge: ledger
+  zen keeps the badge: ledger
+requiredOutlineCaseNames:
+  - a flagged prose turn with work draws one outline
+  - a flagged work-only turn draws its row outline once
+  - two flagged turns in one group draw one outline each
+  - a flagged classic turn draws one outline
+  - a flagged system row draws one outline
+requiredInteractionNames:
+  - help click opens and closes the panel
+  - help keyboard
+  - outside pointer closes the panel
+  - the badge is not a control
+  - panel copy follows highlights
+  - help link only when supplied
+  - integrity added after mount announces once
+  - integrity present at mount fills its status after mount
+requiredInteractionKinds:
+  help click opens and closes the panel: help-click
+  help keyboard: help-keyboard
+  outside pointer closes the panel: outside-pointer
+  the badge is not a control: badge-static
+  panel copy follows highlights: panel-copy
+  help link only when supplied: help-link
+  integrity added after mount announces once: late-arrival
+  integrity present at mount fills its status after mount: status-after-mount
+requiredThinkingCaseName: a flagged turn in a thinking-only group is marked
+
+requiredMutationNames:
+  - the badge ignores the hash
+  - the folded work loses its mark
+  - the help control is lost when condensed
+  - escape leaves focus in the panel
+  - the work block repeats the card outline
+  - the status is static text at mount
+  - the thinking-only group loses its mark
+mutations:
+  - name: the badge ignores the hash
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "integrityView(integrity, transcriptContentHash, contentHash)"
+    replace: "integrityView(integrity, transcriptContentHash, transcriptContentHash)"
+    expectedDiagnostic: "different hashes draw the badge only"
+  - name: the folded work loses its mark
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "flaggedPositions={integrityState?.positions}"
+    replace: "flaggedPositions={undefined}"
+    expectedDiagnostic: "group-row-2 must be present"
+  - name: the help control is lost when condensed
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "{integrityState && ("
+    replace: "{integrityState && !heroCondensed && ("
+    expectedDiagnostic: "condensed header keeps the badge: help must be present"
+  - name: escape leaves focus in the panel
+    file: src/ui/transcript/IntegrityBadge.jsx
+    find: "helpRef.current?.focus()"
+    replace: ""
+    expectedDiagnostic: "help keyboard"
+  - name: the work block repeats the card outline
+    file: src/index.css
+    find: ".txn-turnwrap.is-flagged > .txn-turnwork-solo,"
+    replace: ".txn-turnwrap.is-flagged > .txn-turnwork,"
+    expectedDiagnostic: "a flagged prose turn with work draws one outline"
+  - name: the status is static text at mount
+    file: src/ui/transcript/IntegrityBadge.jsx
+    find: "{announced ? INTEGRITY_COPY.statusText : ''}"
+    replace: "{INTEGRITY_COPY.statusText}"
+    expectedDiagnostic: "integrity present at mount fills its status after mount"
+  - name: the thinking-only group loses its mark
+    file: src/ui/transcript/WorkGroup.jsx
+    find: "{isFlagged(turn) && <IntegrityMark decorative={false} />}"
+    replace: ""
+    expectedDiagnostic: "a flagged turn in a thinking-only group is marked"

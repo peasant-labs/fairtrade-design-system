@@ -18,6 +18,8 @@ import { actionGroups } from './action-groups.js'
 import { turnAtReadingLine } from './scroll-position.js'
 import useReaderWidthAnchor from './useReaderWidthAnchor.js'
 import TurnCard from './TurnCard.jsx'
+import IntegrityBadge from './IntegrityBadge.jsx'
+import { integrityView } from './integrity.js'
 import Collapsible from './Collapsible.jsx'
 import TranscriptContext from './TranscriptContext.jsx'
 import { UsageScopes } from './UsageDisclosure.jsx'
@@ -309,6 +311,10 @@ export default function TranscriptViewer({
   subtitle,
   pullRequests,
   headingLevel,
+  integrity,
+  transcriptContentHash,
+  contentHash,
+  integrityHelpHref,
 }) {
   if (breadcrumb != null && breadcrumbContext != null) {
     throw new TypeError('TranscriptViewer cannot use breadcrumb and breadcrumbContext together; pass either a complete breadcrumb or ancestor context, not both.')
@@ -321,6 +327,9 @@ export default function TranscriptViewer({
   const EmptyHeading = headingTag(pageLevel, 1)
   const vm = viewModel
   const tabsId = useId()
+  /* the served integrity flag: null draws nothing; otherwise the badge draws, and the listed
+     positions are marked only when the rendered content is the content the flag refers to */
+  const integrityState = useMemo(() => integrityView(integrity, transcriptContentHash, contentHash), [integrity, transcriptContentHash, contentHash])
   const caps = capabilities ?? {}
   /* the ledger presentation is a CHROME switch only: same view state, same capabilities,
      same callbacks; the root class scopes the ledger CSS block. */
@@ -639,6 +648,8 @@ export default function TranscriptViewer({
     }).filter((t) => t != null)
   }, [turns, filters, commits, vm, searchReveal, session.id])
   const actionLayout = useMemo(() => actionGroups(turns, visibleTurns), [turns, visibleTurns])
+  /* the panel mentions marked turns only when one is drawn: a marked position that no visible turn holds is not */
+  const hasIntegrityHighlights = !!integrityState && visibleTurns.some((turn) => integrityState.positions.has(turn.sourcePosition))
   const readerAnchor = useReaderWidthAnchor({ readerPx, scrollRef, activeTurnRef, turnRefs, actionRefs, actionLayout, visibleTurns, ledger, sessionId: session.id, tab, viewMode, onSettle: () => { if (scrollRef.current) syncScrollChrome(scrollRef.current) } })
   useEffect(() => {
     readerDragRef.current = null
@@ -1390,6 +1401,9 @@ export default function TranscriptViewer({
 
             {!mobile && moreActions}
             </>)}
+            {integrityState && (
+              <IntegrityBadge hasHighlights={hasIntegrityHighlights} helpHref={integrityHelpHref} headingLevel={pageLevel + 1} />
+            )}
           </div>
         </div>
 
@@ -1603,6 +1617,8 @@ export default function TranscriptViewer({
                             actionReveal={searchReveal && (ledger ? (actionLayout.locations.get(searchReveal.turn)?.owner ?? searchReveal.turn) === t.index : searchReveal.turn === t.index) ? searchReveal : undefined}
                             registerActionRef={registerActionRef}
                             suppressWork={suppressWork}
+                            flagged={integrityState?.positions.has(t.sourcePosition) ?? false}
+                            flaggedPositions={integrityState?.positions}
                           />
                           {/* host per-turn extension (touched-files panels etc.) —
                               rendered under the card, inside the turn's anchor block */}

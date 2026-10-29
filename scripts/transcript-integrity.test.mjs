@@ -119,7 +119,9 @@ await withMountedSource(async (ctx) => {
       report.check(panel.classList.contains('menu-pop') && panel.classList.contains('menu-float') && panel.getAttribute('data-align') === 'end' && panel.getAttribute('role') === 'region', `${label}: the panel is the shared floating menu surface, a region`)
       report.check(byId(mounted.container, panel.getAttribute('aria-labelledby')) === panel.querySelector('h2'), `${label}: the region is named by its heading`)
       const status = root.querySelector('[role="status"]')
-      report.check(status === root.lastElementChild && text(status) === INTEGRITY_COPY.statusText, `${label}: the visually hidden status is the last child and reads statusText`)
+      report.check(status === root.lastElementChild && text(status) === '', `${label}: the visually hidden status is the last child and is empty on first paint`)
+      await mounted.settle(150)
+      report.check(text(status) === INTEGRITY_COPY.statusText, `${label}: the status reads statusText once the badge has settled`)
     } else if (row.kind === 'toggle') {
       const before = window.document.activeElement
       await mounted.act(() => click(window, help))

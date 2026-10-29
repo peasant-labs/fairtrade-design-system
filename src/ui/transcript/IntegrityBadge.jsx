@@ -8,10 +8,15 @@ import { INTEGRITY_COPY } from './integrity.js'
    help link. The badge is not a control. The (?) toggles a panel that stays in the DOM (hidden
    when closed) so aria-controls always resolves; opening never moves focus, the panel never traps
    it, and it never opens by itself or on hover. Escape closes it and returns focus to the (?); a
-   pointer down outside closes it and leaves focus where it was. */
+   pointer down outside closes it and leaves focus where it was. The status line is empty when it
+   first enters the page and is filled a moment later, so a screen reader that watches a live
+   region the badge arrived with still hears it. */
 
 /** Keep the open panel inside the viewport by the page gutter, shifting it sideways when needed. */
 const VIEWPORT_GUTTER_PX = 16
+
+/** How long the status line stays empty after the badge enters the page. */
+const ANNOUNCE_DELAY_MS = 100
 
 /**
  * @param {object} props
@@ -21,6 +26,7 @@ const VIEWPORT_GUTTER_PX = 16
  */
 export default function IntegrityBadge({ hasHighlights = false, helpHref, headingLevel = 2 }) {
   const [open, setOpen] = useState(false)
+  const [announced, setAnnounced] = useState(false)
   const rootRef = useRef(null)
   const helpRef = useRef(null)
   const panelRef = useRef(null)
@@ -29,6 +35,11 @@ export default function IntegrityBadge({ hasHighlights = false, helpHref, headin
   const Heading = `h${Math.min(6, Math.max(1, headingLevel))}`
 
   const close = useCallback(() => setOpen(false), [])
+
+  useEffect(() => {
+    const timer = setTimeout(() => setAnnounced(true), ANNOUNCE_DELAY_MS)
+    return () => clearTimeout(timer)
+  }, [])
 
   useEffect(() => {
     if (!open) return undefined
@@ -101,7 +112,7 @@ export default function IntegrityBadge({ hasHighlights = false, helpHref, headin
         <p>{INTEGRITY_COPY.panelNoVerify}</p>
         {helpHref ? <a className="txn-integrity-link" href={helpHref}>{INTEGRITY_COPY.helpLink}</a> : null}
       </div>
-      <span className="txn-sr" role="status">{INTEGRITY_COPY.statusText}</span>
+      <span className="txn-sr" role="status">{announced ? INTEGRITY_COPY.statusText : ''}</span>
     </span>
   )
 }

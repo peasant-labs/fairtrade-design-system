@@ -4167,7 +4167,7 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
     outline: var(--stroke-hairline) dashed var(--warning); outline-offset: calc(var(--stroke-hairline) * -1);
   }
   .txn-turnwrap.is-flagged > .txn-systemrow,
-  .txn-turnwrap.is-flagged > .txn-turnwork,
+  .txn-turnwrap.is-flagged > .txn-turnwork-solo,
   .txn-modelactions-turn.is-flagged {
     outline: var(--stroke-hairline) dashed var(--warning); outline-offset: calc(var(--stroke-hairline) * -1);
   }

@@ -254,9 +254,10 @@ export default function TurnCard({
   const hasWork = !!(turn.toolCalls?.length || turn.thinking)
   const workBlock = ledger && !suppressWork && (hasWork || modelActions?.length) ? (
     <div className="txn-turnwork">
-      {ledgerDetail ? flagMark : null}
+      {/* a work block drawn without group rows has no row to carry the mark, so it leads the block */}
+      {ledgerDetail && !modelActions?.length && turn.role !== 'system' ? flagMark : null}
       {modelActions?.length || turn.role === 'user' || turn.role === 'system' ? (
-        <ModelActions turns={modelActions?.length ? modelActions : [turn]} openTools={openTools} onToggle={toggleTool} expandAll={expandAll} compact={compact} flaggedPositions={flaggedPositions} reveal={actionReveal} registerActionRef={registerActionRef} />
+        <ModelActions turns={modelActions?.length ? modelActions : [turn]} openTools={openTools} onToggle={toggleTool} expandAll={expandAll} compact={compact} flaggedPositions={flaggedPositions} cardTurn={ledgerDetail ? undefined : turn} reveal={actionReveal} registerActionRef={registerActionRef} />
       ) : turn.toolCalls?.length ? (
         <TranscriptWorkGroup
           tools={turn.toolCalls}
@@ -333,7 +334,7 @@ export default function TurnCard({
           ) : ledgerDetail ? (
             <>
               <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}{flagName}</TurnHeading>
-              {workBlock ?? (flagged ? <div className="txn-turnwork">{flagMark}</div> : null)}
+              {workBlock ?? (flagged && !suppressWork ? <div className="txn-turnwork txn-turnwork-solo">{flagMark}</div> : null)}
             </>
           ) : (
             <>
