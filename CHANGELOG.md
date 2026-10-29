@@ -4,6 +4,13 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.53 - 2026-10-29
+
+### Fixed
+
+- Normalize permitted diagram presentation attributes to React SVG property names without changing diagram safety checks.
+- Show standalone switch saving feedback without restoring redundant on/off labels or shifting the control.
+
 ## 0.0.52 - 2026-10-29
 
 ### Changed
