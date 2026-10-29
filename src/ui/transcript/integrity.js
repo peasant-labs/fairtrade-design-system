@@ -19,7 +19,7 @@ export const INTEGRITY_COPY = Object.freeze({
   helpName: 'what does suspicious transcript mean?',
   panelHeading: 'about this flag',
   panelBody: 'This transcript has likely been edited after it was recorded, according to our automated detection systems.',
-  panelOtherTools: 'Custom tools, plugins or hooks used during the session can flag false positives.',
+  panelOtherTools: 'Custom tools, plugins or hooks used during the session can create false positives.',
   statusText: 'This transcript has been flagged by an automated check and was likely modified after initially recorded.',
   turnMark: 'flagged',
   turnName: ', flagged by an automated check',
