@@ -1,0 +1,146 @@
+[
+  {
+    "theme": "light",
+    "width": 1440,
+    "scroll": 1440,
+    "nested": [
+      {
+        "depth": "1",
+        "inset": "12px"
+      },
+      {
+        "depth": "2",
+        "inset": "24px"
+      },
+      {
+        "depth": "3",
+        "inset": "36px"
+      },
+      {
+        "depth": "4",
+        "inset": "36px"
+      }
+    ],
+    "role": [
+      {
+        "size": 24,
+        "border": "1px"
+      },
+      {
+        "size": 24,
+        "border": "1px"
+      }
+    ],
+    "stateWords": 0,
+    "h1": "legible before clever, restrained before decorated.",
+    "errors": []
+  },
+  {
+    "theme": "light",
+    "width": 390,
+    "scroll": 390,
+    "nested": [
+      {
+        "depth": "1",
+        "inset": "8px"
+      },
+      {
+        "depth": "2",
+        "inset": "16px"
+      },
+      {
+        "depth": "3",
+        "inset": "24px"
+      },
+      {
+        "depth": "4",
+        "inset": "24px"
+      }
+    ],
+    "role": [
+      {
+        "size": 24,
+        "border": "1px"
+      },
+      {
+        "size": 24,
+        "border": "1px"
+      }
+    ],
+    "stateWords": 0,
+    "h1": "legible before clever, restrained before decorated.",
+    "errors": []
+  },
+  {
+    "theme": "dark",
+    "width": 1440,
+    "scroll": 1440,
+    "nested": [
+      {
+        "depth": "1",
+        "inset": "12px"
+      },
+      {
+        "depth": "2",
+        "inset": "24px"
+      },
+      {
+        "depth": "3",
+        "inset": "36px"
+      },
+      {
+        "depth": "4",
+        "inset": "36px"
+      }
+    ],
+    "role": [
+      {
+        "size": 24,
+        "border": "1px"
+      },
+      {
+        "size": 24,
+        "border": "1px"
+      }
+    ],
+    "stateWords": 0,
+    "h1": "legible before clever, restrained before decorated.",
+    "errors": []
+  },
+  {
+    "theme": "dark",
+    "width": 390,
+    "scroll": 390,
+    "nested": [
+      {
+        "depth": "1",
+        "inset": "8px"
+      },
+      {
+        "depth": "2",
+        "inset": "16px"
+      },
+      {
+        "depth": "3",
+        "inset": "24px"
+      },
+      {
+        "depth": "4",
+        "inset": "24px"
+      }
+    ],
+    "role": [
+      {
+        "size": 24,
+        "border": "1px"
+      },
+      {
+        "size": 24,
+        "border": "1px"
+      }
+    ],
+    "stateWords": 0,
+    "h1": "legible before clever, restrained before decorated.",
+    "errors": []
+  }
+]
