@@ -28,6 +28,7 @@ package is pre-1.0, so minor/patch semantics are best-effort.
 - Keep helper-session disclosure controls stable when their labels change.
 - Fill repository group headings across the complete row.
 - Preserve standard input, textarea and select styles when consumers pass custom classes.
+- Retain the same reading position between consecutive transcript-width adjustments.
 - Keep transcript footer controls in a single scrolling row and adapt shortcut hints to the actual preview width.
 - Make scrollable before-and-after redaction examples keyboard reachable.
 - Leave Mermaid as an external runtime dependency so consuming Next.js builds resolve its graph dependencies correctly.
