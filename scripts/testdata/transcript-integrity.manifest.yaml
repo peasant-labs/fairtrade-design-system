@@ -1,0 +1,62 @@
+# Required-NAME manifest for transcript-integrity.yaml: deletion protection. Membership is
+# asserted, never a bare count.
+requiredViewCaseNames:
+  - absent integrity draws nothing
+  - null integrity draws nothing
+  - malformed integrity renders nothing
+  - matching hashes mark the listed turns
+  - different hashes draw the badge only
+  - a missing rendered hash draws the badge only
+  - a missing transcript hash draws the badge only
+  - two empty hashes never match
+  - a sticky flag with no turns draws the badge only
+  - malformed positions are dropped
+  - a quoted hash does not match
+requiredAdapterCaseNames:
+  - positions follow the wire array
+  - prefiltered turns keep their original positions
+  - repeated index keeps distinct positions
+  - visible projection keeps positions
+  - unknown timestamp keeps its position
+  - earlier history has no source position
+requiredCopyKeys:
+  - badgeLabel
+  - helpName
+  - panelHeading
+  - panelBody
+  - panelHighlights
+  - panelBestEffort
+  - panelOtherTools
+  - panelNoVerify
+  - helpLink
+  - statusText
+  - turnMark
+  - turnName
+  - groupMark
+
+requiredMutationNames:
+  - the hash check is skipped
+  - a malformed object is treated as flagged
+  - positions use the index field
+  - a copied turn loses its position
+mutations:
+  - name: the hash check is skipped
+    file: src/ui/transcript/integrity.js
+    find: "transcriptContentHash === contentHash"
+    replace: "true"
+    expectedDiagnostic: "different hashes draw the badge only"
+  - name: a malformed object is treated as flagged
+    file: src/ui/transcript/integrity.js
+    find: "!Array.isArray(flagged)"
+    replace: "!flagged"
+    expectedDiagnostic: "malformed integrity renders nothing"
+  - name: positions use the index field
+    file: src/ui/transcript/adapter.js
+    find: "turnVM.sourcePosition = sourcePositions.get(t)"
+    replace: "turnVM.sourcePosition = t.index"
+    expectedDiagnostic: "repeated index keeps distinct positions"
+  - name: a copied turn loses its position
+    file: src/ui/transcript/adapter.js
+    find: "if (copy !== turn) sourcePositions.set(copy, sourcePositions.get(turn))"
+    replace: ""
+    expectedDiagnostic: "unknown timestamp keeps its position"

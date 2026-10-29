@@ -922,9 +922,18 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
   }
   const stickyModels = resolveStickyModels(completeTurns, payload.model)
   // session metadata records are not conversation, and an unknown time is no time at all
+  /* a main turn's place in payload.turns, taken before any filter or copy and carried across
+     withKnownTime's copy, so a served position still finds a turn whose time was dropped */
+  /** @type {Map<TurnDetail, number>} */
+  const sourcePositions = new Map()
+  if (partition === 'main') completeTurns.forEach((turn, i) => sourcePositions.set(turn, i))
   const filteredTurns = (payload.harness === 'pi' ? completeTurns : prefilterTurns(completeTurns))
     .filter((turn) => !isSessionMetadataTurn(turn, payload.harness))
-    .map(withKnownTime)
+    .map((turn) => {
+      const copy = withKnownTime(turn)
+      if (copy !== turn) sourcePositions.set(copy, sourcePositions.get(turn))
+      return copy
+    })
   const visibleTurnIndices = visibleIndices === undefined ? null : new Set(visibleIndices)
   const turns = visibleTurnIndices === null ? filteredTurns : filteredTurns.filter((turn) => visibleTurnIndices.has(turn.index))
   const labels = computeTurnLabels(turns)
@@ -1009,6 +1018,7 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
       toolCalls,
       annotations: annotationsByTurn[t.index] ?? [],
     }
+    if (sourcePositions.has(t)) turnVM.sourcePosition = sourcePositions.get(t)
     if (depth === 0 && t.role === 'assistant') turnVM.provider = provider
     if (t.agentName) turnVM.agentName = t.agentName
     if (thinking) turnVM.thinking = thinking

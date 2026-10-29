@@ -1,0 +1,82 @@
+# Cases for scripts/transcript-integrity.test.mjs. `viewCases` feed integrityView; an omitted
+# field is passed as undefined. `adapterCases` name a payload builder in the test and list the
+# [index, sourcePosition] pairs the cooked main turns must carry.
+viewCases:
+  - name: absent integrity draws nothing
+    transcriptContentHash: h1
+    contentHash: h1
+    expect: null
+  - name: null integrity draws nothing
+    integrity: null
+    transcriptContentHash: h1
+    contentHash: h1
+    expect: null
+  - name: malformed integrity renders nothing
+    malformed:
+      - "flagged"
+      - [1]
+      - {}
+      - {flagged_turns: null}
+      - {flagged_turns: "1"}
+    transcriptContentHash: h1
+    contentHash: h1
+    expect: null
+  - name: matching hashes mark the listed turns
+    integrity: {flagged_turns: [1, 4]}
+    transcriptContentHash: h1
+    contentHash: h1
+    expect: {positions: [1, 4]}
+  - name: different hashes draw the badge only
+    integrity: {flagged_turns: [1, 4]}
+    transcriptContentHash: h1
+    contentHash: h2
+    expect: {positions: []}
+  - name: a missing rendered hash draws the badge only
+    integrity: {flagged_turns: [1, 4]}
+    transcriptContentHash: h1
+    expect: {positions: []}
+  - name: a missing transcript hash draws the badge only
+    integrity: {flagged_turns: [1, 4]}
+    contentHash: h1
+    expect: {positions: []}
+  - name: two empty hashes never match
+    integrity: {flagged_turns: [1, 4]}
+    transcriptContentHash: ""
+    contentHash: ""
+    expect: {positions: []}
+  - name: a sticky flag with no turns draws the badge only
+    integrity: {flagged_turns: []}
+    transcriptContentHash: h1
+    contentHash: h1
+    expect: {positions: []}
+  - name: malformed positions are dropped
+    integrity: {flagged_turns: [-1, 1.5, "2", 3]}
+    transcriptContentHash: h1
+    contentHash: h1
+    expect: {positions: [3]}
+  - name: a quoted hash does not match
+    integrity: {flagged_turns: [1]}
+    transcriptContentHash: h1
+    contentHash: "\"h1\""
+    expect: {positions: []}
+adapterCases:
+  - name: positions follow the wire array
+    builder: plain
+    expect: [[0, 0], [1, 1], [2, 2]]
+  - name: prefiltered turns keep their original positions
+    builder: metadataBetween
+    expect: [[0, 0], [2, 2]]
+  - name: repeated index keeps distinct positions
+    builder: repeatedIndex
+    expect: [[5, 0], [5, 1]]
+  - name: visible projection keeps positions
+    builder: plain
+    options: {visibleTurnIndices: [2]}
+    expect: [[2, 2]]
+  - name: unknown timestamp keeps its position
+    builder: unknownTimestamp
+    expect: [[0, 0], [1, 1], [2, 2]]
+  - name: earlier history has no source position
+    builder: earlierHistory
+    expect: [[0, 0]]
+    earlierUndefined: true
