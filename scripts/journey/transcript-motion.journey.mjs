@@ -174,9 +174,17 @@ for (const motion of spec.motion) for (const row of spec.cases) {
     // let a short animation finish before the test samples it. The test resumes it below.
     await page.addInitScript(() => {
       const animate = Element.prototype.animate
+      const play = Animation.prototype.play
+      window.__resumeDisclosureMotion = animation => play.call(animation)
       Element.prototype.animate = function (...args) {
         const animation = animate.apply(this, args)
-        if (this.classList.contains('txn-disclosure')) animation.pause()
+        if (this.classList.contains('txn-disclosure')) {
+          animation.pause()
+          // Production may defer its first play until rAF after a large body
+          // mounts. Keep that deferred play from undoing the test's hold;
+          // only the explicit native-play calls below release the sample.
+          animation.play = () => {}
+        }
         return animation
       }
     })
@@ -222,7 +230,7 @@ for (const motion of spec.motion) for (const row of spec.cases) {
         if (!animation) return null
         animation.pause(); animation.currentTime = 0
         const start = { height: el.getBoundingClientRect().height, opacity: Number(getComputedStyle(el).opacity) }
-        animation.play()
+        window.__resumeDisclosureMotion(animation)
         return start
       })
       expect(reversed).not.toBeNull()
@@ -255,7 +263,7 @@ for (const motion of spec.motion) for (const row of spec.cases) {
           const end = el.getBoundingClientRect().height
           const easing = animation.effect.getTiming().easing
           const expectedEasing = getComputedStyle(el).getPropertyValue('--ease-in-out').trim()
-          animation.play()
+          window.__resumeDisclosureMotion(animation)
           // Observe the animation-to-React handoff frame by frame. Dropping the final
           // keyframe before the hidden commit flashes the body's natural height here.
           const finishHeights = []
