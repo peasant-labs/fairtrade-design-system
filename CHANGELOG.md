@@ -4,6 +4,15 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.50 - 2026-10-28
+
+### Fixed
+
+- Render Mermaid flowcharts with safe line breaks while retaining unsafe-content checks.
+- Highlight transcript search matches and reveal results inside nested scrollable content.
+- Start tool disclosure transitions from their initial frame.
+- Adapt fixed-width transcript readers to available sidebar space while preserving live resize anchoring.
+
 ## 0.0.49 - 2026-10-27
 
 ### Added
