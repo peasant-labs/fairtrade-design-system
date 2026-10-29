@@ -221,6 +221,13 @@ const meta = {
   title: 'components/PromptDigest',
   component: PromptDigest,
   tags: ['autodocs'],
+  // A query container needs allocated width. The centered canvas otherwise
+  // shrink-wraps its zero intrinsic inline size, unlike a real page body.
+  decorators: [(Story) => (
+    <div className="pd-story-host" style={{ inlineSize: 'min(calc(100vw - var(--sp-4) * 2), var(--maxw))', maxInlineSize: '100%' }}>
+      <Story />
+    </div>
+  )],
   argTypes: {
     digest: { control: 'object' },
     className: { control: 'text' },
