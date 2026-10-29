@@ -1,0 +1,13 @@
+{
+  "sourceCommit": "6d42cf7325478655a7ab4b90809db4aa75139f77",
+  "sourceTree": "bd268830e58e8323df9dde0d419d0593e0505aad",
+  "package": "0.0.54",
+  "build": "pnpm build; pnpm prepack; pnpm build-storybook",
+  "servedRuntimeMarkers": [
+    {
+      "path": "dist/assets/index-Bcf4F8ge.js",
+      "sha256": "8ba563c384987eb90a53c96d8aee3694c75eb7ce2e0461261b1f23b08a43e5ef"
+    }
+  ],
+  "mountedResult": "8 passed; both themes; actual consumer font alias;1440/390; labels/nodes contained;16px; keyboard panning"
+}

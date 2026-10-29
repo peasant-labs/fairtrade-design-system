@@ -1,0 +1,1 @@
+Mounted production in-use transcript, source 6d42cf7325478655a7ab4b90809db4aa75139f77. All four screenshots inspected. Phone captures intentionally show the horizontally panned readable diagram; the SVG itself contains all labels. No masking or threshold reductions. Sanitizer and security checks retained.
