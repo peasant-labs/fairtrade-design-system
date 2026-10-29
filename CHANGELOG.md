@@ -10,6 +10,8 @@ package is pre-1.0, so minor/patch semantics are best-effort.
 
 - Normalize permitted diagram presentation attributes to React SVG property names without changing diagram safety checks.
 - Show standalone switch saving feedback without restoring redundant on/off labels or shifting the control.
+- Indent nested agent prose without connector lines while preserving recorded depth.
+- Preserve user heading and breadcrumb case; allow explicit chrome casing and router-aware breadcrumb links.
 
 ## 0.0.52 - 2026-10-29
 
