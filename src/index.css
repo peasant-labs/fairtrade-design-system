@@ -2674,7 +2674,7 @@
   .txn-hint .kbd-key { font-size: var(--fs-label); padding: 0 var(--sp-1); min-width: var(--target-min); }
   /* Embedded previews use their own available width, even on a wide monitor. */
   @container transcript-footer (width < 60rem) {
-    .txn-hint { display: none; }
+    .txn-footer .txn-hint { display: none; }
   }
 
 
