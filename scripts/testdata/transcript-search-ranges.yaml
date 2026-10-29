@@ -1,0 +1,18 @@
+cases:
+  - name: document window owns node filter
+    parts: ["first ", "needle", " last"]
+    query: needle
+    expected: [needle]
+  - name: detached document has no window
+    detached: true
+    parts: ["alpha ", "needle", " omega"]
+    query: needle
+    expected: [needle]
+  - name: inline nodes form one rendered match
+    parts: ["find ", "these", " words"]
+    query: these words
+    expected: [these words]
+  - name: no match stays empty
+    parts: ["visible text"]
+    query: absent
+    expected: []

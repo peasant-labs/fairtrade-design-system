@@ -2,6 +2,7 @@ import MermaidBlock from './MermaidBlock.jsx'
 import ReactMarkdown from 'react-markdown'
 import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
+import { memo } from 'react'
 
 /* Markdown is the transcript's untrusted-content boundary. The parser deliberately has no
    rehype-raw plugin, so source HTML stays text instead of becoming executable DOM. GFM supplies
@@ -146,3 +147,7 @@ export default function Markdown({ text, source }) {
     </div>
   )
 }
+
+// Reader chrome changes frequently while the transcript text stays unchanged.
+// Avoid reparsing every mounted turn on width, rail and scroll updates.
+export const MemoMarkdown = memo(Markdown)

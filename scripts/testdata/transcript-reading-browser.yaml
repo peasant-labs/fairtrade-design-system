@@ -7,8 +7,22 @@
   "lastResponseParagraphs": 24,
   "unverified": {"owner": "example", "repo": "sample", "number": 42, "url": "https://github.com/example/sample/pull/42", "source": {"turnIndex": 3, "toolCallIndex": 0, "toolCallId": "target-gamma"}},
   "toolDurations": [{"name": "seconds", "ms": 1000, "label": "1s"}, {"name": "milliseconds", "ms": 820, "label": "820ms"}, {"name": "minutes and seconds", "ms": 75000, "label": "1m 15s"}],
+  "disclosureLineCount": 400,
+  "disclosureLinePrefix": "representative disclosure line",
+  "disclosures": [
+    {"name": "large shell animated", "tool": "Bash", "preview": "printf large-shell", "motion": "no-preference", "selector": "[aria-label='command output']"},
+    {"name": "large write animated", "tool": "Write", "preview": "src/large-example.js", "motion": "no-preference", "selector": ".txn-diff"},
+    {"name": "large shell reduced motion", "tool": "Bash", "preview": "printf large-shell", "motion": "reduce", "selector": "[aria-label='command output']"},
+    {"name": "large write reduced motion", "tool": "Write", "preview": "src/large-example.js", "motion": "reduce", "selector": ".txn-diff"}
+  ],
   "shortTaskCount": 1,
   "shortLeadingActions": 1,
+  "searchSourceOnly": "**source-only markup evidence**",
+  "searchMixed": {"text": "[label](needle-token) visible needle-token", "query": "needle-token"},
+  "searchHorizontal": "terminal_search_needle",
+  "searchNested": {"id": "deep-output", "query": "nested_output_needle", "lines": 100, "prefixRepeat": 20},
+  "searchFrequent": {"query": "response", "repeat": 1000, "minimum": 1000, "scrollStep": 100, "maxFrameMs": 1000},
+  "searchRepeated": {"query": "repeated reading needle", "turn": 50, "paragraphs": [3, 21]},
   "width": [
     {"name": "long assistant reading point survives keyboard reflow", "turn": 50, "paragraph": 6, "gesture": "keyboard", "motion": "reduce"},
     {"name": "long assistant reading point survives pointer reversal", "turn": 50, "paragraph": 6, "gesture": "pointer", "motion": "no-preference"},

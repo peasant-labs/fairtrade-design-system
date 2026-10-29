@@ -11,10 +11,6 @@
    behaviour to the Storybook play() functions and the Fairtest mounted rows. */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import React, { act } from 'react'
-import { JSDOM } from 'jsdom'
-import react from '@vitejs/plugin-react'
-import { createServer } from 'vite'
 import YAML from 'yaml'
 
 export const ROOT = resolve(new URL('..', import.meta.url).pathname)
@@ -94,6 +90,11 @@ function mutationPlugin() {
  * and hand the gate `load(path)` and `mount(element)`. Everything is torn down in finally.
  */
 export async function withMountedSource(run, { url = 'https://fairtrade.invalid/' } = {}) {
+  // Fixture validation and mutation orchestration do not need a DOM or a Vite server.
+  // Load the mounted-only dependencies in the isolated process that actually mounts.
+  const [{ default: React, act }, { JSDOM }, { default: react }, { createServer }] = await Promise.all([
+    import('react'), import('jsdom'), import('@vitejs/plugin-react'), import('vite'),
+  ])
   const dom = new JSDOM('<!doctype html><html><body></body></html>', { url, pretendToBeVisual: true })
   dom.window.HTMLElement.prototype.scrollIntoView = function scrollIntoView() {}
   dom.window.HTMLElement.prototype.scrollTo = function scrollTo() {}
@@ -116,7 +117,9 @@ export async function withMountedSource(run, { url = 'https://fairtrade.invalid/
   // react-dom reads the DOM's capabilities (input events and the like) when it first loads, so it
   // loads only after the jsdom globals exist; loaded earlier it falls back to legacy event paths.
   const { createRoot } = await import('react-dom/client')
-  const server = await createServer({ appType: 'custom', configFile: false, logLevel: 'silent', plugins: [mutationPlugin(), react()], root: ROOT, server: { middlewareMode: true } })
+  // This harness only uses ssrLoadModule. Scanning index.html and prebundling the
+  // client application wastes memory and can race separate mutation processes.
+  const server = await createServer({ appType: 'custom', configFile: false, logLevel: 'silent', plugins: [mutationPlugin(), react()], root: ROOT, optimizeDeps: { noDiscovery: true, include: [] }, server: { middlewareMode: true } })
   const roots = []
   try {
     const load = (path) => server.ssrLoadModule(path)
@@ -176,11 +179,14 @@ export function createReport(gate) {
       checks += 1
       if (!passed) failures.push(message)
     },
-    finish(summary) {
+    failIfAny() {
       if (failures.length > 0) {
         console.error(`${gate} failed:\n- ${failures.join('\n- ')}`)
         process.exit(1)
       }
+    },
+    finish(summary) {
+      this.failIfAny()
       console.log(`${gate}: ${checks} checks passed; ${summary}`)
     },
   }

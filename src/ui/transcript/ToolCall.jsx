@@ -11,7 +11,7 @@ import {
   ListChecks,
   Wrench,
 } from 'lucide-react'
-import ToolBody from './ToolBody.jsx'
+import { MemoToolBody as ToolBody } from './ToolBody.jsx'
 import UsageDisclosure from './UsageDisclosure.jsx'
 import { formatDurationMs } from './time.js'
 import Collapsible from './Collapsible.jsx'
@@ -77,7 +77,7 @@ export default function ToolCall({ tool, open = false, onToggle, showChevron = t
           )}
         </span>
       </button>
-      <Collapsible open={open}><ToolBody tool={tool} /><UsageDisclosure usage={tool.usage} /></Collapsible>
+      <Collapsible open={open} startOnFrame><ToolBody tool={tool} /><UsageDisclosure usage={tool.usage} /></Collapsible>
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import { Clock, Globe } from 'lucide-react'
+import { memo } from 'react'
 import { DiffHunks } from './DiffEntryCard.jsx'
 import TaskBody from './TaskBody.jsx'
 import { formatDurationMs } from './time.js'
@@ -199,3 +200,7 @@ export default function ToolBody({ tool }) {
       return <DefaultBody tool={tool} />
   }
 }
+
+// An open tool can contain hundreds of diff rows. Reader chrome updates do not
+// change its cooked tool value, so keep its body out of those renders.
+export const MemoToolBody = memo(ToolBody)

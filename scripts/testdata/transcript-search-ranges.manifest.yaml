@@ -1,0 +1,5 @@
+requiredCases:
+  - document window owns node filter
+  - detached document has no window
+  - inline nodes form one rendered match
+  - no match stays empty

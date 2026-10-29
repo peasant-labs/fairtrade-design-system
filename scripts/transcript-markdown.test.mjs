@@ -4,14 +4,15 @@
    links, inert HTML, and width-bearing blocks. This script imports the same ui.js export that a
    package consumer imports, then renders it into a DOM and checks semantic output. */
 
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { existsSync, readFileSync } from 'node:fs'
+import { resolve, dirname } from 'node:path'
+import { registerHooks } from 'node:module'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import ts from 'typescript'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { createServer } from 'vite'
 import { JSDOM } from 'jsdom'
 import YAML from 'yaml'
-import { withMountedSource } from './mounted-parts.mjs'
 
 const ROOT = resolve(new URL('..', import.meta.url).pathname)
 const MANIFEST_PATH = resolve(ROOT, 'scripts/testdata/transcript-markdown.manifest.yaml')
@@ -27,7 +28,11 @@ const importDom = new JSDOM('<!doctype html><html><body></body></html>')
 for (const [key, value] of Object.entries({ window: importDom.window, document: importDom.window.document, navigator: importDom.window.navigator })) {
   Object.defineProperty(globalThis, key, { configurable: true, writable: true, value })
 }
-const ui = await import('../dist/lib/ui.js')
+// Only the dedicated mutation child imports this module with the source-only query.
+// Invoking this file normally always runs the built and mounted gate, regardless of environment.
+const sourceOnly = new URL(import.meta.url).search === '?source-only'
+const mutation = sourceOnly && process.env.FAIRTRADE_MARKDOWN_SOURCE_MUTATION ? JSON.parse(process.env.FAIRTRADE_MARKDOWN_SOURCE_MUTATION) : null
+const ui = sourceOnly ? null : await import('../dist/lib/ui.js')
 
 const CASE_FIELDS = ['name', 'prop', 'source', 'expect']
 const EXPECT_FIELDS = [
@@ -121,30 +126,51 @@ function loadFixtures() {
 }
 
 const fixtures = loadFixtures()
-const mutation = process.env.FAIRTRADE_MARKDOWN_SOURCE_MUTATION ? JSON.parse(process.env.FAIRTRADE_MARKDOWN_SOURCE_MUTATION) : null
-let TranscriptMarkdown = ui.TranscriptMarkdown
-let viteServer
-
-if (mutation) {
-  const mutationPlugin = {
-    name: 'fairtrade-markdown-source-mutation',
-    enforce: 'pre',
-    transform(code, id) {
-      if (!id.split('?')[0].endsWith(`/${mutation.file}`)) return null
-      const count = code.split(mutation.find).length - 1
+let TranscriptMarkdown = ui?.TranscriptMarkdown
+const target = resolve(ROOT, mutation?.file ?? 'src/ui/transcript/Markdown.jsx')
+let applied = false
+// Load actual source modules in memory without a Vite SSR server. The built-export
+// corpus remains independent of this source loader. Resolve Vite-style extensionless
+// imports, JSX, CSS side effects, and raw text imports used by the mounted demo.
+const hooks = registerHooks({
+  resolve(specifier, context, nextResolve) {
+    if (specifier.startsWith('.') && context.parentURL?.startsWith('file:') && fileURLToPath(context.parentURL).startsWith(`${ROOT}/src/`)) {
+      const base = resolve(dirname(fileURLToPath(context.parentURL)), specifier)
+      for (const file of [base, `${base}.js`, `${base}.jsx`, `${base}/index.js`, `${base}/index.jsx`]) {
+        if (existsSync(file) && !file.endsWith('/') && /\.(?:js|jsx)$/.test(file)) return nextResolve(pathToFileURL(file).href, context)
+      }
+    }
+    return nextResolve(specifier, context)
+  },
+  load(url, context, nextLoad) {
+    if (url.startsWith('file:') && new URL(url).search === '?raw' && fileURLToPath(url).startsWith(`${ROOT}/`)) {
+      return { format: 'module', source: `export default ${JSON.stringify(readFileSync(fileURLToPath(url), 'utf8'))}`, shortCircuit: true }
+    }
+    if (url.startsWith('file:') && url.endsWith('.css') && fileURLToPath(url).startsWith(`${ROOT}/src/`)) {
+      // CSS side-effect imports do not affect server-rendered markup.
+      return { format: 'module', source: '', shortCircuit: true }
+    }
+    if (!url.startsWith('file:') || !url.endsWith('.jsx')) return nextLoad(url, context)
+    const file = fileURLToPath(url)
+    if (!file.startsWith(`${ROOT}/src/`)) return nextLoad(url, context)
+    let source = readFileSync(file, 'utf8')
+    if (mutation && file === target) {
+      const count = source.split(mutation.find).length - 1
       if (count !== 1) throw new Error(`${mutation.name}: source mutation anchor occurred ${count} times`)
-      return { code: code.replace(mutation.find, mutation.replace), map: null }
-    },
-  }
-  viteServer = await createServer({
-    appType: 'custom',
-    configFile: false,
-    logLevel: 'silent',
-    plugins: [mutationPlugin],
-    root: ROOT,
-    server: { middlewareMode: true },
-  })
-  const loaded = await viteServer.ssrLoadModule('/src/ui/transcript/Markdown.jsx')
+      source = source.replace(mutation.find, mutation.replace)
+      applied = true
+    }
+    const output = ts.transpileModule(source, { fileName: file, reportDiagnostics: true, compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } })
+    const errors = output.diagnostics?.filter(diagnostic => diagnostic.category === ts.DiagnosticCategory.Error) ?? []
+    if (errors.length) throw new Error(`${file}: JSX transform failed: ${errors.map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')).join('; ')}`)
+    return { format: 'module', source: output.outputText, shortCircuit: true }
+  },
+})
+const loadSource = (path) => import(pathToFileURL(resolve(ROOT, `.${path}`)).href)
+
+if (sourceOnly) {
+  const loaded = await import(pathToFileURL(target).href)
+  if (mutation && !applied) throw new Error(`${mutation.name}: production source mutation was not applied`)
   TranscriptMarkdown = loaded.default
 }
 
@@ -195,21 +221,15 @@ for (const testCase of fixtures.cases) {
   }
 }
 
+// Source-only runs exercise the complete Markdown corpus above. The unrelated demo and
+// Mermaid probes below create additional Vite/DOM environments and cannot detect these mutations.
+if (!sourceOnly) {
 /* Mount the canonical in-use demo, not a hand-built view model, so the shipped fixture is checked
    through TranscriptApp -> buildWire -> adaptTranscript -> TranscriptViewer -> TurnCard ->
    TranscriptMarkdown. The marker locates the existing turn that owns the structured body; all
    required semantic tags must be inside that turn rather than coming from a rail or tool output. */
-if (!viteServer) {
-  viteServer = await createServer({
-    appType: 'custom',
-    configFile: false,
-    logLevel: 'silent',
-    root: ROOT,
-    server: { middlewareMode: true },
-  })
-}
 try {
-  const mounted = await viteServer.ssrLoadModule('/src/mockups/inuse/TranscriptApp.jsx')
+  const mounted = await loadSource('/src/mockups/inuse/TranscriptApp.jsx')
   const markup = renderToStaticMarkup(React.createElement(mounted.default, { theme: 'dark' }))
   const { window } = new JSDOM(`<!doctype html><main>${markup}</main>`)
   const mountedTurn = [...window.document.querySelectorAll('.txn-turn')].find((turn) => turn.querySelector('.txn-body')?.textContent.includes(fixtures.mounted.fixtureMarker))
@@ -226,8 +246,8 @@ try {
 
 // The compiler boundary and SVG conversion share the same source used by the mounted renderer.
 const mermaidFixtures = YAML.parse(readFileSync(resolve(ROOT, 'scripts/testdata/transcript-mermaid.yaml'), 'utf8'))
-const sourceModule = await viteServer.ssrLoadModule('/src/ui/transcript/mermaidSource.js')
-const svgModule = await viteServer.ssrLoadModule('/src/ui/transcript/mermaidSvg.jsx')
+const sourceModule = await loadSource('/src/ui/transcript/mermaidSource.js')
+const svgModule = await loadSource('/src/ui/transcript/mermaidSvg.jsx')
 globalThis.DOMParser = importDom.window.DOMParser
 for (const row of mermaidFixtures.accepted) {
   assert(`mermaid-accept-${row.name}`, `${row.name}: source is eligible for Mermaid parsing`, sourceModule.safeMermaidSource(row.source) === true)
@@ -248,8 +268,27 @@ assert('mermaid-oversize', 'oversized source is rejected before compilation', so
 // The pending second render makes the source/diagram identity boundary observable.
 const rerenderNames = uniqueStrings(YAML.parse(manifestSource).requiredMermaidRerenderNames, 'Mermaid rerender manifest')
 if (JSON.stringify(mermaidFixtures.rerender.map(row => row.name).sort()) !== JSON.stringify([...rerenderNames].sort())) throw new Error('Mermaid rerender fixture names differ from manifest')
-await withMountedSource(async ({ load, mount, window, React }) => {
-  const { default: MermaidBlock } = await load('/src/ui/transcript/MermaidBlock.jsx')
+{
+  const window = importDom.window
+  for (const key of ['HTMLElement', 'Element', 'Node', 'Event', 'MouseEvent', 'MutationObserver']) {
+    Object.defineProperty(globalThis, key, { configurable: true, writable: true, value: window[key] })
+  }
+  globalThis.IS_REACT_ACT_ENVIRONMENT = true
+  const { createRoot } = await import('react-dom/client')
+  const mount = async (element) => {
+    const container = window.document.createElement('div')
+    window.document.body.appendChild(container)
+    const root = createRoot(container)
+    const act = async (step) => React.act(async () => { await step(); await Promise.resolve() })
+    await act(() => root.render(element))
+    return {
+      container, act,
+      settle: async () => act(() => new Promise(resolve => setTimeout(resolve, 5))),
+      rerender: async (next) => act(() => root.render(next)),
+      unmount: async () => { await act(() => root.unmount()); container.remove() },
+    }
+  }
+  const { default: MermaidBlock } = await loadSource('/src/ui/transcript/MermaidBlock.jsx')
   const { default: mermaid } = await import('mermaid')
   const original = { initialize: mermaid.initialize, render: mermaid.render, mermaidAPI: mermaid.mermaidAPI }
   const oldParser = Object.getOwnPropertyDescriptor(globalThis, 'DOMParser')
@@ -283,9 +322,10 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     if (oldParser) Object.defineProperty(globalThis, 'DOMParser', oldParser)
     else delete globalThis.DOMParser
   }
-})
+}
+}
 
-if (viteServer) await viteServer.close()
+hooks.deregister()
 const failures = results.filter((result) => !result.ok)
 for (const result of results) console.log((result.ok ? 'PASS ' : 'FAIL ') + result.id + ' — ' + result.description)
 if (failures.length) {
@@ -299,4 +339,4 @@ if (failures.length) {
   ].join('\n'))
   process.exit(1)
 }
-console.log(`\ntranscript markdown fixture gate: all ${results.length} built-export assertions passed across ${fixtures.cases.length} strict cases.`)
+console.log(`\ntranscript markdown fixture gate: all ${results.length} ${sourceOnly ? 'source' : 'built-export'} assertions passed across ${fixtures.cases.length} strict cases.`)

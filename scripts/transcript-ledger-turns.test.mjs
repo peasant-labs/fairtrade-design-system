@@ -13,6 +13,7 @@
    scripts/testdata/transcript-ledger-turns.manifest.yaml */
 import { loadFixturePair, assertExactNames, assertFields, withMountedSource, click, createReport } from './mounted-parts.mjs'
 import { workSummary, workCountLabel, workMetaLabel, workActionsLabel } from '../src/ui/transcript/work-summary.js'
+import './transcript-search-ranges.test.mjs'
 
 const FIXTURE = 'scripts/testdata/transcript-ledger-turns.yaml'
 const MANIFEST = 'scripts/testdata/transcript-ledger-turns.manifest.yaml'

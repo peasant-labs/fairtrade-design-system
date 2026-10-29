@@ -3,7 +3,7 @@ import { useId, useLayoutEffect, useState } from 'react'
 import ProviderIcon from '../ProviderIcon.jsx'
 import BrandMark from '../BrandMark.jsx'
 import { providerAccent, providerDisplayName } from '../provider-policy.js'
-import Markdown from './Markdown.jsx'
+import { MemoMarkdown as Markdown } from './Markdown.jsx'
 import Thinking from './Thinking.jsx'
 import ToolCall from './ToolCall.jsx'
 import TranscriptSystemRow from './SystemRow.jsx'
@@ -220,7 +220,7 @@ export default function TurnCard({
         </div>
       )}
       <Markdown text={turn.displayContent ?? turn.content} />
-      {!ledger && turn.thinking && <Thinking block={turn.thinking} revealRequest={actionReveal?.where === 'thinking' ? actionReveal.sequence : 0} />}
+      {!ledger && turn.thinking && <Thinking block={turn.thinking} actionRef={el => registerActionRef?.(turn.index, 'thinking', el)} revealRequest={actionReveal?.where === 'thinking' ? actionReveal.sequence : 0} />}
       <UsageDisclosure usage={turn.usage} />
       {turn.toolCalls && !ledger && (
         turn.toolCalls.map((t) => (

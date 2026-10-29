@@ -1,12 +1,73 @@
 import { test, expect } from '@playwright/test'
+import { readFileSync } from 'node:fs'
+import YAML from 'yaml'
 import { loadFixturePair } from '../mounted-parts.mjs'
 
 // Pixels, real overflow and post-animation visibility cannot be proved in JSDOM.
 // Reuse the existing built app/runner and small shared demo fixture; no extra service.
 const { fixture } = loadFixturePair('scripts/testdata/transcript-reading-browser.yaml', 'scripts/testdata/transcript-reading-browser.manifest.yaml', {
-  navigation: 'requiredNavigationNames', initial: 'requiredInitialNames', rail: 'requiredRailNames', mobile: 'requiredMobileNames', width: 'requiredWidthNames', widthAction: 'requiredWidthActionNames', movingHeader: 'requiredMovingHeaderNames', widthLifecycle: 'requiredWidthLifecycleNames', drawerMotion: 'requiredDrawerMotionNames',
+  navigation: 'requiredNavigationNames', initial: 'requiredInitialNames', rail: 'requiredRailNames', mobile: 'requiredMobileNames', width: 'requiredWidthNames', widthAction: 'requiredWidthActionNames', movingHeader: 'requiredMovingHeaderNames', widthLifecycle: 'requiredWidthLifecycleNames', drawerMotion: 'requiredDrawerMotionNames', disclosures: 'requiredDisclosureNames',
 })
 const origin = `http://localhost:${process.env.JOURNEY_APP_PORT || 5180}`
+const cmykFlowchart = YAML.parse(readFileSync(new URL('../testdata/transcript-mermaid.yaml', import.meta.url), 'utf8')).accepted.find(row => row.name === 'cmyk-user-flowchart').source
+
+for (const row of fixture.disclosures) test(`tool disclosure ${row.name}`, async ({ page }, info) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.emulateMedia({ reducedMotion: row.motion })
+  await page.goto(`${origin}/?app=transcript&transcript=ledger-disclosure&fb=off&theme=${info.project.name}#inuse`, { waitUntil: 'domcontentloaded' })
+  const tool = page.locator('#turn-1 .txn-tc-head').filter({ has: page.locator('.kind', { hasText: row.tool }) }).filter({ hasText: row.preview })
+  await expect(tool).toBeAttached()
+  const result = await tool.evaluate(async (button, selector) => {
+    const original = Element.prototype.animate
+    Element.prototype.animate = function (...args) {
+      if (this.classList.contains('txn-disclosure')) {
+        const until = performance.now() + 100
+        while (performance.now() < until) { /* model a slow mount before animation creation */ }
+      }
+      return original.apply(this, args)
+    }
+    try {
+      const disclosure = button.parentElement.querySelector('.txn-disclosure')
+      const capture = async () => {
+        button.click()
+        await new Promise(requestAnimationFrame)
+        const animation = disclosure.getAnimations()[0]
+        return { time: animation?.currentTime ?? null, duration: animation?.effect.getComputedTiming().duration ?? null, height: disclosure.getBoundingClientRect().height, hidden: disclosure.hidden }
+      }
+      const opening = await capture()
+      await new Promise(resolve => setTimeout(resolve, 300))
+      const fullHeight = disclosure.getBoundingClientRect().height
+      const body = disclosure.querySelector(selector)
+      const text = body?.textContent ?? ''
+      const rows = body?.querySelectorAll('.dl').length ?? 0
+      const closing = await capture()
+      await new Promise(resolve => setTimeout(resolve, 300))
+      return { opening, closing, fullHeight, text, rows, hidden: disclosure.hidden }
+    } finally {
+      Element.prototype.animate = original
+    }
+  }, row.selector)
+  expect(result.text).toContain(`${fixture.disclosureLinePrefix} ${fixture.disclosureLineCount}`)
+  if (row.tool === 'Write') expect(result.rows).toBe(fixture.disclosureLineCount)
+  if (row.motion === 'reduce') {
+    expect(result.opening.time).toBeNull()
+    expect(result.opening.hidden).toBe(false)
+    expect(result.closing.time).toBeNull()
+    expect(result.closing.hidden).toBe(true)
+  } else {
+    expect(result.opening.duration).toBe(200)
+    expect(result.opening.time).not.toBeNull()
+    expect(result.opening.time).toBeLessThanOrEqual(17)
+    expect(result.opening.height).toBeLessThan(result.fullHeight * 0.1)
+    expect(result.closing.duration).toBe(200)
+    expect(result.closing.time).not.toBeNull()
+    expect(result.closing.time).toBeLessThanOrEqual(17)
+    expect(result.closing.hidden).toBe(false)
+    expect(result.closing.height).toBeGreaterThan(result.fullHeight * 0.9)
+  }
+  expect(result.hidden).toBe(true)
+})
+
 test.describe('touch transcript', () => {
 test.use({ hasTouch: true })
 for (const row of fixture.mobile) test(`transcript mobile drawers ${row.name}`, async ({ page }, info) => {
@@ -370,6 +431,20 @@ for (const row of fixture.navigation) test(`transcript rendered navigation ${row
   await page.getByRole('textbox', { name: 'search transcript', exact: true }).fill(row.query)
   const target = action(page, row)
   if (row.kind !== 'body') await expect(target.locator('button').first()).toHaveAttribute('aria-expanded', 'true')
+  // Inspect the real range, not the containing card: a long card can be on screen while its hit is not.
+  await expect.poll(() => page.locator('.txn-search-highlight').count()).toBeGreaterThan(0)
+  await expect.poll(() => target.evaluate((el, query) => {
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+    let node
+    while ((node = walker.nextNode()) && !node.data.toLowerCase().includes(query.toLowerCase())) {}
+    if (!node) return false
+    const range = document.createRange(), at = node.data.toLowerCase().indexOf(query.toLowerCase())
+    range.setStart(node, at); range.setEnd(node, at + query.length)
+    const stream = el.closest('.txn-stream'), r = range.getBoundingClientRect(), s = stream.getBoundingClientRect()
+    const unclamped = stream.scrollTop > 1 && stream.scrollTop < stream.scrollHeight - stream.clientHeight - 1
+    const painted = [...document.querySelectorAll('.txn-search-highlight')].some(mark => { const m = mark.getBoundingClientRect(); return Math.abs(m.top - r.top) < 2 && Math.abs(m.left - r.left) < 2 })
+    return painted && r.top >= s.top && r.top < s.bottom && (!unclamped || Math.abs((r.top - s.top) / stream.clientHeight - 0.4) < 0.05)
+  }, row.query)).toBe(true)
   await expect.poll(async () => { const m = await inside(target); return m.shown && m.top >= m.viewTop - 1 && m.top < m.viewBottom }).toBe(true)
   if (row.kind !== 'body') {
     const separation = await target.evaluate(el => el.getBoundingClientRect().top - el.closest('article').getBoundingClientRect().top)
@@ -383,7 +458,181 @@ for (const row of fixture.navigation) test(`transcript rendered navigation ${row
     await expect.poll(async () => { const m = await inside(target); return m.shown && m.top >= m.viewTop - 1 && m.top < m.viewBottom }).toBe(true)
   }
   expect(await page.locator(`#turn-${row.turn}`).count()).toBe(1)
+  await page.getByRole('button', { name: 'close search', exact: true }).click()
+  await expect(page.locator('.txn-search-highlight')).toHaveCount(0)
   await info.attach('rendered-destination', { body: JSON.stringify(await inside(target)), contentType: 'application/json' })
+})
+test('search excludes filtered thinking and restores it without changing the filter', async ({ page }, info) => {
+  const row = fixture.navigation.find(item => item.kind === 'thinking')
+  await open(page, info.project.name)
+  const thinking = page.locator('.txn-filters').getByRole('checkbox', { name: /thinking/ })
+  await thinking.uncheck()
+  await page.locator('.txn-stream').focus()
+  await page.keyboard.press('Control+f')
+  await page.getByRole('textbox', { name: 'search transcript' }).fill(row.query)
+  await expect(page.locator('.txn-search-count')).toHaveText('0 matches')
+  await expect(thinking).not.toBeChecked()
+  await thinking.check()
+  await expect(page.locator('.txn-search-count')).toHaveText('1/1')
+  await page.getByRole('button', { name: 'next match', exact: true }).click()
+  await expect(page.locator('.txn-thinking-toggle')).toHaveAttribute('aria-expanded', 'true')
+  await expect.poll(() => page.locator('.txn-search-highlight').count()).toBeGreaterThan(0)
+})
+test('search identifies a source-only markdown match', async ({ page }, info) => {
+  await open(page, info.project.name)
+  await page.locator('.txn-stream').focus()
+  await page.keyboard.press('Control+f')
+  await page.getByRole('textbox', { name: 'search transcript' }).fill(fixture.searchSourceOnly)
+  await expect(page.locator('.txn-search-count')).toHaveText('1/1')
+  await expect(page.getByRole('status').filter({ hasText: 'match in source, not visible in rendered content' })).toBeVisible()
+  await expect(page.locator('.txn-search-highlight')).toHaveCount(0)
+})
+test('source-only markdown occurrence does not displace the rendered occurrence', async ({ page }, info) => {
+  await open(page, info.project.name)
+  await page.locator('.txn-stream').focus(); await page.keyboard.press('Control+f')
+  await page.getByRole('textbox', { name: 'search transcript' }).fill(fixture.searchMixed.query)
+  await expect(page.locator('.txn-search-count')).toHaveText('1/2')
+  await expect(page.locator('.txn-search-highlight.is-current')).toHaveCount(1)
+  await expect(page.getByRole('status').filter({ hasText: 'match in source, not visible' })).toHaveCount(0)
+  await page.getByRole('button', { name: 'next match', exact: true }).click()
+  await expect(page.locator('.txn-search-count')).toHaveText('2/2')
+  await expect(page.getByRole('status').filter({ hasText: 'match in source, not visible' })).toBeVisible()
+  await expect(page.locator('.txn-search-highlight.is-current')).toHaveCount(0)
+})
+test('search reveals a hit beyond the code block horizontal viewport', async ({ page }, info) => {
+  await open(page, info.project.name)
+  await page.locator('.txn-stream').focus(); await page.keyboard.press('Control+f')
+  await page.getByRole('textbox', { name: 'search transcript' }).fill(fixture.searchHorizontal)
+  const code = page.locator('#turn-1 .txn-md-code-wrap')
+  await expect.poll(() => code.evaluate(el => el.scrollLeft)).toBeGreaterThan(0)
+  await expect.poll(() => code.evaluate((el, query) => {
+    const node = el.querySelector('code').firstChild, at = node.data.indexOf(query), range = document.createRange()
+    range.setStart(node, at); range.setEnd(node, at + query.length)
+    const r = range.getBoundingClientRect(), c = el.getBoundingClientRect()
+    return r.left >= c.left && r.right <= c.right
+  }, fixture.searchHorizontal)).toBe(true)
+  await expect(page.locator('.txn-search-highlight.is-current')).toHaveCount(1)
+})
+test('search reveals and tracks a deeply scrolled tool output', async ({ page }, info) => {
+  const row = fixture.searchNested
+  await open(page, info.project.name)
+  await page.locator('.txn-stream').focus(); await page.keyboard.press('Control+f')
+  const input = page.getByRole('textbox', { name: 'search transcript' })
+  await input.fill(row.query)
+  await expect(page.locator('.txn-search-estimate')).toHaveText('approx.')
+  await expect(page.getByLabel('source search; counts can change when sections open and rendered-only text may not be found')).toBeVisible()
+  const tool = page.locator('.txn-toolcall').filter({ has: page.locator('.path', { hasText: row.id }) })
+  await expect(tool.locator('button').first()).toHaveAttribute('aria-expanded', 'true')
+  // A focusable pre has no implicit textbox role.
+  const code = tool.locator('pre.txn-code')
+  await expect.poll(() => code.evaluate(el => el.scrollTop)).toBeGreaterThan(0)
+  await expect.poll(() => code.evaluate(el => el.scrollLeft)).toBeGreaterThan(0)
+  const position = () => code.evaluate((el, query) => {
+    const node = el.firstChild, at = node.data.indexOf(query), range = document.createRange()
+    range.setStart(node, at); range.setEnd(node, at + query.length)
+    const r = range.getBoundingClientRect(), c = el.getBoundingClientRect(), stream = el.closest('.txn-stream').getBoundingClientRect()
+    const mark = document.querySelector('.txn-search-highlight.is-current')?.getBoundingClientRect()
+    return { inside: r.top >= c.top && r.bottom <= c.bottom && r.left >= c.left && r.right <= c.right && r.top >= stream.top && r.bottom <= stream.bottom, aligned: !!mark && Math.abs(mark.top - r.top) < 2 && Math.abs(mark.left - r.left) < 2 }
+  }, row.query)
+  await expect.poll(async () => { const p = await position(); return p.inside && p.aligned }).toBe(true)
+  await expect(input).toBeFocused()
+  const saved = await code.evaluate(el => ({ top: el.scrollTop, left: el.scrollLeft }))
+  for (const axis of ['top', 'left']) {
+    await code.evaluate((el, axis) => { if (axis === 'top') el.scrollTop = 0; else el.scrollLeft = 0 }, axis)
+    await expect(page.locator('.txn-search-highlight.is-current')).toHaveCount(0)
+    await code.evaluate((el, saved) => { el.scrollTop = saved.top; el.scrollLeft = saved.left }, saved)
+    await expect.poll(async () => { const p = await position(); return p.inside && p.aligned }).toBe(true)
+  }
+  const contrast = await code.evaluate(el => {
+    const mark = document.querySelector('.txn-search-highlight.is-current'), style = getComputedStyle(el), highlight = getComputedStyle(mark)
+    const canvas = document.createElement('canvas'), ctx = canvas.getContext('2d', { willReadFrequently: true }); canvas.width = 1; canvas.height = 1
+    const sample = color => { ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = color; ctx.fillRect(0, 0, 1, 1); return [...ctx.getImageData(0, 0, 1, 1).data].slice(0, 3) }
+    const ink = sample(style.color)
+    ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = style.backgroundColor; ctx.fillRect(0, 0, 1, 1); ctx.fillStyle = highlight.backgroundColor; ctx.fillRect(0, 0, 1, 1)
+    const bg = [...ctx.getImageData(0, 0, 1, 1).data].slice(0, 3)
+    const luminance = rgb => rgb.map(v => v / 255).map(v => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4).reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0)
+    const values = [luminance(ink), luminance(bg)].sort((a, b) => a - b)
+    return (values[1] + 0.05) / (values[0] + 0.05)
+  })
+  expect(contrast).toBeGreaterThanOrEqual(4.5)
+})
+test('selected search highlight has a non-colour marker and readable contrast', async ({ page }, info) => {
+  await open(page, info.project.name)
+  await page.locator('.txn-stream').focus(); await page.keyboard.press('Control+f')
+  await page.getByRole('textbox', { name: 'search transcript' }).fill(fixture.navigation.find(item => item.kind === 'body').query)
+  const mark = page.locator('.txn-search-highlight.is-current')
+  await expect(mark).toHaveCount(1)
+  const result = await mark.evaluate(el => {
+    const markStyle = getComputedStyle(el), body = document.querySelector('#turn-2 .txn-body p'), style = getComputedStyle(body)
+    const canvas = document.createElement('canvas'), ctx = canvas.getContext('2d', { willReadFrequently: true })
+    canvas.width = 1; canvas.height = 1
+    const sample = color => { ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = color; ctx.fillRect(0, 0, 1, 1); return [...ctx.getImageData(0, 0, 1, 1).data].slice(0, 3) }
+    const ink = sample(style.color)
+    ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = style.getPropertyValue('--canvas'); ctx.fillRect(0, 0, 1, 1); ctx.fillStyle = markStyle.backgroundColor; ctx.fillRect(0, 0, 1, 1)
+    const background = [...ctx.getImageData(0, 0, 1, 1).data].slice(0, 3)
+    const luminance = rgb => rgb.map(v => v / 255).map(v => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4).reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0)
+    const values = [luminance(ink), luminance(background)].sort((a, b) => a - b)
+    return { ratio: (values[1] + 0.05) / (values[0] + 0.05), outline: markStyle.outlineStyle, width: parseFloat(markStyle.outlineWidth) }
+  })
+  expect(result.outline).toBe('solid'); expect(result.width).toBeGreaterThan(0); expect(result.ratio).toBeGreaterThanOrEqual(4.5)
+})
+test('frequent search culls offscreen highlights during scrolling', async ({ page }, info) => {
+  const row = fixture.searchFrequent
+  await open(page, info.project.name)
+  await page.locator('.txn-stream').focus(); await page.keyboard.press('Control+f')
+  await page.getByRole('textbox', { name: 'search transcript' }).fill(row.query)
+  const count = Number((await page.locator('.txn-search-count').innerText()).split('/')[1])
+  expect(count).toBeGreaterThan(row.minimum)
+  const elapsed = await page.locator('.txn-stream').evaluate(async (el, step) => {
+    el.scrollTop = el.scrollHeight - el.clientHeight - step * 2
+    await new Promise(requestAnimationFrame); await new Promise(requestAnimationFrame)
+    const start = performance.now(); el.scrollTop += step
+    await new Promise(requestAnimationFrame); await new Promise(requestAnimationFrame)
+    return performance.now() - start
+  }, row.scrollStep)
+  await expect.poll(() => page.locator('.txn-search-highlight').count()).toBeGreaterThan(0)
+  expect(await page.locator('.txn-search-highlight').count()).toBeLessThan(count)
+  expect(elapsed).toBeLessThan(row.maxFrameMs)
+  await info.attach('search-scroll-frame', { body: JSON.stringify({ matches: count, elapsedMs: elapsed }), contentType: 'application/json' })
+})
+test('search highlights without the CSS Highlight API and leaves the host registry alone', async ({ page }, info) => {
+  await page.addInitScript(() => { Object.defineProperty(CSS, 'highlights', { configurable: true, value: undefined }) })
+  await open(page, info.project.name)
+  await page.locator('.txn-stream').focus(); await page.keyboard.press('Control+f')
+  await page.getByRole('textbox', { name: 'search transcript' }).fill(fixture.navigation.find(item => item.kind === 'body').query)
+  await expect.poll(() => page.locator('.txn-search-highlight').count()).toBeGreaterThan(0)
+  await expect(page.locator('.txn-search-highlights')).toHaveAttribute('aria-hidden', 'true')
+  await page.getByRole('button', { name: 'close search' }).click()
+  await expect(page.locator('.txn-search-highlight')).toHaveCount(0)
+})
+test('search does not replace a host custom highlight', async ({ page }, info) => {
+  await open(page, info.project.name)
+  await page.evaluate(() => { const range = document.createRange(); range.selectNodeContents(document.querySelector('#inuse')); CSS.highlights.set('txn-search-match', new Highlight(range)) })
+  await page.locator('.txn-stream').focus(); await page.keyboard.press('Control+f')
+  await page.getByRole('textbox', { name: 'search transcript' }).fill(fixture.navigation.find(item => item.kind === 'body').query)
+  await expect.poll(() => page.locator('.txn-search-highlight').count()).toBeGreaterThan(0)
+  await page.getByRole('button', { name: 'close search' }).click()
+  expect(await page.evaluate(() => CSS.highlights.get('txn-search-match')?.size)).toBe(1)
+})
+test('search navigates repeated occurrences in one long section', async ({ page }, info) => {
+  const row = fixture.searchRepeated
+  await open(page, info.project.name)
+  await page.locator('.txn-stream').focus(); await page.keyboard.press('Control+f')
+  await page.getByRole('textbox', { name: 'search transcript' }).fill(row.query)
+  await expect(page.locator('.txn-search-count')).toHaveText('1/2')
+  const paragraphs = page.locator(`#turn-${row.turn} .txn-body p`)
+  const position = n => paragraphs.nth(n - 1).evaluate(el => { const s = el.closest('.txn-stream'); return (el.getBoundingClientRect().top - s.getBoundingClientRect().top) / s.clientHeight })
+  await expect.poll(() => position(row.paragraphs[0])).toBeGreaterThan(0.2)
+  await expect.poll(() => position(row.paragraphs[0])).toBeLessThan(0.6)
+  await page.getByRole('button', { name: 'next match', exact: true }).click()
+  await expect(page.locator('.txn-search-count')).toHaveText('2/2')
+  await expect.poll(() => position(row.paragraphs[1])).toBeGreaterThan(0.2)
+  await expect.poll(() => position(row.paragraphs[1])).toBeLessThan(0.6)
+  await expect.poll(() => page.locator('.txn-search-highlight').count()).toBeGreaterThan(0)
+  await page.getByRole('button', { name: 'previous match', exact: true }).click()
+  await expect(page.locator('.txn-search-count')).toHaveText('1/2')
+  await expect.poll(() => position(row.paragraphs[0])).toBeGreaterThan(0.2)
+  await expect.poll(() => position(row.paragraphs[0])).toBeLessThan(0.6)
 })
 for (const row of fixture.initial) test(`transcript rendered initial ${row.name}`, async ({ page }, info) => {
   await open(page, info.project.name, row.turn)
@@ -431,7 +680,7 @@ test('mermaid diagrams stay local, readable and inert', async ({ page }, info) =
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
   await page.goto(`${origin}/?app=transcript&transcript=mermaid-reading&fb=off&theme=${info.project.name}#inuse`)
   const diagrams = page.locator('.txn-mermaid')
-  await expect(diagrams).toHaveCount(15)
+  await expect(diagrams).toHaveCount(17)
   for (const button of await diagrams.first().locator('.txn-mermaid-toolbar button').all()) {
     const box = await button.boundingBox()
     expect(box.width).toBeGreaterThanOrEqual(36)
@@ -458,6 +707,15 @@ test('mermaid diagrams stay local, readable and inert', async ({ page }, info) =
   }
   await diagrams.nth(14).getByRole('button', { name: 'view diagram' }).click()
   await expect(diagrams.nth(14).getByRole('status')).toContainText('diagram unavailable')
+  await diagrams.nth(15).getByRole('button', { name: 'view diagram' }).click()
+  await expect(diagrams.nth(15).locator('.txn-mermaid-stage svg')).toBeVisible()
+  await expect(diagrams.nth(15).locator('.txn-mermaid-stage')).toContainText('First')
+  await expect(diagrams.nth(15).locator('.txn-mermaid-stage')).toContainText('Second')
+  await expect(diagrams.nth(16).locator('pre code')).toHaveText(`${cmykFlowchart}\n`)
+  await diagrams.nth(16).getByRole('button', { name: 'view diagram' }).click()
+  await expect(diagrams.nth(16).locator('.txn-mermaid-stage svg')).toBeVisible()
+  await expect(diagrams.nth(16).locator('.txn-mermaid-stage')).toContainText('apply_values(v)')
+  await expect(diagrams.nth(16).locator('.txn-mermaid-stage')).toContainText('60/51/53/59')
   await diagrams.nth(8).getByRole('button', { name: 'view diagram' }).click()
   await expect(diagrams.nth(8).getByRole('status')).toContainText('diagram unavailable')
   await diagrams.nth(2).getByRole('button', { name: 'view diagram' }).click()

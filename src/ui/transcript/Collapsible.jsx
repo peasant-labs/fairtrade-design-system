@@ -4,9 +4,10 @@ import { useLayoutEffect, useRef, useState } from 'react'
    on close it remains only for the exit animation, immediately inert and aria-hidden. A
    reversal starts at the currently painted height rather than jumping to either endpoint.
    Sidebars keep their paint: their parent grid owns the clipped width transition. */
-export default function Collapsible({ open, children, className = '', id, keepMounted = false, animateSize = true, as: Tag = 'div', 'aria-label': ariaLabel }) {
+export default function Collapsible({ open, children, className = '', id, keepMounted = false, animateSize = true, startOnFrame = false, as: Tag = 'div', 'aria-label': ariaLabel }) {
   const nodeRef = useRef(null)
   const animationRef = useRef(null)
+  const startFrameRef = useRef(null)
   const previousOpen = useRef(open)
   const [present, setPresent] = useState(open)
   const [animating, setAnimating] = useState(false)
@@ -18,6 +19,8 @@ export default function Collapsible({ open, children, className = '', id, keepMo
     const current = animationRef.current
     const height = animateSize ? current ? node.getBoundingClientRect().height : open ? 0 : node.scrollHeight : 0
     const opacity = animateSize ? (current ? getComputedStyle(node).opacity : open ? 0 : 1) : 1
+    if (startFrameRef.current != null) cancelAnimationFrame(startFrameRef.current)
+    startFrameRef.current = null
     current?.cancel()
     animationRef.current = null
     const allowed = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: no-preference)').matches
@@ -36,12 +39,24 @@ export default function Collapsible({ open, children, className = '', id, keepMo
       { ...(animateSize ? { height: open ? `${node.scrollHeight}px` : '0px' } : {}), opacity: animateSize ? (open ? 1 : 0) : 1 },
     ], { duration, easing: style.getPropertyValue('--ease-in-out').trim(), fill: 'both' })
     animationRef.current = animation
+    // A large tool body can take longer than a frame to mount and measure. The
+    // document timeline can still reflect the previous frame when animate() is
+    // called, making the first visible frame jump halfway through the motion.
+    // Hold the initial keyframe until the browser reaches a fresh frame.
+    if (startOnFrame) {
+      animation.pause()
+      animation.currentTime = 0
+      startFrameRef.current = requestAnimationFrame(() => {
+        startFrameRef.current = null
+        if (animationRef.current === animation) animation.play()
+      })
+    }
     animation.finished.then(() => {
       if (animationRef.current !== animation) return
       setAnimating(false)
       setPresent(open)
     }).catch(() => { /* a reversal or unmount cancels the preceding animation */ })
-  }, [open, animateSize])
+  }, [open, animateSize, startOnFrame])
 
   // Hold the final frame until React has committed the hidden/unmounted contents. Releasing
   // it in the promise callback would paint one frame at natural height before that commit.
@@ -54,6 +69,8 @@ export default function Collapsible({ open, children, className = '', id, keepMo
   }, [animating, present])
 
   useLayoutEffect(() => () => {
+    if (startFrameRef.current != null) cancelAnimationFrame(startFrameRef.current)
+    startFrameRef.current = null
     animationRef.current?.cancel()
     animationRef.current = null
   }, [])

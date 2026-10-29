@@ -64,6 +64,7 @@ const trimHunks = [{ lines: [{ sign: 'add', newNo: '1', text: 'a' }, { sign: 'ad
 /* ── Markdown ────────────────────────────────────────────────────────────────── */
 {
   const out = html(ui.TranscriptMarkdown, { text: 'a **bold** and `code` here' })
+  assert('MD-callable', 'built TranscriptMarkdown remains a callable function', typeof ui.TranscriptMarkdown === 'function' && React.isValidElement(ui.TranscriptMarkdown({ text: 'callable' })))
   assert('MD-bold', 'Markdown renders **bold** as semantic <strong>', /<strong>bold<\/strong>/.test(out))
   assert('MD-code', 'Markdown renders `code` as txn-inlinecode', /<code[^>]*txn-inlinecode[^>]*>code<\/code>/.test(out))
 }
@@ -76,6 +77,7 @@ const trimHunks = [{ lines: [{ sign: 'add', newNo: '1', text: 'a' }, { sign: 'ad
 
 /* ── ToolBody: the six renderers + catch-all (dispatch on cooked ToolCallVM.group) */
 {
+  assert('TOOLBODY-callable', 'built TranscriptToolBody remains a callable function', typeof ui.TranscriptToolBody === 'function' && React.isValidElement(ui.TranscriptToolBody({ tool: readTool })))
   assert('TOOLBODY-read', 'read body emits the code path header', html(ui.TranscriptToolBody, { tool: readTool }).includes('txn-code-path'))
   assert('TOOLBODY-edit', 'edit body emits the diff head + churn', html(ui.TranscriptToolBody, { tool: editTool }).includes('txn-diff-head'))
   const bash = html(ui.TranscriptToolBody, { tool: bashTool })

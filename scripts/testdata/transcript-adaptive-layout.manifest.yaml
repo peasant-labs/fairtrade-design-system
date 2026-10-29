@@ -1,0 +1,12 @@
+requiredCases:
+  - wide room for both rails
+  - intermediate room for one rail
+  - constrained reader
+  - below adaptive breakpoint
+  - adaptive breakpoint
+  - below rail breakpoint
+  - rail breakpoint
+  - above rail breakpoint
+  - phone drawer
+requiredThemes: [dark, light]
+requiredMotion: [reduce, no-preference]
