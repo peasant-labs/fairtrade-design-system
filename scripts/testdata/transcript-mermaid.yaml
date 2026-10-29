@@ -1,3 +1,9 @@
+svgProps:
+  - name: safe text and path presentation attributes
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><text font-style="normal" font-weight="400" alignment-baseline="middle" transform-origin="center">Label</text><path fill-rule="evenodd" clip-rule="evenodd" d="M0 0 L10 10"/></svg>'
+    expectedAttributes:
+      text: { font-style: normal, font-weight: '400', alignment-baseline: middle, transform-origin: center }
+      path: { fill-rule: evenodd, clip-rule: evenodd }
 rerender:
   - name: changed source never displays a previous diagram
     first: "flowchart LR\nA[First] --> B[End]"

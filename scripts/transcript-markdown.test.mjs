@@ -75,7 +75,7 @@ function uniqueStrings(value, label) {
 
 function loadFixtures() {
   const manifest = parseDocument(manifestSource, 'Markdown manifest')
-  exactFields(manifest, ['expectedCaseCount', 'requiredNames', 'requiredMermaidRerenderNames', 'expectedMutationCount', 'mounted', 'mutations'], 'Markdown manifest')
+  exactFields(manifest, ['expectedCaseCount', 'requiredNames', 'requiredMermaidRerenderNames', 'requiredMermaidSvgPropNames', 'expectedMutationCount', 'mounted', 'mutations'], 'Markdown manifest')
   if (!Number.isSafeInteger(manifest.expectedCaseCount) || manifest.expectedCaseCount < 1) throw new Error('Markdown manifest expectedCaseCount must be a positive safe integer')
   if (!Number.isSafeInteger(manifest.expectedMutationCount) || manifest.expectedMutationCount < 1) throw new Error('Markdown manifest expectedMutationCount must be a positive safe integer')
   const requiredNames = uniqueStrings(manifest.requiredNames, 'Markdown manifest requiredNames')
@@ -249,6 +249,21 @@ const mermaidFixtures = YAML.parse(readFileSync(resolve(ROOT, 'scripts/testdata/
 const sourceModule = await loadSource('/src/ui/transcript/mermaidSource.js')
 const svgModule = await loadSource('/src/ui/transcript/mermaidSvg.jsx')
 globalThis.DOMParser = importDom.window.DOMParser
+const svgPropNames = uniqueStrings(YAML.parse(manifestSource).requiredMermaidSvgPropNames, 'Mermaid SVG property manifest')
+if (JSON.stringify(mermaidFixtures.svgProps.map(row => row.name).sort()) !== JSON.stringify([...svgPropNames].sort())) throw new Error('Mermaid SVG property fixture names differ from manifest')
+for (const row of mermaidFixtures.svgProps) {
+  const errors = [], originalError = console.error
+  let markup
+  try {
+    console.error = (...args) => errors.push(args)
+    markup = renderToStaticMarkup(svgModule.mermaidSvg(row.svg, 'props'))
+  } finally { console.error = originalError }
+  assert(`mermaid-svg-props-${row.name}`, `${row.name}: safe SVG renders without invalid React properties`, errors.length === 0)
+  const dom = new JSDOM(markup)
+  for (const [selector, attributes] of Object.entries(row.expectedAttributes)) for (const [name, value] of Object.entries(attributes)) {
+    assert(`mermaid-svg-props-${row.name}-${name}`, `${row.name}: preserves ${name}`, dom.window.document.querySelector(selector)?.getAttribute(name) === value)
+  }
+}
 for (const row of mermaidFixtures.accepted) {
   assert(`mermaid-accept-${row.name}`, `${row.name}: source is eligible for Mermaid parsing`, sourceModule.safeMermaidSource(row.source) === true)
 }

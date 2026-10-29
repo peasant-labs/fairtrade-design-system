@@ -1,4 +1,6 @@
 expectedCaseCount: 6
+requiredMermaidSvgPropNames:
+  - safe text and path presentation attributes
 requiredMermaidRerenderNames:
   - changed source never displays a previous diagram
 requiredNames:
