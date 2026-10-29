@@ -1676,7 +1676,7 @@
       "exports": [
         "Switch"
       ],
-      "doc": "@property {boolean} [busy=false] sets aria-busy; pairs with an aria-live marker.",
+      "doc": "@property {boolean} [busy=false] sets aria-busy and shows progress without moving the label.",
       "props": {
         "checked": {
           "control": "boolean"

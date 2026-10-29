@@ -814,6 +814,16 @@
   /* busy: a quiet ring + a spinning loader sits over the thumb under no-preference */
   .sw[aria-busy="true"] { cursor: progress; border-color: var(--amber-dim); }
   .sw[aria-busy="true"]::before { background: var(--amber-dim); }
+  /* Inline progress replaces the thumb, so changing busy never adds a layout track. */
+  .sw:has(> .sw-busy-indicator)::before { visibility: hidden; }
+  .sw-busy-indicator {
+    position: absolute; inset-block-start: var(--sw-pad); inset-inline-start: var(--sw-pad);
+    display: inline-flex; align-items: center; justify-content: center;
+    inline-size: var(--sw-thumb); block-size: var(--sw-thumb); color: var(--ink);
+  }
+  .sw-busy-indicator svg { inline-size: var(--ic-sm); block-size: var(--ic-sm); }
+  .sw[aria-checked="true"] > .sw-busy-indicator { inset-inline-start: calc(var(--sw-pad) + var(--sw-travel)); color: var(--canvas); }
+
 
   /* label + inline state marker (the non-colour cue, WCAG 1.4.1) */
   .sw-label { font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); }

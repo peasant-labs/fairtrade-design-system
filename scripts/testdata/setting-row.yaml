@@ -112,3 +112,21 @@ rows:
 groups:
   - {name: an open group, defaultOpen: true, rows: 3, expected: {open: true, summary: village 3 settings}}
   - {name: a collapsed group, defaultOpen: false, rows: 1, expected: {open: false, summary: village 1 setting}}
+
+# Standalone switches keep progress visible without restoring shifting state words.
+switches:
+  - name: an idle switch omits state words
+    props: {label: automatic sharing, checked: false}
+    expected: {indicator: false, announcement: '', marker: ''}
+  - name: a checked busy switch shows inline progress
+    props: {label: automatic sharing, checked: true, busy: true}
+    expected: {indicator: true, announcement: updating, marker: ''}
+  - name: an unchecked busy switch shows inline progress
+    props: {label: automatic sharing, checked: false, busy: true}
+    expected: {indicator: true, announcement: updating, marker: ''}
+  - name: an explicit state marker keeps its existing progress
+    props: {label: automatic sharing, checked: true, busy: true, stateMarker: true, onText: syncing}
+    expected: {indicator: false, announcement: '', marker: syncing}
+  - name: a host-labeled busy switch keeps inline progress
+    props: {checked: false, busy: true}
+    expected: {indicator: true, announcement: '', marker: ''}
