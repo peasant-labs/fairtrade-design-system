@@ -3918,7 +3918,7 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 .txn-roleico {
   display: inline-flex; align-items: center; justify-content: center;
   inline-size: var(--target-min); block-size: var(--target-min);
-  border: var(--bd);
+  border: var(--bd-strong);
   color: var(--ink-2);
   flex: none;
 }

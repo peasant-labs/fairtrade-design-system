@@ -701,9 +701,6 @@ export default function Explore({
               <button type="button" className="bs-seg-opt" aria-pressed={layout === 'list'} aria-label="list view" onClick={() => setLayout('list')}>
                 <List size={14} /> list
               </button>
-              <button type="button" className="bs-seg-opt" aria-pressed={mode === 'profile'} aria-label="profile view" onClick={openProfile} disabled={!pageRows.length}>
-                <User size={14} /> profile
-              </button>
             </div>
           </div>
 
