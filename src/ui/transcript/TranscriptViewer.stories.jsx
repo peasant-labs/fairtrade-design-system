@@ -516,12 +516,18 @@ export const IntegrityPhone = {
     const help = canvas.getByRole('button', { name: INTEGRITY_COPY.helpName })
     // the badge keeps its words at every width
     expect(help.querySelector('.txn-integrity-label')).toBeVisible()
+    // the geometry depends on the fonts, so measure once they are in
+    await document.fonts.ready
     await userEvent.click(help)
     const panel = await canvas.findByRole('region', { name: INTEGRITY_COPY.panelHeading })
+    // the panel is placed in the same frame it opens: inside the canvas and the viewer's 16px gutters
     const rect = panel.getBoundingClientRect()
     const frame = canvasElement.getBoundingClientRect()
+    const viewer = panel.closest('.txn-app').getBoundingClientRect()
     expect(rect.left).toBeGreaterThanOrEqual(frame.left - 1)
     expect(rect.right).toBeLessThanOrEqual(frame.right + 1)
+    expect(rect.left).toBeGreaterThanOrEqual(Math.max(viewer.left, 0) + 16 - 1)
+    expect(rect.right).toBeLessThanOrEqual(Math.min(viewer.right, document.documentElement.clientWidth) - 16 + 1)
   },
 }
 

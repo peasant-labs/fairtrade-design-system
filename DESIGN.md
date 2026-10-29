@@ -583,10 +583,11 @@ render the same system.
   below. The badge keeps its words at every width. It sits with the title in the part of the header
   that folds away on scroll, so a condensed header does not show it; the turn marks stay.
 - **Help:** the badge is the one control. Its accessible name is the help question, which contains
-  the visible words, and it opens a short explanation panel (`aria-expanded`, `aria-controls`) that
-  stays inside the viewport by the page gutter. It never opens on its own or on hover, never moves
-  focus, and Escape or a press outside closes it; Escape returns focus to the badge. Folding the
-  header away closes it too.
+  the visible words, and it opens a short explanation panel (`aria-expanded`, `aria-controls`). The
+  panel opens toward the side of the badge that has room and stays inside the transcript viewer and
+  the viewport by the page gutter. It never opens on its own or on hover, never moves focus, and
+  Escape or a press outside closes it; Escape returns focus to the badge. Folding the header away
+  closes it too.
 - **Wording:** every string the badge, the panel and the turn marks show lives in `INTEGRITY_COPY`
   (`src/ui/transcript/integrity.js`), the one place to edit it.
 - **Turn mark:** a flagged turn carries the same glyph and the word flagged on its head, so the cue

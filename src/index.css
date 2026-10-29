@@ -4147,9 +4147,11 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   .txn-integrity-badge[aria-expanded="true"] { background: var(--surface-2); }
   .txn-integrity-badge:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
   @media (hover: hover) and (pointer: fine) { .txn-integrity-badge:hover { background: var(--surface-hover); } }
+  /* the badge places the open panel with an inline left edge, so it takes no transition: the
+     reduced-motion floor would otherwise turn each placement into a one-frame transition */
   .txn-integrity-panel {
     inline-size: var(--measure-read); max-inline-size: calc(100vw - 2 * var(--sp-4)); box-sizing: border-box;
-    padding: var(--sp-4); translate: var(--txn-integrity-shift, 0) 0; text-align: start; text-transform: none;
+    padding: var(--sp-4); transition-property: none; text-align: start; text-transform: none;
     font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink-2);
   }
   .txn-integrity-panel p { margin: 0 0 var(--sp-3); }
