@@ -288,6 +288,11 @@ if (JSON.stringify(mermaidFixtures.rerender.map(row => row.name).sort()) !== JSO
   for (const key of ['HTMLElement', 'Element', 'Node', 'Event', 'MouseEvent', 'MutationObserver']) {
     Object.defineProperty(globalThis, key, { configurable: true, writable: true, value: window[key] })
   }
+  // JSDOM has no font loader or SVG layout. This test controls compiler timing;
+  // real glyph geometry and consumer font aliases run in the built-browser journey.
+  globalThis.getComputedStyle = window.getComputedStyle.bind(window)
+  Object.defineProperty(window.document, 'fonts', { configurable: true, value: { load: async () => [], ready: Promise.resolve() } })
+  window.SVGElement.prototype.getCTM = () => null
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
   const { createRoot } = await import('react-dom/client')
   const mount = async (element) => {

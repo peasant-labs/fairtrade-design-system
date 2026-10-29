@@ -680,7 +680,7 @@ test('mermaid diagrams stay local, readable and inert', async ({ page }, info) =
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
   await page.goto(`${origin}/?app=transcript&transcript=mermaid-reading&fb=off&theme=${info.project.name}#inuse`)
   const diagrams = page.locator('.txn-mermaid')
-  await expect(diagrams).toHaveCount(17)
+  await expect(diagrams).toHaveCount(18)
   for (const button of await diagrams.first().locator('.txn-mermaid-toolbar button').all()) {
     const box = await button.boundingBox()
     expect(box.width).toBeGreaterThanOrEqual(36)
@@ -750,4 +750,55 @@ test.describe('touch mermaid controls', () => {
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
   })
+})
+
+
+const glyphFixtures = YAML.parse(readFileSync(new URL('../testdata/transcript-mermaid-glyphs.yaml', import.meta.url), 'utf8'))
+expect(new Set(glyphFixtures.cases.map(row => row.name))).toEqual(new Set(glyphFixtures.requiredNames))
+for (const row of glyphFixtures.cases) test(`mermaid ${row.name}`, async ({ page }, info) => {
+  await page.setViewportSize({ width: row.width, height: row.height })
+  await page.goto(`${origin}/?app=transcript&transcript=mermaid-reading&fb=off&theme=${info.project.name}#inuse`, { waitUntil: 'networkidle' })
+  await page.evaluate(() => document.fonts.ready)
+  const diagram = page.locator('.txn-mermaid').nth(17)
+  await expect(diagram.locator('pre code')).toHaveText(`${glyphFixtures.source}\n`)
+  // Model a consuming app's font alias, which must determine compiler metrics too.
+  await diagram.evaluate((el, family) => el.style.setProperty('--font-body', family), glyphFixtures.fontFamily)
+  const showDiagram = diagram.getByRole('button', { name: 'view diagram' })
+  await showDiagram.focus()
+  await showDiagram.press('Enter')
+  await expect(showDiagram).toHaveAttribute('aria-pressed', 'true')
+  const svg = diagram.locator('svg')
+  await expect(svg).toBeVisible()
+  await expect.poll(() => svg.evaluate(el => {
+    const box = el.getBoundingClientRect()
+    return [...el.querySelectorAll('text, .node')].every(text => {
+      const glyph = text.getBoundingClientRect()
+      return glyph.left >= box.left - 0.5 && glyph.right <= box.right + 0.5 && glyph.top >= box.top - 0.5 && glyph.bottom <= box.bottom + 0.5
+    })
+  })).toBe(true)
+  expect(await svg.evaluate(el => [...el.querySelectorAll('.node')].every(node => {
+    const shape = node.querySelector('rect, polygon, circle, ellipse')?.getBoundingClientRect()
+    if (!shape) return true
+    return [...node.querySelectorAll('text')].every(text => {
+      const glyph = text.getBoundingClientRect()
+      return glyph.left >= shape.left - 0.5 && glyph.right <= shape.right + 0.5 && glyph.top >= shape.top - 0.5 && glyph.bottom <= shape.bottom + 0.5
+    })
+  })), 'node shapes must be laid out using the same glyph metrics').toBe(true)
+  const facts = await svg.evaluate(el => ({
+    width: el.getBoundingClientRect().width, height: el.getBoundingClientRect().height,
+    viewBox: el.getAttribute('viewBox'),
+    fonts: [...el.querySelectorAll('text')].map(text => ({ family: getComputedStyle(text).fontFamily, size: parseFloat(getComputedStyle(text).fontSize) })),
+  }))
+  expect(facts.fonts.length).toBeGreaterThan(0)
+  expect(facts.fonts.every(font => font.family.includes('consumer text alias') && font.size >= 16)).toBe(true)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  if (row.width === 390) {
+    const stage = diagram.locator('.txn-mermaid-stage')
+    expect(await stage.evaluate(el => el.scrollWidth > el.clientWidth)).toBe(true)
+    await stage.evaluate(el => { el.scrollLeft = el.scrollWidth })
+    expect(await stage.evaluate(el => el.scrollLeft)).toBeGreaterThan(0)
+  }
+  await diagram.evaluate(el => { const stream = el.closest('.txn-stream'); if (stream) stream.scrollTop += el.getBoundingClientRect().bottom - stream.getBoundingClientRect().bottom })
+  await page.screenshot({ path: test.info().outputPath('diagram-glyph-bounds.png') })
+  await test.info().attach('diagram-glyph-bounds', { body: JSON.stringify(facts), contentType: 'application/json' })
 })

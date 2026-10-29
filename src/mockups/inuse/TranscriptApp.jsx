@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import mermaidGlyphsRaw from '../../../scripts/testdata/transcript-mermaid-glyphs.yaml?raw'
+const mermaidGlyphs = JSON.parse(mermaidGlyphsRaw)
 // the only lucide glyphs the demo itself draws are the rewired trajectory-graph zoom controls;
 // every transcript glyph now lives inside the lifted /ui components.
 import { Plus, Minus, Maximize, RefreshCw } from 'lucide-react'
@@ -890,6 +892,10 @@ flowchart TD
     I --> K["from_rgba_into<br/>rgb_to_cmyk(doc profile)"]
     J --> L["exact C0 M0 Y0 K100"]
     K --> M["rich black, profile-dependent<br/>(report: 60/51/53/59)"]
+\`\`\`
+
+\`\`\`mermaid
+${mermaidGlyphs.source}
 \`\`\``
       return { ...base, turns: base.turns.map((turn, index) => index === 1 ? { ...turn, content: source } : turn) }
     }
