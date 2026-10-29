@@ -4143,7 +4143,7 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 @media (width < 768px) { .txn-ledger .txn-stream { padding-inline: var(--sp-4); } }
 
 /* Mermaid charts remain inside the reading column, including wide diagrams. */
-.txn-mermaid { min-width: 0; max-width: 100%; border: 1px solid var(--rule-strong); background: var(--surface); }
+.txn-mermaid { font-family: var(--font-body); font-size: var(--fs-body); min-width: 0; max-width: 100%; border: 1px solid var(--rule-strong); background: var(--surface); }
 .txn-mermaid-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--sp-2); padding: var(--sp-2); border-bottom: 1px solid var(--rule-strong); color: var(--ink-3); font-family: var(--font-mono); }
 .txn-mermaid-toolbar div { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .txn-mermaid-toolbar button { min-width: var(--control-h); min-height: var(--control-h); padding-inline: var(--sp-3); color: var(--ink); background: transparent; border: 1px solid var(--rule-strong); cursor: pointer; font: inherit; }

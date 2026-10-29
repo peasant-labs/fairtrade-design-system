@@ -1,0 +1,20 @@
+{
+  "source": "flowchart TD\n  A[Validate resume cursor] --> B[Read bounded page]\n  B --> C[Escape and stream CSV]\n  C --> D[Advance composite cursor]\n  D --> E{More rows?}\n  E -->|yes| B\n  E -->|no| F[Finish response]\n  B -. disconnect .-> G[Cancel work]\n  C -. disconnect .-> G",
+  "fontFamily": "\"consumer text alias\", sans-serif",
+  "requiredNames": [
+    "desktop glyph bounds",
+    "phone glyph bounds"
+  ],
+  "cases": [
+    {
+      "name": "desktop glyph bounds",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "name": "phone glyph bounds",
+      "width": 390,
+      "height": 844
+    }
+  ]
+}
