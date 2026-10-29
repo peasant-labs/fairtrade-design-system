@@ -112,12 +112,13 @@ export function ModelActions({ turns = [], openTools = {}, onToggle = () => {}, 
   if (!tools.length) {
     return (
       <div className="txn-modelactions txn-modelactions-bare">
-        {turns.map((turn) => turn.thinking && (
-          <div key={turn.identity ?? turn.index} className={rowClass(turn)}>
-            {isFlagged(turn) && <IntegrityMark decorative={false} />}
-            <Thinking block={turn.thinking} actionRef={el => registerActionRef(turn.index, 'thinking', el)} revealRequest={reveal?.turn === turn.index ? reveal.sequence : 0} />
-          </div>
-        ))}
+        {turns.map((turn) => {
+          if (!turn.thinking) return null
+          const key = turn.identity ?? turn.index
+          const thinking = <Thinking key={key} block={turn.thinking} actionRef={el => registerActionRef(turn.index, 'thinking', el)} revealRequest={reveal?.turn === turn.index ? reveal.sequence : 0} />
+          /* only a flagged turn gains a row; every other block renders exactly as it always has */
+          return isFlagged(turn) ? <div key={key} className={rowClass(turn)}><IntegrityMark decorative={false} />{thinking}</div> : thinking
+        })}
       </div>
     )
   }

@@ -168,5 +168,7 @@ interactions:
     kind: help-link
   - name: integrity added after mount announces once
     kind: late-arrival
+  - name: an unflagged thinking-only group keeps its plain structure
+    kind: plain-thinking
   - name: integrity present at mount fills its status after mount
     kind: status-after-mount

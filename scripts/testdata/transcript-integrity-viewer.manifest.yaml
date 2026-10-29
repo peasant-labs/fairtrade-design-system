@@ -41,6 +41,7 @@ requiredInteractionNames:
   - panel copy follows highlights
   - help link only when supplied
   - integrity added after mount announces once
+  - an unflagged thinking-only group keeps its plain structure
   - integrity present at mount fills its status after mount
 requiredInteractionKinds:
   help click opens and closes the panel: help-click
@@ -50,6 +51,7 @@ requiredInteractionKinds:
   panel copy follows highlights: panel-copy
   help link only when supplied: help-link
   integrity added after mount announces once: late-arrival
+  an unflagged thinking-only group keeps its plain structure: plain-thinking
   integrity present at mount fills its status after mount: status-after-mount
 requiredThinkingCaseName: a flagged turn in a thinking-only group is marked
 
@@ -61,6 +63,8 @@ requiredMutationNames:
   - the work block repeats the card outline
   - the status is static text at mount
   - the thinking-only group loses its mark
+  - every thinking block gains a row
+  - the panel counts marks the list does not draw
 mutations:
   - name: the badge ignores the hash
     file: src/ui/transcript/TranscriptViewer.jsx
@@ -94,6 +98,16 @@ mutations:
     expectedDiagnostic: "integrity present at mount fills its status after mount"
   - name: the thinking-only group loses its mark
     file: src/ui/transcript/WorkGroup.jsx
-    find: "{isFlagged(turn) && <IntegrityMark decorative={false} />}"
-    replace: ""
+    find: "<IntegrityMark decorative={false} />{thinking}"
+    replace: "{thinking}"
     expectedDiagnostic: "a flagged turn in a thinking-only group is marked"
+  - name: every thinking block gains a row
+    file: src/ui/transcript/WorkGroup.jsx
+    find: "return isFlagged(turn) ? <div"
+    replace: "return true ? <div"
+    expectedDiagnostic: "an unflagged thinking-only group keeps its plain structure"
+  - name: the panel counts marks the list does not draw
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "tab === 'trace' && viewMode === 'list' && visibleTurns.some("
+    replace: "visibleTurns.some("
+    expectedDiagnostic: "panel copy follows highlights: a viewer on another tab"

@@ -263,6 +263,11 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       await filtered.settle(SETTLE_MS)
       checkOrder(text(panelOf(filtered.container)), 'a viewer whose flagged turn is filtered out', false)
       await filtered.unmount()
+      /* no list renders on another tab, so no mark is drawn there */
+      const elsewhere = await mount(viewerElement({ ...FLAGGED, activeTab: 'files' }))
+      await elsewhere.settle(SETTLE_MS)
+      checkOrder(text(panelOf(elsewhere.container)), 'a viewer on another tab', false)
+      await elsewhere.unmount()
     } else if (row.kind === 'help-link') {
       const without = await mount(viewerElement(FLAGGED))
       await without.settle(SETTLE_MS)
@@ -273,12 +278,32 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       const link = panelOf(withLink.container).querySelector('a[href]')
       report.check(link?.getAttribute('href') === HELP_HREF && text(link) === INTEGRITY_COPY.helpLink, `${row.name}: the link reads helpLink and points at integrityHelpHref`)
       await withLink.unmount()
+    } else if (row.kind === 'plain-thinking') {
+      /* without integrity a thinking-only group is exactly its thinking blocks, as before the props existed */
+      const thinkingVm = adaptTranscript(fixture.thinkingCase.payload)
+      const mounted = await mount(React.createElement(TranscriptViewer, { viewModel: thinkingVm, capabilities: CAPABILITIES, presentation: 'ledger' }))
+      await mounted.settle(SETTLE_MS)
+      const bare = mounted.container.querySelector(`#turn-${fixture.thinkingCase.group} .txn-modelactions-bare`)
+      report.check(!!bare && bare.children.length > 0, `${row.name}: the fixture must render a thinking-only group`)
+      report.check(!!bare && [...bare.children].every((child) => child.classList.contains('txn-thinking')), `${row.name}: the group's children must be the .txn-thinking blocks directly`)
+      report.check(mounted.container.querySelector('.txn-modelactions-turn') === null, `${row.name}: no row wrapper without a flag`)
+      await mounted.unmount()
     } else if (row.kind === 'late-arrival') {
       const mounted = await mount(viewerElement({}))
       await mounted.settle(SETTLE_MS)
       report.check(mounted.container.querySelector('.txn-integrity') === null, `${row.name}: the fixture starts without a badge`)
+      let insertions = 0
+      const observer = new window.MutationObserver((records) => {
+        for (const record of records) {
+          if (record.target.matches?.('.txn-integrity .txn-sr[role="status"]')) insertions += [...record.addedNodes].filter((node) => node.nodeType === 3).length
+          else if (record.type === 'characterData' && record.target.parentElement?.matches('.txn-integrity .txn-sr[role="status"]')) insertions += 1
+        }
+      })
+      observer.observe(mounted.container, { childList: true, subtree: true, characterData: true })
       await mounted.rerender(viewerElement(FLAGGED))
       await mounted.settle(SETTLE_MS)
+      observer.disconnect()
+      report.check(insertions === 1, `${row.name}: the status text must be inserted exactly once, received ${insertions}`)
       const status = mounted.container.querySelector('.txn-integrity .txn-sr[role="status"]')
       report.check(!!status && text(status) === INTEGRITY_COPY.statusText, `${row.name}: status-text must appear and equal statusText`)
       report.check(mounted.container.querySelectorAll('[role="status"]').length >= 1 && mounted.container.querySelectorAll('.txn-integrity .txn-sr[role="status"]').length === 1, `${row.name}: exactly one integrity status line`)
