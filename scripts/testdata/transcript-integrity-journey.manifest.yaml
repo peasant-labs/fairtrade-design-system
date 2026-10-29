@@ -1,0 +1,8 @@
+# Required-NAME manifest for transcript-integrity-journey.yaml: deletion protection. The journey
+# asserts the case names equal this list exactly, as a set.
+requiredCaseNames:
+  - desktop flagged header
+  - desktop classic flagged turns
+  - phone flagged header
+  - phone ledger folded mark
+  - axe on the open panel

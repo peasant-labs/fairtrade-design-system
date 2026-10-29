@@ -1,0 +1,16 @@
+# The integrity badge and flagged-turn marks on the built in-use demo, checked by
+# scripts/journey/transcript-integrity.journey.mjs in both themes.
+#   kind: header-desktop   the badge sits at the right end of the header's top row, outlined in the
+#                          warning color, with its icon and its word
+#   kind: classic-turns    classic cards: two marks, one dashed outline per flagged card
+#   kind: header-phone     390px touch: badge and (?) share the top row; the (?) reaches 44px; the
+#                          panel opens inside the 16px gutters without horizontal scroll; a second tap closes it
+#   kind: folded-mark      the collapsed ledger work group still shows its mark
+#   kind: axe-panel        axe finds nothing in the header with the panel open
+# `query` is the demo's transcript variant; `touch` selects a coarse-pointer phone context.
+cases:
+  - {name: desktop flagged header, kind: header-desktop, query: flagged, viewport: {width: 1440, height: 900}, touch: false}
+  - {name: desktop classic flagged turns, kind: classic-turns, query: flagged-classic, viewport: {width: 1440, height: 900}, touch: false}
+  - {name: phone flagged header, kind: header-phone, query: flagged, viewport: {width: 390, height: 844}, touch: true}
+  - {name: phone ledger folded mark, kind: folded-mark, query: flagged, viewport: {width: 390, height: 844}, touch: true}
+  - {name: axe on the open panel, kind: axe-panel, query: flagged, viewport: {width: 390, height: 844}, touch: true}
