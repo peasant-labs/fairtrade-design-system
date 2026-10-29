@@ -571,6 +571,19 @@ render the same system.
   `--surface-2` fill. A provider chip leads with its brand mark (`<Tag brand="claude">`).
 - **State:** outcome states (redacted, partial, failed) always pair an icon with the word.
 
+### Integrity flag
+- **Badge:** drawn only for a served flag, at the top right of the viewer's title row: a static
+  outlined badge (warning glyph and the word flagged) with a (?) button beside it. No fill, never
+  amber-filled; the ink is the warning ink on `--canvas`.
+- **Help:** the (?) opens a short explanation panel. It never opens on its own or on hover, never
+  moves focus, and Escape closes it and returns focus to the (?).
+- **Turn mark:** a flagged turn carries the same glyph and the word flagged on its head, so the cue
+  is a shape and a word, not a colour. A ledger action block that folds a flagged turn says so.
+  Turns are marked only when the served content hash equals the hash of the rendered content;
+  otherwise the badge draws alone.
+- **No clean state:** a transcript without a flag draws nothing. There is no verified, clean or
+  checked state, because an absent flag proves nothing.
+
 ### Cards / Containers
 - **Corner Style:** square (0).
 - **Background:** `--surface` on the canvas.
