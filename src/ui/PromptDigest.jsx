@@ -1,5 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
-import { ChevronDown, ChevronRight, CornerDownRight, GitCommitHorizontal, Layers, User } from 'lucide-react'
+import { ArrowUpRight, Check, ChevronDown, CornerDownRight, GitCommitHorizontal, Layers, User } from 'lucide-react'
 import Avatar from './Avatar.jsx'
 import BrandMark from './BrandMark.jsx'
 import Chip, { CountBadge } from './Chip.jsx'
@@ -232,10 +232,10 @@ function PromptRow({ entry, href, itemHref, author }) {
     <>
       {glyph}
       <span className="pd-ordinal tnum">{item.ordinal}</span>
-      <span className={open ? 'pd-prompt-text' : 'pd-prompt-text pd-prompt-clamp'}>{text}</span>
+      <span className={open ? 'pd-prompt-text' : 'pd-prompt-text pd-prompt-clamp'}>{text}{href && <ArrowUpRight className="pd-source-mark" aria-hidden="true" />}</span>
       {/* the at-a-glance sum over this prompt's attached commits: present only when at least one
           carries counts, so a row with nothing to show renders no cell and takes no width — the
-          prompt text (flex: 1) only narrows on rows that do have something to show. */}
+          prompt text track only narrows on rows that do have something to show. */}
       {sum && <ChangeCounts additions={sum.additions} deletions={sum.deletions} />}
     </>
   )
@@ -384,10 +384,12 @@ function SplitChain({ items, itemHref, author, selected, onSelect }) {
   return (
     <div className="pd-split">
       <div className="pd-split-side">
-        <p className="pd-split-hint" id={hintId}>
-          <span className="tnum">{entries.length}</span> {entries.length === 1 ? 'transcript' : 'transcripts'}
-          {entries.length > 1 && <>, <kbd className="kbd-key">j</kbd> and <kbd className="kbd-key">k</kbd> move</>}
-        </p>
+        <div className="pd-split-nav-head">
+          <h3 className="pd-split-label">transcripts <span className="tnum">{entries.length}</span></h3>
+          <p className="pd-split-hint" id={hintId}>
+            {entries.length > 1 ? <><kbd className="kbd-key">j</kbd> <kbd className="kbd-key">k</kbd><span className="sr-only"> move between transcripts</span></> : <span className="sr-only">choose the transcript to read its prompts</span>}
+          </p>
+        </div>
         <ul
           ref={listRef}
           className="pd-split-list"
@@ -410,7 +412,7 @@ function SplitChain({ items, itemHref, author, selected, onSelect }) {
                 className={on ? 'pd-split-option pd-split-option-on' : 'pd-split-option'}
                 onClick={() => selectRef.current(i)}
               >
-                <ChevronRight className="pd-split-mark" aria-hidden="true" />
+                <Check className="pd-split-mark" aria-hidden="true" />
                 <span className="pd-split-option-label">{option.session ? option.session.text : 'before the first transcript'}</span>
                 <span className="pd-split-option-count">
                   <span className="tnum">{count}</span> {count === 1 ? 'prompt' : 'prompts'}
@@ -423,8 +425,11 @@ function SplitChain({ items, itemHref, author, selected, onSelect }) {
 
       <section className="pd-split-pane" aria-labelledby={paneTitleId}>
         <header className="pd-split-pane-head">
-          <h3 className="pd-split-pane-title" id={paneTitleId}>{label}</h3>
-          {sessionHref && <a className="link pd-split-open" href={sessionHref}>open the transcript</a>}
+          <div className="pd-split-title-group">
+            <h3 className="pd-split-pane-title" id={paneTitleId}>{label}</h3>
+            <span className="pd-split-prompt-count"><span className="tnum">{entryPromptCount(entry)}</span> {entryPromptCount(entry) === 1 ? 'prompt' : 'prompts'}</span>
+          </div>
+          {sessionHref && <a className="btn btn-secondary pd-split-open" href={sessionHref}>open the transcript <ArrowUpRight aria-hidden="true" /></a>}
         </header>
         {collapsed && (
           <p className="pd-split-collapsed">

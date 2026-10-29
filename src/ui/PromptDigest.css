@@ -17,6 +17,7 @@
    rotation's transition is guarded behind prefers-reduced-motion: no-preference. */
 
 .pd {
+  container: prompt-digest / inline-size;
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
@@ -29,19 +30,20 @@
 
 /* ── header: the counts and the harness ─────────────────────────────────────── */
 .pd-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
   gap: var(--sp-3);
   padding-bottom: var(--sp-3);
   border-bottom: var(--bd);
 }
 
 .pd-counts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-5);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 2fr);
+  gap: var(--sp-4);
+  max-inline-size: calc(var(--sp-8) * 10);
+  min-width: 0;
   margin: 0;
 }
 
@@ -89,8 +91,9 @@
 /* ── skills row ──────────────────────────────────────────────────────────────── */
 .pd-skills {
   display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-4);
 }
 
 .pd-skill-list {
@@ -126,10 +129,7 @@
   border-top: 0;
 }
 
-/* one row body. the >=24px hit box (WCAG 2.5.8) comes from min-height plus the padding; every row
-   shares the same left axis so the glyph column, the ordinal column and the text line up. flex:1
-   only takes effect on a prompt row, where this sits beside the chevron button in .pd-prompt-row;
-   a plain chain row's <li> is not a flex container, so it is a no-op there. */
+/* Every row has a full link hit box; prompt rows use dedicated glyph, ordinal and text tracks. */
 .pd-row-link {
   display: flex;
   flex: 1 1 auto;
@@ -192,49 +192,33 @@ a.pd-row-link:focus-visible {
   color: var(--ink-4);
 }
 
-/* the author's avatar, in a prompt row that has one: the Avatar family's smallest tier is its
-   bare (unset `size`) inline-meta box at 18px (var(--ic-lg)) — larger than every other glyph in
-   this row, which is var(--ic-sm) (14px). Avatar exposes no tier that resolves to --ic-sm, so the
-   row overrides the box here rather than adding a new Avatar tier: this is the same box the User
-   fallback glyph occupies, so rows with and without an author line up on the same left edge.
-   align-self stays flex-start so the box keeps its own natural height instead of stretching to
-   match a two-line clamped block; the fixed margin-top below (not the stretch/centre the parent
-   would otherwise apply) is what centres it against the ordinal's line, so a two-line clamp or an
-   unclamped multi-line expansion never pulls it down. */
-.pd-row-avatar {
-  flex: none;
-  align-self: flex-start;
+/* Icon, ordinal and text share the first prose line, including after wrapping. */
+.pd-prompt-row {
+  --pd-prompt-line: calc(var(--fs-body) * var(--lh-body));
+  --pd-prompt-height: calc(var(--pd-prompt-line) + var(--sp-3) * 2);
+  --pd-glyph-offset: calc((var(--pd-prompt-line) - var(--ic-sm)) / 2);
+}
+.pd-prompt-row .pd-row-link {
+  display: grid;
+  grid-template-columns: var(--ic-sm) 3ch minmax(0, 1fr) auto;
+  align-items: start;
+  padding: var(--sp-3) 0;
+}
+.pd-row-avatar, .pd-prompt-row .pd-row-icon {
+  align-self: start;
   width: var(--ic-sm);
   height: var(--ic-sm);
   margin-top: var(--pd-glyph-offset);
 }
-
-/* a prompt row's own top alignment: the avatar (or the User fallback glyph above) lines up with
-   the ordinal's line, not the top of the row — not centred against the whole two-line clamped
-   block the way .pd-row-link's shared baseline default reads for a single line of chrome text.
-   scoped to .pd-prompt-row (the link+chevron wrapper), not the broader .pd-row-prompt <li>, so a
-   skill/commit row nested in this prompt's own details block keeps the baseline default every
-   other chain row uses; only the prompt's own top-level link pairs a fixed-size glyph with text
-   that can wrap to more than one line. */
-.pd-prompt-row .pd-row-link {
-  align-items: flex-start;
-}
-
-/* the ordinal, the avatar, and the User fallback glyph are three independent flex items sharing
-   this flex-start row, so each one's own top edge — not its ink — lands on the row's top. The
-   ordinal's line box (fs-label at lh-mono) is taller than the 14px glyph box, so its digit sits
-   centred lower within that box than the glyph's content sits within its own. --pd-glyph-offset
-   is exactly that gap, halved: nudging the glyph down by it puts the glyph's visual centre on the
-   ordinal's, the number the finding names, not the prose line (fs-body/lh-body) beside it, which
-   uses a different line-height and would centre differently. Defined once and shared by the
-   avatar and the icon fallback below so both glyphs read at the same vertical centre. */
-.pd-prompt-row {
-  --pd-glyph-offset: calc((var(--fs-label) * var(--lh-mono) - var(--ic-sm)) / 2);
-}
-
-.pd-prompt-row .pd-row-icon {
-  align-self: flex-start;
-  margin-top: var(--pd-glyph-offset);
+.pd-prompt-row .pd-ordinal { line-height: var(--pd-prompt-line); }
+.pd-prompt-row .pd-change-counts { line-height: var(--pd-prompt-line); }
+.pd-source-mark {
+  display: inline;
+  vertical-align: text-bottom;
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+  margin-inline-start: var(--sp-1);
+  color: var(--ink-3);
 }
 
 /* session boundary: chrome type, its two counts tabular and pushed to the right edge. separated
@@ -310,9 +294,10 @@ a.pd-row-link:focus-visible {
 
 /* ── prompt row: the link/text pair beside the disclosure chevron ──────────────────────────── */
 .pd-prompt-row {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-1);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--control-h);
+  align-items: start;
+  gap: var(--sp-2);
 }
 
 /* the disclosure toggle. chrome colour only, at rest, hover, and open alike — it never spends
@@ -323,9 +308,10 @@ a.pd-row-link:focus-visible {
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  width: var(--target-min);
-  height: var(--target-min);
-  margin: var(--sp-2) var(--sp-2) var(--sp-2) 0;
+  width: var(--control-h);
+  height: var(--control-h);
+  margin-block: calc((var(--pd-prompt-height) - var(--control-h)) / 2);
+  margin-inline: 0;
   padding: 0;
   border: 0;
   background: transparent;
@@ -440,14 +426,13 @@ a.pd-row-link:focus-visible {
 
 /* ── split layout: sessions beside a reading pane ─────────────────────────────
    the list is a listbox with one tab stop; the selected option carries three
-   non-colour cues together (the chevron mark, the bolder label, aria-selected)
+   non-colour cues together (the check mark, the bolder label, aria-selected)
    plus the system's selection treatment: a surface tint and a 2px amber left
-   rule. below the md breakpoint the list stacks above the pane; nothing scrolls
-   sideways. */
+   rule. a narrow container stacks the list above the pane; nothing scrolls sideways. */
 .pd-split {
   display: grid;
-  grid-template-columns: minmax(14rem, 20rem) minmax(0, 1fr);
-  gap: var(--sp-4);
+  grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
+  gap: var(--sp-5);
   align-items: start;
   min-width: 0;
 }
@@ -455,11 +440,32 @@ a.pd-row-link:focus-visible {
 .pd-split-side {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-2);
+  gap: 0;
   min-width: 0;
 }
 
+.pd-split-nav-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  min-block-size: calc(var(--control-h) + var(--sp-3));
+  padding-block-end: var(--sp-3);
+  border-bottom: var(--bd);
+}
+.pd-split-label {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--ink-strong);
+}
+.pd-split-label > span { font-weight: 400; color: var(--ink-3); }
 .pd-split-hint {
+  flex: none;
   margin: 0;
   font-family: var(--font-mono);
   font-size: var(--fs-label);
@@ -477,7 +483,6 @@ a.pd-row-link:focus-visible {
   margin: 0;
   padding: 0;
   list-style: none;
-  border: var(--bd);
 }
 
 .pd-split-list:focus-visible {
@@ -487,7 +492,7 @@ a.pd-row-link:focus-visible {
 
 .pd-split-option {
   display: grid;
-  grid-template-columns: var(--ic-sm) minmax(0, 1fr);
+  grid-template-columns: var(--ic-sm) minmax(0, 1fr) auto;
   column-gap: var(--sp-2);
   row-gap: var(--sp-1);
   align-items: baseline;
@@ -505,7 +510,8 @@ a.pd-row-link:focus-visible {
 .pd-split-mark {
   width: var(--ic-sm);
   height: var(--ic-sm);
-  align-self: center;
+  align-self: start;
+  margin-block-start: calc((var(--fs-body) * var(--lh-body) - var(--ic-sm)) / 2);
   color: var(--ink);
   visibility: hidden;
 }
@@ -520,7 +526,8 @@ a.pd-row-link:focus-visible {
 }
 
 .pd-split-option-count {
-  grid-column: 2;
+  grid-column: 3;
+  white-space: nowrap;
   font-family: var(--font-mono);
   font-size: var(--fs-label);
   line-height: var(--lh-mono);
@@ -545,19 +552,20 @@ a.pd-row-link:focus-visible {
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-3);
+  gap: 0;
   min-width: 0;
-  padding: var(--sp-3) var(--sp-4);
-  border: var(--bd);
+  padding: 0 0 0 var(--sp-5);
+  border-inline-start: var(--bd);
 }
 
 .pd-split-pane-head {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: var(--sp-2) var(--sp-4);
-  padding-bottom: var(--sp-2);
+  min-block-size: calc(var(--control-h) + var(--sp-3));
+  padding-bottom: var(--sp-3);
   border-bottom: var(--bd);
 }
 
@@ -566,18 +574,28 @@ a.pd-row-link:focus-visible {
   margin: 0;
   text-transform: none;
   font-family: var(--font-body);
-  font-size: var(--fs-md);
-  font-weight: 700;
-  line-height: 1.35;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  line-height: var(--lh-body);
   color: var(--ink-strong);
   overflow-wrap: anywhere;
 }
 
-.pd-split-open {
+.pd-split-title-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-1) var(--sp-3);
+  min-width: 0;
+}
+.pd-split-prompt-count {
+  white-space: nowrap;
   font-family: var(--font-mono);
   font-size: var(--fs-label);
-  text-transform: lowercase;
+  color: var(--ink-3);
 }
+.pd-split-open { flex: none; }
+.pd-split-open svg { width: var(--ic-sm); height: var(--ic-sm); }
 
 .pd-split-collapsed,
 .pd-split-empty {
@@ -588,6 +606,13 @@ a.pd-row-link:focus-visible {
   color: var(--ink-2);
 }
 
-@media (width < 768px) {
+@container prompt-digest (width < 56rem) {
   .pd-split { grid-template-columns: minmax(0, 1fr); }
+  .pd-split-pane { padding: 0; border-inline-start: 0; }
+}
+@container prompt-digest (width < 40rem) {
+  .pd-head { grid-template-columns: minmax(0, 1fr); }
+  .pd-counts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .pd-count:last-child { grid-column: 1 / -1; }
+  .pd-village { justify-self: start; }
 }
