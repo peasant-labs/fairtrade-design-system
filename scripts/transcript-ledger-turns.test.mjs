@@ -106,6 +106,26 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     ...extra,
   }))
 
+  const { fixture: nesting } = loadFixturePair('scripts/testdata/transcript-nesting.yaml', 'scripts/testdata/transcript-nesting.manifest.yaml', {
+    cases: 'requiredCases',
+  })
+  for (const theme of nesting.themes) for (const presentation of nesting.presentations) {
+    const nestedVM = adaptTranscript(nesting.payload)
+    const mounted = await mountViewer(presentation, { viewModel: nestedVM, theme })
+    const articles = [...mounted.container.querySelectorAll('article[data-turn]')]
+    report.check(same(articles.map(el => Number(el.dataset.turn)), nesting.payload.turns.map(turn => turn.index)), `${theme}/${presentation}: nesting preserves source order and turn navigation identities`)
+    for (const row of nesting.cases) {
+      const article = mounted.container.querySelector(`#turn-${row.index}`)
+      const inset = presentation === 'ledger' ? row.inset : 0
+      report.check(article?.getAttribute('data-agent-depth') === (inset ? String(row.depth) : null), `${row.name}/${theme}/${presentation}: only nested assistant prose gains its recorded depth marker`)
+      report.check(article?.style.getPropertyValue('--txn-agent-depth') === (inset ? String(inset) : ''), `${row.name}/${theme}/${presentation}: visual nesting caps the inset without changing depth`)
+      report.check(nestedVM.turns.find(turn => turn.index === row.index)?.depth === row.depth, `${row.name}/${theme}/${presentation}: the adapter's original depth remains intact`)
+      report.check(article?.dataset.sourceEntryRef === `nested-entry-${row.index}`, `${row.name}/${theme}/${presentation}: source links keep their original entry identity`)
+      if (inset) report.check(!article.querySelector('.subtask'), `${row.name}/${theme}: ledger nesting has no classic connector container`)
+    }
+    await mounted.unmount()
+  }
+
   for (const row of fixture.cases) {
     if (row.kind === 'classic') {
       const mounted = await mountViewer('classic', { savedLabels: { 1: { outcome: 'good' } } })

@@ -120,6 +120,10 @@ export default function TurnCard({
   const ledgerDetail = ledger && !isUser && !hasProse
   const timeLabel = turn.time || turnTimeLabel(turn.timestamp)
   const isSub = !!turn.depth && turn.depth > 0
+  // Only nested assistant prose draws an inset card. Tool/thinking-only entries
+  // remain inline work, even when their source carries a nesting depth. Clamp
+  // presentation only: the recorded depth remains intact on the turn and DOM.
+  const insetAgent = ledger && turn.role === 'assistant' && isSub && hasProse
   // The assistant is the agent, so a present canonical provider selects its
   // accent. Curated turns may omit provider and use the neutral assistant
   // fallback; a present invalid value fails through providerAccent.
@@ -292,6 +296,8 @@ export default function TurnCard({
   return (
     <article
       className={wrapClass}
+      data-agent-depth={insetAgent ? turn.depth : undefined}
+      style={insetAgent ? { '--txn-agent-depth': Math.min(3, turn.depth) } : undefined}
       aria-labelledby={headingId}
       ref={(el) => registerRef(turn.index, el)}
       data-turn={isEarlier ? undefined : turn.index}

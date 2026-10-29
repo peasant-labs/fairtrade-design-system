@@ -404,6 +404,12 @@ tool output keep their own measures and horizontal scrollers. This is the one do
 to the reading-measure paragraph above; every classic surface keeps `--measure-prose` and
 `--measure-read`.
 
+Nested assistant prose in the ledger uses a small depth-based inset without
+connector lines: `--sp-3` per level on desktop and `--sp-2` on phones. The visual
+inset stops growing after three levels; recorded depth and source identity remain
+unchanged. Tool/thinking-only entries remain inline work. Classic cards and the
+publish chooser's hierarchy retain their existing presentation.
+
 The presentation site also uses a locked three-tier heading ladder (`--fs-group`, `--fs-section`,
 `--fs-sub`) that does not drift down the page.
 

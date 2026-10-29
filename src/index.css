@@ -3851,6 +3851,12 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
    themes free. */
 .txn-ledger { --txn-reader-width: 840px; }
 .txn-turnwrap-ledger { max-inline-size: var(--txn-reader-width); margin-inline: auto; }
+/* Nested agent prose keeps the reader column's outer edge and gains a small
+   inset, with no connector spine. The unitless depth is visually capped at 3. */
+.txn-turnwrap-ledger[data-agent-depth] { padding-inline-start: calc(var(--sp-3) * var(--txn-agent-depth)); }
+@media (width < 768px) {
+  .txn-turnwrap-ledger[data-agent-depth] { padding-inline-start: calc(var(--sp-2) * var(--txn-agent-depth)); }
+}
 /* Width is driven by the separator itself. The global reduced-motion duration rule
    must not create an implicit `all` transition on its otherwise static boxes. */
 .txn-ledger :is(.txn-turnwrap-ledger, .txn-turnrow, .txn-turn-rule, .txn-phase) { transition-property: none; }

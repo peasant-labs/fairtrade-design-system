@@ -1,0 +1,26 @@
+{
+  "requiredCases": [
+    "root user stays on the reading edge",
+    "root assistant stays on the reading edge",
+    "first nested agent has one inset",
+    "second nested agent has two insets",
+    "third nested agent has three insets",
+    "deeper agent retains depth with capped visual inset",
+    "nested tool-only entry stays inline",
+    "nested thinking-only entry stays inline",
+    "nested user does not become an agent inset",
+    "nested system entry does not become an agent inset"
+  ],
+  "requiredThemes": [
+    "dark",
+    "light"
+  ],
+  "requiredPresentations": [
+    "ledger",
+    "classic"
+  ],
+  "requiredViewports": [
+    "desktop",
+    "phone"
+  ]
+}
