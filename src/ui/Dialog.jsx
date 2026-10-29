@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 
 /* a real, accessible modal dialog. role=dialog + aria-modal + aria-labelledby;
@@ -9,17 +10,19 @@ import { X } from 'lucide-react'
    the close button is disabled. */
 export default function Dialog({ open, onClose, title, labelId = 'dlg-title', children, footer, returnFocusRef, size = 'default', className = '', dismissible = true }) {
   const dialogRef = useRef(null)
+  const [portalTarget, setPortalTarget] = useState(null)
+  useEffect(() => { setPortalTarget(document.body) }, [])
   const onCloseRef = useRef(onClose)
   onCloseRef.current = dismissible ? onClose : () => {}
   const rfRef = useRef(returnFocusRef)
   rfRef.current = returnFocusRef
 
   useEffect(() => {
-    if (!open) return
+    if (!open || !portalTarget) return
     const prevFocus = document.activeElement
     const dlg = dialogRef.current
     const focusables = () =>
-      [...dlg.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+      [...dlg.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
         .filter((el) => el.offsetParent !== null || el === document.activeElement)
     ;(focusables()[0] || dlg).focus()
 
@@ -65,10 +68,10 @@ export default function Dialog({ open, onClose, title, labelId = 'dlg-title', ch
       const target = (rf && rf.current) || prevFocus
       if (target && typeof target.focus === 'function') requestAnimationFrame(() => target.focus())
     }
-  }, [open])
+  }, [open, portalTarget])
 
-  if (!open) return null
-  return (
+  if (!open || !portalTarget) return null
+  return createPortal(
     <div className="dlg-overlay" onMouseDown={(e) => { if (dismissible && e.target.classList.contains('scrim')) onClose() }}>
       <div className="scrim" />
       <div className={['dialog', 'framed', size === 'wide' ? 'dialog-wide' : '', className].filter(Boolean).join(' ')} ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={labelId} tabIndex={-1}>
@@ -81,6 +84,7 @@ export default function Dialog({ open, onClose, title, labelId = 'dlg-title', ch
         <div className="dlg-body">{children}</div>
         {footer && <div className="dlg-foot">{footer}</div>}
       </div>
-    </div>
+    </div>,
+    portalTarget,
   )
 }

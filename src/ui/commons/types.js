@@ -181,6 +181,9 @@ export const COLLECTIVE_ROLES = Object.freeze([
  * @typedef {object} ExploreSurfaceProps
  * @property {ExplorePayload} data
  * @property {string} [className]
+ * @property {import('react').ReactNode} [title] Browse title; null when the host already supplies its heading.
+ * @property {import('react').ReactNode} [resultsFooter] Additional session groups after the results and pagination, inside the result column.
+ * @property {'grid'|'list'} [defaultLayout] Initial result layout; grid by default. Users can still switch views.
  * @property {(filters: ExploreFilters) => void} [onFiltersChange]
  * @property {(transcript: ExploreTranscriptPayload) => void} [onOpenTranscript]
  * @property {(owner: ExploreOwnerPayload) => void} [onOpenProfile]

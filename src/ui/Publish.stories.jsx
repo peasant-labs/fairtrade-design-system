@@ -100,6 +100,7 @@ export const PopupScanFailed = {
   render: () => <Popup state="scan-failed" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement.ownerDocument.body)
+    await canvas.findByRole('dialog')
     await expect(canvas.getByRole('button', { name: 'publish to 2 collectives' })).toBeDisabled()
     await expect(canvas.getByRole('button', { name: 're-scan' })).toBeEnabled()
     await expect(canvas.getByRole('alert')).toHaveTextContent('the scan failed, so publish is off.')
@@ -113,6 +114,7 @@ export const PopupCheckingStage = {
   render: () => <Popup state="checking" checking={{ stage: 'scanning 468 turns…', progress: { done: 120, total: 468 }, note: 'taking longer than usual (12s): every turn is checked for secrets and personal details on this computer before anything is sent. publish waits for it.' }} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement.ownerDocument.body)
+    await canvas.findByRole('dialog')
     const status = canvas.getByRole('status')
     await expect(status).toHaveTextContent('scanning 468 turns…')
     await expect(status).toHaveTextContent('120 of 468')
@@ -127,6 +129,7 @@ export const PopupScanFailedDetail = {
   render: () => <Popup state="scan-failed" scan={{ ...SCAN, failure: 'this session needs a quick re-index before it can be published', failureAction: { label: 're-index and retry', onSelect: fn() }, failureDetail: 'index out of date: 3 turns changed since the last index.\nre-index ran: no; another index update was running on this computer.\nfix: re-index this session, then scan again.' }} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement.ownerDocument.body)
+    await canvas.findByRole('dialog')
     await expect(canvas.getByRole('alert')).toHaveTextContent('this session needs a quick re-index')
     await expect(canvas.getByRole('button', { name: 're-index and retry' })).toBeEnabled()
     await userEvent.click(canvas.getByText('details'))
@@ -139,6 +142,7 @@ export const PopupReady = {
   render: () => <Popup state="ready" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement.ownerDocument.body)
+    await canvas.findByRole('dialog')
     await userEvent.click(canvas.getByRole('button', { name: 'show matches' }))
     await expect(canvas.getAllByText('redacted').length).toBeGreaterThan(0)
     await expect(canvas.queryByRole('button', { name: 'keep' })).toBeNull()
@@ -151,6 +155,7 @@ export const PopupKept = {
   render: () => <Popup state="ready" scan={{ ...SCAN, matches: SCAN.matches.map((match) => ({ ...match, kept: match.id === 'm2' })) }} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement.ownerDocument.body)
+    await canvas.findByRole('dialog')
     await expect(canvas.getByText(/kept un-redacted, will be sent/)).toBeInTheDocument()
     await expect(canvas.getByRole('button', { name: 'hide matches' })).toHaveAttribute('aria-expanded', 'true')
   },
@@ -160,6 +165,7 @@ export const PopupUnscanned = {
   render: () => <Popup state="ready" scan={undefined} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement.ownerDocument.body)
+    await canvas.findByRole('dialog')
     await expect(canvas.getByText(/not scanned yet, so publish is off/)).toBeInTheDocument()
     await expect(canvas.getByRole('button', { name: 'publish to 2 collectives' })).toBeDisabled()
   },
@@ -177,6 +183,7 @@ export const PopupStoppedDetail = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement.ownerDocument.body)
+    await canvas.findByRole('dialog')
     await expect(canvas.getByText('stopped while reading your collectives.')).toBeInTheDocument()
     await expect(canvas.queryAllByText(/review who can read it/)).toHaveLength(0)
     await userEvent.click(canvas.getByText('details'))
@@ -195,6 +202,7 @@ export const PopupCollectivesFailed = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement.ownerDocument.body)
+    await canvas.findByRole('dialog')
     await expect(canvas.getByText('can’t load your collectives right now')).toBeInTheDocument()
     await expect(canvas.getByRole('button', { name: 'retry loading your collectives' })).toBeEnabled()
     await expect(canvas.getByRole('button', { name: 'publish' })).toBeDisabled()
@@ -210,6 +218,7 @@ export const PopupScanNote = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement.ownerDocument.body)
+    await canvas.findByRole('dialog')
     await expect(canvas.getByText(/copy being published stops before it/)).toBeInTheDocument()
     await expect(canvas.getByRole('button', { name: 'publish to 2 collectives' })).toBeEnabled()
   },

@@ -1,5 +1,6 @@
 # Required-NAME manifest for repo-picker.yaml: deletion protection.
 requiredCaseNames:
+  - repositories can be edited directly in a page
   - the count
   - search
   - select all on a filtered list

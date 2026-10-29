@@ -49,5 +49,5 @@ mutations:
   - name: a settings switch repeats its state in words
     file: src/ui/Settings.jsx
     find: "stateMarker={false} "
-    replace: ""
+    replace: "stateMarker={true} "
     expectedDiagnostic: "a settings switch shows no on/off word"

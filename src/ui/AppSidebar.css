@@ -229,7 +229,7 @@ span.asb-item { cursor: default; }
 }
 .asb-ext + .asb-sr + .asb-tag { margin-left: var(--sp-2); }
 /* the shortcuts sit under the brand, a hairline between them and the app's pages */
-.asb-utils { padding-bottom: var(--sp-3); border-bottom: var(--bd); }
+.asb-utils { margin-top: auto; padding-top: var(--sp-3); border-top: var(--bd); }
 
 /* ── account row ──────────────────────────────────────────────────────── */
 /* the footer: the theme toggle, then the account, pinned to the column's foot */

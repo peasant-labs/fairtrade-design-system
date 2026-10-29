@@ -155,7 +155,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       } else if (row.kind === 'soon') {
         const mounted = await mount(React.createElement(AppSidebar, propsFor(row)))
         const entries = [...mounted.container.querySelectorAll('.asb-utils .asb-app')]
-        const soon = entries.find((item) => item.querySelector('.asb-label')?.textContent === 'community')
+        const soon = entries.find((item) => item.querySelector('.asb-label')?.textContent === 'future')
         const actual = soon && {
           tag: soon.tagName,
           disabled: soon.getAttribute('aria-disabled'),
@@ -196,8 +196,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
             ...(foot ? [tokenOf(foot)] : []),
           ]
           orders.push(order)
-          const lastApp = [...mounted.container.querySelectorAll('.asb-utils .asb-app .asb-label')].at(-1)?.textContent
-          report.check(lastApp === row.lastApp, `${name}: the last switcher entry in ${config.app} must be ${row.lastApp}, received ${lastApp}`)
+          const lastApp = [...mounted.container.querySelectorAll('.asb-utils .asb-app .asb-label')].at(-1)?.textContent ?? null
+          report.check(lastApp === row.lastApp[config.app], `${name}: the last switcher entry in ${config.app} must be ${row.lastApp}, received ${lastApp}`)
           await mounted.unmount()
         }
         for (const [index, order] of orders.entries()) {

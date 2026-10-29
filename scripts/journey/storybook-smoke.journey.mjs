@@ -64,7 +64,7 @@ test.describe('storybook smoke', () => {
         await page.waitForFunction(
           () => {
             const r = document.querySelector('#storybook-root,#root')
-            return r && r.childElementCount > 0
+            return (r && r.childElementCount > 0) || document.querySelector('.dlg-overlay [role="dialog"]') !== null
           },
           null,
           { timeout: 15000 },
@@ -72,7 +72,7 @@ test.describe('storybook smoke', () => {
         await page.waitForTimeout(50)
         const empty = await page.evaluate(() => {
           const r = document.querySelector('#storybook-root,#root')
-          return !r || r.childElementCount === 0
+          return (!r || r.childElementCount === 0) && !document.querySelector('.dlg-overlay [role="dialog"]')
         })
         if (empty) errs.push('smoke: empty root')
         if (errs.length) failures.push({ id, errs: errs.slice(0, 2) })

@@ -21,13 +21,13 @@ responsive:
   - name: collective grid
     file: src/index.css
     selector: .cex-coll-grid
-    desktop: 'grid-template-columns: 1fr 1fr'
+    desktop: 'grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)'
     query: '@media (width < 768px)'
     narrow: 'grid-template-columns: 1fr'
   - name: transcript grid
     file: src/index.css
     selector: .cex-grid
-    desktop: 'grid-template-columns: 1fr 1fr'
+    desktop: 'grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)'
     query: '@media (width < 768px)'
     narrow: 'grid-template-columns: 1fr'
 publishContract:

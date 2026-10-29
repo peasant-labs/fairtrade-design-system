@@ -63,6 +63,8 @@ export const FAIRTEST_PATHS = Object.freeze({
   dispatchManifest: 'scripts/testdata/fairtest-dispatch.manifest.yaml',
   storyInventoryCorpus: 'scripts/testdata/component-story-inventory.yaml',
   storyInventoryManifest: 'scripts/testdata/component-story-inventory.manifest.yaml',
+  componentRootCorpus: 'scripts/testdata/component-portal-roots.yaml',
+  componentRootManifest: 'scripts/testdata/component-portal-roots.manifest.yaml',
   publishKeyboardCorpus: 'scripts/testdata/publish-keyboard.yaml',
   publishKeyboardManifest: 'scripts/testdata/publish-keyboard.manifest.yaml',
 })

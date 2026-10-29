@@ -4,7 +4,9 @@ import { readFileSync } from 'node:fs'
 import * as ui from '@peasant-labs/fairtrade/ui'
 import * as schema from '@peasant-labs/schema'
 import React from 'react'
-import { renderToStaticMarkup } from 'react-dom/server'
+import { createRoot } from 'react-dom/client'
+import { act } from 'react'
+import { JSDOM } from 'jsdom'
 
 const fixture = JSON.parse(readFileSync(new URL('./redaction-categories.json', import.meta.url), 'utf8'))
 for (const name of fixture.exports) assert.equal(ui[name], schema[name], `${name}: unchanged Schema re-export`)
@@ -33,15 +35,27 @@ for (const row of fixture.invalidLabels) {
 }
 console.log('packed /ui category bindings, inventories, parsers, converters and runtime refusal verified')
 const recovery = JSON.parse(readFileSync(new URL('./publish-recovery.json', import.meta.url), 'utf8'))
+const dom = new JSDOM('<!doctype html><html><body></body></html>', { pretendToBeVisual: true })
+globalThis.window = dom.window
+globalThis.document = dom.window.document
+globalThis.HTMLElement = dom.window.HTMLElement
+globalThis.requestAnimationFrame = dom.window.requestAnimationFrame.bind(dom.window)
+globalThis.IS_REACT_ACT_ENVIRONMENT = true
 for (const row of recovery.cases) {
-  const html = renderToStaticMarkup(React.createElement(ui.PublishDialog, {
+  const host = document.createElement('div')
+  document.body.appendChild(host)
+  const root = createRoot(host)
+  await act(async () => root.render(React.createElement(ui.PublishDialog, {
     open: true, state: 'stopped', title: 'Recorded session', onClose() {}, scan: row.scan,
     access: row.audience ? [{ id: 'readers', name: 'Readers' }] : [],
     onRecover: row.callback === 'recover' || row.callback === 'both' ? () => {} : undefined,
     onRetry: row.callback === 'retry' || row.callback === 'both' ? () => {} : undefined,
-  }))
-  const button = html.match(/<button[^>]*class="btn btn-primary btn-sm"[^>]*>/)?.[0]
+  })))
+  const button = document.body.querySelector('.pub-dialog .btn-primary.btn-sm')
   assert.ok(button, `${row.name}: packed retry action exists`)
-  assert.equal(button.includes('disabled=""'), !row.allowed, `${row.name}: packed recovery/retry readiness`)
+  assert.equal(button.disabled, !row.allowed, `${row.name}: packed recovery/retry readiness`)
+  await act(async () => root.unmount())
+  host.remove()
 }
+dom.window.close()
 console.log('packed /ui prerequisite recovery and strict publication retry readiness verified')

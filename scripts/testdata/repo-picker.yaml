@@ -22,6 +22,10 @@ owners:
 initialSelected: [acme/ingest-api, acme/web]
 
 cases:
+  - name: repositories can be edited directly in a page
+    inline: true
+    steps: [clear, reset]
+    expected: {count: 2 of 8 selected, save: save, dialog: false}
   - name: the count
     steps: []
     expected: {visible: [acme/ingest-api, acme/web, acme/worker, acme/sdk-js, acme/sdk-go, acme/infra, vitor/notes, vitor/dotfiles], count: 2 of 8 selected, save: save}

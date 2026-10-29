@@ -4,6 +4,35 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.52 - 2026-10-29
+
+### Changed
+
+- Place app pages above search and documentation shortcuts and omit the unavailable community destination.
+- Use quieter dark-theme dividers while preserving control and text contrast.
+- Keep switch labels stable by omitting redundant state words by default.
+- Align discovery transcript rows around readable titles, provider metadata and fixed-width metrics.
+- Reduce transcript turn-header height and use consistently padded identity tiles.
+- Keep discovery results visible on phones behind a compact filter disclosure.
+- Limit discovery layout controls to grid and list; author profiles remain available from their normal links.
+- Clarify transcript selection and prompt reading with aligned digest statistics and row actions.
+
+### Added
+
+- Inline repository selection for collective settings.
+- Embedded discovery headings, initial layout and result-footer composition options.
+
+### Fixed
+
+- Center dialogs against the viewport even inside transformed app containers, preserving keyboard focus and return focus.
+- Keep helper-session disclosure controls stable when their labels change.
+- Fill repository group headings across the complete row.
+- Preserve standard input, textarea and select styles when consumers pass custom classes.
+- Retain the same reading position between consecutive transcript-width adjustments.
+- Keep transcript footer controls in a single scrolling row and adapt shortcut hints to the actual preview width.
+- Make scrollable before-and-after redaction examples keyboard reachable.
+- Leave Mermaid as an external runtime dependency so consuming Next.js builds resolve its graph dependencies correctly.
+
 ## 0.0.51 - 2026-10-28
 
 ### Added

@@ -69,6 +69,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
 
     const pane = root.querySelector('.pd-split-pane')
     report.check(text(pane?.querySelector('.pd-split-pane-title')) === row.pane.title, `${row.name}: pane title expected ${JSON.stringify(row.pane.title)}, received ${JSON.stringify(text(pane?.querySelector('.pd-split-pane-title')))}`)
+    report.check(text(pane?.querySelector('.pd-split-prompt-count')) === row.options[row.selected].count, `${row.name}: selected pane shows its own prompt count`)
     const prompts = [...(pane?.querySelectorAll('.pd-prompt-text') ?? [])].map(text)
     report.check(JSON.stringify(prompts) === JSON.stringify(row.pane.prompts), `${row.name}: pane prompts expected ${JSON.stringify(row.pane.prompts)}, received ${JSON.stringify(prompts)}`)
     if (row.pane.collapsed) report.check(text(pane?.querySelector('.pd-split-collapsed'))?.startsWith(row.pane.collapsed), `${row.name}: a collapsed session states ${JSON.stringify(row.pane.collapsed)}`)

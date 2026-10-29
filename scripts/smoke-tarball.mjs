@@ -44,6 +44,8 @@ try {
   execFileSync('tar', ['-xzf', tgz, '-C', pkgDir, '--strip-components=1'], { stdio: 'inherit' })
 
   const hostPackages = new Set([
+    // DOM runtime for the mounted packed-dialog recovery checks.
+    'jsdom',
     ...Object.keys(pkg.dependencies ?? {}),
     ...Object.keys(pkg.peerDependencies ?? {}),
   ])

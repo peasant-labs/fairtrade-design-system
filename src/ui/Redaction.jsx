@@ -222,7 +222,7 @@ function MatchCard({ match, onToggle, readOnly = false }) {
       {/* before -> after on the diff chassis. the secret + its redacted form are CODE: mono, never
           lowercased. removed originals use −; kept originals use an eye. the + glyph and state-aware
           sr labels carry the same meaning for AT and for color-blind readers. */}
-      <div className="rdx-pair" role="group" aria-label="before and after redaction">
+      <div className="rdx-pair" tabIndex={0} role="group" aria-label="before and after redaction">
         <div className={`rdx-row rdx-row-del${kept ? ' rdx-row-muted' : ''}`}>
           <span className="rdx-rail" aria-hidden="true" />
           <span className="rdx-glyph" aria-hidden="true">
