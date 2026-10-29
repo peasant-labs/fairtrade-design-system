@@ -13,3 +13,6 @@ requiredCaseKinds:
   phone flagged header: header-phone
   phone ledger folded mark: folded-mark
   axe on the open panel: axe-panel
+# The page mutations that prove the placement gate, by name.
+requiredPageMutationNames:
+  - the badge is back in the actions row

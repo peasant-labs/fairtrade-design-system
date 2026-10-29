@@ -12,7 +12,7 @@ requiredCaseNames:
   - a filtered-out flagged turn leaves only the badge
   - a hidden tool category leaves only the badge
   - earlier history is never marked
-  - condensed header keeps the badge
+  - condensed header folds the badge away with the title
   - zen keeps the badge
 requiredCaseKinds:
   no integrity renders nothing: ledger
@@ -25,7 +25,7 @@ requiredCaseKinds:
   a filtered-out flagged turn leaves only the badge: ledger
   a hidden tool category leaves only the badge: ledger
   earlier history is never marked: ledger
-  condensed header keeps the badge: ledger
+  condensed header folds the badge away with the title: ledger
   zen keeps the badge: ledger
 requiredOutlineCaseNames:
   - a flagged prose turn with work draws one outline
@@ -44,6 +44,7 @@ requiredInteractionNames:
   - integrity added after mount announces once
   - an unflagged thinking-only group keeps its plain structure
   - integrity present at mount fills its status after mount
+  - condensing the header closes an open panel
 requiredInteractionKinds:
   help click opens and closes the panel: help-click
   help keyboard: help-keyboard
@@ -55,13 +56,16 @@ requiredInteractionKinds:
   integrity added after mount announces once: late-arrival
   an unflagged thinking-only group keeps its plain structure: plain-thinking
   integrity present at mount fills its status after mount: status-after-mount
+  condensing the header closes an open panel: fold-closes
 requiredFoldedProseCaseName: a flagged prose turn whose work folds into an earlier group draws one outline
 requiredThinkingCaseName: a flagged turn in a thinking-only group is marked
 
 requiredMutationNames:
   - the badge ignores the hash
   - the folded work loses its mark
-  - the help control is lost when condensed
+  - the badge unmounts when condensed
+  - the badge leaves the title's line
+  - an open panel outlives the fold
   - escape leaves focus in the panel
   - the work block repeats the card outline
   - the status is static text at mount
@@ -79,11 +83,21 @@ mutations:
     find: "flaggedPositions={integrityState?.positions}"
     replace: "flaggedPositions={undefined}"
     expectedDiagnostic: "group-row-2 must be present"
-  - name: the help control is lost when condensed
+  - name: the badge unmounts when condensed
     file: src/ui/transcript/TranscriptViewer.jsx
-    find: "{integrityState && ("
-    replace: "{integrityState && !heroCondensed && ("
-    expectedDiagnostic: "condensed header keeps the badge: badge must be present"
+    find: "{integrityState\n          ? ("
+    replace: "{integrityState && !heroCondensed\n          ? ("
+    expectedDiagnostic: "condensed header folds the badge away with the title: badge must be present"
+  - name: the badge leaves the title's line
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "<div className=\"txn-title-row\">"
+    replace: "<div className=\"txn-title-row-moved\">"
+    expectedDiagnostic: "ledger flagged with matching hash marks listed turns: badge must be present"
+  - name: an open panel outlives the fold
+    file: src/ui/transcript/IntegrityBadge.jsx
+    find: "if (folded) setOpen(false)"
+    replace: ""
+    expectedDiagnostic: "condensing the header closes an open panel"
   - name: escape leaves focus in the panel
     file: src/ui/transcript/IntegrityBadge.jsx
     find: "badgeRef.current?.focus()"

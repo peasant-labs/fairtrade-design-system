@@ -450,8 +450,8 @@ export const PhoneHeader = {
 }
 
 /* ── integrity flag ───────────────────────────────────────────────────────────
-   A served integrity flag draws one outlined badge button at the top right of the title row, which
-   opens a short explanation, and a mark on each flagged turn (a glyph and a word, never a fill).
+   A served integrity flag draws one outlined badge button on the title's line, right after the
+   title (under it on a phone), never in the header's actions row. It opens a short explanation, and a mark on each flagged turn (a glyph and a word, never a fill).
    The reading session flags two turns: an assistant prose turn and the tool-only turn the ledger
    folds into its action block. Without a bound content hash the badge draws alone. There is no
    clean or verified state: a transcript with no flag draws nothing. */
@@ -470,6 +470,8 @@ export const IntegrityFlagged = {
     const canvas = within(canvasElement)
     const help = canvas.getByRole('button', { name: INTEGRITY_COPY.helpName })
     expect(canvasElement.querySelectorAll('.txn-integrity-badge')).toHaveLength(1)
+    expect(help.closest('.txn-integrity').previousElementSibling).toHaveClass('txn-title')
+    expect(help.closest('.txn-actions')).toBeNull()
     expect(canvasElement.querySelectorAll('.txn-integrity-mark').length).toBeGreaterThan(0)
     expect(help).toHaveAttribute('aria-expanded', 'false')
     await userEvent.click(help)
@@ -511,7 +513,10 @@ export const IntegrityPhone = {
   args: integrityArgs,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(canvas.getByRole('button', { name: INTEGRITY_COPY.helpName }))
+    const help = canvas.getByRole('button', { name: INTEGRITY_COPY.helpName })
+    // the badge keeps its words at every width
+    expect(help.querySelector('.txn-integrity-label')).toBeVisible()
+    await userEvent.click(help)
     const panel = await canvas.findByRole('region', { name: INTEGRITY_COPY.panelHeading })
     const rect = panel.getBoundingClientRect()
     const frame = canvasElement.getBoundingClientRect()

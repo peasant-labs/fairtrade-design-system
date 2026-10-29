@@ -5,14 +5,15 @@ import { INTEGRITY_COPY } from './integrity.js'
 /* IntegrityBadge: the transcript's integrity flag: one outlined badge button (the warning glyph,
    the label and a (?) glyph) that discloses a short explanation, and a visually hidden status
    line. DUMB: the host decides whether the flag exists; the badge draws the same panel either
-   way, and the panel holds no link. The badge is the only control: it is named by
-   the help question, which contains its visible label, so the label may shrink away on a narrow
-   header without losing the name. It toggles a panel that stays in the DOM (hidden when closed)
-   so aria-controls always resolves; opening never moves focus, the panel never traps it, and it
-   never opens by itself or on hover. Escape closes it and returns focus to the badge; a pointer
-   down outside closes it and leaves focus where it was. The status line is empty when it first
-   enters the page and is filled a moment later, so a screen reader that watches a live region
-   the badge arrived with still hears it. Every string comes from INTEGRITY_COPY. */
+   way, and the panel holds no link. The badge is the only control: it is named by the help
+   question, which contains its visible label. It toggles a panel that stays in the DOM (hidden
+   when closed) so aria-controls always resolves; opening never moves focus, the panel never traps
+   it, and it never opens by itself or on hover. Escape closes it and returns focus to the badge; a
+   pointer down outside closes it and leaves focus where it was, and so does the host folding the
+   badge out of view (a condensed header), so a panel nobody can see never holds Escape. The status
+   line is empty when it first enters the page and is filled a moment later, so a screen reader
+   that watches a live region the badge arrived with still hears it. Every string comes from
+   INTEGRITY_COPY. */
 
 /** Keep the open panel inside the viewport by the page gutter, shifting it sideways when needed. */
 const VIEWPORT_GUTTER_PX = 16
@@ -23,8 +24,9 @@ const ANNOUNCE_DELAY_MS = 100
 /**
  * @param {object} props
  * @param {number} [props.headingLevel=2]  the panel heading's level, one under the viewer title
+ * @param {boolean} [props.folded=false]  the host has folded the badge out of view; an open panel closes
  */
-export default function IntegrityBadge({ headingLevel = 2 }) {
+export default function IntegrityBadge({ headingLevel = 2, folded = false }) {
   const [open, setOpen] = useState(false)
   const [announced, setAnnounced] = useState(false)
   const rootRef = useRef(null)
@@ -38,6 +40,10 @@ export default function IntegrityBadge({ headingLevel = 2 }) {
     const timer = setTimeout(() => setAnnounced(true), ANNOUNCE_DELAY_MS)
     return () => clearTimeout(timer)
   }, [])
+
+  useEffect(() => {
+    if (folded) setOpen(false)
+  }, [folded])
 
   useEffect(() => {
     if (!open) return undefined

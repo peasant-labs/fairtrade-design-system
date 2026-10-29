@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /* Mounted-source gate for the integrity props of the transcript viewer. Every case mounts the
    REAL viewer (adaptTranscript -> TranscriptViewer) through vite and asserts which integrity
-   controls reach the DOM: the header badge (the one control, which opens its panel), the hidden
+   controls reach the DOM: the badge on the title's line (the one control, which opens its panel,
+   and never in the header's actions row; a condensed header folds it away with the title), the hidden
    status line, the marks on the listed turns and the work group, and nothing at all for an absent
    or malformed value. The interaction rows drive the badge with a pointer and the keyboard. Every
    string is read from INTEGRITY_COPY, so rewording a value there needs no edit here.
@@ -53,7 +54,7 @@ function outlineSelectors() {
   return selectors
 }
 
-const CONTROL_NAMES = ['badge', 'panel', 'status-text', 'mark-1', 'mark-2', 'mark-3', 'mark-4', 'mark-7', 'group-row-2', 'group-head', 'earlier-mark']
+const CONTROL_NAMES = ['badge', 'badge-shown', 'panel', 'status-text', 'mark-1', 'mark-2', 'mark-3', 'mark-4', 'mark-7', 'group-row-2', 'group-head', 'earlier-mark']
 for (const row of fixture.cases) {
   assertFields(row, ['name', 'kind', 'props', 'present', 'absent'], `${FIXTURE} ${row.name}`)
   assertExactNames([...row.present, ...row.absent], CONTROL_NAMES, `${FIXTURE} ${row.name} controls`)
@@ -97,9 +98,14 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   }
   const CONTROLS = {
     'badge': (root) => {
-      const badge = root.querySelector('.txn-header .txn-header-top .txn-actions > .txn-integrity:last-child > button.txn-integrity-badge')
-      const ok = badge && badge.closest('.txn-integrity').querySelectorAll('button').length === 1 && badge.getAttribute('aria-label') === INTEGRITY_COPY.helpName && badge.getAttribute('aria-expanded') === 'false' && text(badge) === INTEGRITY_COPY.badgeLabel
+      /* on the title's line: the title, then the badge, inside the header's details; never in the actions row */
+      const badge = root.querySelector('.txn-header .txn-header-details > .txn-title-row > .txn-title + .txn-integrity:last-child > button.txn-integrity-badge')
+      const ok = badge && root.querySelector('.txn-header .txn-actions .txn-integrity') === null && root.querySelectorAll('.txn-integrity').length === 1 && badge.closest('.txn-integrity').querySelectorAll('button').length === 1 && badge.getAttribute('aria-label') === INTEGRITY_COPY.helpName && badge.getAttribute('aria-expanded') === 'false' && text(badge) === INTEGRITY_COPY.badgeLabel
       return ok ? badge : null
+    },
+    'badge-shown': (root) => {
+      const badge = CONTROLS.badge(root)
+      return badge && !badge.closest('[inert], [aria-hidden="true"], [hidden]') ? badge : null
     },
     'panel': (root) => {
       const panel = root.querySelector('.txn-integrity-panel')
@@ -121,6 +127,17 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     }
   }
 
+  /* the stream reports a long scroll and moves past the sticky threshold, so the header condenses */
+  async function condense(mounted) {
+    const stream = mounted.container.querySelector('.txn-stream')
+    Object.defineProperty(stream, 'scrollHeight', { configurable: true, get: () => 6000 })
+    Object.defineProperty(stream, 'clientHeight', { configurable: true, get: () => 400 })
+    await mounted.act(() => {
+      stream.scrollTop = 240
+      stream.dispatchEvent(new window.Event('scroll', { bubbles: false }))
+    })
+  }
+
   async function mountViewer(props = {}, { condensed = false } = {}) {
     const { hashes, integrity, toolcalls, ...rest } = props
     const filters = toolcalls === false ? { ...FILTERS, categories: { ...FILTERS.categories, toolcalls: false } } : undefined
@@ -135,15 +152,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       ...rest,
     }
     const mounted = await mount(React.createElement(TranscriptViewer, viewerProps))
-    if (condensed) {
-      const stream = mounted.container.querySelector('.txn-stream')
-      Object.defineProperty(stream, 'scrollHeight', { configurable: true, get: () => 6000 })
-      Object.defineProperty(stream, 'clientHeight', { configurable: true, get: () => 400 })
-      await mounted.act(() => {
-        stream.scrollTop = 240
-        stream.dispatchEvent(new window.Event('scroll', { bubbles: false }))
-      })
-    }
+    if (condensed) await condense(mounted)
     await mounted.settle(SETTLE_MS)
     return mounted
   }
@@ -350,6 +359,19 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(text(status) === INTEGRITY_COPY.statusText, `${row.name}: the status line must read statusText after mount`)
       await act(async () => root.unmount())
       container.remove()
+    } else if (row.kind === 'fold-closes') {
+      /* the stream scrolls under an open panel: the header folds the badge away, and the panel closes with it */
+      const mounted = await mount(viewerElement(FLAGGED))
+      await mounted.settle(SETTLE_MS)
+      const help = helpOf(mounted.container)
+      const panel = panelOf(mounted.container)
+      await mounted.act(() => click(window, help))
+      report.check(!panel.hidden, `${row.name}: the panel is open before the header condenses`)
+      await condense(mounted)
+      await mounted.settle(SETTLE_MS)
+      report.check(!!mounted.container.querySelector('.txn-app-condensed'), `${row.name}: the fixture must condense the header`)
+      report.check(panel.hidden && help.getAttribute('aria-expanded') === 'false', `${row.name}: condensing the header closes the open panel`)
+      await mounted.unmount()
     } else {
       throw new Error(`${FIXTURE}: unknown interaction kind ${JSON.stringify(row.kind)}`)
     }

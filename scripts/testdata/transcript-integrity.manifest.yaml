@@ -44,7 +44,7 @@ requiredCssCaseNames:
   - the badge keeps the control height and width
   - the warning glyph is the warning colour
   - the open badge takes the elevated fill
-  - a narrow header shows the compact badge
+  - the badge wraps beside the title one step from it
   - the panel is capped between the phone gutters
   - a flagged card is drawn with a dashed warning outline
   - the mark icon is the warning colour
@@ -67,7 +67,7 @@ requiredMutationNames:
   - the panel is never hidden
   - the badge never reports expanded
   - hover opens the panel
-  - the badge label never compacts
+  - the title row loses its step
   - escape does not return focus
   - an outside pointer down does not close
   - the flagged class is dropped
@@ -110,11 +110,11 @@ mutations:
     find: "onClick={() => setOpen((value) => !value)}"
     replace: "onClick={() => setOpen((value) => !value)} onPointerOver={() => setOpen(true)}"
     expectedDiagnostic: "hover and focus open nothing"
-  - name: the badge label never compacts
+  - name: the title row loses its step
     file: src/index.css
-    find: ".txn-integrity-badge > .txn-integrity-label { display: none; }"
-    replace: ".txn-integrity-badge > .txn-integrity-label { display: inline; }"
-    expectedDiagnostic: "must declare display: none"
+    find: ".txn-title-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-4);"
+    replace: ".txn-title-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2);"
+    expectedDiagnostic: "must declare gap: var(--sp-4)"
   - name: escape does not return focus
     file: src/ui/transcript/IntegrityBadge.jsx
     find: "badgeRef.current?.focus()"

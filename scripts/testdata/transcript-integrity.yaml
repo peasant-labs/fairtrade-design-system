@@ -189,9 +189,9 @@ cssCases:
   - name: the open badge takes the elevated fill
     selector: '.txn-integrity-badge[aria-expanded="true"]'
     includes: ["background: var(--surface-2)"]
-  - name: a narrow header shows the compact badge
-    selector: ".txn-integrity-badge > .txn-integrity-label"
-    includes: ["display: none"]
+  - name: the badge wraps beside the title one step from it
+    selector: ".txn-title-row"
+    includes: ["display: flex", "flex-wrap: wrap", "gap: var(--sp-4)"]
   - name: the panel is capped between the phone gutters
     selector: ".txn-integrity-panel"
     includes: ["inline-size: var(--measure-read)", "max-inline-size: calc(100vw - 2 * var(--sp-4))"]

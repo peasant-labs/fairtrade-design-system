@@ -572,17 +572,21 @@ render the same system.
 - **State:** outcome states (redacted, partial, failed) always pair an icon with the word.
 
 ### Integrity flag
-- **Badge:** drawn only for a served flag, at the top right of the viewer's title row: one outlined
-  button reading the warning glyph, the words suspicious transcript and a (?) glyph. No fill at
-  rest, never amber-filled; the edge and the warning glyph are `--warning`, the words are `--ink`
-  and the (?) glyph is `--ink-2`. It is the control height, so 44px on a coarse pointer.
+- **Badge:** drawn only for a served flag, inline to the right of the transcript title on the
+  title's line, one `--sp-4` (16px) after its text: one outlined button reading the warning glyph,
+  the words suspicious transcript and a (?) glyph. No fill at rest, never amber-filled; the edge
+  and the warning glyph are `--warning`, the words are `--ink` and the (?) glyph is `--ink-2`. It
+  is the control height, so 44px on a coarse pointer.
+- **Placement:** never in the header's actions row, so the host's actions (not published, publish)
+  hold the same place whether or not a transcript is flagged. A title that fills its line, and
+  every header narrower than 768px, wraps the badge under the title at its left edge, one `--sp-4`
+  below. The badge keeps its words at every width. It sits with the title in the part of the header
+  that folds away on scroll, so a condensed header does not show it; the turn marks stay.
 - **Help:** the badge is the one control. Its accessible name is the help question, which contains
-  the visible words, and it opens a short explanation panel (`aria-expanded`, `aria-controls`). It
-  never opens on its own or on hover, never moves focus, and Escape or a press outside closes it;
-  Escape returns focus to the badge.
-- **Narrow header:** below 768px the words leave and the badge keeps its two glyphs, so the badge
-  and the host's header actions share one line on a phone without horizontal scroll. The accessible
-  name is unchanged.
+  the visible words, and it opens a short explanation panel (`aria-expanded`, `aria-controls`) that
+  stays inside the viewport by the page gutter. It never opens on its own or on hover, never moves
+  focus, and Escape or a press outside closes it; Escape returns focus to the badge. Folding the
+  header away closes it too.
 - **Wording:** every string the badge, the panel and the turn marks show lives in `INTEGRITY_COPY`
   (`src/ui/transcript/integrity.js`), the one place to edit it.
 - **Turn mark:** a flagged turn carries the same glyph and the word flagged on its head, so the cue

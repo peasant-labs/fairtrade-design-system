@@ -1398,14 +1398,21 @@ export default function TranscriptViewer({
 
             {!mobile && moreActions}
             </>)}
-            {integrityState && (
-              <IntegrityBadge headingLevel={pageLevel + 1} />
-            )}
           </div>
         </div>
 
         <Collapsible open={!heroCondensed} keepMounted className="txn-header-details">
-        <TitleHeading className="txn-title" title={title}>{title}</TitleHeading>
+        {/* a served integrity flag draws its badge on the title's line, one step after the text, and
+            wraps under it when the title fills the line or the screen is narrow; never in the
+            actions row, so the host's actions hold their place. It folds away with the title. */}
+        {integrityState
+          ? (
+            <div className="txn-title-row">
+              <TitleHeading className="txn-title" title={title}>{title}</TitleHeading>
+              <IntegrityBadge headingLevel={pageLevel + 1} folded={heroCondensed} />
+            </div>
+          )
+          : <TitleHeading className="txn-title" title={title}>{title}</TitleHeading>}
         {/* an optional one-line deck under the title (ledger reads it as the transcript's
             provenance line); render-when-supplied so classic is untouched. A div, not a
             paragraph: the prop takes a node, and a composed deck may hold block content. */}
