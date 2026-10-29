@@ -170,6 +170,9 @@ for (const row of fixture.cases) {
       expect(m.badgeInTop, `${context}: the badge sits in the header's top row ${JSON.stringify(m)}`).toBe(true)
       expect(m.badgeInFooter, `${context}: the badge does not sit in the footer`).toBe(false)
       expect(m.buttons, `${context}: the badge is the one control`).toBe(1)
+      expect(m.hostActions, `${context}: the demo header carries host actions beside the badge`).toBeGreaterThan(0)
+      /* one line: the host actions and the badge share one centre line */
+      for (const item of m.rows) expect(Math.abs(item.mid - m.badgeMid), `${context}: ${item.cls} shares the badge's line ${JSON.stringify(m.rows)}`).toBeLessThanOrEqual(1)
       expect(m.right, `${context}: the badge stays inside the header row ${JSON.stringify(m)}`).toBeLessThanOrEqual(m.topRight + 0.5)
       expect(m.size.w, `${context}: the badge is at least 44px wide`).toBeGreaterThanOrEqual(44)
       expect(m.size.h, `${context}: the badge is at least 44px tall`).toBeGreaterThanOrEqual(44)

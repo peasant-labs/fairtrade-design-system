@@ -3,8 +3,8 @@
 #   kind: header-desktop   the badge, the one control, sits at the right end of the header's top row,
 #                          outlined in the warning color, with both glyphs and its whole label
 #   kind: classic-turns    classic cards: two marks, one dashed outline per flagged card
-#   kind: header-phone     390px touch: the badge sits in the top row with no horizontal overflow;
-#                          the badge reaches 44px; the panel opens inside the
+#   kind: header-phone     390px touch: the badge and the host's header actions share one line with
+#                          no horizontal overflow; the badge reaches 44px; the panel opens inside the
 #                          16px gutters without horizontal scroll; a second tap closes it
 #   kind: folded-mark      the collapsed ledger work group still shows its mark
 #   kind: axe-panel        axe finds nothing in the header with the panel open

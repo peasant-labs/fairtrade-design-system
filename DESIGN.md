@@ -580,6 +580,9 @@ render the same system.
   the visible words, and it opens a short explanation panel (`aria-expanded`, `aria-controls`). It
   never opens on its own or on hover, never moves focus, and Escape or a press outside closes it;
   Escape returns focus to the badge.
+- **Narrow header:** below 768px the words leave and the badge keeps its two glyphs, so the badge
+  and the host's header actions share one line on a phone without horizontal scroll. The accessible
+  name is unchanged.
 - **Wording:** every string the badge, the panel and the turn marks show lives in `INTEGRITY_COPY`
   (`src/ui/transcript/integrity.js`), the one place to edit it.
 - **Turn mark:** a flagged turn carries the same glyph and the word flagged on its head, so the cue

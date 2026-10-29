@@ -4139,6 +4139,11 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   .txn-integrity-badge[aria-expanded="true"] { background: var(--surface-2); }
   .txn-integrity-badge:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
   @media (hover: hover) and (pointer: fine) { .txn-integrity-badge:hover { background: var(--surface-hover); } }
+  /* a narrow header keeps the badge and the host's actions on one line: the label leaves and the
+     badge keeps its two glyphs; the accessible name, the help question, still carries the label */
+  @media (width < 768px) {
+    .txn-integrity-badge > .txn-integrity-label { display: none; }
+  }
   .txn-integrity-panel {
     inline-size: var(--measure-read); max-inline-size: calc(100vw - 2 * var(--sp-4)); box-sizing: border-box;
     padding: var(--sp-4); translate: var(--txn-integrity-shift, 0) 0; text-align: start; text-transform: none;
