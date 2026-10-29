@@ -1,7 +1,8 @@
-import { mkdirSync } from 'node:fs'
+import { mkdirSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
-import { loadFixturePair } from '../mounted-parts.mjs'
+import { loadFixturePair, loadStrictYaml, ROOT } from '../mounted-parts.mjs'
+import { integrityFlagged } from '../../src/mockups/inuse/integrity-fixture.js'
 import { INTEGRITY_COPY } from '../../src/ui/transcript/integrity.js'
 
 /* The integrity badge and the flagged-turn marks on the built in-use demo, on a desktop and a
@@ -10,6 +11,27 @@ import { INTEGRITY_COPY } from '../../src/ui/transcript/integrity.js'
    INTEGRITY_CAPTURE_DIR, when set, also writes <dir>/<name>-<theme>.png of the mounted #inuse
    region (panel open in the phone cases). Leave it unset in CI. */
 const { fixture } = loadFixturePair('scripts/testdata/transcript-integrity-journey.yaml', 'scripts/testdata/transcript-integrity-journey.manifest.yaml', { cases: 'requiredCaseNames' })
+const KINDS = ['header-desktop', 'classic-turns', 'header-phone', 'folded-mark', 'axe-panel']
+const requiredKinds = loadStrictYaml('scripts/testdata/transcript-integrity-journey.manifest.yaml').requiredCaseKinds ?? {}
+for (const row of fixture.cases) {
+  if (requiredKinds[row.name] !== row.kind) throw new Error(`${row.name}: must run kind ${JSON.stringify(requiredKinds[row.name])}, received ${JSON.stringify(row.kind)}`)
+  if (!KINDS.includes(row.kind)) throw new Error(`${row.name}: unknown kind ${JSON.stringify(row.kind)}`)
+}
+const FLAGGED_COUNT = integrityFlagged.flagged_turns.length
+
+/* the newest source the build reads: a dist older than this is not this branch's build */
+const newestSource = (() => {
+  let newest = statSync(`${ROOT}/src/index.css`).mtimeMs
+  const walk = (dir) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isDirectory()) walk(`${dir}/${entry.name}`)
+      else if (/\.(jsx?|css)$/.test(entry.name) && !/\.stories\./.test(entry.name)) newest = Math.max(newest, statSync(`${dir}/${entry.name}`).mtimeMs)
+    }
+  }
+  walk(`${ROOT}/src/ui/transcript`)
+  walk(`${ROOT}/src/mockups/inuse`)
+  return newest
+})()
 const origin = `http://localhost:${process.env.JOURNEY_APP_PORT || 5180}`
 const captureDir = process.env.INTEGRITY_CAPTURE_DIR
 const GUTTER = 16
@@ -25,6 +47,8 @@ for (const row of fixture.cases) {
       ...(row.touch ? { hasTouch: true, isMobile: true } : {}),
     })
     const page = await ctx.newPage()
+    const servedScripts = []
+    page.on('response', (response) => { if (/\.js(\?|$)/.test(response.url()) && response.url().startsWith(origin)) servedScripts.push(response) })
     await page.goto(`${origin}/?fb=off&transcript=${row.query}&theme=${theme}#inuse`)
     await page.locator('#inuse').scrollIntoViewIfNeeded()
     await page.evaluate(() => document.fonts.ready)
@@ -36,6 +60,17 @@ for (const row of fixture.cases) {
       return texts.some((text) => text.includes('txn-integrity-badge'))
     })
     expect(served, `${context}: the served stylesheet must carry the integrity badge rules`).toBe(true)
+
+    /* provenance of the scripts: every served bundle is byte-identical to this worktree's dist, and
+       that dist is not older than the sources it was built from */
+    expect(servedScripts.length, `${context}: the page loaded no script`).toBeGreaterThan(0)
+    for (const response of servedScripts) {
+      const file = `${ROOT}/dist${new URL(response.url()).pathname}`
+      const served = await response.body()
+      expect(served.equals(readFileSync(file)), `${context}: ${response.url()} is not this worktree's dist build`).toBe(true)
+    }
+    const distNewest = Math.max(...readdirSync(`${ROOT}/dist/assets`).map((name) => statSync(`${ROOT}/dist/assets/${name}`).mtimeMs))
+    expect(distNewest, `${context}: dist is older than the sources, so rebuild before the journey`).toBeGreaterThanOrEqual(newestSource)
 
     const badge = page.locator('#inuse .txn-integrity-badge')
     const help = page.locator('#inuse .txn-integrity-help')
@@ -78,28 +113,28 @@ for (const row of fixture.cases) {
       expect(m.border, `${context}: the badge border is the warning color ${JSON.stringify(m)}`).toBe(m.warning)
       expect(m.icons, `${context}: the badge has an icon`).toBeGreaterThanOrEqual(1)
       expect(m.text, `${context}: the badge names the flag`).toBe(INTEGRITY_COPY.badgeLabel)
-      /* ledger: the two flagged turns (the prose turn and the folded tool-only turn) each draw one outline */
+      /* ledger: the flagged turns (the prose turn and the folded tool-only turn) each draw one outline */
       const outlines = await page.evaluate(() => {
         const dashed = [...document.querySelectorAll('#inuse *')].filter((el) => getComputedStyle(el).outlineStyle === 'dashed')
         return { count: dashed.length, flagged: document.querySelectorAll('#inuse .is-flagged').length, outlined: dashed.map((el) => el.className) }
       })
-      expect(outlines.count, `${context}: one dashed outline per flagged turn: the prose turn's card and the folded tool-only turn's row ${JSON.stringify(outlines)}`).toBe(2)
+      expect(outlines.count, `${context}: one dashed outline per flagged turn: the prose turn's card and the folded tool-only turn's row ${JSON.stringify(outlines)}`).toBe(FLAGGED_COUNT)
     }
 
     if (row.kind === 'classic-turns') {
       const marks = page.locator('#inuse .txn-integrity-mark')
-      await expect(marks).toHaveCount(2)
+      await expect(marks).toHaveCount(FLAGGED_COUNT)
       for (const mark of await marks.all()) await expect(mark).toBeVisible()
       const cards = await page.evaluate(() =>
         [...document.querySelectorAll('#inuse .txn-turnwrap.is-flagged')].map((wrap) => {
           const card = wrap.querySelector(':scope > .txn-turn')
           return { style: getComputedStyle(card).outlineStyle, width: getComputedStyle(card).outlineWidth }
         }))
-      expect(cards.length, `${context}: two flagged cards`).toBe(2)
+      expect(cards.length, `${context}: one flagged card per flagged turn`).toBe(FLAGGED_COUNT)
       for (const card of cards) expect(card.style, `${context}: a flagged card outlines dashed ${JSON.stringify(cards)}`).toBe('dashed')
       /* one outline per flagged turn: no element on the mounted page other than the two cards draws one */
       const dashed = await page.evaluate(() => [...document.querySelectorAll('#inuse *')].filter((el) => getComputedStyle(el).outlineStyle === 'dashed').length)
-      expect(dashed, `${context}: exactly one dashed outline per flagged turn`).toBe(2)
+      expect(dashed, `${context}: exactly one dashed outline per flagged turn`).toBe(FLAGGED_COUNT)
     }
 
     if (row.kind === 'header-phone') {

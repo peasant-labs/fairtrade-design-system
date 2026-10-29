@@ -66,6 +66,7 @@ requiredMutationNames:
   - the thinking-only group loses its mark
   - every thinking block gains a row
   - the panel counts marks the list does not draw
+  - a folded prose turn is outlined twice
 mutations:
   - name: the badge ignores the hash
     file: src/ui/transcript/TranscriptViewer.jsx
@@ -112,3 +113,8 @@ mutations:
     find: "tab === 'trace' && viewMode === 'list' && visibleTurns.some("
     replace: "visibleTurns.some("
     expectedDiagnostic: "panel copy follows highlights: a viewer on another tab"
+  - name: a folded prose turn is outlined twice
+    file: src/ui/transcript/WorkGroup.jsx
+    find: " || turnHasProse(turn)"
+    replace: ""
+    expectedDiagnostic: "a flagged prose turn whose work folds into an earlier group draws one outline"
