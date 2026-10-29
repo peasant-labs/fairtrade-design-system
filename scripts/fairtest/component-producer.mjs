@@ -350,7 +350,7 @@ export function createComponentStaticDriver(options = {}) {
       )
     }
     const body = await fetchText(`http://${host}:${port}/iframe.html`)
-    if (!body || !body.includes(`id="${COMPONENT_SELECTORS.root.replace(/^#/, '')}"`)) {
+    if (!body || !body.includes(`id="${COMPONENT_SELECTORS.storyRoot.replace(/^#/, '')}"`)) {
       throw new Error(
         'component producer: readiness probe found no story root for field "ready" at path driver.readiness; ' +
         'repair: rebuild storybook-static/ with pnpm build-storybook so the served iframe carries the story root.',

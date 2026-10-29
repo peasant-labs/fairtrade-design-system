@@ -11,6 +11,8 @@
 // browser; the mounted component proof lives in the component journey.
 
 import assert from 'node:assert/strict'
+import { createRequire } from 'node:module'
+
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, isAbsolute, join, resolve } from 'node:path'
@@ -29,6 +31,10 @@ import { fairtestRelative } from './fairtest-paths.mjs'
 
 /** @type {{ fixture: { cases: Array<{name: string, rowPrefix: string, storyId: string, layout: string, action: string | null, tie: string}> } }} */
 const { fixture: storyInventory } = loadFixturePair(fairtestRelative('storyInventoryCorpus'), fairtestRelative('storyInventoryManifest'))
+
+
+// jsdom ships no declarations; keep its test-only boundary explicitly typed.
+const { JSDOM } = /** @type {{ JSDOM: new (html: string) => { window: { document: Document, close: () => void } } }} */ (createRequire(import.meta.url)('jsdom'))
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..', '..')
@@ -718,7 +724,8 @@ describe('component target registry and theme rows', () => {
     assert.equal(selected.storyId, targets.COMPONENT_STORY_ID)
     assert.ok(Object.isFrozen(selected), 'target record must be frozen')
     assert.deepEqual({ ...selected.selectors }, {
-      root: '#storybook-root',
+      root: '#storybook-root:not(:has(~ .dlg-overlay > [role="dialog"])), body > .dlg-overlay:has(> [role="dialog"])',
+      storyRoot: '#storybook-root',
       trigger: '.sgd-trigger',
       toggle: '[data-testid="session-group-disclosure-toggle"]',
       label: '[data-testid="session-group-disclosure-label"]',
@@ -914,4 +921,20 @@ describe('component target source boundary', () => {
     const result = execFileSync(process.execPath, ['--check', resolve(HERE, TARGET_MODULE)], { encoding: 'utf8' })
     assert.equal(typeof result, 'string')
   })
+})
+
+describe('component portal root selection', () => {
+  const { fixture } = loadFixturePair(fairtestRelative('componentRootCorpus'), fairtestRelative('componentRootManifest'))
+  for (const row of fixture.cases) {
+    it(row.name, () => {
+      const dom = new JSDOM(row.html)
+      try {
+        const selected = [...dom.window.document.querySelectorAll(targets.COMPONENT_SELECTORS.root)]
+        assert.deepEqual(selected.map((node) => node.id), row.roots)
+        const input = { rootChildCount: selected[0]?.childElementCount ?? 0, bodyClass: 'sb-main-centered sb-show-main', errorDisplay: 'none', errorStackText: '' }
+        if (row.mounted) assert.equal(targets.assertComponentMounted(input).mounted, true)
+        else assert.throws(() => targets.assertComponentMounted(input), /empty mounted root/)
+      } finally { dom.window.close() }
+    })
+  }
 })

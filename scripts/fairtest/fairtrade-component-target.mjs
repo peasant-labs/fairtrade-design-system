@@ -61,9 +61,12 @@ export const COMPONENT_ACTION_NAME = 'expand-disclosure'
  * sgd class, root id, or Storybook chrome selector literal of its own.
  */
 export const COMPONENT_SELECTORS = Object.freeze({
-  // The Storybook story root. It exists statically and empty, so attachment
-  // alone is never a mount proof; the row requires real children.
-  root: '#storybook-root',
+  // A viewport portal is the active surface while its dialog is mounted.
+  // Otherwise observe the story root. Never accept the body as a component.
+  root: '#storybook-root:not(:has(~ .dlg-overlay > [role="dialog"])), body > .dlg-overlay:has(> [role="dialog"])',
+  // Static iframe readiness still proves the Storybook shell exists, separately
+  // from the active surface's real children, facts, floors and accessibility.
+  storyRoot: '#storybook-root',
   trigger: '.sgd-trigger',
   toggle: '[data-testid="session-group-disclosure-toggle"]',
   label: '[data-testid="session-group-disclosure-label"]',

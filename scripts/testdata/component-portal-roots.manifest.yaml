@@ -1,0 +1,8 @@
+requiredCaseNames:
+  - ordinary component keeps the mounted story root
+  - portal dialog replaces a nonempty decorator root
+  - portal dialog mounts beside an empty story root
+  - empty overlay cannot prove a blank component mounted
+  - unrelated page content cannot prove a component mounted
+  - a missing story and portal cannot prove a component mounted
+  - nested portal lookalike cannot replace the story root

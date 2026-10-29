@@ -1,0 +1,29 @@
+cases:
+  - name: ordinary component keeps the mounted story root
+    html: '<body><div id="storybook-root"><button>publish</button></div></body>'
+    roots: [storybook-root]
+    mounted: true
+  - name: portal dialog replaces a nonempty decorator root
+    html: '<body><div id="storybook-root"><div></div></div><div id="portal" class="dlg-overlay"><div role="dialog"><button>close</button></div></div></body>'
+    roots: [portal]
+    mounted: true
+  - name: portal dialog mounts beside an empty story root
+    html: '<body><div id="storybook-root"></div><div id="portal" class="dlg-overlay"><div role="dialog"><button>close</button></div></div></body>'
+    roots: [portal]
+    mounted: true
+  - name: empty overlay cannot prove a blank component mounted
+    html: '<body><div id="storybook-root"></div><div id="portal" class="dlg-overlay"></div></body>'
+    roots: [storybook-root]
+    mounted: false
+  - name: unrelated page content cannot prove a component mounted
+    html: '<body><h1>storybook</h1><div id="storybook-root"></div><button>publish</button></body>'
+    roots: [storybook-root]
+    mounted: false
+  - name: a missing story and portal cannot prove a component mounted
+    html: '<body><h1>storybook</h1></body>'
+    roots: []
+    mounted: false
+  - name: nested portal lookalike cannot replace the story root
+    html: '<body><div id="storybook-root"><div><div id="nested" class="dlg-overlay"><div role="dialog">nested</div></div></div></div></body>'
+    roots: [storybook-root]
+    mounted: true

@@ -71,7 +71,7 @@ cases:
     accessibility:
       policy: component-serious-violations-gate
       gatedScope: component-root
-      scopeRoot: '#storybook-root'
+      scopeRoot: '#storybook-root:not(:has(~ .dlg-overlay > [role="dialog"])), body > .dlg-overlay:has(> [role="dialog"])'
       scopedAfter: {violations: 0, ids: [], incomplete: [], passes: 12}
       gate: {policy: component-serious-violations-gate, point: after-interaction, observedTheme: dark, ariaExpanded: true, result: pass, measured: 0}
       pageWide: {scope: page, root: document, informational: true, violations: 0, blocking: 0, blockingIds: [], incomplete: [], passes: 17}
@@ -83,7 +83,7 @@ cases:
     accessibility:
       policy: component-serious-violations-gate
       gatedScope: component-root
-      scopeRoot: '#storybook-root'
+      scopeRoot: '#storybook-root:not(:has(~ .dlg-overlay > [role="dialog"])), body > .dlg-overlay:has(> [role="dialog"])'
       scopedAfter: {violations: 1, ids: [aria-required-children], incomplete: [], passes: 11}
       gate: {policy: component-serious-violations-gate, point: after-interaction, observedTheme: light, ariaExpanded: true, result: fail, measured: 1}
       pageWide: {scope: page, root: document, informational: true, violations: 0, blocking: 0, blockingIds: [], incomplete: [], passes: 17}
@@ -95,7 +95,7 @@ cases:
     accessibility:
       policy: component-serious-violations-gate
       gatedScope: component-root
-      scopeRoot: '#storybook-root'
+      scopeRoot: '#storybook-root:not(:has(~ .dlg-overlay > [role="dialog"])), body > .dlg-overlay:has(> [role="dialog"])'
       scopedAfter: {violations: 0, ids: [], incomplete: [], passes: 12}
       gate: {policy: component-serious-violations-gate, point: after-interaction, observedTheme: dark, ariaExpanded: true, result: pass, measured: 0}
       pageWide: {scope: page, root: document, informational: true, violations: 7, blocking: 7, blockingIds: [color-contrast], incomplete: [color-contrast], passes: 120}
@@ -108,7 +108,7 @@ cases:
     accessibility:
       policy: component-serious-violations-gate
       gatedScope: component-root
-      scopeRoot: '#storybook-root'
+      scopeRoot: '#storybook-root:not(:has(~ .dlg-overlay > [role="dialog"])), body > .dlg-overlay:has(> [role="dialog"])'
       blocking: 7
       violations: 7
       scopedAfter: {violations: 0, ids: [], incomplete: [], passes: 12}
@@ -122,7 +122,7 @@ cases:
     accessibility:
       policy: component-serious-violations-gate
       gatedScope: page
-      scopeRoot: '#storybook-root'
+      scopeRoot: '#storybook-root:not(:has(~ .dlg-overlay > [role="dialog"])), body > .dlg-overlay:has(> [role="dialog"])'
       scopedAfter: {violations: 0, ids: [], incomplete: [], passes: 12}
       gate: {policy: component-serious-violations-gate, point: after-interaction, observedTheme: dark, ariaExpanded: true, result: pass, measured: 0}
       pageWide: {scope: page, root: document, informational: true, violations: 0, blocking: 0, blockingIds: [], incomplete: [], passes: 17}
@@ -146,7 +146,7 @@ cases:
     accessibility:
       policy: component-serious-violations-gate
       gatedScope: component-root
-      scopeRoot: '#storybook-root'
+      scopeRoot: '#storybook-root:not(:has(~ .dlg-overlay > [role="dialog"])), body > .dlg-overlay:has(> [role="dialog"])'
       scopedAfter: {violations: 0, ids: [], incomplete: [], passes: 12}
       gate: {policy: component-serious-violations-gate, point: after-interaction, observedTheme: dark, ariaExpanded: true, result: pass, measured: 1}
       pageWide: {scope: page, root: document, informational: true, violations: 0, blocking: 0, blockingIds: [], incomplete: [], passes: 17}
