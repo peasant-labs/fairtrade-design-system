@@ -157,7 +157,7 @@
         "Breadcrumb",
         "Steps"
       ],
-      "doc": "@property {string} label - the crumb text",
+      "doc": "@property {string} label - the crumb text, preserving source capitalization",
       "props": {
         "label": {
           "control": "text"
@@ -174,7 +174,8 @@
         "LongLabel",
         "StepsWizard",
         "StepsFirst",
-        "StepsComplete"
+        "StepsComplete",
+        "RoutedContent"
       ]
     },
     {

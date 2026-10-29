@@ -10,7 +10,13 @@ await withMountedSource(async ({ load, mount, React, window }) => {
   const cooked = adaptTranscript(input.viewer)
   const vm = { ...cooked, analytics: {...cooked.analytics, phases:input.phases} }
   const { SettingStatus, SettingRow } = await load('/src/ui/Settings.jsx')
+  const Breadcrumb = (await load('/src/ui/Breadcrumb.jsx')).default
+  function RouterLink({ children, ...props }) {
+    return el('a', { ...props, 'data-router-link': 'true', onClick(event) { event.preventDefault(); event.currentTarget.setAttribute('data-navigated', 'true') } }, children)
+  }
   const components = {
+    breadcrumb: el(Breadcrumb, input.breadcrumb),
+    routedBreadcrumb: el(Breadcrumb, { ...input.breadcrumb, LinkComponent: RouterLink }),
     navigator: el((await load('/src/ui/graph/CodeMapNavigator.jsx')).default, input.navigator),
     commits: el((await load('/src/ui/CommitGraph.jsx')).default, input.commits),
     ranked: el((await load('/src/ui/graph/RankedRow.jsx')).default, input.ranked),

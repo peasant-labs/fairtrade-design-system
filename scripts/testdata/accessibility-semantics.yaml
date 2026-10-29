@@ -1,4 +1,10 @@
 cases:
+  - {name: breadcrumb keeps a normal anchor exit, component: breadcrumb, selector: 'a[href="/collectives/alpha"]', attribute: class, expected: link}
+  - {name: breadcrumb current item is not a link, component: breadcrumb, selector: '.cur[aria-current="page"]', text: 'Session ABC-9', count: 1}
+  - {name: breadcrumb ignores a current item href, component: breadcrumb, selector: 'a[href="/transcripts/abc-9"]', absent: true}
+  - {name: breadcrumb chrome is explicit per item, component: breadcrumb, selector: '.crumb-item-chrome', text: HOME, count: 1}
+  - {name: breadcrumb uses the supplied router link, component: routedBreadcrumb, selector: '[data-router-link="true"]', count: 2}
+  - {name: breadcrumb router exit receives its href, component: routedBreadcrumb, click: 'a[href="/collectives/alpha"]', selector: 'a[href="/collectives/alpha"]', attribute: data-navigated, expected: 'true'}
   - {name: navigator disclosure is redundant to the tree item, component: navigator, selector: .gmp-navigator-disclosure, attribute: aria-hidden, expected: 'true'}
   - {name: session spine is a list item, component: commits, selector: .cg-session-spine, attribute: role, expected: listitem}
   - {name: ranked intensity has bounded precision, component: ranked, selector: .tlp-ranked-doi, attribute: aria-label, expected: 'api, 0.74 of 1 recorded, 200 loc'}
@@ -30,6 +36,11 @@ cases:
   - {name: scent explanation is keyboard reachable, component: scent, focus: .tlp-scent-filter, selector: .tlp-scent-filter, attribute: aria-describedby, documentReference: '[role="tooltip"]'}
   - {name: outline explanation has a tap trigger, component: outline, selector: '.txn-ol-grouphead .term', attribute: aria-describedby, documentReference: '[role="tooltip"]'}
 input:
+  breadcrumb:
+    items:
+      - {label: HOME, href: /, chrome: true}
+      - {label: Collective Alpha, href: /collectives/alpha}
+      - {label: Session ABC-9, href: /transcripts/abc-9}
   facets: {topics: [{tag: testing, count: 2}]}
   insights: {insights: [{kind: decision, provenance: mechanical, title: decision, summary: summary, evidence: []}]}
   annotations: [{id: note, kind: error, turn: 0, label: recorded error}]
