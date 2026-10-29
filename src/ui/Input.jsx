@@ -115,6 +115,7 @@ export default function Input({
   defaultValue,
   onChange,
   id,
+  className = '',
   ...rest
 }) {
   const [current, handleChange] = useControllable(value, defaultValue, onChange);
@@ -126,7 +127,7 @@ export default function Input({
           <input
             id={fieldId}
             type={type}
-            className="input is-input"
+            className={`input is-input ${className}`.trim()}
             value={current}
             onChange={handleChange}
             readOnly={readOnly}
@@ -182,6 +183,7 @@ export function Textarea({
   defaultValue,
   onChange,
   id,
+  className = '',
   ...rest
 }) {
   const [current, handleChange] = useControllable(value, defaultValue, onChange);
@@ -190,7 +192,7 @@ export function Textarea({
       {({ id: fieldId, describedBy, invalid: errInvalid }) => (
         <textarea
           id={fieldId}
-          className="input is-input"
+          className={`input is-input ${className}`.trim()}
           rows={rows}
           value={current}
           onChange={handleChange}
@@ -241,6 +243,7 @@ export function Select({
   defaultValue,
   onChange,
   id,
+  className = '',
   ...rest
 }) {
   const [current, handleChange] = useControllable(value, defaultValue, onChange);
@@ -250,7 +253,7 @@ export function Select({
         <div className="select-wrap">
           <select
             id={fieldId}
-            className="select"
+            className={`select ${className}`.trim()}
             value={current}
             onChange={handleChange}
             disabled={disabled}
