@@ -34,9 +34,21 @@ export default function useReaderWidthAnchor({ readerPx, scrollRef, activeTurnRe
     frame.current = null
   }
   function begin() {
-    clear()
     const stream = scrollRef.current
     const index = activeTurnRef.current
+    // Successive width adjustments belong to the same reading position. Picking
+    // another character at the reading line after each reflow can move the
+    // original character by a whole line when the column widens again.
+    if (anchor.current?.index === index) {
+      compensate()
+      if (anchor.current) {
+        finishing.current = false
+        reconciled.current = false
+        schedule()
+        return
+      }
+    }
+    clear()
     const turn = visibleTurns.find(item => item.index === index)
     const location = ledger && !String(turn?.displayContent ?? turn?.content ?? '').trim() ? actionLayout.locations.get(index) : null
     const target = location ? actionRefs.current.get(`${index}:${location.where}`) : turnRefs.current[index]
@@ -91,7 +103,9 @@ export default function useReaderWidthAnchor({ readerPx, scrollRef, activeTurnRe
     const header = scrollRef.current?.closest('.txn-app')?.querySelector('.txn-header')
     const moving = header?.getAnimations?.({ subtree: true }).some(a => a.playState === 'running' && Number.isFinite(a.effect?.getComputedTiming().endTime))
     if (finishing.current && !moving) {
-      if (reconciled.current) { clear(); return }
+      // Stop measuring at rest, but retain the character until scrolling or
+      // deliberate navigation releases it. The next width change reuses it.
+      if (reconciled.current) { finishing.current = false; return }
       reconciled.current = true
       onSettle()
     }
