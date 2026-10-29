@@ -14,6 +14,8 @@ package is pre-1.0, so minor/patch semantics are best-effort.
 - Align discovery transcript rows around readable titles, provider metadata and fixed-width metrics.
 - Reduce transcript turn-header height and use consistently padded identity tiles.
 - Keep discovery results visible on phones behind a compact filter disclosure.
+- Limit discovery layout controls to grid and list; author profiles remain available from their normal links.
+- Clarify transcript selection and prompt reading with aligned digest statistics and row actions.
 
 ### Added
 
@@ -25,6 +27,7 @@ package is pre-1.0, so minor/patch semantics are best-effort.
 - Center dialogs against the viewport even inside transformed app containers, preserving keyboard focus and return focus.
 - Keep helper-session disclosure controls stable when their labels change.
 - Fill repository group headings across the complete row.
+- Preserve standard input, textarea and select styles when consumers pass custom classes.
 - Keep transcript footer controls in a single scrolling row and adapt shortcut hints to the actual preview width.
 - Make scrollable before-and-after redaction examples keyboard reachable.
 - Leave Mermaid as an external runtime dependency so consuming Next.js builds resolve its graph dependencies correctly.
