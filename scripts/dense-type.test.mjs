@@ -24,6 +24,11 @@ function microRefs(tree) {
 const hasDeclaration = tree => /--fs-micro\s*:/.test(tree.get('src/index.css'))
 const allowed = ref => deferred.has(ref) || deferred.has(ref.split(':')[0])
 function check(kind, tree) {
+  if (kind === 'headingCase') {
+    const body = tree.get('src/index.css').match(/h1, h2, h3\s*\{([^}]+)\}/)?.[1]
+    const generated = walkCss(readFileSync(join(ROOT, 'packages/tokens/base.css'), 'utf8')).blocks.find(b => b.prelude === 'h1, h2, h3')
+    return !body || /\blowercase\b/.test(body) || generated?.decls.some(d => d.prop === 'text-transform' && d.value === 'lowercase') ? ['unannotated headings must preserve source case'] : []
+  }
   if (kind === 'ownedMicro') return microRefs(tree).filter(ref => !allowed(ref))
   if (kind === 'retirement') return hasDeclaration(tree) ? [] : microRefs(tree)
   return ['src/index.css', ...shippedSourceSheets()].filter(file => !deferred.has(file)).flatMap(file =>
@@ -34,7 +39,8 @@ function check(kind, tree) {
 for (const row of spec.source) {
   assert.deepEqual(check(row.kind, files), [], `${row.name}: restore the conversion register before building`)
   const changed = new Map(files)
-  if (row.kind === 'ownedMicro') changed.set('src/index.css', changed.get('src/index.css') + '\n.mutation { font-size: var(--fs-micro); }')
+  if (row.kind === 'headingCase') changed.set('src/index.css', changed.get('src/index.css').replace('h1, h2, h3 {', 'h1, h2, h3 { text-transform: lowercase;'))
+  else if (row.kind === 'ownedMicro') changed.set('src/index.css', changed.get('src/index.css') + '\n.mutation { font-size: var(--fs-micro); }')
   else if (row.kind === 'retirement') {
     changed.set('src/index.css', changed.get('src/index.css').replace(/--fs-micro\s*:[^;]+;/, '') + '\n.mutation { font-size: var(--fs-micro); }')
   } else changed.set('src/index.css', changed.get('src/index.css') + '\n.mutation { font-size: 11px; }')

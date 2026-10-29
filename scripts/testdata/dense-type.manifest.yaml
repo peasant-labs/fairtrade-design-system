@@ -1,4 +1,5 @@
 requiredSourceNames:
+  - unannotated headings preserve user case
   - owned micro consumers are converted
   - retirement never leaves a dangling consumer
   - dense font literals meet the chrome floor
