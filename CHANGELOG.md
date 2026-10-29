@@ -4,6 +4,14 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.54 - 2026-10-29
+
+### Fixed
+
+- Lay out diagrams with the loaded font family and size used by their host, including application font aliases.
+- Fit rendered labels and node outlines inside the SVG viewport without shrinking text or removing keyboard panning.
+- Bound diagram font loading and avoid stale rendering work after source changes or unmounting.
+
 ## 0.0.53 - 2026-10-29
 
 ### Fixed
