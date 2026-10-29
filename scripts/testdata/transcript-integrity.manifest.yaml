@@ -47,6 +47,7 @@ requiredCssCaseNames:
   - the panel is capped between the phone gutters
   - a flagged card is drawn with a dashed warning outline
   - the mark icon is the warning colour
+  - the panel link keeps a comfortable target on a coarse pointer
 requiredCopyKeys:
   - badgeLabel
   - helpName
@@ -94,7 +95,7 @@ mutations:
     expectedDiagnostic: "repeated index keeps distinct positions"
   - name: a copied turn loses its position
     file: src/ui/transcript/adapter.js
-    find: "if (copy !== turn) sourcePositions.set(copy, sourcePositions.get(turn))"
+    find: "if (copy !== turn && position !== undefined) sourcePositions.set(copy, position)"
     replace: ""
     expectedDiagnostic: "unknown timestamp keeps its position"
   - name: the panel is never hidden

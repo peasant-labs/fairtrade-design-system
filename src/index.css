@@ -4149,7 +4149,7 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   .txn-integrity-panel p { margin: 0 0 var(--sp-3); }
   .txn-integrity-panel > :last-child { margin-block-end: 0; }
   .txn-integrity-heading { margin: 0 0 var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-body); font-weight: 600; text-transform: lowercase; color: var(--ink); }
-  .txn-integrity-link { color: var(--ink); text-decoration: underline; text-underline-offset: var(--sp-1); }
+  .txn-integrity-link { display: inline-flex; align-items: center; min-block-size: var(--control-h); color: var(--ink); text-decoration: underline; text-underline-offset: var(--sp-1); }
   .txn-integrity-link:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
   @media (width < 480px) { .txn-integrity-panel { inline-size: calc(100vw - 2 * var(--sp-4)); } }
 

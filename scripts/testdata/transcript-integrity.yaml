@@ -198,3 +198,6 @@ cssCases:
   - name: the mark icon is the warning colour
     selector: ".txn-integrity-mark .lucide"
     includes: ["color: var(--warning)"]
+  - name: the panel link keeps a comfortable target on a coarse pointer
+    selector: ".txn-integrity-link"
+    includes: ["min-block-size: var(--control-h)"]

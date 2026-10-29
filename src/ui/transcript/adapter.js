@@ -931,7 +931,8 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
     .filter((turn) => !isSessionMetadataTurn(turn, payload.harness))
     .map((turn) => {
       const copy = withKnownTime(turn)
-      if (copy !== turn) sourcePositions.set(copy, sourcePositions.get(turn))
+      const position = sourcePositions.get(turn)
+      if (copy !== turn && position !== undefined) sourcePositions.set(copy, position)
       return copy
     })
   const visibleTurnIndices = visibleIndices === undefined ? null : new Set(visibleIndices)
