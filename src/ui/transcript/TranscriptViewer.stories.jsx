@@ -13,8 +13,9 @@ export const Pi = {
     const canvas = within(canvasElement)
     const tool = canvas.getByRole('button', { name: /Orchard.CheckPlan/ })
     await userEvent.click(tool)
-    await expect(canvas.getByText('error result')).toBeVisible()
-    await expect(canvas.getByText('recorded tool details')).toBeVisible()
+    /* the tool body opens with a height animation, so wait for it to be shown rather than assert on the first frame */
+    await waitFor(() => expect(canvas.getByText('error result')).toBeVisible())
+    await waitFor(() => expect(canvas.getByText('recorded tool details')).toBeVisible())
     await expect(canvas.queryByText('MetadataOnlyNeedle')).toBeNull()
   },
 }
