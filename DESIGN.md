@@ -29,9 +29,9 @@ colors:
   ink-4-light: '#625c51'
   ink-5: '#615b50'
   ink-5-light: '#837d72'
-  rule: '#4f4a40'
+  rule: '#403d35'
   rule-light: '#b3ab96'
-  rule-strong: '#857f72'
+  rule-strong: '#767165'
   rule-strong-light: '#7f7762'
   focus-ring: '#d6ae66'
   focus-ring-light: '#0d0c09'
@@ -306,7 +306,7 @@ first, with the light value under a `-light` key where it differs.
   Likewise, checked inputs and selected interactive toggles use `--amber-fill` with `--amber-fill-ink`, with non-color state cues.
   A switch is the exception: on is the inverted neutral (an `--ink-strong` track, a `--canvas`
   thumb) and never amber, because a settings page holds many switches and amber stays scarce. The
-  track's fill and the thumb's side carry the state, so a settings row shows no on/off word beside it.
+  track's fill and the thumb's side carry the state, so switches show no redundant on/off word beside them. The accessible state remains `aria-checked`.
   The fill tokens are split from `--amber` so light-theme text can stay dark enough for AA. `--on-amber` is the
   ink on the remaining `--amber` fills (the current step, the current page number).
 
@@ -351,8 +351,8 @@ is for secondary text, never primary body.
 button borders, toggles, focus rings, meaningful icons, chart series) clears 3:1 against every
 surface in both themes: use `--rule-strong` or stronger. On the ground, `--rule-strong` holds 4:1,
 so panel edges, inputs and buttons read clearly. Hairline dividers between same-tone
-surfaces (`--rule`) stay deliberately subtle but hold 2:1 on the ground, so a line is never
-invisible. `scripts/contrast.mjs`, run by `pnpm build`, fails on control borders, the focus ring,
+surfaces (`--rule`) stay deliberately subtle at 1.5:1 or higher on the ground; they structure
+content without competing with controls. `scripts/contrast.mjs`, run by `pnpm build`, fails on control borders, the focus ring,
 these two floors and the 6.3:1 muted-ink floor, and only reports the toggle fill, the `--amber-dim`
 focus tint and the dividers on raised surfaces; icons and chart series are checked in review.
 
@@ -631,10 +631,11 @@ render the same system.
 - **Trails:** breadcrumb, step indicator, tabs and pagination; orientation lives here.
 - **App sidebar:** `AppSidebar` is the one sidebar for every app screen (online, local and docs),
   in one order that every app gets, enforced by the component so no app can drift: (1) the brand
-  row, the mark with the collapse control; (2) the shortcuts, under a hairline from the pages:
-  search first (`search`, with a quiet mono key hint), the docs and community, then the app's links
-  that leave it (`elsewhere`, or any `external` item, which the component lifts out of the groups);
-  (3) the app's own pages (`groups`; settings is never one of them); (4) the footer, one compact row
+  row, the mark with the collapse control; (2) the app's own pages (`groups`; settings is never
+  one of them); (3) the shortcuts, pushed toward the footer with a hairline above them: search
+  first (`search`, with a quiet mono key hint), the docs, then the app's links that leave it
+  (`elsewhere`, or any `external` item, which the component lifts out of the groups);
+  (4) the footer, one compact row
   pinned under the nav with a hairline above it: the account on the left (avatar or initial and
   handle, or the host's signed-out slot) at the nav icons' inset, and on the right two square icon
   buttons, the settings gear (`settingsHref`, or a `settings` item the component lifts out of the
@@ -650,9 +651,8 @@ render the same system.
   Home and End on the separator), groups of items with an icon or a colour swatch, the current item
   marked with `aria-current` and the amber inset bar, an outside-the-app marker, the switcher to
   the docs (never the app the reader is in, and never online or local, in any app; each opens in a
-  new tab unless its entry names a target; the switcher always ends with community as a place that does not exist yet, text marked
-  `aria-disabled` with a quiet "soon" note in the trailing slot and no hover or press, until an app
-  names its own community entry) and the account row. Brand text is `peasant`, never `peasant labs`.
+  new tab unless its entry names a target). Community is hidden from menus until that surface is
+  available. Brand text is `peasant`, never `peasant labs`.
   Collapse and width persist per browser. Below 768px it becomes a top bar whose menu opens the
   same nav as an opaque drawer; the menu button then becomes the drawer's one close control.
   `AppSidebarLayout` places it beside the page. Its motion runs only under

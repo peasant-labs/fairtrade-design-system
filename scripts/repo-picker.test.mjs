@@ -15,8 +15,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   const { RepoPicker } = await load('/src/ui/index.js')
   for (const row of fixture.cases) {
     const saved = []
-    const mounted = await mount(React.createElement(RepoPicker, { open: true, onClose: () => {}, owners: fixture.owners, initialSelected: fixture.initialSelected, onSave: (diff) => saved.push(diff) }))
-    const root = mounted.container
+    const mounted = await mount(React.createElement(RepoPicker, { open: true, inline: row.inline ?? false, onClose: () => {}, owners: fixture.owners, initialSelected: fixture.initialSelected, onSave: (diff) => saved.push(diff) }))
+    const root = row.inline ? mounted.container : mounted.document.body
     const buttonNamed = (name) => [...root.querySelectorAll('button')].find((button) => text(button) === name || text(button).startsWith(name))
     for (const step of row.steps) {
       const [kind, arg] = step.split(/:(.*)/s)
@@ -31,11 +31,13 @@ await withMountedSource(async ({ load, mount, window, React }) => {
           click(window, box)
         } else if (kind === 'select-all') click(window, buttonNamed('select all'))
         else if (kind === 'clear') click(window, buttonNamed('clear'))
+        else if (kind === 'reset') click(window, buttonNamed('reset'))
         else if (kind === 'save') click(window, root.querySelector('.rpk-foot .btn-primary'))
         else throw new Error(`${FIXTURE}: unknown step ${JSON.stringify(step)}`)
       })
     }
     const expected = row.expected
+    if (expected.dialog === false) report.check(!root.querySelector('[role="dialog"]'), `${row.name}: the repository controls must be in the page, without a dialog`)
     const visible = [...root.querySelectorAll('.rpk-repo-name')].map(text)
     if (expected.visible) report.check(JSON.stringify(visible) === JSON.stringify(expected.visible), `${row.name}: visible expected ${JSON.stringify(expected.visible)}, received ${JSON.stringify(visible)}`)
     if (expected.count) report.check(text(root.querySelector('.rpk-count')) === expected.count, `${row.name}: count expected ${JSON.stringify(expected.count)}, received ${JSON.stringify(text(root.querySelector('.rpk-count')))}`)
@@ -73,6 +75,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       })
     }
     const expected = row.expected
+    if (expected.dialog === false) report.check(!root.querySelector('[role="dialog"]'), `${row.name}: the repository controls must be in the page, without a dialog`)
     if (expected.groups) {
       const groups = [...root.querySelectorAll('.gms-group-label')].map(text)
       report.check(JSON.stringify(groups) === JSON.stringify(expected.groups), `${row.name}: groups expected ${JSON.stringify(expected.groups)}, received ${JSON.stringify(groups)}`)

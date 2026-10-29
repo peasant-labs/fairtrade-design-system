@@ -79,7 +79,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       done: { ...fixture.done, ...(row.pending ? { pending: row.pending } : {}), ...(row.doneCollectives ? { collectives: row.doneCollectives } : {}) },
     })
     const mounted = await mount(React.createElement(ui.PublishDialog, props))
-    const dialog = mounted.container.querySelector('[role="dialog"]')
+    const dialog = mounted.document.body.querySelector('[role="dialog"]')
     report.check(!!dialog && dialog.classList.contains('dialog-wide'), `${row.name}: the popup is the wide dialog`)
     const heading = text(dialog?.querySelector('.dlg-head h3'))
     report.check(heading === row.heading, `${row.name}: heading expected ${JSON.stringify(row.heading)}, received ${JSON.stringify(heading)}`)
@@ -131,14 +131,14 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     let calls = 0
     const onPublish = () => { calls += 1 }
     const mounted = await mount(React.createElement(ui.PublishDialog, base({ state: 'ready', onPublish })))
-    const primary = mounted.container.querySelector('.pub-primary')
+    const primary = mounted.document.body.querySelector('.pub-primary')
     await mounted.act(() => primary.focus())
     await mounted.rerender(React.createElement(ui.PublishDialog, base({ state: 'publishing', onPublish })))
     report.check(window.document.activeElement === primary, `${row.name}: publishing keeps the primary focused`)
     await mounted.act(() => click(window, primary))
     report.check(calls === 0, `${row.name}: publishing ignores a repeated activation`)
     await mounted.rerender(React.createElement(ui.PublishDialog, base({ state: row.result, onPublish })))
-    const dialog = mounted.container.querySelector('[role="dialog"]')
+    const dialog = mounted.document.body.querySelector('[role="dialog"]')
     report.check(dialog.contains(window.document.activeElement), `${row.name}: finishing keeps focus inside the popup`)
     report.check(text(window.document.activeElement) === 'done', `${row.name}: finishing focuses done`)
     await mounted.unmount()
@@ -166,7 +166,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   for (const row of fixture.update) {
     let publishCalls = 0
     const mounted = await mount(React.createElement(ui.PublishDialog, base({ state: row.state ?? 'ready', mode: 'update', access: row.access, onRestore: noop, onPublish: () => { publishCalls++ }, changes: { summary: '6 new turns since you published, 1 new match, redacted' } })))
-    const dialog = mounted.container.querySelector('[role="dialog"]')
+    const dialog = mounted.document.body.querySelector('[role="dialog"]')
     const primary = [...dialog.querySelectorAll('.dlg-foot .btn-primary')][0]
     report.check(text(primary) === row.primary, `${row.name}: primary expected ${JSON.stringify(row.primary)}, received ${JSON.stringify(text(primary))}`)
     report.check(primary.disabled === !row.enabled, `${row.name}: update primary must be ${row.enabled ? 'enabled' : 'disabled'}`)

@@ -94,7 +94,7 @@ export const Join = {
     />
   ),
   play: async ({ canvasElement, step }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     const trigger = canvas.getByRole('button', { name: /join collective/i })
 
     await step('open the dialog; focus lands inside', async () => {
@@ -191,7 +191,7 @@ export const Contribute = {
     )
   },
   play: async ({ canvasElement, step }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     const trigger = canvas.getByRole('button', { name: /contribute transcripts/i })
 
     await step('open and confirm the flow end to end', async () => {
@@ -287,7 +287,7 @@ export const Leave = {
   name: 'leave (retention choice)',
   render: () => <LeaveDemo />,
   play: async ({ canvasElement, step }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     const trigger = canvas.getByRole('button', { name: /leave collective/i })
 
     await step('open; the retract choice toggles the confirm copy', async () => {
@@ -390,7 +390,7 @@ export const LeaveStatic = {
   name: 'leave (static)',
   render: () => <LeaveDemo />,
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await userEvent.click(canvas.getByRole('button', { name: /leave collective/i }))
     await canvas.findByRole('dialog')
   },

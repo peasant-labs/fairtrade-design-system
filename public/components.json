@@ -709,7 +709,8 @@
         "OpenStatic",
         "LongBodyStatic",
         "DestructiveStatic",
-        "CustomLabelId"
+        "CustomLabelId",
+        "InsideTransformedPage"
       ]
     },
     {
@@ -1468,7 +1469,8 @@
       "props": {},
       "stories": [
         "Default",
-        "EmptySearch"
+        "EmptySearch",
+        "InPage"
       ]
     },
     {

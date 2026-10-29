@@ -14,7 +14,6 @@ export default function ViewSwitch({ label = '', on = false, onToggle = () => {}
     <div className="txn-viewsw">
       <button type="button" role="switch" aria-checked={on} className="sw" onClick={onToggle} aria-label={label} />
       <span className="txn-viewsw-label">{label}</span>
-      <span className="txn-viewsw-state">{on ? 'on' : 'off'}</span>
     </div>
   )
 }

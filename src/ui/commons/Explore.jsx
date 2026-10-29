@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { headingTag, pageHeadingLevel } from '../heading.js'
 import { formatCount, formatDate } from '../format.js'
-import { Compass, FileText, LayoutGrid, List, SearchX, User } from 'lucide-react'
+import { Compass, FileText, LayoutGrid, List, Search, SearchX, SlidersHorizontal, User } from 'lucide-react'
 import FacetRail from '../FacetRail.jsx'
 import { StatGrid } from '../StatTiles.jsx'
 import Pagination from '../Pagination.jsx'
-import { ProviderTag } from '../ProviderIcon.jsx'
+import { ProviderName, ProviderTag } from '../ProviderIcon.jsx'
 import { VisibilityEye } from '../VisibilityControl.jsx'
 
 const PAGE_SIZE = 4
@@ -224,18 +224,22 @@ function TranscriptPreviewCard({ transcript, href, onOpen, cardHeading: CardHead
 function TranscriptRow({ transcript, href, onOpen }) {
   const row = (
     <>
-      <span className="cex-trow-model">
-        <ProviderTag harness={transcript.modelProvider} />
-        <b>{transcript.modelName || transcript.modelProvider}</b>
+      <span className="cex-trow-main">
+        <span className="cex-trow-title">{transcript.title || 'untitled transcript'}</span>
+        <span className="cex-trow-model">
+          <ProviderName harness={transcript.modelProvider} />
+          {transcript.modelName && <span>{transcript.modelName}</span>}
+        </span>
       </span>
-      <span className="cex-trow-title">{titleize(transcript.title || 'untitled transcript')}</span>
       <span className="cex-trow-stats mono tnum">
-        {transcript.durationMs != null && <span>{fmtDur(transcript.durationMs)}</span>}
-        {transcript.turnCount != null && <span>{transcript.turnCount} turns</span>}
-        {transcript.toolCallCount != null && <span>{transcript.toolCallCount} tools</span>}
+        <span>{transcript.durationMs != null ? fmtDur(transcript.durationMs) : ''}</span>
+        <span>{transcript.turnCount != null ? `${formatCount(transcript.turnCount)} ${transcript.turnCount === 1 ? 'turn' : 'turns'}` : ''}</span>
+        <span>{transcript.toolCallCount != null ? `${formatCount(transcript.toolCallCount)} ${transcript.toolCallCount === 1 ? 'tool' : 'tools'}` : ''}</span>
       </span>
-      <span className="cex-trow-date mono tnum">{fmtDate(transcript.sessionStart || transcript.sessionEnd || '')}</span>
-      <VisibilityEye visibility={transcript.visibility} />
+      <span className="cex-trow-end">
+        <span className="cex-trow-date mono tnum">{fmtDate(transcript.sessionStart || transcript.sessionEnd || '')}</span>
+        <VisibilityEye visibility={transcript.visibility} />
+      </span>
     </>
   )
   if (href) {
@@ -287,6 +291,9 @@ function CollectiveCard({ collective, href, onOpen }) {
 export default function Explore({
   data,
   className = '',
+  title = 'explore transcripts',
+  resultsFooter,
+  defaultLayout = 'grid',
   onFiltersChange,
   onOpenTranscript,
   onOpenProfile,
@@ -309,7 +316,9 @@ export default function Explore({
   const [order, setOrder] = useState('recent')
   const [provider, setProvider] = useState('all')
   const [topics, setTopics] = useState(() => new Set())
-  const [layout, setLayout] = useState('grid')
+  const [layout, setLayout] = useState(defaultLayout)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const filterPanelId = useId()
   const [page, setPage] = useState(() => seedInitialPage(payload.transcripts.page))
   const [selectedId, setSelectedId] = useState(null)
   const [mode, setMode] = useState('browse')
@@ -610,8 +619,9 @@ export default function Explore({
   return (
     <div className={`cex-root ${className}`.trim()}>
       <header className="cex-explore-head">
-        <H0 className="cex-h2">explore transcripts</H0>
+        {title != null && <H0 className="cex-h2">{title}</H0>}
         <div className="input-ico cex-searchbar">
+          <Search aria-hidden="true" />
           <input
             className="input"
             type="text"
@@ -629,6 +639,11 @@ export default function Explore({
       </header>
 
       <div className="cex-explore-body">
+        <button type="button" className="btn btn-secondary cex-filter-toggle" aria-expanded={filtersOpen} aria-controls={filterPanelId} onClick={() => setFiltersOpen((open) => !open)}>
+          <SlidersHorizontal size={14} aria-hidden="true" /> filters
+          {(provider !== 'all' || topics.size > 0) && <span className="tnum">{(provider !== 'all' ? 1 : 0) + topics.size} active</span>}
+        </button>
+        <div id={filterPanelId} className={`cex-filter-panel${filtersOpen ? ' is-open' : ''}`}>
         <FacetRail
           order={order}
           onOrder={(next) => setOrder(next)}
@@ -648,6 +663,7 @@ export default function Explore({
           onClear={reset}
           className="cex-rail"
         />
+        </div>
 
         <div className="cex-results">
           {collectiveHits && (
@@ -740,6 +756,7 @@ export default function Explore({
           {totalItems > currentLimit && (
             <Pagination page={currentPage} totalItems={totalItems} pageSize={currentLimit} onChange={setPage} className="cex-pgn" />
           )}
+          {resultsFooter}
         </div>
       </div>
     </div>

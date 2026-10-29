@@ -3,10 +3,9 @@ import { Circle, CircleCheck, Loader } from 'lucide-react'
 
 /* a real, accessible toggle (the interactive version of the .sw-field specimen in
    sections/36-states.html). a button role="switch" with aria-checked carries the
-   state; the track's inverted fill and the thumb's side show it without colour, and the inline
-   .sw-state marker (icon + lowercase on/off text) says it in words (WCAG 1.4.1). a host that
-   states the setting's state itself (a settings row and its status mark) turns the marker off
-   with stateMarker={false}. the CSS handles the fill, we only flip the text + icon. Space,
+   state; the track's inverted fill and the thumb's side show it without colour. State
+   words are omitted by default so labels stay fixed when toggled. The optional .sw-state
+   marker remains available for hosts that explicitly request it. Space,
    Enter, and click toggle. supports controlled (checked + onChange) and uncontrolled
    (defaultChecked). reuses the .sw / .sw-field / .sw-label / .sw-state styles, zero
    new CSS. note: the control class is .sw (the swatch chip elsewhere is .swc). */
@@ -24,7 +23,7 @@ import { Circle, CircleCheck, Loader } from 'lucide-react'
  * @property {React.ComponentType<{size?: number}>} [stateIcon] override icon for the
  *           .sw-state marker; defaults to CircleCheck (on) / Circle (off).
  * @property {string} [id]              id for the control; links the label's `for`.
- * @property {boolean} [stateMarker=true] show the on/off word beside the switch; off where the
+ * @property {boolean} [stateMarker=false] show the on/off word beside the switch; off where the
  *           host already says the state (a settings row).
  */
 
@@ -42,7 +41,7 @@ export default function Switch({
   offText = 'off',
   stateIcon: StateIcon,
   id,
-  stateMarker = true,
+  stateMarker = false,
 }) {
   const [internal, setInternal] = useState(defaultChecked)
   const isControlled = checked !== undefined

@@ -8,10 +8,9 @@ import './AppSidebar.css'
 
      desktop (width >= 768px)  a sticky full-height column in one fixed order that every app gets:
                                  1. the brand mark, with the collapse control
-                                 2. the shortcuts: search (`search`), the docs and community (the
-                                    switcher), then the app's links that leave it (an `external`
-                                    item, or `elsewhere`)
-                                 3. the app's own pages (`groups`)
+                                 2. the app's own pages (`groups`)
+                                 3. the shortcuts: search, docs and links that leave the app,
+                                    pushed toward the footer
                                  4. the footer, one row pinned to the column's foot: the account on
                                     the left; a settings gear (`settingsHref`, or a `settings` item
                                     lifted out of the groups) and the theme toggle on the right
@@ -50,8 +49,7 @@ import './AppSidebar.css'
  * @property {string} [href]     where the app lives. An app without an href is omitted, unless it has a tag.
  * @property {string} [tag]      a short note after the label. With no href the entry is shown as text, not a link.
  * @property {boolean} [soon]    a place that does not exist yet: shown as text, aria-disabled, with a 'soon' note
- *                               and no hover or press. The switcher always ends with community as soon unless
- *                               `apps` names a community entry of its own.
+ *                               and no hover or press. Community entries are hidden until that surface is available.
  * @property {string} [target]   default '_blank': another app opens in a new tab.
  * @property {string} [rel]      default 'noopener noreferrer' when the target is '_blank'.
  */
@@ -107,9 +105,9 @@ import './AppSidebar.css'
  * @property {string} [currentId]                   the id of the current item (aria-current="page").
  * @property {string} [homeHref]                    the brand links here.
  * @property {string} [brand]                       the brand's accessible name and tooltip, default 'peasant'.
- * @property {AppSidebarSearch} [search]           the app's search, the first shortcut under the brand.
+ * @property {AppSidebarSearch} [search]           the app's search, the first shortcut above the footer.
  * @property {AppSidebarItem[]} [elsewhere]         the app's links that leave it (collectives online, from the local app),
- *                                                  listed in the shortcuts after the docs and community. An `external`
+ *                                                  listed in the shortcuts after the docs. An `external`
  *                                                  item in `groups` moves there too.
  * @property {string} [settingsHref]                the app's settings: a gear in the footer, current when currentId is
  *                                                  'settings'. A `settings` item in `groups` becomes the gear instead.
@@ -148,7 +146,7 @@ import './AppSidebar.css'
  * @property {string} [className]
  */
 
-/** The app switcher's default entries, in order: the docs (community as soon follows by itself).
+/** The app switcher's default entries, in order: the docs.
  * Online and local are never in a switcher, in any app. Consumers map their hrefs in.
  * @type {ReadonlyArray<Readonly<AppSidebarApp>>} */
 export const APP_SIDEBAR_APPS = Object.freeze([
@@ -156,12 +154,10 @@ export const APP_SIDEBAR_APPS = Object.freeze([
 ])
 
 /** The apps a switcher never lists: the hosted and the local app reach each other another way. */
-const NEVER_SWITCHED = new Set(['online', 'local'])
+const NEVER_SWITCHED = new Set(['online', 'local', 'community'])
 
 const APP_ICONS = { online: Globe, local: Laptop, docs: BookOpen, community: MessagesSquare }
 
-/** The switcher's last entry in every app until a community space exists. */
-const COMMUNITY_SOON = Object.freeze({ id: 'community', label: 'community', soon: true })
 const RESIZE_STEP = 16
 const EXTERNAL_SUFFIX = ', opens outside this app'
 const NEW_TAB_SUFFIX = ', opens in a new tab'
@@ -290,13 +286,11 @@ function SidebarItem({ item, current, Link, onNavigate, collapsed }) {
   return <span className={className} aria-current={ariaCurrent} title={title}>{body}</span>
 }
 
-/* the switcher entries: the docs and community. the app the reader is in is not a destination, so
+/* the switcher entries: the docs. the app the reader is in is not a destination, so
    it is left out; online and local are never listed, in any app; an entry with nowhere to go is left
    out unless it is a place to come (soon). each opens in a new tab unless its entry names a target. */
 function switcherEntries(app, apps) {
-  // every app ends its switcher with community; an app names its own entry once the place exists
-  const withCommunity = apps.some((entry) => entry.id === COMMUNITY_SOON.id) ? apps : [...apps, COMMUNITY_SOON]
-  return withCommunity.filter((entry) => entry.id !== app && !NEVER_SWITCHED.has(entry.id) && (entry.href || entry.tag || entry.soon))
+  return apps.filter((entry) => entry.id !== app && !NEVER_SWITCHED.has(entry.id) && (entry.href || entry.tag || entry.soon))
 }
 
 function SwitcherEntry({ entry, Link, onNavigate, collapsed }) {
@@ -341,11 +335,11 @@ function SearchItem({ search, onNavigate, collapsed }) {
   )
 }
 
-/* the shortcuts on top, under the brand: search, then the docs and community, then the app's own
+/* the shortcuts below the pages, above the footer: search, then the docs, then the app's own
    links that leave it (collectives online, from the local app) */
-function Shortcuts({ search, entries, elsewhere, Link, onNavigate, collapsed, currentId }) {
+function Shortcuts({ search, entries, elsewhere, Link, onNavigate, collapsed, currentId, startIndex = 0 }) {
   if (!search && entries.length === 0 && elsewhere.length === 0) return null
-  let index = 0
+  let index = startIndex
   return (
     <nav className="asb-group asb-utils" aria-label="shortcuts">
       <ul className="asb-list">
@@ -413,8 +407,8 @@ function AccountRow({ account, Link, onNavigate, collapsed }) {
 
 /**
  * The shared app sidebar, in one order for every app: the brand mark with a collapse handle on the
- * column's edge, the shortcuts (search, the docs and community, the app's links that leave it), the
- * app's own pages, then the footer row (the account on the left, the settings gear and the theme
+ * column's edge, the app's own pages, then shortcuts (search, the docs and outside links)
+ * above the footer row (the account on the left, the settings gear and the theme
  * toggle on the right). A sticky resizable column on desktop
  * that collapses to an icon rail; a top bar plus an opaque drawer below 768px.
  * @param {AppSidebarProps} props
@@ -609,22 +603,23 @@ export default function AppSidebar({
 
   const rootClass = ['asb', className].filter(Boolean).join(' ')
   // the component owns the order, whatever a host puts in its groups: a link that leaves the app
-  // moves up to the shortcuts, and settings moves down to the footer's gear
+  // moves to the shortcuts above the footer, and settings moves down to the footer's gear
   const leaving = []
   let settingsItem = null
   const pages = groups.map((group) => ({
     ...group,
     items: group.items.filter((item) => {
+      if (item.id === 'community') return false
       if (item.id === 'settings' && item.href) { settingsItem = settingsItem ?? item; return false }
       if (item.external) { leaving.push(item); return false }
       return true
     }),
   })).filter((group) => group.items.length > 0)
   const entries = switcherEntries(app, apps)
-  const links = [...leaving, ...elsewhere]
+  const links = [...leaving, ...elsewhere].filter((item) => item.id !== 'community')
   const gearHref = settingsHref ?? settingsItem?.href
   // a running index over every listed item, so the drawer can stagger them in order
-  let listIndex = (search ? 1 : 0) + entries.length + links.length
+  let listIndex = 0
   const shownAccount = accountSlot ?? (account ? <AccountRow account={account} Link={Link} onNavigate={onNavigate} collapsed={collapsed} /> : null)
   const showTheme = (theme === 'light' || theme === 'dark') && typeof onThemeChange === 'function'
 
@@ -683,10 +678,7 @@ export default function AppSidebar({
             data-animate={indicator?.animate ? 'true' : 'false'}
             style={indicator ? { transform: `translateY(${indicator.top}px)`, left: `${indicator.left}px`, width: `${indicator.width}px`, height: `${indicator.height}px` } : undefined}
           />
-          {/* 2. the shortcuts: search, the docs and community, then the app's links that leave it */}
-          <Shortcuts search={search} entries={entries} elsewhere={links} Link={Link} onNavigate={onNavigate} collapsed={collapsed} currentId={currentId} />
-
-          {/* 3. the app's own pages */}
+          {/* 2. the app's own pages */}
           {pages.map((group) => (
             <nav key={group.id} className="asb-group" aria-label={group.ariaLabel ?? group.label ?? group.id}>
               {group.label ? <span className="asb-glabel">{group.label}</span> : null}
@@ -699,6 +691,10 @@ export default function AppSidebar({
               </ul>
             </nav>
           ))}
+
+          {/* 3. the shortcuts: search, the docs, then the app's links that leave it */}
+          <Shortcuts startIndex={listIndex} search={search} entries={entries} elsewhere={links} Link={Link} onNavigate={onNavigate} collapsed={collapsed} currentId={currentId} />
+
         </div>
 
         {/* 4. the footer: one row pinned under the nav, the account on the left (or the host's

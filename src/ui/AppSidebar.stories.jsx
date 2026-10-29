@@ -35,7 +35,7 @@ const meta = {
 }
 export default meta
 
-// the switcher: the docs; the component ends it with community as soon by itself
+// the switcher: the docs; community stays hidden until that surface is available
 const apps = APP_SIDEBAR_APPS.map((entry) => ({ ...entry, href: '#docs' }))
 
 const ONLINE_GROUPS = [
@@ -207,7 +207,7 @@ export const Online = {
     const toggle = canvas.getByRole('button', { name: 'collapse the sidebar' })
     await expect(toggle).toHaveAttribute('aria-expanded', 'true')
     await expect(canvas.getByRole('link', { name: 'home' })).toHaveAttribute('aria-current', 'page')
-    // the shortcuts sit on top: search, the docs (a new tab) and community; never online or local
+    // the shortcuts sit above the footer: search and the docs (a new tab); never online or local
     const switcher = canvas.getByRole('navigation', { name: 'shortcuts' })
     await expect(within(switcher).queryByText('online')).toBeNull()
     await expect(within(switcher).getByRole('link', { name: /^docs\s*, opens in a new tab$/ })).toHaveAttribute('target', '_blank')

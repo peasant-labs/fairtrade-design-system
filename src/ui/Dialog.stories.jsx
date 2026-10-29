@@ -75,7 +75,7 @@ export const Default = {
     />
   ),
   play: async ({ canvasElement, step }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     const trigger = canvas.getByRole('button', { name: /open dialog/i })
 
     await step('open the dialog', async () => {
@@ -285,7 +285,7 @@ export const CustomLabelId = {
     />
   ),
   play: async ({ canvasElement, step, args }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     const trigger = canvas.getByRole('button', { name: /open dialog/i })
 
     await step('open and assert aria-labelledby matches the custom labelId', async () => {
@@ -300,5 +300,22 @@ export const CustomLabelId = {
       await userEvent.keyboard('{Escape}')
       await waitFor(() => expect(canvas.queryByRole('dialog')).not.toBeInTheDocument())
     })
+  },
+}
+
+export const InsideTransformedPage = {
+  render: () => <div style={{ transform: 'translateY(var(--sp-5))', width: '50%' }}>
+    <DialogDemo title="new collective" body={<p>the popup belongs to the viewport.</p>} />
+  </div>,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement.ownerDocument.body)
+    await userEvent.click(canvas.getByRole('button', { name: /open dialog/i }))
+    const dialog = await canvas.findByRole('dialog')
+    const box = dialog.getBoundingClientRect()
+    const view = canvasElement.ownerDocument.defaultView
+    await expect(Math.abs(box.x + box.width / 2 - view.innerWidth / 2)).toBeLessThan(2)
+    await expect(Math.abs(box.y + box.height / 2 - view.innerHeight / 2)).toBeLessThan(2)
+    await userEvent.keyboard('{Escape}')
+    await expect(canvas.queryByRole('dialog')).toBeNull()
   },
 }

@@ -14,6 +14,7 @@ export const LIB_EXTERNALS = Object.freeze([
   '@tanstack/react-table',
   '@xyflow/react',
   'lucide-react',
+  'mermaid',
   'react',
   'react-dom',
   'react/jsx-runtime',

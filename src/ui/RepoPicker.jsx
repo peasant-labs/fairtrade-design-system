@@ -29,6 +29,15 @@ function saveLabel(add, remove) {
   return `save: ${parts.join(', ')}`
 }
 
+/** Repository controls used directly inside a page, without a second popup. */
+function InlinePicker({ title, labelId, children, footer }) {
+  return <section className="rpk-inline" aria-labelledby={labelId}>
+    <h3 id={labelId}>{title}</h3>
+    {children}
+    {footer}
+  </section>
+}
+
 /**
  * @param {object} props
  * @param {boolean} props.open
@@ -38,11 +47,13 @@ function saveLabel(add, remove) {
  * @param {(diff: { add: string[], remove: string[] }) => void} props.onSave
  * @param {string} [props.title='link repositories']
  * @param {import('react').ReactNode} [props.description] - one line under the title.
+ * @param {boolean} [props.inline=false] - show the repository controls directly in the containing page.
  * @param {boolean} [props.saving=false] - the host's write is in flight.
  * @param {string} [props.error] - the host's write failed; shown in a role="alert" line.
  */
-export default function RepoPicker({ open, onClose, owners, initialSelected = [], onSave, title = 'link repositories', description, saving = false, error }) {
+export default function RepoPicker({ open, onClose, owners, initialSelected = [], onSave, title = 'link repositories', description, saving = false, error, inline = false }) {
   const baseId = useId()
+  const Frame = inline ? InlinePicker : Dialog
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState(() => new Set(initialSelected))
   const start = useMemo(() => new Set(initialSelected), [initialSelected])
@@ -78,7 +89,7 @@ export default function RepoPicker({ open, onClose, owners, initialSelected = []
   const footer = (
     <div className="rpk-foot">
       {error && <span className="rpk-error" role="alert">{error}</span>}
-      <button type="button" className="btn btn-secondary btn-sm" onClick={onClose} disabled={saving}>cancel</button>
+      <button type="button" className="btn btn-secondary btn-sm" onClick={inline ? () => setSelected(new Set(initialSelected)) : onClose} disabled={saving}>{inline ? 'reset' : 'cancel'}</button>
       <button type="button" className="btn btn-primary btn-sm" disabled={saving || (!add.length && !remove.length)} aria-busy={saving ? 'true' : undefined} onClick={() => onSave({ add, remove })}>
         {saveLabel(add.length, remove.length)}
       </button>
@@ -86,7 +97,7 @@ export default function RepoPicker({ open, onClose, owners, initialSelected = []
   )
 
   return (
-    <Dialog open={open} onClose={onClose} title={title} labelId={`${baseId}-title`} size="wide" className="rpk-dialog" footer={footer}>
+    <Frame open={open} onClose={onClose} title={title} labelId={`${baseId}-title`} size="wide" className="rpk-dialog" footer={footer}>
       {description && <p className="rpk-description">{description}</p>}
       <div className="rpk-search">
         <label className="rpk-label" htmlFor={`${baseId}-search`}>search repos</label>
@@ -133,6 +144,6 @@ export default function RepoPicker({ open, onClose, owners, initialSelected = []
           ))}
         </div>
       )}
-    </Dialog>
+    </Frame>
   )
 }

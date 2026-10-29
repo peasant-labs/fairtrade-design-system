@@ -12,12 +12,12 @@ import BrandMark from './BrandMark.jsx'
 
 /**
  * a single avatar tile: initials, or a photo with the initials as the fallback beneath it.
- * the base .avatar is 18px (inline meta); size scales it up for standalone use.
+ * the base .avatar is 24px (inline identity); size scales it up for standalone use.
  *
  * @param {object} props
  * @param {string} props.name - the person's name; used as the accessible label and to derive initials when none are given.
  * @param {string} [props.initials] - explicit initials to render; defaults to the first letters of `name`.
- * @param {AvatarSize} [props.size] - one of 'sm' | 'md' | 'lg' (24 / 32 / 44px). omit for the bare 18px base.
+ * @param {AvatarSize} [props.size] - one of 'sm' | 'md' | 'lg' (24 / 32 / 44px). omit for the 24px base.
  * @param {string} [props.src] - optional photo url; when set the tile becomes an .av-img with the photo over the initials.
  * @param {boolean} [props.more] - render the amber "+N overflow" tile (.av-more); `initials` carries the "+5" text.
  * @param {string} [props.className] - extra class names appended after the avatar classes.

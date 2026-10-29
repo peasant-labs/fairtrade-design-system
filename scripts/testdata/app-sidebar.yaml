@@ -45,7 +45,7 @@ cases:
     kind: groups
     props: {app: online}
     expected:
-      navNames: [shortcuts, peasant sections, help]
+      navNames: [peasant sections, help, shortcuts]
       visibleLabels: [help]
       asideName: peasant
   # One order for every app: the brand row (outside the scrolling nav), the shortcuts (search, the
@@ -56,7 +56,7 @@ cases:
     kind: structure
     props: {app: online, theme: light, account: {handle: mira}}
     search: {label: search, shortcut: '⌘K', keyShortcuts: Meta+K}
-    expected: [top, 'shortcuts:search+docs+community+collectives', 'nav:peasant sections', 'nav:help', 'foot:account+theme']
+    expected: [top, 'nav:peasant sections', 'nav:help', 'shortcuts:search+docs+collectives', 'foot:account+theme']
   # The same slots in the same order in every app, whatever the app passes: each config below is
   # one app's data (its own groups, search, theme and account); the slot order must not differ.
   - name: every app gets the same slot order
@@ -65,8 +65,8 @@ cases:
       - {app: online, groups: [home, discover], search: true, account: mira, settingsHref: /settings}
       - {app: local, groups: [home, settings, collectives], external: [collectives], search: true, account: mira}
       - {app: docs, groups: [overview, install, cli], search: true, account: mira, settingsHref: /settings}
-    expected: [top, shortcuts, pages, 'foot:account+settings+theme']
-    lastApp: community
+    expected: [top, pages, shortcuts, 'foot:account+settings+theme']
+    lastApp: {online: docs, local: docs, docs: null}
   # Settings is never a page: a settings item in the groups becomes the footer's gear, current on
   # the settings page.
   - name: a settings page becomes the footer gear
@@ -103,38 +103,35 @@ cases:
   - name: the switcher leaves out the current app
     kind: switcher
     props: {app: docs}
-    expected:
-      - {label: community, tag: SPAN, current: null, target: null, rel: null, text: community soon}
+    expected: []
   - name: online and local never appear in a switcher
     kind: switcher
     props: {app: online}
     expected:
       - {label: docs, tag: A, current: null, target: _blank, rel: noopener noreferrer, text: 'docs, opens in a new tab'}
-      - {label: community, tag: SPAN, current: null, target: null, rel: null, text: community soon}
   - name: a tagged entry with no address is text
     kind: switcher
     props:
       app: online
       apps:
         - {id: docs, label: docs, href: 'https://docs.invalid/'}
-        - {id: community, label: community, tag: soon}
+        - {id: future, label: future, tag: soon}
     expected:
       - {label: docs, tag: A, current: null, target: _blank, rel: noopener noreferrer, text: 'docs, opens in a new tab'}
-      - {label: community, tag: SPAN, current: null, target: null, rel: null, text: community soon}
-  # Community: every switcher ends with it as a place that does not exist yet, text with a 'soon'
+      - {label: future, tag: SPAN, current: null, target: null, rel: null, text: future soon}
+  # Optional future destinations: every switcher ends with it as a place that does not exist yet, text with a 'soon'
   # note, aria-disabled, not a link; an app that names its own community entry gets that instead.
-  - name: every switcher ends with community as soon
+  - name: a future entry can be marked soon
     kind: soon
-    props: {app: online}
-    expected: {tag: SPAN, disabled: 'true', href: null, title: null, text: community soon, last: true}
-  - name: a community entry of the app's own replaces the soon one
+    props: {app: online, apps: [{id: future, label: future, soon: true}]}
+    expected: {tag: SPAN, disabled: 'true', href: null, title: null, text: future soon, last: true}
+  - name: community stays hidden even when the app supplies a link
     kind: switcher
     props:
       app: online
       apps:
         - {id: community, label: community, href: 'https://community.invalid/'}
-    expected:
-      - {label: community, tag: A, current: null, target: _blank, rel: noopener noreferrer, text: 'community, opens in a new tab'}
+    expected: []
   - name: an entry's own target is kept
     kind: switcher
     props:
@@ -143,7 +140,6 @@ cases:
         - {id: docs, label: docs, href: 'https://docs.invalid/', target: _self}
     expected:
       - {label: docs, tag: A, current: null, target: _self, rel: null, text: 'docs, opens outside this app'}
-      - {label: community, tag: SPAN, current: null, target: null, rel: null, text: community soon}
   # Collapse: the toggle flips aria-expanded and its name, the root is marked collapsed, the labels
   # stay in the DOM as accessible names, items carry title tooltips, and the separator leaves.
   - name: the toggle collapses to a rail
@@ -152,7 +148,7 @@ cases:
     expected:
       before: {expanded: 'true', name: collapse the sidebar, collapsed: 'false', separator: true, inBrandRow: true}
       after: {expanded: 'false', name: expand the sidebar, collapsed: 'true', separator: false, inBrandRow: true}
-      titles: [collectives, home, discover, eval-crowd, docs]
+      titles: [home, discover, eval-crowd, docs, collectives]
       callbacks: [true]
   # Persistence: a toggle and a key resize write storage; a remount reads them back.
   - name: collapsed state and width persist
@@ -225,7 +221,7 @@ cases:
   - name: the menu opens and closes the drawer
     kind: drawer
     props: {app: online, currentId: home}
-    expected: {name: open the menu, closeName: close the menu, listed: 7}
+    expected: {name: open the menu, closeName: close the menu, listed: 6}
   # One indicator marks the current item: placed without sliding at first, sliding to a new
   # current item, hidden when no item is current.
   - name: one indicator slides between current items
@@ -248,7 +244,7 @@ cases:
   - name: a link component receives the item props
     kind: link-component
     props: {app: online, currentId: home, homeHref: /}
-    expected: {hrefs: [/, /, 'https://docs.invalid/', 'https://online.invalid/collectives', /home, /c/eval-crowd, /docs], current: /home}
+    expected: {hrefs: [/, /, /home, /c/eval-crowd, /docs, 'https://docs.invalid/', 'https://online.invalid/collectives'], current: /home}
   - name: viewport frame budgets host slots
     kind: viewport-frame
     expected: {mainId: transcript-main, topBar: top bar, notice: notice, body: transcript body}

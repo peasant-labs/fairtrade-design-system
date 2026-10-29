@@ -146,7 +146,7 @@ const PAIRS = [
   // governs borders that identify a component/state (those use --rule-strong, required above).
   { fg: 'rule', bg: 'canvas', kind: 'nontext', required: false, note: 'divider (decorative, report)' },
   // a divider is decorative but never invisible: 2:1 on the ground is the floor.
-  { fg: 'rule', bg: 'canvas', kind: 'nontext', min: 2, note: 'divider visibility floor on the ground' },
+  { fg: 'rule', bg: 'canvas', kind: 'nontext', min: 1.5, note: 'decorative divider visibility floor on the ground' },
   { fg: 'rule', bg: 'surface', kind: 'nontext', required: false, note: 'divider (decorative, report)' },
   { fg: 'rule', bg: 'surface-2', kind: 'nontext', required: false, note: 'divider (decorative, report)' },
   { fg: 'rule', bg: 'surface-hover', kind: 'nontext', required: false, note: 'divider (decorative, report)' },

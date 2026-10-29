@@ -42,8 +42,8 @@ await withMountedSource(async ({ load, mount, React, window }) => {
       open: true, onClose() {}, title: 'Recorded Session', state: row.state ?? 'ready', scan: { matches },
       access: [{ id: 'c', name: 'Readers' }], onPublish() { published = true }, onRetry() { published = true },
     }))
-    const primary = popup.container.querySelector('.dlg-foot .btn-primary')
-    report.check(primary?.disabled === true && !!popup.container.querySelector('[role="alert"]') && !popup.container.textContent.includes('all redacted'), `${row.name}: unknown scan must block publishing and trusted summary`)
+    const primary = popup.document.body.querySelector('.dlg-foot .btn-primary')
+    report.check(primary?.disabled === true && !!popup.document.body.querySelector('[role="alert"]') && !popup.document.body.textContent.includes('all redacted'), `${row.name}: unknown scan must block publishing and trusted summary`)
     await popup.act(() => click(window, primary))
     report.check(!published, `${row.name}: unknown scan cannot invoke publish`)
     await popup.unmount()

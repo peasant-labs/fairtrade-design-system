@@ -9,7 +9,7 @@
 .rpk-count { margin-inline-start: auto; font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-2); }
 .rpk-owners { display: flex; flex-direction: column; gap: var(--sp-4); }
 .rpk-owner { display: flex; flex-direction: column; margin: 0; max-width: none; padding: 0; border: var(--bd); }
-.rpk-owner-head {
+.rpk-owner-head { inline-size: 100%; max-inline-size: none;
   display: flex;
   align-items: center;
   gap: var(--sp-2);
@@ -46,3 +46,8 @@
 .rpk-empty { margin: 0; font-family: var(--font-body); font-size: var(--fs-body); color: var(--ink-3); }
 .rpk-foot { display: flex; flex: 1 1 auto; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--sp-2) var(--sp-3); }
 .rpk-error { margin-inline-end: auto; font-family: var(--font-body); font-size: var(--fs-body); color: var(--ink); }
+
+/* The same repository task can live in a page, with no extra modal or card. */
+.rpk-inline { display: grid; gap: var(--sp-4); min-width: 0; padding: 0; }
+.rpk-inline > h3 { font-family: var(--font-mono); font-size: var(--fs-lg); margin: 0; }
+.rpk-inline .rpk-foot { padding-top: var(--sp-3); border-top: var(--bd); }

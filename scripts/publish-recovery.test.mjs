@@ -11,7 +11,7 @@ await withMountedSource(async ({ load, mount, React, window }) => {
     onRetry: row.callback === 'retry' || row.callback === 'both' ? () => calls.push('retry') : undefined,
     onPublish: () => calls.push('publish'),
   })
-  const primary = (mounted) => mounted.container.querySelector('.dlg-foot .btn-primary')
+  const primary = (mounted) => mounted.document.body.querySelector('.dlg-foot .btn-primary')
   // Capture the actual React handler installed on the production button so stale/direct
   // invocation is exercised independently of the browser's disabled-button suppression.
   const handler = (button) => Object.entries(button).find(([key]) => key.startsWith('__reactProps$'))?.[1]?.onClick
@@ -26,7 +26,7 @@ await withMountedSource(async ({ load, mount, React, window }) => {
     await mounted.act(() => handler(button)())
     report.check(JSON.stringify(calls) === JSON.stringify(row.allowed ? [row.callback] : []), `${row.name}: direct callback guard`)
     if (row.refused) {
-      report.check(!!mounted.container.querySelector('[role="alert"]') && !mounted.container.textContent.includes('all redacted'), `${row.name}: explicit review refusal remains visible`)
+      report.check(!!mounted.document.body.querySelector('[role="alert"]') && !mounted.document.body.textContent.includes('all redacted'), `${row.name}: explicit review refusal remains visible`)
     }
     await mounted.unmount()
   }

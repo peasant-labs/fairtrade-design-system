@@ -38,6 +38,7 @@ export const Default = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement.ownerDocument.body)
+    await canvas.findByRole('dialog')
     const count = canvasElement.ownerDocument.querySelector('.rpk-count')
     await expect(count).toHaveTextContent('2 of 7 selected')
     await userEvent.type(canvas.getByRole('searchbox', { name: 'search repos' }), 'sdk')
@@ -52,8 +53,22 @@ export const EmptySearch = {
   render: () => <RepoPicker open onClose={fn()} owners={OWNERS} initialSelected={[]} onSave={fn()} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement.ownerDocument.body)
+    await canvas.findByRole('dialog')
     await userEvent.type(canvas.getByRole('searchbox', { name: 'search repos' }), 'zzz')
     /* the empty message is revealed after the search settles, so wait for it rather than assert on the first frame */
     await waitFor(() => expect(canvas.getByText('no repository matches “zzz”.')).toBeVisible())
+  },
+}
+
+export const InPage = {
+  render: () => <RepoPicker inline open onClose={fn()} owners={OWNERS} initialSelected={['acme/ingest-api', 'acme/web']} title="repositories" onSave={fn()} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.queryByRole('dialog')).toBeNull()
+    await expect(canvas.getByRole('searchbox', { name: 'search repos' })).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'clear' }))
+    await expect(canvas.getByRole('button', { name: 'save: unlink 2' })).toBeEnabled()
+    await userEvent.click(canvas.getByRole('button', { name: 'reset' }))
+    await expect(canvas.getByRole('button', { name: 'save' })).toBeDisabled()
   },
 }

@@ -16,14 +16,14 @@ await withMountedSource(async ({ load, mount, React, window }) => {
       done: { url: 'https://village.invalid/transcripts/test', collectives: ['Readers'] },
     }
     const mounted = await mount(React.createElement(PublishDialog, { ...props, state: 'ready' }))
-    await mounted.act(() => mounted.container.querySelector(row.focus).focus())
+    await mounted.act(() => mounted.document.body.querySelector(row.focus).focus())
     await mounted.rerender(React.createElement(PublishDialog, { ...props, state: 'publishing' }))
-    const dialog = mounted.container.querySelector('[role="dialog"]')
+    const dialog = mounted.document.body.querySelector('[role="dialog"]')
     report.check(dialog.contains(window.document.activeElement) && !window.document.activeElement.disabled, `${row.name}: publishing must focus an enabled control inside the dialog`)
     await mounted.act(() => opener.focus())
     report.check(dialog.contains(window.document.activeElement), `${row.name}: outside focus is contained by the modal`)
     await mounted.rerender(React.createElement(PublishDialog, { ...props, state: 'done' }))
-    report.check(mounted.container.querySelector('.dlg-foot button') === window.document.activeElement, `${row.name}: completion focuses done`)
+    report.check(mounted.document.body.querySelector('.dlg-foot button') === window.document.activeElement, `${row.name}: completion focuses done`)
     await mounted.rerender(React.createElement(PublishDialog, { ...props, open: false, state: 'done' }))
     await mounted.settle()
     report.check(window.document.activeElement === opener, `${row.name}: close returns to the original opener`)
@@ -40,7 +40,7 @@ await withMountedSource(async ({ load, mount, React, window }) => {
     globalThis.cancelAnimationFrame = (handle) => callbacks.delete(handle)
     try {
       const mounted = await mount(React.createElement(Menu, { label: 'actions', items: [{ label: 'copy link' }] }))
-      const trigger = mounted.container.querySelector('.menu-trigger')
+      const trigger = mounted.document.body.querySelector('.menu-trigger')
       await mounted.act(() => {
         trigger.focus()
         row.key ? keydown(window, trigger, row.key) : click(window, trigger)

@@ -20,7 +20,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     const module = await load(row.module)
     const mounted = await mount(React.createElement(module[row.component], row.props ?? {}))
     for (const probe of row.probes) {
-      const nodes = [...mounted.container.querySelectorAll(probe.selector)]
+      const nodes = [...window.document.body.querySelectorAll(probe.selector)]
       const text = nodes.map(node => node.textContent.replace(/\s+/g, ' ').trim()).join('\n')
       if (probe.count != null) report.check(nodes.length === probe.count, `${row.name}: ${probe.selector} count expected ${probe.count}, received ${nodes.length}`)
       if (probe.text != null) report.check(text.includes(probe.text), `${row.name}: ${probe.selector} must contain ${JSON.stringify(probe.text)}; received ${JSON.stringify(text)}`)

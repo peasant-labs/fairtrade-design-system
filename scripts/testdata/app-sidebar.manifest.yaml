@@ -13,8 +13,8 @@ requiredCaseNames:
   - the brand is the mark alone
   - the switcher leaves out the current app
   - online and local never appear in a switcher
-  - every switcher ends with community as soon
-  - a community entry of the app's own replaces the soon one
+  - a future entry can be marked soon
+  - community stays hidden even when the app supplies a link
   - an entry's own target is kept
   - every app gets the same slot order
   - a tagged entry with no address is text
@@ -53,8 +53,8 @@ requiredMutationNames:
   - the footer loses the theme toggle
   - search leaves the sidebar
   - the theme toggle names the current theme
-  - community is not marked disabled
-  - the switcher drops community
+  - a future entry is not marked disabled
+  - the switcher exposes community
   - the switcher lists online and local
   - an outside link stays among the pages
   - settings stays a page
@@ -88,13 +88,13 @@ mutations:
     expectedDiagnostic: "items render as links and buttons: collectives text"
   - name: the switcher lists apps it cannot reach
     file: src/ui/AppSidebar.jsx
-    find: "return withCommunity.filter((entry) => entry.id !== app && !NEVER_SWITCHED.has(entry.id) && (entry.href || entry.tag || entry.soon))"
-    replace: "return withCommunity.filter((entry) => entry.id !== app && !NEVER_SWITCHED.has(entry.id))"
+    find: "return apps.filter((entry) => entry.id !== app && !NEVER_SWITCHED.has(entry.id) && (entry.href || entry.tag || entry.soon))"
+    replace: "return apps.filter((entry) => entry.id !== app && !NEVER_SWITCHED.has(entry.id))"
     expectedDiagnostic: "online and local never appear in a switcher: switcher entries"
   - name: the switcher lists the current app
     file: src/ui/AppSidebar.jsx
-    find: "return withCommunity.filter((entry) => entry.id !== app && !NEVER_SWITCHED.has(entry.id) && (entry.href || entry.tag || entry.soon))"
-    replace: "return withCommunity.filter((entry) => !NEVER_SWITCHED.has(entry.id) && (entry.href || entry.tag || entry.soon))"
+    find: "return apps.filter((entry) => entry.id !== app && !NEVER_SWITCHED.has(entry.id) && (entry.href || entry.tag || entry.soon))"
+    replace: "return apps.filter((entry) => !NEVER_SWITCHED.has(entry.id) && (entry.href || entry.tag || entry.soon))"
     expectedDiagnostic: "the switcher leaves out the current app: switcher entries"
   - name: another app opens in the same tab
     file: src/ui/AppSidebar.jsx
@@ -151,16 +151,16 @@ mutations:
     find: "const next = theme === 'light' ? 'dark' : 'light'"
     replace: "const next = theme"
     expectedDiagnostic: "the theme toggle names the theme it switches to: the toggle must read"
-  - name: community is not marked disabled
+  - name: a future entry is not marked disabled
     file: src/ui/AppSidebar.jsx
     find: 'className="asb-item asb-app asb-item-soon" aria-disabled="true"'
     replace: 'className="asb-item asb-app asb-item-soon"'
-    expectedDiagnostic: "every switcher ends with community as soon: the soon entry"
-  - name: the switcher drops community
+    expectedDiagnostic: "a future entry can be marked soon: the soon entry"
+  - name: the switcher exposes community
     file: src/ui/AppSidebar.jsx
-    find: "? apps : [...apps, COMMUNITY_SOON]"
-    replace: "? apps : apps"
-    expectedDiagnostic: "every app gets the same slot order: the last switcher entry"
+    find: "new Set(['online', 'local', 'community'])"
+    replace: "new Set(['online', 'local'])"
+    expectedDiagnostic: "community stays hidden even when the app supplies a link: switcher entries"
   - name: the switcher lists online and local
     file: src/ui/AppSidebar.jsx
     find: "entry.id !== app && !NEVER_SWITCHED.has(entry.id) && (entry.href"
