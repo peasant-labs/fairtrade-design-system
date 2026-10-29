@@ -921,12 +921,12 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
     for (const call of turn.toolCalls ?? []) if (call.id) idCounts.set(call.id, (idCounts.get(call.id) ?? 0) + 1)
   }
   const stickyModels = resolveStickyModels(completeTurns, payload.model)
-  // session metadata records are not conversation, and an unknown time is no time at all
   /* a main turn's place in payload.turns, taken before any filter or copy and carried across
      withKnownTime's copy, so a served position still finds a turn whose time was dropped */
   /** @type {Map<TurnDetail, number>} */
   const sourcePositions = new Map()
   if (partition === 'main') completeTurns.forEach((turn, i) => sourcePositions.set(turn, i))
+  // session metadata records are not conversation, and an unknown time is no time at all
   const filteredTurns = (payload.harness === 'pi' ? completeTurns : prefilterTurns(completeTurns))
     .filter((turn) => !isSessionMetadataTurn(turn, payload.harness))
     .map((turn) => {
