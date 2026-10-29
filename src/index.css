@@ -4124,23 +4124,21 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
    Shape carries the cue, not hue: a dashed edge, a triangle glyph, and the word. The badge word is
    ink; only its edge and glyph are --warning, so amber stays the one focal point of the header. */
 @layer components {
-  .txn-integrity { position: relative; display: inline-flex; align-items: center; gap: var(--sp-1); margin-inline-start: var(--sp-2); }
+  .txn-integrity { position: relative; display: inline-flex; align-items: center; margin-inline-start: var(--sp-2); }
+  /* the badge is the one control: ink label, warning edge and glyph, a (?) glyph after the label */
   .txn-integrity-badge {
-    display: inline-flex; align-items: center; gap: var(--sp-2); box-sizing: border-box;
-    block-size: var(--chip-h); padding-inline: var(--sp-3);
+    display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); box-sizing: border-box;
+    block-size: var(--control-h); min-inline-size: var(--control-h); padding-inline: var(--sp-3);
     border: var(--stroke-hairline) solid var(--warning); border-radius: 0; background: transparent;
     color: var(--ink); font-family: var(--font-mono); font-size: var(--fs-label); font-weight: 400; text-transform: lowercase;
+    white-space: nowrap; cursor: pointer;
   }
-  .txn-integrity-badge .lucide { color: var(--warning); flex: none; inline-size: var(--ic-sm); block-size: var(--ic-sm); }
-  .txn-integrity-help {
-    display: inline-flex; align-items: center; justify-content: center; flex: none; box-sizing: border-box;
-    inline-size: var(--control-h); block-size: var(--control-h); padding: 0;
-    border: var(--stroke-hairline) solid var(--rule-strong); border-radius: 0; background: transparent;
-    color: var(--ink-2); cursor: pointer;
-  }
-  .txn-integrity-help[aria-expanded="true"] { background: var(--surface-2); }
-  .txn-integrity-help:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
-  @media (hover: hover) and (pointer: fine) { .txn-integrity-help:hover { color: var(--ink); background: var(--surface-hover); } }
+  .txn-integrity-badge .lucide { flex: none; inline-size: var(--ic-sm); block-size: var(--ic-sm); }
+  .txn-integrity-warn { color: var(--warning); }
+  .txn-integrity-q { color: var(--ink-2); }
+  .txn-integrity-badge[aria-expanded="true"] { background: var(--surface-2); }
+  .txn-integrity-badge:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
+  @media (hover: hover) and (pointer: fine) { .txn-integrity-badge:hover { background: var(--surface-hover); } }
   .txn-integrity-panel {
     inline-size: var(--measure-read); max-inline-size: calc(100vw - 2 * var(--sp-4)); box-sizing: border-box;
     padding: var(--sp-4); translate: var(--txn-integrity-shift, 0) 0; text-align: start; text-transform: none;
@@ -4149,8 +4147,6 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   .txn-integrity-panel p { margin: 0 0 var(--sp-3); }
   .txn-integrity-panel > :last-child { margin-block-end: 0; }
   .txn-integrity-heading { margin: 0 0 var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-body); font-weight: 600; text-transform: lowercase; color: var(--ink); }
-  .txn-integrity-link { display: inline-flex; align-items: center; min-block-size: var(--control-h); color: var(--ink); text-decoration: underline; text-underline-offset: var(--sp-1); }
-  .txn-integrity-link:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
   @media (width < 480px) { .txn-integrity-panel { inline-size: calc(100vw - 2 * var(--sp-4)); } }
 
   .txn-integrity-mark { display: inline-flex; align-items: center; gap: var(--sp-1); font-family: var(--font-mono); font-size: var(--fs-label); font-weight: 400; text-transform: lowercase; color: var(--ink-2); }

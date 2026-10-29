@@ -38,9 +38,9 @@ requiredInteractionNames:
   - help keyboard
   - outside pointer closes the panel
   - escape closes the panel from outside the badge
-  - the badge is not a control
-  - panel copy follows highlights
-  - help link only when supplied
+  - the badge is the only control
+  - the panel copy is the same with or without marks
+  - the panel carries no link
   - integrity added after mount announces once
   - an unflagged thinking-only group keeps its plain structure
   - integrity present at mount fills its status after mount
@@ -49,9 +49,9 @@ requiredInteractionKinds:
   help keyboard: help-keyboard
   outside pointer closes the panel: outside-pointer
   escape closes the panel from outside the badge: escape-outside
-  the badge is not a control: badge-static
-  panel copy follows highlights: panel-copy
-  help link only when supplied: help-link
+  the badge is the only control: badge-control
+  the panel copy is the same with or without marks: panel-copy
+  the panel carries no link: no-link
   integrity added after mount announces once: late-arrival
   an unflagged thinking-only group keeps its plain structure: plain-thinking
   integrity present at mount fills its status after mount: status-after-mount
@@ -67,7 +67,6 @@ requiredMutationNames:
   - the status is static text at mount
   - the thinking-only group loses its mark
   - every thinking block gains a row
-  - the panel counts marks the list does not draw
   - a folded prose turn is outlined twice
 mutations:
   - name: the badge ignores the hash
@@ -84,10 +83,10 @@ mutations:
     file: src/ui/transcript/TranscriptViewer.jsx
     find: "{integrityState && ("
     replace: "{integrityState && !heroCondensed && ("
-    expectedDiagnostic: "condensed header keeps the badge: help must be present"
+    expectedDiagnostic: "condensed header keeps the badge: badge must be present"
   - name: escape leaves focus in the panel
     file: src/ui/transcript/IntegrityBadge.jsx
-    find: "helpRef.current?.focus()"
+    find: "badgeRef.current?.focus()"
     replace: ""
     expectedDiagnostic: "help keyboard"
   - name: the work block repeats the card outline
@@ -110,11 +109,6 @@ mutations:
     find: "return isFlagged(turn) ? <div"
     replace: "return true ? <div"
     expectedDiagnostic: "an unflagged thinking-only group keeps its plain structure"
-  - name: the panel counts marks the list does not draw
-    file: src/ui/transcript/TranscriptViewer.jsx
-    find: "tab === 'trace' && viewMode === 'list' && visibleTurns.some("
-    replace: "visibleTurns.some("
-    expectedDiagnostic: "panel copy follows highlights: a viewer on another tab"
   - name: a folded prose turn is outlined twice
     file: src/ui/transcript/WorkGroup.jsx
     find: " || turnHasProse(turn)"

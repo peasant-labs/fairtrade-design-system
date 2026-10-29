@@ -572,11 +572,16 @@ render the same system.
 - **State:** outcome states (redacted, partial, failed) always pair an icon with the word.
 
 ### Integrity flag
-- **Badge:** drawn only for a served flag, at the top right of the viewer's title row: a static
-  outlined badge (warning glyph and the word flagged) with a (?) button beside it. No fill, never
-  amber-filled; the edge and the glyph are `--warning`, the word is `--ink`.
-- **Help:** the (?) opens a short explanation panel. It never opens on its own or on hover, never
-  moves focus, and Escape closes it and returns focus to the (?).
+- **Badge:** drawn only for a served flag, at the top right of the viewer's title row: one outlined
+  button reading the warning glyph, the words suspicious transcript and a (?) glyph. No fill at
+  rest, never amber-filled; the edge and the warning glyph are `--warning`, the words are `--ink`
+  and the (?) glyph is `--ink-2`. It is the control height, so 44px on a coarse pointer.
+- **Help:** the badge is the one control. Its accessible name is the help question, which contains
+  the visible words, and it opens a short explanation panel (`aria-expanded`, `aria-controls`). It
+  never opens on its own or on hover, never moves focus, and Escape or a press outside closes it;
+  Escape returns focus to the badge.
+- **Wording:** every string the badge, the panel and the turn marks show lives in `INTEGRITY_COPY`
+  (`src/ui/transcript/integrity.js`), the one place to edit it.
 - **Turn mark:** a flagged turn carries the same glyph and the word flagged on its head, so the cue
   is a shape and a word, not a colour. A ledger action block that folds a flagged turn says so.
   Turns are marked only when the served content hash equals the hash of the rendered content;

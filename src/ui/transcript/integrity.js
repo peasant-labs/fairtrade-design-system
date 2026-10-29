@@ -6,18 +6,21 @@
 
 /** @typedef {import('@peasant-labs/schema').VillageTranscriptIntegrity} VillageTranscriptIntegrity */
 
-/** Every string the integrity badge, its help panel and the flagged-turn mark show. */
+/**
+ * Every string the integrity badge, its help panel and the flagged-turn mark show. This object is
+ * the single place to edit that wording: change a value here and every surface follows. The tests
+ * read the strings from this object rather than repeating them, so a reworded value needs no test
+ * edit. They do guard that the key set stays the same, that no value names a rule, a field or the
+ * service behind the check, and that no value uses an em dash or a middle dot. The badge's
+ * accessible name (helpName) must contain its visible label (badgeLabel).
+ */
 export const INTEGRITY_COPY = Object.freeze({
-  badgeLabel: 'flagged',
-  helpName: 'what does flagged mean?',
+  badgeLabel: 'suspicious transcript',
+  helpName: 'what does suspicious transcript mean?',
   panelHeading: 'about this flag',
-  panelBody: "This transcript has likely been edited after it was recorded: an automated check found that the session's own records don't line up.",
-  panelHighlights: "Turns marked flagged are where the check found the records don't line up.",
-  panelBestEffort: 'The check follows fixed rules and does its best, but it can be wrong. A flag is not proof.',
-  panelOtherTools: 'Custom tools, plugins or hooks used during the session can also cause this, without anyone editing the transcript.',
-  panelNoVerify: 'A transcript without a flag is not proven unedited. The check can miss changes.',
-  helpLink: 'how the check works',
-  statusText: 'This transcript has been flagged by an automated check.',
+  panelBody: 'This transcript has likely been edited after it was recorded, according to our automated detection systems.',
+  panelOtherTools: 'Custom tools, plugins or hooks used during the session can flag false positives.',
+  statusText: 'This transcript has been flagged by an automated check and was likely modified after initially recorded.',
   turnMark: 'flagged',
   turnName: ', flagged by an automated check',
   groupMark: 'includes a flagged turn',

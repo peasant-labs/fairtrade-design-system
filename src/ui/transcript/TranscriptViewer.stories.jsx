@@ -450,7 +450,7 @@ export const PhoneHeader = {
 }
 
 /* ── integrity flag ───────────────────────────────────────────────────────────
-   A served integrity flag draws one outlined badge at the top right of the title row, a (?) that
+   A served integrity flag draws one outlined badge button at the top right of the title row, which
    opens a short explanation, and a mark on each flagged turn (a glyph and a word, never a fill).
    The reading session flags two turns: an assistant prose turn and the tool-only turn the ledger
    folds into its action block. Without a bound content hash the badge draws alone. There is no
@@ -461,7 +461,6 @@ const integrityArgs = {
   presentation: 'ledger',
   subtitle: 'a public transcript from fairtrade, read as a ledger.',
   ...integrityBoundProps,
-  integrityHelpHref: 'https://example.org/docs/transcript-check',
 }
 
 export const IntegrityFlagged = {

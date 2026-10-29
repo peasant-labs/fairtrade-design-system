@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /* Mounted-source gate for the integrity props of the transcript viewer. Every case mounts the
    REAL viewer (adaptTranscript -> TranscriptViewer) through vite and asserts which integrity
-   controls reach the DOM: the header badge and its (?) panel, the hidden status line, the marks
-   on the listed turns and the work group, and nothing at all for an absent or malformed value.
-   The interaction rows drive the (?) with a pointer and the keyboard.
+   controls reach the DOM: the header badge (the one control, which opens its panel), the hidden
+   status line, the marks on the listed turns and the work group, and nothing at all for an absent
+   or malformed value. The interaction rows drive the badge with a pointer and the keyboard. Every
+   string is read from INTEGRITY_COPY, so rewording a value there needs no edit here.
    Cases: scripts/testdata/transcript-integrity-viewer.yaml (+ .manifest.yaml).
    Run: pnpm test:transcript-integrity-viewer;
    mutations: pnpm test:transcript-integrity-viewer:mutations */
@@ -52,7 +53,7 @@ function outlineSelectors() {
   return selectors
 }
 
-const CONTROL_NAMES = ['badge', 'help', 'panel', 'status-text', 'mark-1', 'mark-2', 'mark-3', 'mark-4', 'mark-7', 'group-row-2', 'group-head', 'earlier-mark']
+const CONTROL_NAMES = ['badge', 'panel', 'status-text', 'mark-1', 'mark-2', 'mark-3', 'mark-4', 'mark-7', 'group-row-2', 'group-head', 'earlier-mark']
 for (const row of fixture.cases) {
   assertFields(row, ['name', 'kind', 'props', 'present', 'absent'], `${FIXTURE} ${row.name}`)
   assertExactNames([...row.present, ...row.absent], CONTROL_NAMES, `${FIXTURE} ${row.name} controls`)
@@ -70,10 +71,10 @@ const FILTERS = {
 }
 const SERVED_HASH = 'sha256:served'
 const OTHER_HASH = 'sha256:other'
-const HELP_HREF = 'https://example.test/how-it-works'
 
 const report = createReport('transcript integrity viewer')
 const text = (node) => (node?.textContent ?? '').replace(/\s+/g, ' ').trim()
+const byId = (container, id) => (id ? [...container.querySelectorAll('[id]')].find((node) => node.id === id) ?? null : null)
 
 const SETTLE_MS = 150 /* past the badge's announce delay */
 
@@ -92,15 +93,13 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   const articleOf = (container, index) => container.querySelector(`#turn-${index}`)
   const flaggedName = (article) => {
     const heading = article?.getAttribute('aria-labelledby') ? [...article.querySelectorAll('[id]')].find((node) => node.id === article.getAttribute('aria-labelledby')) : null
-    return text(heading).includes('flagged')
+    return (heading?.textContent ?? '').endsWith(INTEGRITY_COPY.turnName)
   }
   const CONTROLS = {
-    'badge': (root) => root.querySelector('.txn-header .txn-header-top .txn-actions > .txn-integrity:last-child .txn-integrity-badge'),
-    'help': (root) => {
-      const help = root.querySelector('.txn-integrity .txn-integrity-help')
-      const badge = root.querySelector('.txn-integrity .txn-integrity-badge')
-      const ok = help && badge && badge.nextElementSibling === help && help.getAttribute('aria-label') === INTEGRITY_COPY.helpName && help.getAttribute('aria-expanded') === 'false'
-      return ok ? help : null
+    'badge': (root) => {
+      const badge = root.querySelector('.txn-header .txn-header-top .txn-actions > .txn-integrity:last-child > button.txn-integrity-badge')
+      const ok = badge && badge.closest('.txn-integrity').querySelectorAll('button').length === 1 && badge.getAttribute('aria-label') === INTEGRITY_COPY.helpName && badge.getAttribute('aria-expanded') === 'false' && text(badge) === INTEGRITY_COPY.badgeLabel
+      return ok ? badge : null
     },
     'panel': (root) => {
       const panel = root.querySelector('.txn-integrity-panel')
@@ -191,12 +190,13 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     report.check(!!bare, `${name}: the fixture must fold turn ${row} into a thinking-only group`)
     const rowNode = bare?.querySelector('.txn-modelactions-turn.is-flagged')
     report.check(!!rowNode?.querySelector('.txn-integrity-mark'), `${name}: the flagged turn's thinking must lead with a mark`)
-    report.check(!!rowNode && /flagged/.test(text(rowNode.querySelector('.txn-integrity-mark'))), `${name}: the mark must be readable, not hidden`)
+    const thinkingMark = rowNode?.querySelector('.txn-integrity-mark')
+    report.check(!!thinkingMark && text(thinkingMark) === INTEGRITY_COPY.turnMark && thinkingMark.getAttribute('aria-hidden') !== 'true', `${name}: the mark must be readable, not hidden`)
     await mounted.unmount()
   }
 
   const FLAGGED = { integrity: { flagged_turns: [1, 3] }, transcriptContentHash: SERVED_HASH, contentHash: SERVED_HASH }
-  const helpOf = (container) => container.querySelector('.txn-integrity .txn-integrity-help')
+  const helpOf = (container) => container.querySelector('.txn-integrity > button.txn-integrity-badge')
   const panelOf = (container) => container.querySelector('.txn-integrity .txn-integrity-panel')
 
   for (const row of fixture.interactions) {
@@ -213,7 +213,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(help.getAttribute('aria-expanded') === 'false' && panel.hidden, `${row.name}: a second click hides it`)
       await mounted.unmount()
     } else if (row.kind === 'help-keyboard') {
-      const mounted = await mount(viewerElement({ ...FLAGGED, integrityHelpHref: HELP_HREF }))
+      const mounted = await mount(viewerElement(FLAGGED))
       await mounted.settle(SETTLE_MS)
       const help = helpOf(mounted.container)
       const panel = panelOf(mounted.container)
@@ -224,11 +224,13 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       await mounted.act(() => { keydown(window, help, ' '); click(window, help) })
       report.check(panel.hidden, `${row.name}: Space closes the panel`)
       await mounted.act(() => click(window, help))
-      const link = panel.querySelector('a[href]')
-      link.focus()
-      await mounted.act(() => keydown(window, link, 'Escape'))
+      /* the panel holds no control, so the test makes its heading focusable to put focus inside */
+      const heading = panel.querySelector('h1, h2, h3, h4, h5, h6')
+      heading.setAttribute('tabindex', '-1')
+      heading.focus()
+      await mounted.act(() => keydown(window, heading, 'Escape'))
       report.check(panel.hidden, `${row.name}: Escape inside the panel hides it`)
-      report.check(window.document.activeElement === help, `${row.name}: Escape returns focus to the (?), received ${window.document.activeElement?.tagName}`)
+      report.check(window.document.activeElement === help, `${row.name}: Escape returns focus to the badge, received ${window.document.activeElement?.tagName}`)
       await mounted.unmount()
     } else if (row.kind === 'escape-outside') {
       const mounted = await mount(viewerElement(FLAGGED))
@@ -242,7 +244,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(!panel.hidden && window.document.activeElement === title, `${row.name}: the panel is open and focus sits outside the badge`)
       await mounted.act(() => keydown(window, title, 'Escape'))
       report.check(panel.hidden, `${row.name}: Escape with focus outside the badge hides the panel`)
-      report.check(window.document.activeElement === help, `${row.name}: focus returns to the (?), received ${window.document.activeElement?.tagName}`)
+      report.check(window.document.activeElement === help, `${row.name}: focus returns to the badge, received ${window.document.activeElement?.tagName}`)
       await mounted.act(() => keydown(window, title, 'Escape'))
       report.check(panel.hidden && window.document.activeElement === help, `${row.name}: a later Escape changes nothing once closed`)
       await mounted.unmount()
@@ -259,54 +261,44 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(panel.hidden, `${row.name}: a pointer down on the title hides the panel`)
       report.check(window.document.activeElement === title, `${row.name}: focus stays where it was`)
       await mounted.unmount()
-    } else if (row.kind === 'badge-static') {
+    } else if (row.kind === 'badge-control') {
       const mounted = await mount(viewerElement(FLAGGED))
       await mounted.settle(SETTLE_MS)
       const root = mounted.container.querySelector('.txn-integrity')
-      const badge = root.querySelector('.txn-integrity-badge')
-      report.check(!badge.hasAttribute('tabindex') && badge.getAttribute('role') !== 'button' && !badge.hasAttribute('onclick') && badge.querySelector('button, a, [tabindex]') === null, `${row.name}: the badge has no tabindex, no button role and no handler`)
+      const badge = helpOf(mounted.container)
+      const panel = panelOf(mounted.container)
+      report.check(!!badge && badge.tagName === 'BUTTON' && badge.getAttribute('aria-label') === INTEGRITY_COPY.helpName && byId(mounted.container, badge.getAttribute('aria-controls')) === panel, `${row.name}: the badge is a button named by helpName that controls the panel`)
       const focusable = [...root.querySelectorAll('a[href], button, input, select, textarea, [tabindex]')].filter((node) => !node.closest('[hidden]'))
-      report.check(focusable.length === 1 && focusable[0] === helpOf(mounted.container), `${row.name}: the (?) must be the only focusable element while closed, received ${focusable.length}`)
+      report.check(focusable.length === 1 && focusable[0] === badge, `${row.name}: the badge must be the only focusable element while closed, received ${focusable.length}`)
+      for (const type of ['pointerover', 'pointerenter', 'mouseover', 'mouseenter']) {
+        await mounted.act(() => { badge.dispatchEvent(new window.Event(type, { bubbles: true })) })
+      }
+      await mounted.settle(50)
+      report.check(panel.hidden && badge.getAttribute('aria-expanded') === 'false', `${row.name}: hovering the badge opens nothing`)
       await mounted.unmount()
     } else if (row.kind === 'panel-copy') {
-      const order = [INTEGRITY_COPY.panelBody, INTEGRITY_COPY.panelBestEffort, INTEGRITY_COPY.panelOtherTools]
-      const checkOrder = (panelText, label, withHighlights) => {
-        let at = -1
-        for (const part of order) {
-          const found = panelText.indexOf(part)
-          report.check(found > at, `${row.name}: ${label} must carry ${JSON.stringify(part.slice(0, 24))} in order`)
-          at = Math.max(at, found)
-        }
-        report.check(panelText.includes(INTEGRITY_COPY.panelHighlights) === withHighlights, `${row.name}: ${label} highlights sentence must be ${withHighlights ? 'present' : 'absent'}`)
-        report.check(panelText.endsWith(INTEGRITY_COPY.panelNoVerify) || panelText.endsWith(`${INTEGRITY_COPY.panelNoVerify} ${INTEGRITY_COPY.helpLink}`), `${row.name}: ${label} must end with panelNoVerify`)
+      /* the panel reads the same whether or not any turn is marked: heading, body, other tools */
+      const expected = [INTEGRITY_COPY.panelHeading, INTEGRITY_COPY.panelBody, INTEGRITY_COPY.panelOtherTools]
+      const checkPanel = (panel, label) => {
+        const parts = [...(panel?.children ?? [])].map((node) => text(node))
+        report.check(JSON.stringify(parts) === JSON.stringify(expected), `${row.name}: ${label} must read ${JSON.stringify(expected)}, received ${JSON.stringify(parts)}`)
       }
-      const marked = await mount(viewerElement(FLAGGED))
-      await marked.settle(SETTLE_MS)
-      checkOrder(text(panelOf(marked.container)), 'a viewer with marked turns', true)
-      await marked.unmount()
-      const badgeOnly = await mount(viewerElement({ ...FLAGGED, contentHash: OTHER_HASH }))
-      await badgeOnly.settle(SETTLE_MS)
-      checkOrder(text(panelOf(badgeOnly.container)), 'a viewer with the badge only', false)
-      await badgeOnly.unmount()
-      const filtered = await mount(viewerElement({ ...FLAGGED, integrity: { flagged_turns: [6] } }))
-      await filtered.settle(SETTLE_MS)
-      checkOrder(text(panelOf(filtered.container)), 'a viewer whose flagged turn is filtered out', false)
-      await filtered.unmount()
-      /* no list renders on another tab, so no mark is drawn there */
-      const elsewhere = await mount(viewerElement({ ...FLAGGED, activeTab: 'files' }))
-      await elsewhere.settle(SETTLE_MS)
-      checkOrder(text(panelOf(elsewhere.container)), 'a viewer on another tab', false)
-      await elsewhere.unmount()
-    } else if (row.kind === 'help-link') {
-      const without = await mount(viewerElement(FLAGGED))
-      await without.settle(SETTLE_MS)
-      report.check(panelOf(without.container).querySelector('a[href]') === null, `${row.name}: no link without integrityHelpHref`)
-      await without.unmount()
-      const withLink = await mount(viewerElement({ ...FLAGGED, integrityHelpHref: HELP_HREF }))
-      await withLink.settle(SETTLE_MS)
-      const link = panelOf(withLink.container).querySelector('a[href]')
-      report.check(link?.getAttribute('href') === HELP_HREF && text(link) === INTEGRITY_COPY.helpLink, `${row.name}: the link reads helpLink and points at integrityHelpHref`)
-      await withLink.unmount()
+      for (const [label, props] of [
+        ['a viewer with marked turns', FLAGGED],
+        ['a viewer with the badge only', { ...FLAGGED, contentHash: OTHER_HASH }],
+        ['a viewer on another tab', { ...FLAGGED, activeTab: 'files' }],
+      ]) {
+        const mounted = await mount(viewerElement(props))
+        await mounted.settle(SETTLE_MS)
+        checkPanel(panelOf(mounted.container), label)
+        await mounted.unmount()
+      }
+    } else if (row.kind === 'no-link') {
+      /* the panel links nowhere: a host that still passes the old link prop draws no link */
+      const mounted = await mount(viewerElement({ ...FLAGGED, integrityHelpHref: 'https://example.test/ignored' }))
+      await mounted.settle(SETTLE_MS)
+      report.check(mounted.container.querySelector('.txn-integrity a') === null, `${row.name}: the badge and its panel carry no link`)
+      await mounted.unmount()
     } else if (row.kind === 'plain-thinking') {
       /* without integrity a thinking-only group is exactly its thinking blocks, as before the props existed */
       const thinkingVm = adaptTranscript(fixture.thinkingCase.payload)

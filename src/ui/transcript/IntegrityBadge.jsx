@@ -2,15 +2,17 @@ import { CircleHelp, TriangleAlert } from 'lucide-react'
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { INTEGRITY_COPY } from './integrity.js'
 
-/* IntegrityBadge: the transcript's integrity flag: a static outlined badge, a (?) button that
-   discloses a short explanation, and a visually hidden status line. DUMB: the host decides whether
-   the flag exists and passes only `hasHighlights` (whether any turn is marked) and an optional
-   help link. The badge is not a control. The (?) toggles a panel that stays in the DOM (hidden
-   when closed) so aria-controls always resolves; opening never moves focus, the panel never traps
-   it, and it never opens by itself or on hover. Escape closes it and returns focus to the (?); a
-   pointer down outside closes it and leaves focus where it was. The status line is empty when it
-   first enters the page and is filled a moment later, so a screen reader that watches a live
-   region the badge arrived with still hears it. */
+/* IntegrityBadge: the transcript's integrity flag: one outlined badge button (the warning glyph,
+   the label and a (?) glyph) that discloses a short explanation, and a visually hidden status
+   line. DUMB: the host decides whether the flag exists; the badge draws the same panel either
+   way, and the panel holds no link. The badge is the only control: it is named by
+   the help question, which contains its visible label, so the label may shrink away on a narrow
+   header without losing the name. It toggles a panel that stays in the DOM (hidden when closed)
+   so aria-controls always resolves; opening never moves focus, the panel never traps it, and it
+   never opens by itself or on hover. Escape closes it and returns focus to the badge; a pointer
+   down outside closes it and leaves focus where it was. The status line is empty when it first
+   enters the page and is filled a moment later, so a screen reader that watches a live region
+   the badge arrived with still hears it. Every string comes from INTEGRITY_COPY. */
 
 /** Keep the open panel inside the viewport by the page gutter, shifting it sideways when needed. */
 const VIEWPORT_GUTTER_PX = 16
@@ -20,15 +22,13 @@ const ANNOUNCE_DELAY_MS = 100
 
 /**
  * @param {object} props
- * @param {boolean} [props.hasHighlights=false]  true when at least one turn is marked
- * @param {string} [props.helpHref]  optional link to the explanation of the check
  * @param {number} [props.headingLevel=2]  the panel heading's level, one under the viewer title
  */
-export default function IntegrityBadge({ hasHighlights = false, helpHref, headingLevel = 2 }) {
+export default function IntegrityBadge({ headingLevel = 2 }) {
   const [open, setOpen] = useState(false)
   const [announced, setAnnounced] = useState(false)
   const rootRef = useRef(null)
-  const helpRef = useRef(null)
+  const badgeRef = useRef(null)
   const panelRef = useRef(null)
   const panelId = useId()
   const headingId = useId()
@@ -50,7 +50,7 @@ export default function IntegrityBadge({ hasHighlights = false, helpHref, headin
       if (event.key !== 'Escape' || event.defaultPrevented) return
       event.stopPropagation()
       setOpen(false)
-      helpRef.current?.focus()
+      badgeRef.current?.focus()
     }
     document.addEventListener('pointerdown', onPointerDown)
     document.addEventListener('keydown', onKeyDown)
@@ -84,21 +84,19 @@ export default function IntegrityBadge({ hasHighlights = false, helpHref, headin
 
   return (
     <span className="txn-integrity" ref={rootRef}>
-      <span className="txn-integrity-badge">
-        <TriangleAlert size={14} aria-hidden="true" />
-        {INTEGRITY_COPY.badgeLabel}
-      </span>
       <button
         type="button"
-        ref={helpRef}
-        className="txn-integrity-help"
+        ref={badgeRef}
+        className="txn-integrity-badge"
         aria-label={INTEGRITY_COPY.helpName}
         title={INTEGRITY_COPY.helpName}
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((value) => !value)}
       >
-        <CircleHelp size={16} aria-hidden="true" />
+        <TriangleAlert size={14} aria-hidden="true" className="txn-integrity-warn" />
+        <span className="txn-integrity-label">{INTEGRITY_COPY.badgeLabel}</span>
+        <CircleHelp size={14} aria-hidden="true" className="txn-integrity-q" />
       </button>
       <div
         id={panelId}
@@ -110,10 +108,8 @@ export default function IntegrityBadge({ hasHighlights = false, helpHref, headin
         hidden={!open}
       >
         <Heading id={headingId} className="txn-integrity-heading">{INTEGRITY_COPY.panelHeading}</Heading>
-        <p>{INTEGRITY_COPY.panelBody}{hasHighlights ? ` ${INTEGRITY_COPY.panelHighlights}` : ''}</p>
-        <p>{INTEGRITY_COPY.panelBestEffort} {INTEGRITY_COPY.panelOtherTools}</p>
-        <p>{INTEGRITY_COPY.panelNoVerify}</p>
-        {helpHref ? <a className="txn-integrity-link" href={helpHref}>{INTEGRITY_COPY.helpLink}</a> : null}
+        <p>{INTEGRITY_COPY.panelBody}</p>
+        <p>{INTEGRITY_COPY.panelOtherTools}</p>
       </div>
       <span className="txn-sr" role="status">{announced ? INTEGRITY_COPY.statusText : ''}</span>
     </span>

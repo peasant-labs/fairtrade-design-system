@@ -82,25 +82,25 @@ adapterCases:
     earlierUndefined: true
 # `badgeCases` mount IntegrityBadge; `kind` picks the assertion set. `turnCases` mount one turn of
 # `turnPayload` through TurnCard; `markWithin` is the selector the single visible mark must sit in.
-# `groupCases` mount ModelActions over turns 1 and 3 with the named turns flagged. `cssCases` read
+# `groupCases` mount ModelActions over turns 1 and 3 with the named turns flagged; `groupMark`
+# says whether the folded summary shows INTEGRITY_COPY.groupMark (the gate reads the words from it). `cssCases` read
 # the first rule with that exact selector from src/index.css and require each declaration text.
 badgeCases:
-  - name: the badge is static and the help button controls a hidden panel
+  - name: the badge is the one button and controls a hidden panel
     kind: structure
   - name: a click opens and closes the panel without moving focus
     kind: toggle
-  - name: escape on the button closes the panel
+  - name: hover and focus open nothing
+    kind: hover
+  - name: escape on the badge closes the panel
     kind: escape-button
-  - name: escape inside the panel returns focus to the button
+  - name: escape inside the panel returns focus to the badge
     kind: escape-panel
-    props: {helpHref: "https://example.test/how-it-works"}
   - name: a pointer down outside closes the panel and keeps focus
     kind: outside-pointer
-  - name: the panel reads in the settled order with highlights and a link
+  - name: the panel reads its heading, body and other-tools sentence with no link
     kind: panel-order
-    props: {hasHighlights: true, helpHref: "https://example.test/how-it-works"}
-  - name: without highlights or a link the panel omits both
-    kind: panel-plain
+    props: {hasHighlights: true, helpHref: "https://example.test/ignored"}
   - name: the panel heading follows the heading level
     kind: heading-level
     props: {headingLevel: 3}
@@ -172,23 +172,23 @@ turnCases:
 groupCases:
   - name: a flagged turn marks its row and the folded summary
     flaggedTurns: [3]
-    expect: {flaggedRows: 1, groupMark: "includes a flagged turn"}
+    expect: {flaggedRows: 1, groupMark: true}
   - name: no flagged turn draws no mark
     flaggedTurns: []
-    expect: {flaggedRows: 0, groupMark: null}
+    expect: {flaggedRows: 0, groupMark: false}
 cssCases:
   - name: the badge keeps ink text and a warning edge
     selector: ".txn-integrity-badge"
     includes: ["border: var(--stroke-hairline) solid var(--warning)", "color: var(--ink)", "border-radius: 0"]
-  - name: the badge icon is the warning colour
-    selector: ".txn-integrity-badge .lucide"
+  - name: the badge keeps the control height and width
+    selector: ".txn-integrity-badge"
+    includes: ["block-size: var(--control-h)", "min-inline-size: var(--control-h)"]
+  - name: the warning glyph is the warning colour
+    selector: ".txn-integrity-warn"
     includes: ["color: var(--warning)"]
-  - name: the open help button takes the elevated fill
-    selector: '.txn-integrity-help[aria-expanded="true"]'
+  - name: the open badge takes the elevated fill
+    selector: '.txn-integrity-badge[aria-expanded="true"]'
     includes: ["background: var(--surface-2)"]
-  - name: the help button keeps the control height
-    selector: ".txn-integrity-help"
-    includes: ["inline-size: var(--control-h)", "block-size: var(--control-h)"]
   - name: the panel is capped between the phone gutters
     selector: ".txn-integrity-panel"
     includes: ["inline-size: var(--measure-read)", "max-inline-size: calc(100vw - 2 * var(--sp-4))"]
@@ -198,6 +198,3 @@ cssCases:
   - name: the mark icon is the warning colour
     selector: ".txn-integrity-mark .lucide"
     includes: ["color: var(--warning)"]
-  - name: the panel link keeps a comfortable target on a coarse pointer
-    selector: ".txn-integrity-link"
-    includes: ["min-block-size: var(--control-h)"]

@@ -102,7 +102,6 @@ The viewer takes a served integrity flag and draws it; it never decides one.
 | `integrity` | the served `VillageTranscriptIntegrity`, passed through untouched. A well formed value means the transcript is flagged and the header shows the badge in every presentation and at every width. Absent, `null` or malformed renders nothing. |
 | `transcriptContentHash` | the detail response's `transcript.content_hash`: the content `flagged_turns` refer to. |
 | `contentHash` | the bare hash of the content `viewModel` was cooked from, from the content route's `Village-Content-Hash` header. |
-| `integrityHelpHref` | an optional link inside the badge's explanation panel. |
 
 Position binding: each entry of `flagged_turns` is a position in the wire `turns` array. The adapter
 records it on every main turn as `sourcePosition`, before any turn is dropped or merged, so a served

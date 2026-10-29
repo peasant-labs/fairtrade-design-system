@@ -48,61 +48,61 @@ cases:
     kind: ledger
     props: {}
     present: []
-    absent: [badge, help, panel, status-text, mark-1, mark-2, mark-3, mark-4, mark-7, group-row-2, group-head, earlier-mark]
+    absent: [badge, panel, status-text, mark-1, mark-2, mark-3, mark-4, mark-7, group-row-2, group-head, earlier-mark]
   - name: malformed integrity renders nothing
     kind: ledger
     props: {integrity: {flagged_turns: null}, hashes: same}
     present: []
-    absent: [badge, help, panel, status-text, mark-1, mark-2, mark-3, mark-4, mark-7, group-row-2, group-head, earlier-mark]
+    absent: [badge, panel, status-text, mark-1, mark-2, mark-3, mark-4, mark-7, group-row-2, group-head, earlier-mark]
   - name: ledger flagged with matching hash marks listed turns
     kind: ledger
     props: {integrity: {flagged_turns: [1, 2, 3, 4, 7]}, hashes: same}
-    present: [badge, help, status-text, mark-1, mark-3, mark-4, mark-7, group-row-2, group-head]
+    present: [badge, status-text, mark-1, mark-3, mark-4, mark-7, group-row-2, group-head]
     absent: [panel, mark-2, earlier-mark]
   - name: classic flagged with matching hash marks listed turns
     kind: classic
     props: {integrity: {flagged_turns: [1, 2, 3, 4, 7]}, hashes: same}
-    present: [badge, help, status-text, mark-1, mark-2, mark-3, mark-4, mark-7]
+    present: [badge, status-text, mark-1, mark-2, mark-3, mark-4, mark-7]
     absent: [panel, group-row-2, group-head, earlier-mark]
   - name: different hashes draw the badge only
     kind: ledger
     props: {integrity: {flagged_turns: [1, 2, 3, 4, 7]}, hashes: different}
-    present: [badge, help, status-text]
+    present: [badge, status-text]
     absent: [panel, mark-1, mark-2, mark-3, mark-4, mark-7, group-row-2, group-head, earlier-mark]
   - name: different hashes draw the badge only in classic
     kind: classic
     props: {integrity: {flagged_turns: [1, 2, 3, 4, 7]}, hashes: different}
-    present: [badge, help, status-text]
+    present: [badge, status-text]
     absent: [panel, mark-1, mark-2, mark-3, mark-4, mark-7, group-row-2, group-head, earlier-mark]
   - name: sticky flag with no turns draws the badge only
     kind: ledger
     props: {integrity: {flagged_turns: []}, hashes: same}
-    present: [badge, help, status-text]
+    present: [badge, status-text]
     absent: [panel, mark-1, mark-2, mark-3, mark-4, mark-7, group-row-2, group-head, earlier-mark]
   - name: a filtered-out flagged turn leaves only the badge
     kind: ledger
     props: {integrity: {flagged_turns: [6]}, hashes: same}
-    present: [badge, help, status-text]
+    present: [badge, status-text]
     absent: [panel, mark-1, mark-2, mark-3, mark-4, mark-7, group-row-2, group-head, earlier-mark]
   - name: a hidden tool category leaves only the badge
     kind: ledger
     props: {integrity: {flagged_turns: [2]}, hashes: same, toolcalls: false}
-    present: [badge, help, status-text]
+    present: [badge, status-text]
     absent: [panel, mark-1, mark-2, mark-3, mark-4, mark-7, group-row-2, group-head, earlier-mark]
   - name: earlier history is never marked
     kind: ledger
     props: {integrity: {flagged_turns: [1]}, hashes: same}
-    present: [badge, help, status-text, mark-1]
+    present: [badge, status-text, mark-1]
     absent: [panel, mark-2, mark-3, mark-4, mark-7, group-row-2, group-head, earlier-mark]
   - name: condensed header keeps the badge
     kind: ledger
     props: {integrity: {flagged_turns: [1]}, hashes: same, condensed: true}
-    present: [badge, help, status-text, mark-1]
+    present: [badge, status-text, mark-1]
     absent: [panel, mark-2, mark-3, mark-4, mark-7, group-row-2, group-head, earlier-mark]
   - name: zen keeps the badge
     kind: ledger
     props: {integrity: {flagged_turns: [1]}, hashes: same, zen: true}
-    present: [badge, help, status-text, mark-1]
+    present: [badge, status-text, mark-1]
     absent: [panel, mark-2, mark-3, mark-4, mark-7, group-row-2, group-head, earlier-mark]
 
 # `outlineCases` check the dashed outline. The selectors of the outline rule in index.css are
@@ -198,12 +198,12 @@ interactions:
     kind: outside-pointer
   - name: escape closes the panel from outside the badge
     kind: escape-outside
-  - name: the badge is not a control
-    kind: badge-static
-  - name: panel copy follows highlights
+  - name: the badge is the only control
+    kind: badge-control
+  - name: the panel copy is the same with or without marks
     kind: panel-copy
-  - name: help link only when supplied
-    kind: help-link
+  - name: the panel carries no link
+    kind: no-link
   - name: integrity added after mount announces once
     kind: late-arrival
   - name: an unflagged thinking-only group keeps its plain structure

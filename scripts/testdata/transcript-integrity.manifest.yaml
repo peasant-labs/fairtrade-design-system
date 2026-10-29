@@ -20,13 +20,13 @@ requiredAdapterCaseNames:
   - unknown timestamp keeps its position
   - earlier history has no source position
 requiredBadgeCaseNames:
-  - the badge is static and the help button controls a hidden panel
+  - the badge is the one button and controls a hidden panel
   - a click opens and closes the panel without moving focus
-  - escape on the button closes the panel
-  - escape inside the panel returns focus to the button
+  - hover and focus open nothing
+  - escape on the badge closes the panel
+  - escape inside the panel returns focus to the badge
   - a pointer down outside closes the panel and keeps focus
-  - the panel reads in the settled order with highlights and a link
-  - without highlights or a link the panel omits both
+  - the panel reads its heading, body and other-tools sentence with no link
   - the panel heading follows the heading level
 requiredTurnCaseNames:
   - a classic flagged turn marks its head
@@ -41,23 +41,18 @@ requiredGroupCaseNames:
   - no flagged turn draws no mark
 requiredCssCaseNames:
   - the badge keeps ink text and a warning edge
-  - the badge icon is the warning colour
-  - the open help button takes the elevated fill
-  - the help button keeps the control height
+  - the badge keeps the control height and width
+  - the warning glyph is the warning colour
+  - the open badge takes the elevated fill
   - the panel is capped between the phone gutters
   - a flagged card is drawn with a dashed warning outline
   - the mark icon is the warning colour
-  - the panel link keeps a comfortable target on a coarse pointer
 requiredCopyKeys:
   - badgeLabel
   - helpName
   - panelHeading
   - panelBody
-  - panelHighlights
-  - panelBestEffort
   - panelOtherTools
-  - panelNoVerify
-  - helpLink
   - statusText
   - turnMark
   - turnName
@@ -69,10 +64,10 @@ requiredMutationNames:
   - positions use the index field
   - a copied turn loses its position
   - the panel is never hidden
-  - the help button never reports expanded
+  - the badge never reports expanded
+  - hover opens the panel
   - escape does not return focus
   - an outside pointer down does not close
-  - the highlights sentence is dropped
   - the flagged class is dropped
   - the heading suffix is dropped
   - the group mark is dropped
@@ -103,26 +98,26 @@ mutations:
     find: "hidden={!open}"
     replace: "hidden={false}"
     expectedDiagnostic: "aria-controls resolves to the hidden panel"
-  - name: the help button never reports expanded
+  - name: the badge never reports expanded
     file: src/ui/transcript/IntegrityBadge.jsx
     find: "aria-expanded={open}"
     replace: "aria-expanded={false}"
     expectedDiagnostic: "a click opens the panel"
+  - name: hover opens the panel
+    file: src/ui/transcript/IntegrityBadge.jsx
+    find: "onClick={() => setOpen((value) => !value)}"
+    replace: "onClick={() => setOpen((value) => !value)} onPointerOver={() => setOpen(true)}"
+    expectedDiagnostic: "hover and focus open nothing"
   - name: escape does not return focus
     file: src/ui/transcript/IntegrityBadge.jsx
-    find: "helpRef.current?.focus()"
+    find: "badgeRef.current?.focus()"
     replace: ""
-    expectedDiagnostic: "focus returns to the help button"
+    expectedDiagnostic: "focus returns to the badge"
   - name: an outside pointer down does not close
     file: src/ui/transcript/IntegrityBadge.jsx
     find: "!rootRef.current.contains(event.target)"
     replace: "false"
     expectedDiagnostic: "a pointer down outside closes the panel"
-  - name: the highlights sentence is dropped
-    file: src/ui/transcript/IntegrityBadge.jsx
-    find: "{hasHighlights ?"
-    replace: "{false ?"
-    expectedDiagnostic: "panel order must be"
   - name: the flagged class is dropped
     file: src/ui/transcript/TurnCard.jsx
     find: "(flagged ? ' is-flagged' : '')"

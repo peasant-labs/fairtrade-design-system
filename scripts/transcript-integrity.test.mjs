@@ -100,22 +100,25 @@ await withMountedSource(async (ctx) => {
   const h = React.createElement
 
   for (const row of fixture.badgeCases) {
-    const props = { hasHighlights: false, ...(row.props ?? {}) }
+    const props = { ...(row.props ?? {}) }
     const mounted = await mount(h('div', null, h(IntegrityBadge, props), h('button', { type: 'button', id: 'outside' }, 'outside')))
     const root = mounted.container.querySelector('.txn-integrity')
-    const badge = root?.querySelector('.txn-integrity-badge')
-    const help = root?.querySelector('button.txn-integrity-help')
+    const badge = root?.querySelector('button.txn-integrity-badge')
     const panel = root?.querySelector('.txn-integrity-panel')
     const label = `${row.name}`
-    report.check(!!root && !!badge && !!help && !!panel, `${label}: the badge, the help button and the panel must all render`)
-    if (!root || !badge || !help || !panel) { await mounted.unmount(); continue }
+    report.check(!!root && !!badge && !!panel, `${label}: the badge button and the panel must both render`)
+    if (!root || !badge || !panel) { await mounted.unmount(); continue }
     if (row.kind === 'structure') {
-      report.check([...root.children].map((n) => n.className.split(' ')[0]).join(',') === 'txn-integrity-badge,txn-integrity-help,txn-integrity-panel,txn-sr', `${label}: DOM order must be badge, help, panel, status`)
-      report.check(badge.tagName === 'SPAN' && !badge.hasAttribute('tabindex') && badge.querySelector('button') === null, `${label}: the badge is static text`)
-      report.check(text(badge) === INTEGRITY_COPY.badgeLabel && badge.querySelector('svg')?.getAttribute('aria-hidden') === 'true', `${label}: the badge shows its icon (aria-hidden) and the label`)
-      report.check(help.getAttribute('type') === 'button' && help.getAttribute('aria-label') === INTEGRITY_COPY.helpName && help.getAttribute('title') === INTEGRITY_COPY.helpName, `${label}: the help button is named by helpName`)
-      report.check(help.getAttribute('aria-expanded') === 'false' && help.querySelector('svg')?.getAttribute('aria-hidden') === 'true', `${label}: the help button starts closed with an aria-hidden glyph`)
-      report.check(byId(mounted.container, help.getAttribute('aria-controls')) === panel && panel.hidden, `${label}: aria-controls resolves to the hidden panel`)
+      report.check([...root.children].map((n) => n.className.split(' ')[0]).join(',') === 'txn-integrity-badge,txn-integrity-panel,txn-sr', `${label}: DOM order must be badge, panel, status`)
+      report.check(root.querySelectorAll('button').length === 1, `${label}: the badge is the one control, with no separate help button`)
+      report.check(badge.getAttribute('type') === 'button' && badge.getAttribute('aria-label') === INTEGRITY_COPY.helpName && badge.getAttribute('title') === INTEGRITY_COPY.helpName, `${label}: the badge is a button named by helpName`)
+      const parts = [...badge.children].map((n) => (n.tagName.toLowerCase() === 'svg' ? `svg:${n.getAttribute('aria-hidden')}` : `${n.className}:${text(n)}`))
+      const expectedParts = ['svg:true', `txn-integrity-label:${INTEGRITY_COPY.badgeLabel}`, 'svg:true']
+      report.check(show(parts) === show(expectedParts), `${label}: the badge reads warning glyph, label, help glyph, received ${show(parts)}`)
+      report.check(badge.firstElementChild?.classList.contains('txn-integrity-warn') && badge.lastElementChild?.classList.contains('txn-integrity-q'), `${label}: the warning glyph leads and the help glyph follows`)
+      report.check(INTEGRITY_COPY.helpName.toLowerCase().includes(INTEGRITY_COPY.badgeLabel.toLowerCase()), `${label}: the accessible name contains the visible label`)
+      report.check(badge.getAttribute('aria-expanded') === 'false', `${label}: the badge starts closed`)
+      report.check(byId(mounted.container, badge.getAttribute('aria-controls')) === panel && panel.hidden, `${label}: aria-controls resolves to the hidden panel`)
       report.check(panel.classList.contains('menu-pop') && panel.classList.contains('menu-float') && panel.getAttribute('data-align') === 'end' && panel.getAttribute('role') === 'region', `${label}: the panel is the shared floating menu surface, a region`)
       report.check(byId(mounted.container, panel.getAttribute('aria-labelledby')) === panel.querySelector('h2'), `${label}: the region is named by its heading`)
       const status = root.querySelector('[role="status"]')
@@ -124,28 +127,37 @@ await withMountedSource(async (ctx) => {
       report.check(text(status) === INTEGRITY_COPY.statusText, `${label}: the status reads statusText once the badge has settled`)
     } else if (row.kind === 'toggle') {
       const before = window.document.activeElement
-      await mounted.act(() => click(window, help))
-      report.check(help.getAttribute('aria-expanded') === 'true' && !panel.hidden, `${label}: a click opens the panel`)
+      await mounted.act(() => click(window, badge))
+      report.check(badge.getAttribute('aria-expanded') === 'true' && !panel.hidden, `${label}: a click opens the panel`)
       report.check(window.document.activeElement === before, `${label}: opening never moves focus`)
-      await mounted.act(() => click(window, help))
-      report.check(help.getAttribute('aria-expanded') === 'false' && panel.hidden, `${label}: a second click closes it`)
+      await mounted.act(() => click(window, badge))
+      report.check(badge.getAttribute('aria-expanded') === 'false' && panel.hidden, `${label}: a second click closes it`)
+    } else if (row.kind === 'hover') {
+      for (const type of ['pointerover', 'pointerenter', 'mouseover', 'mouseenter', 'focusin']) {
+        await mounted.act(() => { badge.dispatchEvent(new window.Event(type, { bubbles: true })) })
+      }
+      badge.focus()
+      await mounted.settle(50)
+      report.check(panel.hidden && badge.getAttribute('aria-expanded') === 'false', `${label}: hover and focus open nothing`)
     } else if (row.kind === 'escape-button') {
-      help.focus()
-      await mounted.act(() => click(window, help))
-      await mounted.act(() => keydown(window, help, 'Escape'))
-      report.check(panel.hidden && help.getAttribute('aria-expanded') === 'false', `${label}: Escape on the button closes the panel`)
-      report.check(window.document.activeElement === help, `${label}: focus stays on the help button`)
+      badge.focus()
+      await mounted.act(() => click(window, badge))
+      await mounted.act(() => keydown(window, badge, 'Escape'))
+      report.check(panel.hidden && badge.getAttribute('aria-expanded') === 'false', `${label}: Escape on the badge closes the panel`)
+      report.check(window.document.activeElement === badge, `${label}: focus stays on the badge`)
     } else if (row.kind === 'escape-panel') {
-      await mounted.act(() => click(window, help))
-      const link = panel.querySelector('a')
-      link.focus()
-      await mounted.act(() => keydown(window, link, 'Escape'))
+      await mounted.act(() => click(window, badge))
+      /* the panel holds no control, so the test makes its heading focusable to put focus inside */
+      const heading = panel.querySelector('h2')
+      heading.setAttribute('tabindex', '-1')
+      heading.focus()
+      await mounted.act(() => keydown(window, heading, 'Escape'))
       report.check(panel.hidden, `${label}: Escape inside the panel closes it`)
-      report.check(window.document.activeElement === help, `${label}: focus returns to the help button`)
+      report.check(window.document.activeElement === badge, `${label}: focus returns to the badge`)
     } else if (row.kind === 'outside-pointer') {
       const outside = mounted.container.querySelector('#outside')
       outside.focus()
-      await mounted.act(() => click(window, help))
+      await mounted.act(() => click(window, badge))
       await mounted.act(() => { panel.dispatchEvent(new window.Event('pointerdown', { bubbles: true })) })
       report.check(!panel.hidden, `${label}: a pointer down inside the panel keeps it open`)
       await mounted.act(() => { outside.dispatchEvent(new window.Event('pointerdown', { bubbles: true })) })
@@ -153,14 +165,9 @@ await withMountedSource(async (ctx) => {
       report.check(window.document.activeElement === outside, `${label}: closing from outside does not move focus`)
     } else if (row.kind === 'panel-order') {
       const parts = [...panel.children].map((n) => `${n.tagName.toLowerCase()}:${text(n)}`)
-      const expected = [`h2:${INTEGRITY_COPY.panelHeading}`, `p:${INTEGRITY_COPY.panelBody} ${INTEGRITY_COPY.panelHighlights}`, `p:${INTEGRITY_COPY.panelBestEffort} ${INTEGRITY_COPY.panelOtherTools}`, `p:${INTEGRITY_COPY.panelNoVerify}`, `a:${INTEGRITY_COPY.helpLink}`]
+      const expected = [`h2:${INTEGRITY_COPY.panelHeading}`, `p:${INTEGRITY_COPY.panelBody}`, `p:${INTEGRITY_COPY.panelOtherTools}`]
       report.check(show(parts) === show(expected), `${label}: panel order must be ${show(expected)}, received ${show(parts)}`)
-      const link = panel.querySelector('a')
-      report.check(link?.getAttribute('href') === props.helpHref && panel.lastElementChild === link, `${label}: the link comes last and points at helpHref`)
-    } else if (row.kind === 'panel-plain') {
-      const parts = [...panel.children].map((n) => `${n.tagName.toLowerCase()}:${text(n)}`)
-      const expected = [`h2:${INTEGRITY_COPY.panelHeading}`, `p:${INTEGRITY_COPY.panelBody}`, `p:${INTEGRITY_COPY.panelBestEffort} ${INTEGRITY_COPY.panelOtherTools}`, `p:${INTEGRITY_COPY.panelNoVerify}`]
-      report.check(show(parts) === show(expected), `${label}: without highlights or a link the panel must read ${show(expected)}, received ${show(parts)}`)
+      report.check(root.querySelector('a') === null, `${label}: the panel carries no link, even when a host passes one`)
     } else if (row.kind === 'heading-level') {
       const heading = panel.querySelector(`h${props.headingLevel}`)
       report.check(!!heading && byId(mounted.container, panel.getAttribute('aria-labelledby')) === heading, `${label}: the panel heading is an h${props.headingLevel} that names the region`)
@@ -204,7 +211,8 @@ await withMountedSource(async (ctx) => {
     report.check(flaggedRows.length === row.expect.flaggedRows, `${row.name}: flagged rows must be ${row.expect.flaggedRows}, received ${flaggedRows.length}`)
     report.check(flaggedRows.every((r) => r.firstElementChild?.classList.contains('txn-integrity-mark') && text(r.firstElementChild) === INTEGRITY_COPY.turnMark), `${row.name}: a flagged row leads with the mark`)
     const summaryMark = mounted.container.querySelector('.txn-modelactions-head .txn-integrity-mark')
-    report.check((summaryMark ? text(summaryMark) : null) === row.expect.groupMark, `${row.name}: the summary mark must read ${show(row.expect.groupMark)}, received ${show(summaryMark ? text(summaryMark) : null)}`)
+    const wantGroupMark = row.expect.groupMark ? INTEGRITY_COPY.groupMark : null
+    report.check((summaryMark ? text(summaryMark) : null) === wantGroupMark, `${row.name}: the summary mark must read ${show(wantGroupMark)}, received ${show(summaryMark ? text(summaryMark) : null)}`)
     if (row.expect.groupMark) {
       const head = mounted.container.querySelector('.txn-modelactions-head')
       await mounted.act(() => click(window, head))

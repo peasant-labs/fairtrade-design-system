@@ -207,7 +207,6 @@
  * @property {import('@peasant-labs/schema').VillageTranscriptIntegrity | null} [integrity]  the served integrity value, passed through untouched. Present and well formed means flagged: the header shows the badge in every presentation and width. Absent, null or malformed renders nothing
  * @property {string | null} [transcriptContentHash]                   the detail response's `transcript.content_hash`, the content `integrity.flagged_turns` refer to
  * @property {string | null} [contentHash]                             the bare hash of the content `viewModel` was cooked from (the content route's `Village-Content-Hash` header). Turns are marked only when it equals `transcriptContentHash` and both are non-empty
- * @property {string} [integrityHelpHref]                              optional link inside the badge's explanation panel
  */
 
 /**

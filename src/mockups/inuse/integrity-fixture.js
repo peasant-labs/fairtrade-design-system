@@ -11,5 +11,4 @@ export const integrityBoundProps = Object.freeze({
   integrity: integrityFlagged,
   transcriptContentHash: integrityServedHash,
   contentHash: integrityServedHash,
-  integrityHelpHref: 'https://example.org/docs/transcript-check',
 })
