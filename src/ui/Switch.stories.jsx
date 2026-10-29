@@ -68,6 +68,16 @@ export const Busy = {
     busy: true,
     onText: 'syncing',
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const toggle = canvas.getByRole('switch', { name: 'syncing gemini-cli transcripts' })
+    await expect(toggle).toHaveAttribute('aria-busy', 'true')
+    await expect(canvasElement.querySelector('.sw-busy-indicator')).toBeVisible()
+    await expect(canvas.getByRole('status')).toHaveTextContent('updating')
+    await userEvent.click(toggle)
+    await expect(toggle).toHaveAttribute('aria-checked', 'true')
+    await expect(canvasElement.querySelector('.sw-state')).toBeNull()
+  },
 }
 
 export const CustomStateIcon = {

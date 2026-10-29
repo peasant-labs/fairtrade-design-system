@@ -228,11 +228,12 @@
     -webkit-font-smoothing: antialiased;
   }
   h1, h2, h3 {
-    @apply font-display text-ink-strong lowercase;
+    @apply font-display text-ink-strong;
     margin: 0;
     font-weight: 700;
     line-height: var(--lh-tight);
   }
+  h1[data-chrome-heading], h2[data-chrome-heading], h3[data-chrome-heading] { text-transform: lowercase; }
   p { margin: 0; }
   /* neuroinclusive defaults (see llm/NEUROINCLUSIVE.md): prose gets comfortable
      tracking + capped measure; mono/data/chrome stays tight and aligned */
@@ -431,11 +432,12 @@
   .card .card-foot .grow { color: var(--ink); }
 
   /* trails */
-  .crumb { @apply flex items-center gap-2 font-mono text-label lowercase text-ink-3; min-width: 0; max-width: 100%; overflow-x: auto; }
+  .crumb { @apply flex items-center gap-2 font-mono text-label text-ink-3; min-width: 0; max-width: 100%; overflow-x: auto; }
   .crumb .lucide { @apply text-ink-5; width: var(--ic-sm); height: var(--ic-sm); }
   .crumb .cur { @apply text-ink; }
   .crumb a { @apply text-ink-3; text-decoration: none; }
   .crumb a:hover, .crumb a:focus-visible { @apply text-ink; }
+  .crumb-item-chrome { text-transform: lowercase; }
   .crumb-item { @apply inline-flex items-center; gap: var(--sp-2); white-space: nowrap; }
   .steps { @apply flex items-center flex-wrap; gap: 0; }
   .step { @apply inline-flex items-center gap-2 font-mono text-label lowercase text-ink-3; }
@@ -814,6 +816,16 @@
   /* busy: a quiet ring + a spinning loader sits over the thumb under no-preference */
   .sw[aria-busy="true"] { cursor: progress; border-color: var(--amber-dim); }
   .sw[aria-busy="true"]::before { background: var(--amber-dim); }
+  /* Inline progress replaces the thumb, so changing busy never adds a layout track. */
+  .sw:has(> .sw-busy-indicator)::before { visibility: hidden; }
+  .sw-busy-indicator {
+    position: absolute; inset-block-start: var(--sw-pad); inset-inline-start: var(--sw-pad);
+    display: inline-flex; align-items: center; justify-content: center;
+    inline-size: var(--sw-thumb); block-size: var(--sw-thumb); color: var(--ink);
+  }
+  .sw-busy-indicator svg { inline-size: var(--ic-sm); block-size: var(--ic-sm); }
+  .sw[aria-checked="true"] > .sw-busy-indicator { inset-inline-start: calc(var(--sw-pad) + var(--sw-travel)); color: var(--canvas); }
+
 
   /* label + inline state marker (the non-colour cue, WCAG 1.4.1) */
   .sw-label { font-family: var(--font-mono); font-size: var(--fs-label); text-transform: lowercase; color: var(--ink-2); }
@@ -3172,7 +3184,7 @@
 
   .cmg-crumb { margin-bottom: var(--sp-1); }
   .cmg-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-4); flex-wrap: wrap; }
-  .cmg-title { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-lg); line-height: var(--lh-body); color: var(--ink-strong); text-transform: lowercase; overflow-wrap: anywhere; }
+  .cmg-title { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-lg); line-height: var(--lh-body); color: var(--ink-strong); overflow-wrap: anywhere; }
   .cmg-deck { margin-top: var(--sp-2); font-family: var(--font-body); font-size: var(--fs-body); color: var(--ink-3); line-height: var(--lh-body); letter-spacing: var(--tracking-prose); word-spacing: var(--word-spacing-prose); }
   .cmg-sub { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-lg); line-height: var(--lh-body); color: var(--ink-strong); text-transform: lowercase; display: inline-flex; align-items: center; gap: var(--sp-2); overflow-wrap: anywhere; }
   .cmg-sub .lucide { color: var(--ink-3); flex: none; }
@@ -3347,7 +3359,7 @@
   .cmg-proj-toggle:hover { color: var(--ink-strong); }
   .cmg-proj-toggle:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
   .cmg-proj-toggle .lucide { color: var(--ink-3); flex: none; }
-  .cmg-proj-name { font-size: var(--fs-sm); font-weight: 600; text-transform: lowercase; color: var(--ink); }
+  .cmg-proj-name { font-size: var(--fs-sm); font-weight: 600; color: var(--ink); }
   .cmg-proj-branch { display: inline-flex; align-items: center; gap: var(--sp-1); font-size: var(--fs-label); color: var(--ink-4); }
   .cmg-proj-branch .lucide { width: var(--ic-sm); height: var(--ic-sm); }
   .cmg-proj-cnt { margin-left: auto; font-size: var(--fs-label); color: var(--ink-4); }
@@ -3841,6 +3853,12 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
    themes free. */
 .txn-ledger { --txn-reader-width: 840px; }
 .txn-turnwrap-ledger { max-inline-size: var(--txn-reader-width); margin-inline: auto; }
+/* Nested agent prose keeps the reader column's outer edge and gains a small
+   inset, with no connector spine. The unitless depth is visually capped at 3. */
+.txn-turnwrap-ledger[data-agent-depth] { padding-inline-start: calc(var(--sp-3) * var(--txn-agent-depth)); }
+@media (width < 768px) {
+  .txn-turnwrap-ledger[data-agent-depth] { padding-inline-start: calc(var(--sp-2) * var(--txn-agent-depth)); }
+}
 /* Width is driven by the separator itself. The global reduced-motion duration rule
    must not create an implicit `all` transition on its otherwise static boxes. */
 .txn-ledger :is(.txn-turnwrap-ledger, .txn-turnrow, .txn-turn-rule, .txn-phase) { transition-property: none; }

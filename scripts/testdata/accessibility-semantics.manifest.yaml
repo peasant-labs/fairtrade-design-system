@@ -1,4 +1,10 @@
 requiredCaseNames:
+  - breadcrumb keeps a normal anchor exit
+  - breadcrumb current item is not a link
+  - breadcrumb ignores a current item href
+  - breadcrumb chrome is explicit per item
+  - breadcrumb uses the supplied router link
+  - breadcrumb router exit receives its href
   - facet captions are not headings
   - insight group captions are not headings
   - scent explanation is keyboard reachable
@@ -30,6 +36,7 @@ requiredCaseNames:
   - settings share one save announcement
   - settings announce the edited row
 requiredMutationNames:
+  - breadcrumb discards the supplied router
   - facets regain heading semantics
   - insights regain heading semantics
   - scent loses help trigger
@@ -58,6 +65,7 @@ requiredMutationNames:
   - settings regain per-row regions
   - settings lose save announcement
 mutations:
+  - {name: breadcrumb discards the supplied router, file: src/ui/Breadcrumb.jsx, find: '<LinkComponent href={item.href} className="link">{content}</LinkComponent>', replace: '<a href={item.href} className="link">{content}</a>', expectedDiagnostic: breadcrumb uses the supplied router link}
   - {name: facets regain heading semantics, file: src/ui/FacetRail.jsx, find: '<p className="fr-heading"><Cpu className="lucide fr-heading-ico" aria-hidden="true" /><span className="fr-heading-text">provider</span></p>', replace: '<h3 className="fr-heading">provider</h3>', expectedDiagnostic: facet captions are not headings}
   - {name: insights regain heading semantics, file: src/ui/graph/InsightPanel.jsx, find: '<p className="tlp-insight-group-title">{INSIGHT_KIND_LABELS[kind]}</p>', replace: '<h4>{INSIGHT_KIND_LABELS[kind]}</h4>', expectedDiagnostic: insight group captions are not headings}
   - {name: scent loses help trigger, file: src/ui/graph/ScentTag.jsx, find: '<Tooltip content={hoverText}>{control}</Tooltip>', replace: control, expectedDiagnostic: scent explanation is keyboard reachable}

@@ -2,7 +2,7 @@ import React from 'react'
 
 const TAGS = new Set(['svg', 'g', 'defs', 'marker', 'path', 'rect', 'circle', 'ellipse', 'line', 'polygon', 'polyline', 'text', 'tspan', 'title', 'desc', 'symbol', 'switch'])
 const ATTRS = new Set(['id', 'class', 'viewBox', 'width', 'height', 'x', 'y', 'x1', 'x2', 'y1', 'y2', 'cx', 'cy', 'r', 'rx', 'ry', 'd', 'points', 'transform', 'text-anchor', 'dominant-baseline', 'marker-start', 'marker-end', 'marker-mid', 'refX', 'refY', 'markerWidth', 'markerHeight', 'orient', 'preserveAspectRatio', 'stroke-dasharray', 'stroke-width', 'fill', 'stroke', 'font-size', 'font-family', 'markerUnits', 'dy', 'dx', 'font-style', 'font-weight', 'alignment-baseline', 'fill-rule', 'clip-rule', 'opacity', 'transform-origin', 'xml:space', 'overflow'])
-const RENAME = { 'xml:space': 'xmlSpace', class: 'className', 'text-anchor': 'textAnchor', 'dominant-baseline': 'dominantBaseline', 'marker-start': 'markerStart', 'marker-end': 'markerEnd', 'marker-mid': 'markerMid', 'stroke-dasharray': 'strokeDasharray', 'stroke-width': 'strokeWidth', 'font-size': 'fontSize', 'font-family': 'fontFamily' }
+const RENAME = { 'xml:space': 'xmlSpace', class: 'className', 'text-anchor': 'textAnchor', 'dominant-baseline': 'dominantBaseline', 'marker-start': 'markerStart', 'marker-end': 'markerEnd', 'marker-mid': 'markerMid', 'stroke-dasharray': 'strokeDasharray', 'stroke-width': 'strokeWidth', 'font-size': 'fontSize', 'font-family': 'fontFamily', 'font-style': 'fontStyle', 'font-weight': 'fontWeight', 'alignment-baseline': 'alignmentBaseline', 'fill-rule': 'fillRule', 'clip-rule': 'clipRule', 'transform-origin': 'transformOrigin' }
 
 /* Parse as XML, never insert the compiler's SVG into the live document. */
 export function mermaidSvg(svg, prefix) {

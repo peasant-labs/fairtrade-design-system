@@ -1,0 +1,205 @@
+{
+  "themes": [
+    "dark",
+    "light"
+  ],
+  "presentations": [
+    "ledger",
+    "classic"
+  ],
+  "viewports": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 1000,
+      "step": 12
+    },
+    {
+      "name": "phone",
+      "width": 390,
+      "height": 1000,
+      "step": 8
+    }
+  ],
+  "cases": [
+    {
+      "name": "root user stays on the reading edge",
+      "index": 0,
+      "depth": 0,
+      "inset": 0
+    },
+    {
+      "name": "root assistant stays on the reading edge",
+      "index": 1,
+      "depth": 0,
+      "inset": 0
+    },
+    {
+      "name": "first nested agent has one inset",
+      "index": 2,
+      "depth": 1,
+      "inset": 1
+    },
+    {
+      "name": "second nested agent has two insets",
+      "index": 3,
+      "depth": 2,
+      "inset": 2
+    },
+    {
+      "name": "third nested agent has three insets",
+      "index": 4,
+      "depth": 3,
+      "inset": 3
+    },
+    {
+      "name": "deeper agent retains depth with capped visual inset",
+      "index": 5,
+      "depth": 4,
+      "inset": 3
+    },
+    {
+      "name": "nested tool-only entry stays inline",
+      "index": 6,
+      "depth": 1,
+      "inset": 0
+    },
+    {
+      "name": "nested thinking-only entry stays inline",
+      "index": 7,
+      "depth": 1,
+      "inset": 0
+    },
+    {
+      "name": "nested user does not become an agent inset",
+      "index": 8,
+      "depth": 1,
+      "inset": 0
+    },
+    {
+      "name": "nested system entry does not become an agent inset",
+      "index": 9,
+      "depth": 1,
+      "inset": 0
+    }
+  ],
+  "payload": {
+    "id": "nested-agent-reading",
+    "harness": "claude-code",
+    "startTime": "2026-10-29T08:00:00Z",
+    "endTime": "2026-10-29T08:09:00Z",
+    "durationMins": 9,
+    "totalTokens": 1200,
+    "tokensIn": 800,
+    "tokensOut": 400,
+    "turnCount": 10,
+    "toolCallCount": 1,
+    "outcome": "resolved",
+    "inputSubmissionCount": 2,
+    "turns": [
+      {
+        "index": 0,
+        "role": "user",
+        "depth": 0,
+        "content": "Review the nested agent work.",
+        "timestamp": "2026-10-29T08:00:00Z",
+        "sourceEntryRef": "nested-entry-0"
+      },
+      {
+        "index": 1,
+        "role": "assistant",
+        "depth": 0,
+        "content": "I will coordinate the review and keep each response identifiable.",
+        "timestamp": "2026-10-29T08:01:00Z",
+        "sourceEntryRef": "nested-entry-1"
+      },
+      {
+        "index": 2,
+        "role": "assistant",
+        "depth": 1,
+        "agentName": "reviewer",
+        "content": "The first reviewer checks the implementation.",
+        "timestamp": "2026-10-29T08:02:00Z",
+        "sourceEntryRef": "nested-entry-2",
+        "parentIndex": 1
+      },
+      {
+        "index": 3,
+        "role": "assistant",
+        "depth": 2,
+        "agentName": "test-reviewer",
+        "content": "The second reviewer checks the test boundary.",
+        "timestamp": "2026-10-29T08:03:00Z",
+        "sourceEntryRef": "nested-entry-3",
+        "parentIndex": 2
+      },
+      {
+        "index": 4,
+        "role": "assistant",
+        "depth": 3,
+        "agentName": "fixture-reviewer",
+        "content": "The third reviewer checks the recorded fixture.",
+        "timestamp": "2026-10-29T08:04:00Z",
+        "sourceEntryRef": "nested-entry-4",
+        "parentIndex": 3
+      },
+      {
+        "index": 5,
+        "role": "assistant",
+        "depth": 4,
+        "agentName": "deep-reviewer",
+        "content": "The deeper review remains readable without losing its recorded depth.",
+        "timestamp": "2026-10-29T08:05:00Z",
+        "sourceEntryRef": "nested-entry-5",
+        "parentIndex": 4
+      },
+      {
+        "index": 6,
+        "role": "assistant",
+        "depth": 1,
+        "content": "",
+        "toolCalls": [
+          {
+            "id": "nested-read",
+            "name": "Read",
+            "arguments": "{\"file_path\":\"test/fixture.yaml\"}",
+            "result": "expected: preserved",
+            "filePath": "test/fixture.yaml"
+          }
+        ],
+        "timestamp": "2026-10-29T08:06:00Z",
+        "sourceEntryRef": "nested-entry-6",
+        "parentIndex": 1
+      },
+      {
+        "index": 7,
+        "role": "assistant",
+        "depth": 1,
+        "entryType": "thinking",
+        "content": "I should check the original source identity.",
+        "timestamp": "2026-10-29T08:07:00Z",
+        "sourceEntryRef": "nested-entry-7",
+        "parentIndex": 1
+      },
+      {
+        "index": 8,
+        "role": "user",
+        "depth": 1,
+        "content": "Keep the original source order.",
+        "timestamp": "2026-10-29T08:08:00Z",
+        "sourceEntryRef": "nested-entry-8",
+        "parentIndex": 1
+      },
+      {
+        "index": 9,
+        "role": "system",
+        "depth": 1,
+        "content": "Review complete.",
+        "timestamp": "2026-10-29T08:09:00Z",
+        "sourceEntryRef": "nested-entry-9",
+        "parentIndex": 1
+      }
+    ],
+    "title": "Review nested agent work"
+  }
+}

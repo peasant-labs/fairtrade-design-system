@@ -7,8 +7,8 @@ import { Circle, CircleCheck, Loader } from 'lucide-react'
    words are omitted by default so labels stay fixed when toggled. The optional .sw-state
    marker remains available for hosts that explicitly request it. Space,
    Enter, and click toggle. supports controlled (checked + onChange) and uncontrolled
-   (defaultChecked). reuses the .sw / .sw-field / .sw-label / .sw-state styles, zero
-   new CSS. note: the control class is .sw (the swatch chip elsewhere is .swc). */
+   (defaultChecked). reuses the .sw / .sw-field / .sw-label / .sw-state styles; inline progress stays
+   inside the control. note: the control class is .sw (the swatch chip elsewhere is .swc). */
 
 /**
  * @typedef {Object} SwitchProps
@@ -16,7 +16,7 @@ import { Circle, CircleCheck, Loader } from 'lucide-react'
  * @property {boolean} [defaultChecked=false] initial state when uncontrolled.
  * @property {(next: boolean) => void} [onChange] called with the next state on toggle.
  * @property {boolean} [disabled=false] real `disabled` attribute (dim, not focusable).
- * @property {boolean} [busy=false]     sets aria-busy; pairs with an aria-live marker.
+ * @property {boolean} [busy=false]     sets aria-busy and shows progress without moving the label.
  * @property {React.ReactNode} [label]  text rendered in the associated .sw-label.
  * @property {string} [onText='on']     state-marker text shown when checked.
  * @property {string} [offText='off']   state-marker text shown when unchecked.
@@ -74,12 +74,16 @@ export default function Switch({
         aria-busy={busy || undefined}
         disabled={disabled}
         onClick={toggle}
-      />
+      >
+        {busy && !stateMarker && <span className="sw-busy-indicator" aria-hidden="true"><Loader className="sw-busy-spin" /></span>}
+      </button>
       {label != null && (
         <label className="sw-label" htmlFor={swId}>
           {label}
         </label>
       )}
+      {/* Hosts that supply their own label also own the surrounding save status. */}
+      {!stateMarker && label != null && <span className="sr-only" role="status">{busy ? 'updating' : ''}</span>}
       {stateMarker && (
         <span className="sw-state" aria-live={busy ? 'polite' : undefined}>
           <Icon className={busy ? 'sw-busy-spin' : undefined} aria-hidden="true" />{' '}

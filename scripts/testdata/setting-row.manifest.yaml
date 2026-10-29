@@ -20,12 +20,18 @@ requiredGroupNames:
   - a collapsed group
 
 requiredMutationNames:
+  - a busy switch loses its progress indicator
   - a settings switch repeats its state in words
   - a failed write keeps the new value
   - Escape saves instead of cancelling
   - the failure is not announced
   - a remount leaves the row marked gone
 mutations:
+  - name: a busy switch loses its progress indicator
+    file: src/ui/Switch.jsx
+    find: '{busy && !stateMarker && <span className="sw-busy-indicator"'
+    replace: '{false && <span className="sw-busy-indicator"'
+    expectedDiagnostic: "a checked busy switch shows inline progress: inline progress"
   - name: a failed write keeps the new value
     file: src/ui/Settings.jsx
     find: "      setShown(previous)\n"
@@ -51,3 +57,10 @@ mutations:
     find: "stateMarker={false} "
     replace: "stateMarker={true} "
     expectedDiagnostic: "a settings switch shows no on/off word"
+
+requiredSwitchNames:
+  - an idle switch omits state words
+  - a checked busy switch shows inline progress
+  - an unchecked busy switch shows inline progress
+  - an explicit state marker keeps its existing progress
+  - a host-labeled busy switch keeps inline progress

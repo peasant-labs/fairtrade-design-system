@@ -736,6 +736,7 @@ function buildMockupVM() {
 
 import { piPayload } from './pi-fixture.js'
 import { readingPayload } from './reading-fixture.js'
+import nestingSource from '../../../scripts/testdata/transcript-nesting.yaml?raw'
 import { integrityBoundProps } from './integrity-fixture.js'
 import { usePublishFlow } from './PublishFlowDemo.jsx'
 import ContextTranscriptDemo from './ContextTranscriptDemo.jsx'
@@ -769,6 +770,7 @@ function DefaultTranscriptApp({ theme }) {
   const flagged = search === 'flagged' || search === 'flagged-classic'
   const ledger = search !== 'classic' && search !== 'flagged-classic'
   const vm = useMemo(() => {
+    if (search === 'ledger-nesting') return adaptTranscript(JSON.parse(nestingSource).payload)
     if (search === 'ledger-reading' || search === 'ledger-reading-short' || search === 'ledger-disclosure') return adaptTranscript(readingPayload({ short: search === 'ledger-reading-short', disclosure: search === 'ledger-disclosure' }))
     if (flagged) return adaptTranscript(readingPayload())
     if (search === 'pi') return adaptTranscript(piPayload)

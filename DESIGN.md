@@ -404,6 +404,12 @@ tool output keep their own measures and horizontal scrollers. This is the one do
 to the reading-measure paragraph above; every classic surface keeps `--measure-prose` and
 `--measure-read`.
 
+Nested assistant prose in the ledger uses a small depth-based inset without
+connector lines: `--sp-3` per level on desktop and `--sp-2` on phones. The visual
+inset stops growing after three levels; recorded depth and source identity remain
+unchanged. Tool/thinking-only entries remain inline work. Classic cards and the
+publish chooser's hierarchy retain their existing presentation.
+
 The presentation site also uses a locked three-tier heading ladder (`--fs-group`, `--fs-section`,
 `--fs-sub`) that does not drift down the page.
 
@@ -429,7 +435,8 @@ capped measure; mono gets letter-spacing 0 so columns stay aligned.
 
 **The Lowercase Chrome Rule.** UI chrome is all lowercase (nav, labels, buttons, headings, tabs,
 table headers). User content is never lowercased: names, transcript text, collective names, code,
-hashes and data values keep their case. Multi-line literal copy (error bodies, help, tooltips) may
+hashes and data values keep their case. Unannotated headings preserve source case; static chrome
+headings opt in with `data-chrome-heading` or a component-scoped chrome selector. Multi-line literal copy (error bodies, help, tooltips) may
 use sentence case so sentences stay parseable. Never `text-transform: uppercase` on multi-word text.
 
 **The Tabular Numbers Rule.** Every count, duration, stat and numeric column uses tabular lining

@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { expect, userEvent, within } from 'storybook/test'
 import Breadcrumb, { Steps } from './Breadcrumb.jsx'
 import { frame } from './story-frame.jsx'
 import { Home, Users, FileText } from 'lucide-react'
@@ -104,4 +106,30 @@ export const StepsComplete = {
       ]}
     />
   ),
+}
+
+// A host router receives intermediate hrefs; recorded names keep their case.
+export const RoutedContent = {
+  parameters: { layout: 'padded' },
+  render: function RoutedContent() {
+    const [route, setRoute] = useState('')
+    const Link = ({ href, children, ...props }) => <a {...props} href={href} onClick={event => { event.preventDefault(); setRoute(href) }}>{children}</a>
+    return <div className="flex flex-col gap-4">
+      <h2>EnCUCA Review</h2>
+      <h3 data-chrome-heading>READING OPTIONS</h3>
+      <Breadcrumb LinkComponent={Link} items={[
+        { label: 'HOME', href: '/', chrome: true },
+        { label: 'Collective Alpha', href: '/collectives/alpha' },
+        { label: 'Session ABC-9', href: '/transcripts/abc-9' },
+      ]} />
+      <output aria-live="polite">{route}</output>
+    </div>
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('heading', { name: 'EnCUCA Review' })).toBeVisible()
+    await userEvent.click(canvas.getByRole('link', { name: 'Collective Alpha' }))
+    await expect(canvasElement.querySelector('output')).toHaveTextContent('/collectives/alpha')
+    await expect(canvasElement.querySelector('.cur a')).toBeNull()
+  },
 }

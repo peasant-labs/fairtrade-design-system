@@ -10,12 +10,12 @@ import { loadFixturePair, withMountedSource, click, keydown, createReport, asser
 
 const FIXTURE = 'scripts/testdata/setting-row.yaml'
 const MANIFEST = 'scripts/testdata/setting-row.manifest.yaml'
-const { fixture } = loadFixturePair(FIXTURE, MANIFEST, { rows: 'requiredRowNames', groups: 'requiredGroupNames' })
+const { fixture } = loadFixturePair(FIXTURE, MANIFEST, { rows: 'requiredRowNames', groups: 'requiredGroupNames', switches: 'requiredSwitchNames' })
 const report = createReport('setting row')
 const text = (node) => node?.textContent.replace(/\s+/g, ' ').trim() ?? ''
 
 await withMountedSource(async ({ load, mount, window, React }) => {
-  const { SettingRow, SettingGroup, SETTING_ROW_STATES } = await load('/src/ui/index.js')
+  const { SettingRow, SettingGroup, Switch, SETTING_ROW_STATES } = await load('/src/ui/index.js')
   // every exported row state has a word, and a case reads every word
   assertExactNames(Object.keys(fixture.statusWords), [...SETTING_ROW_STATES], 'setting row: status words against SETTING_ROW_STATES')
   assertExactNames([...new Set(fixture.rows.map((row) => row.expected.status))], Object.values(fixture.statusWords), 'setting row: the statuses the cases read')
@@ -76,6 +76,21 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     await mounted.unmount()
   }
 
+  for (const row of fixture.switches) {
+    const writes = []
+    const mounted = await mount(React.createElement(Switch, { ...row.props, onChange: (next) => writes.push(next) }))
+    const root = mounted.container
+    const toggle = root.querySelector('[role="switch"]')
+    report.check(Boolean(root.querySelector('.sw-busy-indicator')) === row.expected.indicator, `${row.name}: inline progress`)
+    report.check(text(root.querySelector('[role="status"]')) === row.expected.announcement, `${row.name}: busy announcement`)
+    report.check(text(root.querySelector('.sw-state')) === row.expected.marker, `${row.name}: optional state word`)
+    report.check(toggle.getAttribute('aria-checked') === String(row.props.checked), `${row.name}: checked state preserved`)
+    report.check(toggle.hasAttribute('aria-busy') === Boolean(row.props.busy), `${row.name}: busy state preserved`)
+    await mounted.act(() => click(window, toggle))
+    report.check(writes.length === (row.props.busy ? 0 : 1), `${row.name}: busy prevents duplicate changes`)
+    await mounted.unmount()
+  }
+
   for (const group of fixture.groups) {
     const rows = Array.from({ length: group.rows }, (_, index) => React.createElement('div', { key: index, className: 'srow' }, `row ${index}`))
     const mounted = await mount(React.createElement(SettingGroup, { label: 'village', defaultOpen: group.defaultOpen }, rows))
@@ -86,4 +101,4 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   }
 })
 
-report.finish(`${fixture.rows.length} rows and ${fixture.groups.length} groups.`)
+report.finish(`${fixture.rows.length} rows and ${fixture.groups.length} groups, ${fixture.switches.length} standalone switches.`)

@@ -37,9 +37,6 @@ test.describe('built app', () => {
       svg: document.querySelectorAll('svg.lucide').length,
       leftover: document.querySelectorAll('i[data-lucide]').length,
       copyUnnamed: document.querySelectorAll('.copy-token:not([aria-label])').length,
-      iconBtnUnnamed: [...document.querySelectorAll('button')].filter(
-        (b) => !b.textContent.trim() && !b.getAttribute('aria-label') && b.querySelector('svg,i'),
-      ).length,
       h1: document.querySelectorAll('h1').length,
       h2: document.querySelectorAll('h2').length,
       h3: document.querySelectorAll('h3').length,
@@ -48,7 +45,13 @@ test.describe('built app', () => {
     expect(counts.svg, `${counts.svg} svgs`).toBeGreaterThan(250)
     expect(counts.leftover, `${counts.leftover} left`).toBe(0)
     expect(counts.copyUnnamed, `${counts.copyUnnamed} unnamed`).toBe(0)
-    expect(counts.iconBtnUnnamed, `${counts.iconBtnUnnamed} unnamed`).toBe(0)
+    // An icon-only button can be named by an associated HTML label or
+    // aria-labelledby as well as aria-label. Ask the accessibility tree rather
+    // than treating the absence of one particular attribute as an unnamed control.
+    const iconOnlyButtons = await page.locator('button').evaluateAll((buttons) => buttons.flatMap((button, index) =>
+      !button.textContent.trim() && !button.getAttribute('aria-label') && button.querySelector('svg,i') ? [index] : [],
+    ))
+    for (const index of iconOnlyButtons) await expect(page.locator('button').nth(index)).toHaveAccessibleName(/\S/)
     expect(counts.h1, `${counts.h1} h1`).toBe(1)
     expect(counts.h2 >= 15 && counts.h3 >= 5, `h2=${counts.h2} h3=${counts.h3}`).toBe(true)
     expect(counts.ariaHiddenSvg, `${counts.ariaHiddenSvg} hidden`).toBeGreaterThan(200)

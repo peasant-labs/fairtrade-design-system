@@ -4,6 +4,9 @@ register:
   reading: {fontToken: --fs-body, familyToken: --font-body, minimumPx: 16}
   code: {fontToken: --fs-body, familyToken: --font-mono, minimumPx: 16}
 source:
+  - name: unannotated headings preserve user case
+    kind: headingCase
+    mutation: global heading lowercasing returns
   - name: owned micro consumers are converted
     kind: ownedMicro
     mutation: a micro consumer returns
