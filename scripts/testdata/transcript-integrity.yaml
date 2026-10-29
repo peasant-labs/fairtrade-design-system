@@ -80,3 +80,121 @@ adapterCases:
     builder: earlierHistory
     expect: [[0, 0]]
     earlierUndefined: true
+# `badgeCases` mount IntegrityBadge; `kind` picks the assertion set. `turnCases` mount one turn of
+# `turnPayload` through TurnCard; `markWithin` is the selector the single visible mark must sit in.
+# `groupCases` mount ModelActions over turns 1 and 3 with the named turns flagged. `cssCases` read
+# the first rule with that exact selector from src/index.css and require each declaration text.
+badgeCases:
+  - name: the badge is static and the help button controls a hidden panel
+    kind: structure
+  - name: a click opens and closes the panel without moving focus
+    kind: toggle
+  - name: escape on the button closes the panel
+    kind: escape-button
+  - name: escape inside the panel returns focus to the button
+    kind: escape-panel
+    props: {helpHref: "https://example.test/how-it-works"}
+  - name: a pointer down outside closes the panel and keeps focus
+    kind: outside-pointer
+  - name: the panel reads in the settled order with highlights and a link
+    kind: panel-order
+    props: {hasHighlights: true, helpHref: "https://example.test/how-it-works"}
+  - name: without highlights or a link the panel omits both
+    kind: panel-plain
+  - name: the panel heading follows the heading level
+    kind: heading-level
+    props: {headingLevel: 3}
+turnPayload:
+  id: integrity-turns
+  harness: claude-code
+  startTime: '2026-09-20T10:00:00Z'
+  endTime: '2026-09-20T10:05:00Z'
+  durationMins: 5
+  totalTokens: 0
+  tokensIn: 0
+  tokensOut: 0
+  turnCount: 5
+  toolCallCount: 3
+  outcome: resolved
+  turns:
+    - {index: 0, role: user, content: 'prepare the fixture', timestamp: '2026-09-20T10:00:00Z', depth: 0}
+    - index: 1
+      role: assistant
+      content: 'running the checks.'
+      timestamp: '2026-09-20T10:01:00Z'
+      depth: 0
+      toolCalls:
+        - {id: tc-a, name: Bash, arguments: '{"command":"pnpm test"}', result: '"ok"', exitCode: 0}
+    - {index: 2, role: system, content: 'session resumed, worktree changed on disk', timestamp: '2026-09-20T10:02:00Z', depth: 0}
+    - index: 3
+      role: assistant
+      content: ''
+      timestamp: '2026-09-20T10:03:00Z'
+      depth: 0
+      toolCalls:
+        - {id: tc-b, name: Read, filePath: src/a.ts, arguments: '{"file_path":"src/a.ts"}', result: '"ok"'}
+    - {index: 4, role: assistant, content: 'the helper reports back.', timestamp: '2026-09-20T10:04:00Z', depth: 1, agentName: helper}
+turnCases:
+  - name: a classic flagged turn marks its head
+    turn: 1
+    presentation: classic
+    flagged: true
+    markWithin: ".txn-turnhead"
+  - name: a classic turn that is not flagged draws nothing
+    turn: 1
+    presentation: classic
+    flagged: false
+  - name: a ledger flagged turn marks its head
+    turn: 1
+    presentation: ledger
+    flagged: true
+    markWithin: ".txn-turnhead"
+  - name: a ledger system row carries the mark in its trailing cluster
+    turn: 2
+    presentation: ledger
+    flagged: true
+    markWithin: ".txn-systemrow-head-row"
+  - name: a ledger detail turn leads its work block with the mark
+    turn: 3
+    presentation: ledger
+    flagged: true
+    markWithin: ".txn-turnwork"
+  - name: a classic subagent card takes the same path
+    turn: 4
+    presentation: classic
+    flagged: true
+    markWithin: ".txn-subtask .txn-turnhead"
+  - name: a ledger subagent turn takes the same path
+    turn: 4
+    presentation: ledger
+    flagged: true
+    markWithin: ".txn-turnhead"
+groupCases:
+  - name: a flagged turn marks its row and the folded summary
+    flaggedTurns: [3]
+    expect: {flaggedRows: 1, groupMark: "includes a flagged turn"}
+  - name: no flagged turn draws no mark
+    flaggedTurns: []
+    expect: {flaggedRows: 0, groupMark: null}
+cssCases:
+  - name: the badge keeps ink text and a warning edge
+    selector: ".txn-integrity-badge"
+    includes: ["border: var(--stroke-hairline) solid var(--warning)", "color: var(--ink)", "border-radius: 0"]
+  - name: the badge icon is the warning colour
+    selector: ".txn-integrity-badge .lucide"
+    includes: ["color: var(--warning)"]
+  - name: the open help button takes the elevated fill
+    selector: '.txn-integrity-help[aria-expanded="true"]'
+    includes: ["background: var(--surface-2)"]
+  - name: the help button keeps the control height
+    selector: ".txn-integrity-help"
+    includes: ["inline-size: var(--control-h)", "block-size: var(--control-h)"]
+  - name: the panel is capped between the phone gutters
+    selector: ".txn-integrity-panel"
+    includes: ["inline-size: var(--measure-read)", "max-inline-size: calc(100vw - 2 * var(--sp-4))"]
+  - name: a flagged card is drawn with a dashed warning outline
+    selector: ".txn-turnwrap.is-flagged > .txn-turn"
+    includes: ["outline: var(--stroke-hairline) dashed var(--warning)", "outline-offset: calc(var(--stroke-hairline) * -1)", "border-color: transparent"]
+  - name: the mark icon is the warning colour
+    selector: ".txn-integrity-mark .lucide"
+    includes: ["color: var(--warning)"]

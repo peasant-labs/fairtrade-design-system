@@ -19,6 +19,34 @@ requiredAdapterCaseNames:
   - visible projection keeps positions
   - unknown timestamp keeps its position
   - earlier history has no source position
+requiredBadgeCaseNames:
+  - the badge is static and the help button controls a hidden panel
+  - a click opens and closes the panel without moving focus
+  - escape on the button closes the panel
+  - escape inside the panel returns focus to the button
+  - a pointer down outside closes the panel and keeps focus
+  - the panel reads in the settled order with highlights and a link
+  - without highlights or a link the panel omits both
+  - the panel heading follows the heading level
+requiredTurnCaseNames:
+  - a classic flagged turn marks its head
+  - a classic turn that is not flagged draws nothing
+  - a ledger flagged turn marks its head
+  - a ledger system row carries the mark in its trailing cluster
+  - a ledger detail turn leads its work block with the mark
+  - a classic subagent card takes the same path
+  - a ledger subagent turn takes the same path
+requiredGroupCaseNames:
+  - a flagged turn marks its row and the folded summary
+  - no flagged turn draws no mark
+requiredCssCaseNames:
+  - the badge keeps ink text and a warning edge
+  - the badge icon is the warning colour
+  - the open help button takes the elevated fill
+  - the help button keeps the control height
+  - the panel is capped between the phone gutters
+  - a flagged card is drawn with a dashed warning outline
+  - the mark icon is the warning colour
 requiredCopyKeys:
   - badgeLabel
   - helpName
@@ -39,6 +67,15 @@ requiredMutationNames:
   - a malformed object is treated as flagged
   - positions use the index field
   - a copied turn loses its position
+  - the panel is never hidden
+  - the help button never reports expanded
+  - escape does not return focus
+  - an outside pointer down does not close
+  - the highlights sentence is dropped
+  - the flagged class is dropped
+  - the heading suffix is dropped
+  - the group mark is dropped
+  - the dashed outline turns solid
 mutations:
   - name: the hash check is skipped
     file: src/ui/transcript/integrity.js
@@ -60,3 +97,48 @@ mutations:
     find: "if (copy !== turn) sourcePositions.set(copy, sourcePositions.get(turn))"
     replace: ""
     expectedDiagnostic: "unknown timestamp keeps its position"
+  - name: the panel is never hidden
+    file: src/ui/transcript/IntegrityBadge.jsx
+    find: "hidden={!open}"
+    replace: "hidden={false}"
+    expectedDiagnostic: "aria-controls resolves to the hidden panel"
+  - name: the help button never reports expanded
+    file: src/ui/transcript/IntegrityBadge.jsx
+    find: "aria-expanded={open}"
+    replace: "aria-expanded={false}"
+    expectedDiagnostic: "a click opens the panel"
+  - name: escape does not return focus
+    file: src/ui/transcript/IntegrityBadge.jsx
+    find: "helpRef.current?.focus()"
+    replace: ""
+    expectedDiagnostic: "focus returns to the help button"
+  - name: an outside pointer down does not close
+    file: src/ui/transcript/IntegrityBadge.jsx
+    find: "!rootRef.current.contains(event.target)"
+    replace: "false"
+    expectedDiagnostic: "a pointer down outside closes the panel"
+  - name: the highlights sentence is dropped
+    file: src/ui/transcript/IntegrityBadge.jsx
+    find: "{hasHighlights ?"
+    replace: "{false ?"
+    expectedDiagnostic: "panel order must be"
+  - name: the flagged class is dropped
+    file: src/ui/transcript/TurnCard.jsx
+    find: "(flagged ? ' is-flagged' : '')"
+    replace: "''"
+    expectedDiagnostic: "must carry is-flagged"
+  - name: the heading suffix is dropped
+    file: src/ui/transcript/TurnCard.jsx
+    find: "const flagName = flagged ?"
+    replace: "const flagName = false ?"
+    expectedDiagnostic: "the heading must end with the hidden turnName"
+  - name: the group mark is dropped
+    file: src/ui/transcript/WorkGroup.jsx
+    find: "{anyFlagged ?"
+    replace: "{false ?"
+    expectedDiagnostic: "the summary mark must read"
+  - name: the dashed outline turns solid
+    file: src/index.css
+    find: "outline: var(--stroke-hairline) dashed var(--warning); outline-offset: calc(var(--stroke-hairline) * -1); border-color: transparent;"
+    replace: "outline: var(--stroke-hairline) solid var(--warning); outline-offset: calc(var(--stroke-hairline) * -1); border-color: transparent;"
+    expectedDiagnostic: "must declare outline: var(--stroke-hairline) dashed var(--warning)"

@@ -4119,3 +4119,56 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 .txn-mermaid-stage svg .pieCircle:nth-of-type(even) { fill: var(--ink-4); }
 
 .txn-mermaid-stage svg switch > text { text-anchor: middle; }
+
+/* ---- integrity flag: the header badge, its (?) panel, and the flagged-turn mark ----
+   Shape carries the cue, not hue: a dashed edge, a triangle glyph, and the word. The badge word is
+   ink; only its edge and glyph are --warning, so amber stays the one focal point of the header. */
+@layer components {
+  .txn-integrity { position: relative; display: inline-flex; align-items: center; gap: var(--sp-1); margin-inline-start: var(--sp-2); }
+  .txn-integrity-badge {
+    display: inline-flex; align-items: center; gap: var(--sp-2); box-sizing: border-box;
+    block-size: var(--chip-h); padding-inline: var(--sp-3);
+    border: var(--stroke-hairline) solid var(--warning); border-radius: 0; background: transparent;
+    color: var(--ink); font-family: var(--font-mono); font-size: var(--fs-label); font-weight: 400; text-transform: lowercase;
+  }
+  .txn-integrity-badge .lucide { color: var(--warning); flex: none; inline-size: var(--ic-sm); block-size: var(--ic-sm); }
+  .txn-integrity-help {
+    display: inline-flex; align-items: center; justify-content: center; flex: none; box-sizing: border-box;
+    inline-size: var(--control-h); block-size: var(--control-h); padding: 0;
+    border: var(--stroke-hairline) solid var(--rule-strong); border-radius: 0; background: transparent;
+    color: var(--ink-2); cursor: pointer;
+  }
+  .txn-integrity-help[aria-expanded="true"] { background: var(--surface-2); }
+  .txn-integrity-help:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
+  @media (hover: hover) and (pointer: fine) { .txn-integrity-help:hover { color: var(--ink); background: var(--surface-hover); } }
+  .txn-integrity-panel {
+    inline-size: var(--measure-read); max-inline-size: calc(100vw - 2 * var(--sp-4)); box-sizing: border-box;
+    padding: var(--sp-4); translate: var(--txn-integrity-shift, 0) 0; text-align: start; text-transform: none;
+    font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink-2);
+  }
+  .txn-integrity-panel p { margin: 0 0 var(--sp-3); }
+  .txn-integrity-panel > :last-child { margin-block-end: 0; }
+  .txn-integrity-heading { margin: 0 0 var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-body); font-weight: 600; text-transform: lowercase; color: var(--ink); }
+  .txn-integrity-link { color: var(--ink); text-decoration: underline; text-underline-offset: var(--sp-1); }
+  .txn-integrity-link:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
+  @media (width < 480px) { .txn-integrity-panel { inline-size: calc(100vw - 2 * var(--sp-4)); } }
+
+  .txn-integrity-mark { display: inline-flex; align-items: center; gap: var(--sp-1); font-family: var(--font-mono); font-size: var(--fs-label); font-weight: 400; text-transform: lowercase; color: var(--ink-2); }
+  .txn-integrity-mark .lucide { color: var(--warning); flex: none; inline-size: var(--ic-sm); block-size: var(--ic-sm); }
+  .txn-modelactions-head .txn-integrity-mark { margin-inline-start: var(--sp-3); }
+  .txn-modelactions-turn > .txn-integrity-mark { display: flex; padding-block: var(--sp-1); }
+
+  /* the dashed edge sits on the card's edge: over the border on a classic card, with no layout shift
+     on a ledger card, which has none. The active inset bar stays inside it. */
+  .txn-turnwrap.is-flagged > .txn-turn {
+    outline: var(--stroke-hairline) dashed var(--warning); outline-offset: calc(var(--stroke-hairline) * -1); border-color: transparent;
+  }
+  .txn-turnwrap.is-flagged > .txn-subtask .txn-turn {
+    outline: var(--stroke-hairline) dashed var(--warning); outline-offset: calc(var(--stroke-hairline) * -1);
+  }
+  .txn-turnwrap.is-flagged > .txn-systemrow,
+  .txn-turnwrap.is-flagged > .txn-turnwork,
+  .txn-modelactions-turn.is-flagged {
+    outline: var(--stroke-hairline) dashed var(--warning); outline-offset: calc(var(--stroke-hairline) * -1);
+  }
+}
