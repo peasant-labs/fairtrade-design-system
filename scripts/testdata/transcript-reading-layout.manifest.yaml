@@ -195,8 +195,8 @@ mutations:
     expectedDiagnostic: "the width handle reads as a grip: it must stay a slim 3x32 mark"
   - name: the bottom bar stacks again
     file: src/index.css
-    find: ".txn-footer { flex: none; display: flex; align-items: stretch; gap: var(--sp-3); padding: 0 var(--sp-4); border-top: var(--bd); background: var(--surface); }"
-    replace: ".txn-footer { flex: none; display: flex; flex-direction: column; align-items: stretch; gap: var(--sp-3); padding: 0 var(--sp-4); border-top: var(--bd); background: var(--surface); }"
+    find: ".txn-footer { container: transcript-footer / inline-size; flex: none; display: flex; align-items: stretch; gap: var(--sp-3); padding: 0 var(--sp-4); border-top: var(--bd); background: var(--surface); }"
+    replace: ".txn-footer { container: transcript-footer / inline-size; flex: none; display: flex; flex-direction: column; align-items: stretch; gap: var(--sp-3); padding: 0 var(--sp-4); border-top: var(--bd); background: var(--surface); }"
     expectedDiagnostic: "the bottom bar is one row: it must not stack a second row"
   - name: graph loses its way back on a phone
     file: src/index.css
