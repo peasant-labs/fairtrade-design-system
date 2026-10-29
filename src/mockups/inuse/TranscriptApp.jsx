@@ -736,6 +736,7 @@ function buildMockupVM() {
 
 import { piPayload } from './pi-fixture.js'
 import { readingPayload } from './reading-fixture.js'
+import { integrityBoundProps } from './integrity-fixture.js'
 import { usePublishFlow } from './PublishFlowDemo.jsx'
 import ContextTranscriptDemo from './ContextTranscriptDemo.jsx'
 
@@ -763,9 +764,13 @@ function DefaultTranscriptApp({ theme }) {
   // `?transcript=ledger` reads the same demo session through the ledger presentation.
   // `?transcript=ledger-system` keeps that canonical session and appends one synthetic system
   // turn, so the built app renders the compact system row (the canonical demo has none).
-  const ledger = search !== 'classic'
+  // `?transcript=flagged` and `?transcript=flagged-classic` read the reading session with a served
+  // integrity flag on two of its turns, in the ledger and the classic presentation.
+  const flagged = search === 'flagged' || search === 'flagged-classic'
+  const ledger = search !== 'classic' && search !== 'flagged-classic'
   const vm = useMemo(() => {
     if (search === 'ledger-reading' || search === 'ledger-reading-short' || search === 'ledger-disclosure') return adaptTranscript(readingPayload({ short: search === 'ledger-reading-short', disclosure: search === 'ledger-disclosure' }))
+    if (flagged) return adaptTranscript(readingPayload())
     if (search === 'pi') return adaptTranscript(piPayload)
     const base = buildMockupVM()
     if (search === 'mermaid-reading') {
@@ -957,6 +962,7 @@ flowchart TD
         showOutcome={false}
         showSearchTrigger
         presentation={ledger ? 'ledger' : 'classic'}
+        {...(flagged ? integrityBoundProps : {})}
         initialPosition={search === 'ledger-reading' && /^\d+$/.test(new URLSearchParams(window.location.search).get('turn') ?? '') ? { kind: 'turn', turnIndex: Number(new URLSearchParams(window.location.search).get('turn')) } : undefined}
         sidebarLayout={ledger ? sidebarLayout : undefined}
         onSidebarLayoutChange={ledger ? setSidebarLayout : undefined}

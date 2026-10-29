@@ -93,6 +93,27 @@ The combinations and the controls each one must show or omit are fixtured in
 `scripts/testdata/transcript-viewer-chrome.yaml`; `pnpm test:transcript-viewer-chrome` mounts
 the real viewer for every case. No wire field is involved.
 
+## integrity
+
+The viewer takes a served integrity flag and draws it; it never decides one.
+
+| prop | meaning |
+|---|---|
+| `integrity` | the served `VillageTranscriptIntegrity`, passed through untouched. A well formed value means the transcript is flagged and the header shows the badge in every presentation and at every width. Absent, `null` or malformed renders nothing. |
+| `transcriptContentHash` | the detail response's `transcript.content_hash`: the content `flagged_turns` refer to. |
+| `contentHash` | the bare hash of the content `viewModel` was cooked from, from the content route's `Village-Content-Hash` header. |
+
+Position binding: each entry of `flagged_turns` is a position in the wire `turns` array. The adapter
+records it on every main turn as `sourcePosition`, before any turn is dropped or merged, so a served
+position finds its turn even when the cooked list is shorter than the wire list. Earlier history
+carries no position and is never marked. A position with no visible turn draws nothing.
+
+Hash rule: turns are marked only when `contentHash` equals `transcriptContentHash` and both are
+non-empty. Any other combination draws the badge alone, because positions of other content point at
+other turns. The viewer never derives integrity from the turns it renders. The behaviour is fixtured
+in `scripts/testdata/transcript-integrity-viewer.yaml`; `pnpm test:transcript-integrity-viewer`
+mounts the real viewer for every case.
+
 ## observed model resolution
 
 `TurnDetail.observedModel` is source evidence from assistant output. The adapter resolves it over the

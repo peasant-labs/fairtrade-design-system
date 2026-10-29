@@ -1,0 +1,203 @@
+# Cases for scripts/transcript-integrity.test.mjs. `viewCases` feed integrityView; an omitted
+# field is passed as undefined. `adapterCases` name a payload builder in the test and list the
+# [index, sourcePosition] pairs the cooked main turns must carry.
+viewCases:
+  - name: absent integrity draws nothing
+    transcriptContentHash: h1
+    contentHash: h1
+    expect: null
+  - name: null integrity draws nothing
+    integrity: null
+    transcriptContentHash: h1
+    contentHash: h1
+    expect: null
+  - name: malformed integrity renders nothing
+    malformed:
+      - "flagged"
+      - [1]
+      - {}
+      - {flagged_turns: null}
+      - {flagged_turns: "1"}
+    transcriptContentHash: h1
+    contentHash: h1
+    expect: null
+  - name: matching hashes mark the listed turns
+    integrity: {flagged_turns: [1, 4]}
+    transcriptContentHash: h1
+    contentHash: h1
+    expect: {positions: [1, 4]}
+  - name: different hashes draw the badge only
+    integrity: {flagged_turns: [1, 4]}
+    transcriptContentHash: h1
+    contentHash: h2
+    expect: {positions: []}
+  - name: a missing rendered hash draws the badge only
+    integrity: {flagged_turns: [1, 4]}
+    transcriptContentHash: h1
+    expect: {positions: []}
+  - name: a missing transcript hash draws the badge only
+    integrity: {flagged_turns: [1, 4]}
+    contentHash: h1
+    expect: {positions: []}
+  - name: two empty hashes never match
+    integrity: {flagged_turns: [1, 4]}
+    transcriptContentHash: ""
+    contentHash: ""
+    expect: {positions: []}
+  - name: a sticky flag with no turns draws the badge only
+    integrity: {flagged_turns: []}
+    transcriptContentHash: h1
+    contentHash: h1
+    expect: {positions: []}
+  - name: malformed positions are dropped
+    integrity: {flagged_turns: [-1, 1.5, "2", 3]}
+    transcriptContentHash: h1
+    contentHash: h1
+    expect: {positions: [3]}
+  - name: a quoted hash does not match
+    integrity: {flagged_turns: [1]}
+    transcriptContentHash: h1
+    contentHash: "\"h1\""
+    expect: {positions: []}
+adapterCases:
+  - name: positions follow the wire array
+    builder: plain
+    expect: [[0, 0], [1, 1], [2, 2]]
+  - name: prefiltered turns keep their original positions
+    builder: metadataBetween
+    expect: [[0, 0], [2, 2]]
+  - name: repeated index keeps distinct positions
+    builder: repeatedIndex
+    expect: [[5, 0], [5, 1]]
+  - name: visible projection keeps positions
+    builder: plain
+    options: {visibleTurnIndices: [2]}
+    expect: [[2, 2]]
+  - name: unknown timestamp keeps its position
+    builder: unknownTimestamp
+    expect: [[0, 0], [1, 1], [2, 2]]
+  - name: earlier history has no source position
+    builder: earlierHistory
+    expect: [[0, 0]]
+    earlierUndefined: true
+# `badgeCases` mount IntegrityBadge; `kind` picks the assertion set. `turnCases` mount one turn of
+# `turnPayload` through TurnCard; `markWithin` is the selector the single visible mark must sit in.
+# `groupCases` mount ModelActions over turns 1 and 3 with the named turns flagged; `groupMark`
+# says whether the folded summary shows INTEGRITY_COPY.groupMark (the gate reads the words from it). `cssCases` read
+# the first rule with that exact selector from src/index.css and require each declaration text.
+badgeCases:
+  - name: the badge is the one button and controls a hidden panel
+    kind: structure
+  - name: a click opens and closes the panel without moving focus
+    kind: toggle
+  - name: hover and focus open nothing
+    kind: hover
+  - name: escape on the badge closes the panel
+    kind: escape-button
+  - name: escape inside the panel returns focus to the badge
+    kind: escape-panel
+  - name: a pointer down outside closes the panel and keeps focus
+    kind: outside-pointer
+  - name: the panel reads its heading, body and other-tools sentence with no link
+    kind: panel-order
+    props: {hasHighlights: true, helpHref: "https://example.test/ignored"}
+  - name: the panel heading follows the heading level
+    kind: heading-level
+    props: {headingLevel: 3}
+turnPayload:
+  id: integrity-turns
+  harness: claude-code
+  startTime: '2026-09-20T10:00:00Z'
+  endTime: '2026-09-20T10:05:00Z'
+  durationMins: 5
+  totalTokens: 0
+  tokensIn: 0
+  tokensOut: 0
+  turnCount: 5
+  toolCallCount: 3
+  outcome: resolved
+  turns:
+    - {index: 0, role: user, content: 'prepare the fixture', timestamp: '2026-09-20T10:00:00Z', depth: 0}
+    - index: 1
+      role: assistant
+      content: 'running the checks.'
+      timestamp: '2026-09-20T10:01:00Z'
+      depth: 0
+      toolCalls:
+        - {id: tc-a, name: Bash, arguments: '{"command":"pnpm test"}', result: '"ok"', exitCode: 0}
+    - {index: 2, role: system, content: 'session resumed, worktree changed on disk', timestamp: '2026-09-20T10:02:00Z', depth: 0}
+    - index: 3
+      role: assistant
+      content: ''
+      timestamp: '2026-09-20T10:03:00Z'
+      depth: 0
+      toolCalls:
+        - {id: tc-b, name: Read, filePath: src/a.ts, arguments: '{"file_path":"src/a.ts"}', result: '"ok"'}
+    - {index: 4, role: assistant, content: 'the helper reports back.', timestamp: '2026-09-20T10:04:00Z', depth: 1, agentName: helper}
+turnCases:
+  - name: a classic flagged turn marks its head
+    turn: 1
+    presentation: classic
+    flagged: true
+    markWithin: ".txn-turnhead"
+  - name: a classic turn that is not flagged draws nothing
+    turn: 1
+    presentation: classic
+    flagged: false
+  - name: a ledger flagged turn marks its head
+    turn: 1
+    presentation: ledger
+    flagged: true
+    markWithin: ".txn-turnhead"
+  - name: a ledger system row carries the mark in its trailing cluster
+    turn: 2
+    presentation: ledger
+    flagged: true
+    markWithin: ".txn-systemrow-head-row"
+  - name: a ledger detail turn leads its work block with the mark
+    turn: 3
+    presentation: ledger
+    flagged: true
+    markWithin: ".txn-turnwork"
+  - name: a classic subagent card takes the same path
+    turn: 4
+    presentation: classic
+    flagged: true
+    markWithin: ".txn-subtask .txn-turnhead"
+  - name: a ledger subagent turn takes the same path
+    turn: 4
+    presentation: ledger
+    flagged: true
+    markWithin: ".txn-turnhead"
+groupCases:
+  - name: a flagged turn marks its row and the folded summary
+    flaggedTurns: [3]
+    expect: {flaggedRows: 1, groupMark: true}
+  - name: no flagged turn draws no mark
+    flaggedTurns: []
+    expect: {flaggedRows: 0, groupMark: false}
+cssCases:
+  - name: the badge keeps ink text and a warning edge
+    selector: ".txn-integrity-badge"
+    includes: ["border: var(--stroke-hairline) solid var(--warning)", "color: var(--ink)", "border-radius: 0"]
+  - name: the badge keeps the control height and width
+    selector: ".txn-integrity-badge"
+    includes: ["block-size: var(--control-h)", "min-inline-size: var(--control-h)"]
+  - name: the warning glyph is the warning colour
+    selector: ".txn-integrity-warn"
+    includes: ["color: var(--warning)"]
+  - name: the open badge takes the elevated fill
+    selector: '.txn-integrity-badge[aria-expanded="true"]'
+    includes: ["background: var(--surface-2)"]
+  - name: the badge wraps beside the title one step from it
+    selector: ".txn-title-row"
+    includes: ["display: flex", "flex-wrap: wrap", "gap: var(--sp-4)"]
+  - name: the panel is capped between the phone gutters
+    selector: ".txn-integrity-panel"
+    includes: ["inline-size: var(--measure-read)", "max-inline-size: calc(100vw - 2 * var(--sp-4))"]
+  - name: a flagged card is drawn with a dashed warning outline
+    selector: ".txn-turnwrap.is-flagged > .txn-turn"
+    includes: ["outline: var(--stroke-hairline) dashed var(--warning)", "outline-offset: calc(var(--stroke-hairline) * -1)", "border-color: transparent"]
+  - name: the mark icon is the warning colour
+    selector: ".txn-integrity-mark .lucide"
+    includes: ["color: var(--warning)"]

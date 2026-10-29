@@ -1,0 +1,147 @@
+# Required-NAME manifest for transcript-integrity.yaml: deletion protection. Membership is
+# asserted, never a bare count.
+requiredViewCaseNames:
+  - absent integrity draws nothing
+  - null integrity draws nothing
+  - malformed integrity renders nothing
+  - matching hashes mark the listed turns
+  - different hashes draw the badge only
+  - a missing rendered hash draws the badge only
+  - a missing transcript hash draws the badge only
+  - two empty hashes never match
+  - a sticky flag with no turns draws the badge only
+  - malformed positions are dropped
+  - a quoted hash does not match
+requiredAdapterCaseNames:
+  - positions follow the wire array
+  - prefiltered turns keep their original positions
+  - repeated index keeps distinct positions
+  - visible projection keeps positions
+  - unknown timestamp keeps its position
+  - earlier history has no source position
+requiredBadgeCaseNames:
+  - the badge is the one button and controls a hidden panel
+  - a click opens and closes the panel without moving focus
+  - hover and focus open nothing
+  - escape on the badge closes the panel
+  - escape inside the panel returns focus to the badge
+  - a pointer down outside closes the panel and keeps focus
+  - the panel reads its heading, body and other-tools sentence with no link
+  - the panel heading follows the heading level
+requiredTurnCaseNames:
+  - a classic flagged turn marks its head
+  - a classic turn that is not flagged draws nothing
+  - a ledger flagged turn marks its head
+  - a ledger system row carries the mark in its trailing cluster
+  - a ledger detail turn leads its work block with the mark
+  - a classic subagent card takes the same path
+  - a ledger subagent turn takes the same path
+requiredGroupCaseNames:
+  - a flagged turn marks its row and the folded summary
+  - no flagged turn draws no mark
+requiredCssCaseNames:
+  - the badge keeps ink text and a warning edge
+  - the badge keeps the control height and width
+  - the warning glyph is the warning colour
+  - the open badge takes the elevated fill
+  - the badge wraps beside the title one step from it
+  - the panel is capped between the phone gutters
+  - a flagged card is drawn with a dashed warning outline
+  - the mark icon is the warning colour
+requiredCopyKeys:
+  - badgeLabel
+  - helpName
+  - panelHeading
+  - panelBody
+  - panelOtherTools
+  - statusText
+  - turnMark
+  - turnName
+  - groupMark
+
+requiredMutationNames:
+  - the hash check is skipped
+  - a malformed object is treated as flagged
+  - positions use the index field
+  - a copied turn loses its position
+  - the panel is never hidden
+  - the badge never reports expanded
+  - hover opens the panel
+  - the title row loses its step
+  - escape does not return focus
+  - an outside pointer down does not close
+  - the flagged class is dropped
+  - the heading suffix is dropped
+  - the group mark is dropped
+  - the dashed outline turns solid
+mutations:
+  - name: the hash check is skipped
+    file: src/ui/transcript/integrity.js
+    find: "transcriptContentHash === contentHash"
+    replace: "true"
+    expectedDiagnostic: "different hashes draw the badge only"
+  - name: a malformed object is treated as flagged
+    file: src/ui/transcript/integrity.js
+    find: "!Array.isArray(flagged)"
+    replace: "!flagged"
+    expectedDiagnostic: "malformed integrity renders nothing"
+  - name: positions use the index field
+    file: src/ui/transcript/adapter.js
+    find: "turnVM.sourcePosition = sourcePositions.get(t)"
+    replace: "turnVM.sourcePosition = t.index"
+    expectedDiagnostic: "repeated index keeps distinct positions"
+  - name: a copied turn loses its position
+    file: src/ui/transcript/adapter.js
+    find: "if (copy !== turn && position !== undefined) sourcePositions.set(copy, position)"
+    replace: ""
+    expectedDiagnostic: "unknown timestamp keeps its position"
+  - name: the panel is never hidden
+    file: src/ui/transcript/IntegrityBadge.jsx
+    find: "hidden={!open}"
+    replace: "hidden={false}"
+    expectedDiagnostic: "aria-controls resolves to the hidden panel"
+  - name: the badge never reports expanded
+    file: src/ui/transcript/IntegrityBadge.jsx
+    find: "aria-expanded={open}"
+    replace: "aria-expanded={false}"
+    expectedDiagnostic: "a click opens the panel"
+  - name: hover opens the panel
+    file: src/ui/transcript/IntegrityBadge.jsx
+    find: "onClick={() => setOpen((value) => !value)}"
+    replace: "onClick={() => setOpen((value) => !value)} onPointerOver={() => setOpen(true)}"
+    expectedDiagnostic: "hover and focus open nothing"
+  - name: the title row loses its step
+    file: src/index.css
+    find: ".txn-title-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-4);"
+    replace: ".txn-title-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2);"
+    expectedDiagnostic: "must declare gap: var(--sp-4)"
+  - name: escape does not return focus
+    file: src/ui/transcript/IntegrityBadge.jsx
+    find: "badgeRef.current?.focus()"
+    replace: ""
+    expectedDiagnostic: "focus returns to the badge"
+  - name: an outside pointer down does not close
+    file: src/ui/transcript/IntegrityBadge.jsx
+    find: "!rootRef.current.contains(event.target)"
+    replace: "false"
+    expectedDiagnostic: "a pointer down outside closes the panel"
+  - name: the flagged class is dropped
+    file: src/ui/transcript/TurnCard.jsx
+    find: "(flagged ? ' is-flagged' : '')"
+    replace: "''"
+    expectedDiagnostic: "must carry is-flagged"
+  - name: the heading suffix is dropped
+    file: src/ui/transcript/TurnCard.jsx
+    find: "const flagName = flagged ?"
+    replace: "const flagName = false ?"
+    expectedDiagnostic: "the heading must end with the hidden turnName"
+  - name: the group mark is dropped
+    file: src/ui/transcript/WorkGroup.jsx
+    find: "{anyFlagged ?"
+    replace: "{false ?"
+    expectedDiagnostic: "the summary mark must read"
+  - name: the dashed outline turns solid
+    file: src/index.css
+    find: "outline: var(--stroke-hairline) dashed var(--warning); outline-offset: calc(var(--stroke-hairline) * -1); border-color: transparent;"
+    replace: "outline: var(--stroke-hairline) solid var(--warning); outline-offset: calc(var(--stroke-hairline) * -1); border-color: transparent;"
+    expectedDiagnostic: "must declare outline: var(--stroke-hairline) dashed var(--warning)"

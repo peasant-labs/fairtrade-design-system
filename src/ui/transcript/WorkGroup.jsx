@@ -2,8 +2,10 @@ import { useLayoutEffect, useId, useRef, useState } from 'react'
 import ToolCall from './ToolCall.jsx'
 import Thinking from './Thinking.jsx'
 import Collapsible from './Collapsible.jsx'
-import { workActionsLabel, workCountLabel, workMetaLabel, workSummary } from './work-summary.js'
+import { turnHasProse, workActionsLabel, workCountLabel, workMetaLabel, workSummary } from './work-summary.js'
 import { toolStateKey } from './tool-state-key.js'
+import { IntegrityMark } from './IntegrityBadge.jsx'
+import { INTEGRITY_COPY } from './integrity.js'
 
 /* TranscriptWorkGroup — one turn's tool activity as a single panel. In the ledger presentation
    a turn shows its prose first and then this panel: the computed summary over its tool calls
@@ -84,8 +86,11 @@ export default function TranscriptWorkGroup({ tools = [], thinking, openTools = 
    The ledger never prints a summary row per call; the turns of one user turn share this block,
     whose header states their work and toggles the rows. Rows start visible with their contents
     closed; compact mode collapses the list. A block with no tools is only thinking,
-   so it draws its thinking lines without a header to open. */
-export function ModelActions({ turns = [], openTools = {}, onToggle = () => {}, expandAll = false, compact = false, reveal, registerActionRef = () => {} }) {
+   so it draws its thinking lines without a header to open. `flaggedPositions` holds the source
+   positions the integrity check marked: each such turn's row is outlined and led by a mark, and
+   the summary shows a mark while the group is folded. `cardTurn` is the turn whose own card
+   carries the mark and the outline: its row is not marked a second time. */
+export function ModelActions({ turns = [], openTools = {}, onToggle = () => {}, expandAll = false, compact = false, flaggedPositions, cardTurn, reveal, registerActionRef = () => {} }) {
   const [open, setOpen] = useState(!compact)
   const previous = useRef({ compact, expandAll: false, openTools: {}, reveal: null })
   const tools = turns.flatMap((turn) => turn.toolCalls ?? [])
@@ -99,10 +104,23 @@ export function ModelActions({ turns = [], openTools = {}, onToggle = () => {}, 
     previous.current = { compact, expandAll, openTools, reveal }
   }, [compact, expandAll, openTools, reveal, tools])
   const label = workActionsLabel(workSummary(tools))
+  /* a turn whose own card carries the mark and the outline is not marked a second time in its row:
+     that is the card this group sits under, and every turn with words, whose card is drawn on its
+     own even when its actions are folded into an earlier turn's group */
+  const isCard = (turn) => (!!cardTurn && (cardTurn.identity ?? cardTurn.index) === (turn.identity ?? turn.index)) || turnHasProse(turn)
+  const isFlagged = (turn) => flaggedPositions?.has(turn.sourcePosition) === true && !isCard(turn)
+  const anyFlagged = turns.some(isFlagged)
+  const rowClass = (turn) => 'txn-modelactions-turn' + (isFlagged(turn) ? ' is-flagged' : '')
   if (!tools.length) {
     return (
       <div className="txn-modelactions txn-modelactions-bare">
-        {turns.map((turn) => turn.thinking && <Thinking key={turn.identity ?? turn.index} block={turn.thinking} actionRef={el => registerActionRef(turn.index, 'thinking', el)} revealRequest={reveal?.turn === turn.index ? reveal.sequence : 0} />)}
+        {turns.map((turn) => {
+          if (!turn.thinking) return null
+          const key = turn.identity ?? turn.index
+          const thinking = <Thinking key={key} block={turn.thinking} actionRef={el => registerActionRef(turn.index, 'thinking', el)} revealRequest={reveal?.turn === turn.index ? reveal.sequence : 0} />
+          /* only a flagged turn gains a row; every other block renders exactly as it always has */
+          return isFlagged(turn) ? <div key={key} className={rowClass(turn)}><IntegrityMark decorative={false} />{thinking}</div> : thinking
+        })}
       </div>
     )
   }
@@ -111,11 +129,13 @@ export function ModelActions({ turns = [], openTools = {}, onToggle = () => {}, 
     <div className={'txn-modelactions' + (shown ? ' is-open' : '')}>
       <button type="button" className="txn-modelactions-head" aria-expanded={shown} onClick={closeAll}>
         <span className="txn-modelactions-summary tnum">{label}</span>
+        {anyFlagged ? <IntegrityMark text={INTEGRITY_COPY.groupMark} decorative={false} /> : null}
       </button>
       <Collapsible open={shown} keepMounted>
         <div className="txn-modelactions-rows">
           {turns.map((turn) => (
-            <div key={turn.identity ?? turn.index} className="txn-modelactions-turn">
+            <div key={turn.identity ?? turn.index} className={rowClass(turn)}>
+              {isFlagged(turn) ? <IntegrityMark decorative={false} /> : null}
               {(turn.toolCalls ?? []).map((tool) => (
                 <ToolCall
                   key={toolStateKey(turn.index, tool)}

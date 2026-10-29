@@ -187,6 +187,7 @@ export const TOOL_GROUPS = Object.freeze([
  * @typedef {object} TurnVM
  * @property {number} index
  * @property {boolean} [sourceIndexUnique] whether this index is unambiguous in its partition
+ * @property {number} [sourcePosition]  position in payload.turns, the value VillageTranscriptIntegrity.flagged_turns refers to; main turns only
  * @property {string} [identity] partition-scoped stable rendering key
  * @property {string} [partition] main or earlier-N; main index navigation stays unchanged
  * @property {string} [sourceEntryRef]

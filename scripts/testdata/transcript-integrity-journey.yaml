@@ -1,0 +1,29 @@
+# The integrity badge and flagged-turn marks on the built in-use demo, checked by
+# scripts/journey/transcript-integrity.journey.mjs in both themes.
+#   kind: header-desktop   the badge, the one control, sits on the title's line one --sp-4 after its
+#                          text, outlined in the warning color, with both glyphs and its whole label;
+#                          the host's not published and publish keep the x they have on `baseline`
+#                          (the same session with no flag); the panel opens fully in the viewport
+#   kind: classic-turns    classic cards: two marks, one dashed outline per flagged card
+#   kind: header-phone     390px touch: the badge, with its words, sits one --sp-4 under the title at
+#                          its left edge; the host's actions keep their x; no horizontal overflow;
+#                          the badge reaches 44px; the panel opens inside the 16px gutters; a second
+#                          tap closes it
+#   kind: folded-mark      the collapsed ledger work group still shows its mark
+#   kind: axe-panel        axe finds nothing in the header with the panel open
+# `query` is the demo's transcript variant; `baseline` the unflagged variant of the same session;
+# `touch` selects a coarse-pointer phone context.
+cases:
+  - {name: desktop flagged header, kind: header-desktop, query: flagged, baseline: ledger-reading, viewport: {width: 1440, height: 900}, touch: false}
+  - {name: desktop classic flagged turns, kind: classic-turns, query: flagged-classic, viewport: {width: 1440, height: 900}, touch: false}
+  - {name: phone flagged header, kind: header-phone, query: flagged, baseline: ledger-reading, viewport: {width: 390, height: 844}, touch: true}
+  - {name: phone ledger folded mark, kind: folded-mark, query: flagged, viewport: {width: 390, height: 844}, touch: true}
+  - {name: axe on the open panel, kind: axe-panel, query: flagged, viewport: {width: 390, height: 844}, touch: true}
+# `pageMutations` change the built page after it loads: `move` is appended into `into`, then the
+# case's placement gate runs and must report a line containing `expect`.
+pageMutations:
+  - name: the badge is back in the actions row
+    case: desktop flagged header
+    move: '#inuse .txn-integrity'
+    into: '#inuse .txn-header-top .txn-actions'
+    expect: '"publish" must keep its x with a flag'

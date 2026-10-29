@@ -8,11 +8,14 @@ import Thinking from './Thinking.jsx'
 import ToolCall from './ToolCall.jsx'
 import TranscriptSystemRow from './SystemRow.jsx'
 import TranscriptWorkGroup, { ModelActions } from './WorkGroup.jsx'
+import { turnHasProse } from './work-summary.js'
 import UsageDisclosure from './UsageDisclosure.jsx'
 import { Term } from '../Explainer.jsx'
 import { formatRelative as formatRelativeTime, isKnownTime } from './time.js'
 import { formatCount } from '../format.js'
 import { toolStateKey } from './tool-state-key.js'
+import { IntegrityMark } from './IntegrityBadge.jsx'
+import { INTEGRITY_COPY } from './integrity.js'
 
 /* TurnCard — one transcript turn, lifted verbatim from the canonical mockup
    (src/mockups/inuse/TranscriptApp.jsx:541). DUMB: it renders a cooked `TurnVM`
@@ -60,6 +63,10 @@ function turnTimeLabel(ts) {
  * @param {number} [props.revealRequest] explicit search navigation sequence
  * @param {number} [props.headingLevel=4] the turn heading's level: h4 under a viewer whose title is an h2, h3 under one
  *        whose title is the page's h1
+ * @param {boolean} [props.flagged=false] the integrity check marked this turn: the article takes `is-flagged`, the
+ *        heading gains a hidden suffix naming the flag, and a visible mark shows in the head (or the system row's
+ *        trailing cluster, or the start of a ledger detail turn's work block)
+ * @param {ReadonlySet<number>} [props.flaggedPositions] source positions marked in a work group this card renders
  * @param {'classic' | 'ledger'} [props.presentation='classic'] chrome presentation. `ledger` leads with a
  *        square role well and the role word, groups the turn's tool calls into one work panel, and renders a
  *        system turn as a compact row; absent, the classic card renders exactly as before. In ledger the head
@@ -90,8 +97,13 @@ export default function TurnCard({
   registerActionRef,
   suppressWork = false,
   presentation = 'classic',
+  flagged = false,
+  flaggedPositions,
 }) {
   const TurnHeading = `h${Math.min(6, Math.max(1, headingLevel))}`
+  /* the hidden suffix that makes a flagged turn's accessible name say so; the visible mark is aria-hidden */
+  const flagName = flagged ? <span className="txn-sr">{INTEGRITY_COPY.turnName}</span> : null
+  const flagMark = flagged ? <IntegrityMark /> : null
   const ledger = presentation === 'ledger'
   const [expanded, setExpanded] = useState(true)
   const bodyId = useId()
@@ -104,7 +116,7 @@ export default function TurnCard({
   const isEarlier = !!turn.partition && turn.partition !== 'main'
   /* Only a turn with words earns a card. An agent turn that is only thinking or tool work is
      inline detail: no role line, no number, no time, just its lines under the previous turn. */
-  const hasProse = String(turn.displayContent ?? turn.content ?? '').trim().length > 0
+  const hasProse = turnHasProse(turn)
   const ledgerDetail = ledger && !isUser && !hasProse
   const timeLabel = turn.time || turnTimeLabel(turn.timestamp)
   const isSub = !!turn.depth && turn.depth > 0
@@ -146,7 +158,7 @@ export default function TurnCard({
 
   const head = (
     <div className={'txn-turnhead' + (ledger ? ' txn-turnhead-ledger' : '')}>
-      <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}</TurnHeading>
+      <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}{flagName}</TurnHeading>
       {ledger ? (
         <>
           {/* the ledger head: the square role well and the role word, then the turn number, the
@@ -155,6 +167,7 @@ export default function TurnCard({
           <span className="txn-roleico" style={roleStyle}>{roleGlyph}</span>
           <span className="txn-rolelabel" style={roleStyle}>{roleLabel}</span>
           <span className="txn-turnnum tnum">#{turn.label}</span>
+          {flagMark}
           {timeLabel && (
             <Term className="txn-turntime" def={turn.timeTitle ?? turn.timestamp ?? turn.time}>
               {timeLabel}
@@ -172,6 +185,7 @@ export default function TurnCard({
           {turn.effectiveModel && <span className="txn-turnmodel mono">{turn.effectiveModel}</span>}
           {isSub && <span className="txn-depth tnum">depth {turn.depth}</span>}
           <span className="txn-turnnum tnum">#{turn.label}</span>
+          {flagMark}
           <button type="button" className="txn-turn-disclosure" aria-expanded={expanded} aria-controls={bodyId} onClick={() => setExpanded(value => !value)}>
             {expanded ? 'collapse' : 'expand'} turn {turn.label}
           </button>
@@ -241,8 +255,10 @@ export default function TurnCard({
   const hasWork = !!(turn.toolCalls?.length || turn.thinking)
   const workBlock = ledger && !suppressWork && (hasWork || modelActions?.length) ? (
     <div className="txn-turnwork">
+      {/* a work block drawn without group rows has no row to carry the mark, so it leads the block */}
+      {ledgerDetail && !modelActions?.length && turn.role !== 'system' ? flagMark : null}
       {modelActions?.length || turn.role === 'user' || turn.role === 'system' ? (
-        <ModelActions turns={modelActions?.length ? modelActions : [turn]} openTools={openTools} onToggle={toggleTool} expandAll={expandAll} compact={compact} reveal={actionReveal} registerActionRef={registerActionRef} />
+        <ModelActions turns={modelActions?.length ? modelActions : [turn]} openTools={openTools} onToggle={toggleTool} expandAll={expandAll} compact={compact} flaggedPositions={flaggedPositions} cardTurn={ledgerDetail ? undefined : turn} reveal={actionReveal} registerActionRef={registerActionRef} />
       ) : turn.toolCalls?.length ? (
         <TranscriptWorkGroup
           tools={turn.toolCalls}
@@ -264,7 +280,7 @@ export default function TurnCard({
     (compact ? ' txn-compact' : '') +
     (ledger ? ' txn-turn-ledger' : '')
 
-  const wrapClass = 'txn-turnwrap' + (ledger ? ' txn-turnwrap-ledger' : '')
+  const wrapClass = 'txn-turnwrap' + (ledger ? ' txn-turnwrap-ledger' : '') + (flagged ? ' is-flagged' : '')
 
   /* a ledger system turn is one compact row, not a card: it renders inside the same article the
      other turns use (one anchor id, one registerRef, the partition data), with the hidden heading
@@ -285,11 +301,11 @@ export default function TurnCard({
     >
       {systemRow ? (
         <>
-          <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}</TurnHeading>
+          <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}{flagName}</TurnHeading>
           <TranscriptSystemRow
             turn={turn}
             revealRequest={revealRequest}
-            actions={<>{anchorButton}{renderActions ? renderActions(turn) : null}</>}
+            actions={<>{flagMark}{anchorButton}{renderActions ? renderActions(turn) : null}</>}
           />
           {workBlock}
         </>
@@ -318,8 +334,8 @@ export default function TurnCard({
             </div>
           ) : ledgerDetail ? (
             <>
-              <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}</TurnHeading>
-              {workBlock}
+              <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}{flagName}</TurnHeading>
+              {workBlock ?? (flagged && !suppressWork ? <div className="txn-turnwork txn-turnwork-solo">{flagMark}</div> : null)}
             </>
           ) : (
             <>

@@ -197,6 +197,15 @@ _acceptViewerProps({ viewModel: vm, capabilities: caps, showOutcome: null })
 // @ts-expect-error — presentation is the closed 'classic' | 'ledger' union
 _acceptViewerProps({ viewModel: vm, capabilities: caps, presentation: 'ledger ' })
 
+/* ── (5d) integrity props: the served shape is passed through, its hashes are strings ──── */
+_acceptViewerProps({ viewModel: vm, capabilities: caps, integrity: { flagged_turns: [1] }, transcriptContentHash: 'sha256:a', contentHash: 'sha256:a' })
+
+// @ts-expect-error - contentHash is a string or null, not a number
+_acceptViewerProps({ viewModel: vm, capabilities: caps, contentHash: 7 })
+
+// @ts-expect-error - flagged_turns holds numeric source positions, not strings
+_acceptViewerProps({ viewModel: vm, capabilities: caps, integrity: { flagged_turns: ['1'] } })
+
 /* ── (6) POSITIVE: a capability flag is genuinely boolean ─────────────────────────
    A bare read does not bite under strictNullChecks, so dereference through a use. */
 /** @param {ViewerCapabilities} c */

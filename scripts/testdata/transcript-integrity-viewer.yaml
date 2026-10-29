@@ -1,0 +1,216 @@
+# Cases for scripts/transcript-integrity-viewer.test.mjs. Every case mounts the real viewer over
+# `payload` and lists each closed control once across `present` and `absent`. `props` picks the
+# integrity value, whether the rendered content hash matches the served one, the presentation,
+# and a few view switches. `stateCases` and `interactions` are driven by `kind`.
+payload:
+  id: integrity-viewer
+  harness: claude-code
+  startTime: '2026-09-20T10:00:00Z'
+  endTime: '2026-09-20T10:08:00Z'
+  durationMins: 8
+  totalTokens: 0
+  tokensIn: 0
+  tokensOut: 0
+  turnCount: 8
+  toolCallCount: 2
+  outcome: resolved
+  turns:
+    - {index: 0, role: user, content: 'prepare the fixture for the check', timestamp: '2026-09-20T10:00:00Z', depth: 0}
+    - index: 1
+      role: assistant
+      content: 'reading the fixture.'
+      timestamp: '2026-09-20T10:01:00Z'
+      depth: 0
+      toolCalls:
+        - {id: tc-a, name: Read, filePath: src/a.ts, arguments: '{"file_path":"src/a.ts"}', result: '"ok"', toolKind: read}
+    - index: 2
+      role: assistant
+      content: ''
+      timestamp: '2026-09-20T10:02:00Z'
+      depth: 0
+      toolCalls:
+        - {id: tc-b, name: Bash, arguments: '{"command":"pnpm test"}', result: '"ok"', exitCode: 0}
+    - {index: 3, role: system, content: 'the workspace check completed', timestamp: '2026-09-20T10:03:00Z', depth: 0}
+    - {index: 4, role: assistant, content: 'the explorer found two callers.', timestamp: '2026-09-20T10:04:00Z', depth: 1, agentName: explorer}
+    - {index: 5, role: user, content: 'run it again and show me the result', timestamp: '2026-09-20T10:05:00Z', depth: 0}
+    - {index: 6, role: system, content: 'custom-title: a name', timestamp: '2026-09-20T10:06:00Z', depth: 0}
+    - {index: 7, role: assistant, content: 'the check passed.', timestamp: '2026-09-20T10:07:00Z', depth: 0}
+  earlierHistory:
+    - state: uncertain_unresolved
+      turns:
+        - {index: 1, role: user, content: 'an older prompt', timestamp: '2026-09-20T09:00:00Z', depth: 0}
+        - {index: 2, role: assistant, content: 'an older answer', timestamp: '2026-09-20T09:01:00Z', depth: 0}
+
+# Controls, each found by its own selector in the gate. A case's present and absent lists together
+# name every control exactly once. `badge` is the badge on the title's line, mounted; `badge-shown`
+# is that badge outside any folded (inert, aria-hidden) region, so a condensed header, which folds
+# the title away, keeps the badge mounted but not shown.
+cases:
+  - name: no integrity renders nothing
+    kind: ledger
+    props: {}
+    present: []
+    absent: [badge, badge-shown, panel, status-text, mark-1, mark-2, mark-3, mark-4, mark-7, group-row-2, group-head, earlier-mark]
+  - name: malformed integrity renders nothing
+    kind: ledger
+    props: {integrity: {flagged_turns: null}, hashes: same}
+    present: []
+    absent: [badge, badge-shown, panel, status-text, mark-1, mark-2, mark-3, mark-4, mark-7, group-row-2, group-head, earlier-mark]
+  - name: ledger flagged with matching hash marks listed turns
+    kind: ledger
+    props: {integrity: {flagged_turns: [1, 2, 3, 4, 7]}, hashes: same}
+    present: [badge, badge-shown, status-text, mark-1, mark-3, mark-4, mark-7, group-row-2, group-head]
+    absent: [panel, mark-2, earlier-mark]
+  - name: classic flagged with matching hash marks listed turns
+    kind: classic
+    props: {integrity: {flagged_turns: [1, 2, 3, 4, 7]}, hashes: same}
+    present: [badge, badge-shown, status-text, mark-1, mark-2, mark-3, mark-4, mark-7]
+    absent: [panel, group-row-2, group-head, earlier-mark]
+  - name: different hashes draw the badge only
+    kind: ledger
+    props: {integrity: {flagged_turns: [1, 2, 3, 4, 7]}, hashes: different}
+    present: [badge, badge-shown, status-text]
+    absent: [panel, mark-1, mark-2, mark-3, mark-4, mark-7, group-row-2, group-head, earlier-mark]
+  - name: different hashes draw the badge only in classic
+    kind: classic
+    props: {integrity: {flagged_turns: [1, 2, 3, 4, 7]}, hashes: different}
+    present: [badge, badge-shown, status-text]
+    absent: [panel, mark-1, mark-2, mark-3, mark-4, mark-7, group-row-2, group-head, earlier-mark]
+  - name: sticky flag with no turns draws the badge only
+    kind: ledger
+    props: {integrity: {flagged_turns: []}, hashes: same}
+    present: [badge, badge-shown, status-text]
+    absent: [panel, mark-1, mark-2, mark-3, mark-4, mark-7, group-row-2, group-head, earlier-mark]
+  - name: a filtered-out flagged turn leaves only the badge
+    kind: ledger
+    props: {integrity: {flagged_turns: [6]}, hashes: same}
+    present: [badge, badge-shown, status-text]
+    absent: [panel, mark-1, mark-2, mark-3, mark-4, mark-7, group-row-2, group-head, earlier-mark]
+  - name: a hidden tool category leaves only the badge
+    kind: ledger
+    props: {integrity: {flagged_turns: [2]}, hashes: same, toolcalls: false}
+    present: [badge, badge-shown, status-text]
+    absent: [panel, mark-1, mark-2, mark-3, mark-4, mark-7, group-row-2, group-head, earlier-mark]
+  - name: earlier history is never marked
+    kind: ledger
+    props: {integrity: {flagged_turns: [1]}, hashes: same}
+    present: [badge, badge-shown, status-text, mark-1]
+    absent: [panel, mark-2, mark-3, mark-4, mark-7, group-row-2, group-head, earlier-mark]
+  - name: condensed header folds the badge away with the title
+    kind: ledger
+    props: {integrity: {flagged_turns: [1]}, hashes: same, condensed: true}
+    present: [badge, status-text, mark-1]
+    absent: [badge-shown, panel, mark-2, mark-3, mark-4, mark-7, group-row-2, group-head, earlier-mark]
+  - name: zen keeps the badge
+    kind: ledger
+    props: {integrity: {flagged_turns: [1]}, hashes: same, zen: true}
+    present: [badge, badge-shown, status-text, mark-1]
+    absent: [panel, mark-2, mark-3, mark-4, mark-7, group-row-2, group-head, earlier-mark]
+
+# `outlineCases` check the dashed outline. The selectors of the outline rule in index.css are
+# matched against the mounted viewer, and the number of elements that draw an edge must equal
+# `outlines`: one per flagged turn, never one for the card and another for its work block.
+outlineCases:
+  - name: a flagged prose turn with work draws one outline
+    kind: ledger
+    flagged: [1]
+    outlines: 1
+  - name: a flagged work-only turn draws its row outline once
+    kind: ledger
+    flagged: [2]
+    outlines: 1
+  - name: two flagged turns in one group draw one outline each
+    kind: ledger
+    flagged: [1, 2]
+    outlines: 2
+  - name: a flagged classic turn draws one outline
+    kind: classic
+    flagged: [1]
+    outlines: 1
+  - name: a flagged system row draws one outline
+    kind: ledger
+    flagged: [3]
+    outlines: 1
+
+# `foldedProseCase` mounts two prose turns that each took an action. The ledger folds both actions
+# into the first turn's group, but the second turn still draws its own card; flagging it draws the
+# card's one outline and no second one around its folded row.
+foldedProseCase:
+  name: a flagged prose turn whose work folds into an earlier group draws one outline
+  flagged: [2]
+  outlines: 1
+  payload:
+    id: integrity-folded-prose
+    harness: claude-code
+    startTime: '2026-09-20T10:00:00Z'
+    endTime: '2026-09-20T10:03:00Z'
+    durationMins: 3
+    totalTokens: 0
+    tokensIn: 0
+    tokensOut: 0
+    turnCount: 3
+    toolCallCount: 2
+    outcome: resolved
+    turns:
+      - {index: 0, role: user, content: 'read both files', timestamp: '2026-09-20T10:00:00Z', depth: 0}
+      - index: 1
+        role: assistant
+        content: 'reading the first file.'
+        timestamp: '2026-09-20T10:01:00Z'
+        depth: 0
+        toolCalls:
+          - {id: tc-a, name: Read, filePath: src/a.ts, arguments: '{"file_path":"src/a.ts"}', result: '"ok"', toolKind: read}
+      - index: 2
+        role: assistant
+        content: 'reading the second file.'
+        timestamp: '2026-09-20T10:02:00Z'
+        depth: 0
+        toolCalls:
+          - {id: tc-b, name: Read, filePath: src/b.ts, arguments: '{"file_path":"src/b.ts"}', result: '"ok"', toolKind: read}
+
+# `thinkingCase` mounts a thinking-only work group; the flagged turn inside it is marked.
+thinkingCase:
+  name: a flagged turn in a thinking-only group is marked
+  payload:
+    id: integrity-thinking
+    harness: claude-code
+    startTime: '2026-09-20T10:00:00Z'
+    endTime: '2026-09-20T10:03:00Z'
+    durationMins: 3
+    totalTokens: 0
+    tokensIn: 0
+    tokensOut: 0
+    turnCount: 4
+    toolCallCount: 0
+    outcome: resolved
+    turns:
+      - {index: 0, role: user, content: 'think it through', timestamp: '2026-09-20T10:00:00Z', depth: 0}
+      - {index: 1, role: assistant, content: 'here is the plan.', timestamp: '2026-09-20T10:01:00Z', depth: 0}
+      - {index: 2, role: assistant, entryType: thinking, content: 'weighing the two approaches', timestamp: '2026-09-20T10:02:00Z', depth: 0}
+  flagged: [2]
+  group: 1
+  row: 2
+
+interactions:
+  - name: help click opens and closes the panel
+    kind: help-click
+  - name: help keyboard
+    kind: help-keyboard
+  - name: outside pointer closes the panel
+    kind: outside-pointer
+  - name: escape closes the panel from outside the badge
+    kind: escape-outside
+  - name: the badge is the only control
+    kind: badge-control
+  - name: the panel copy is the same with or without marks
+    kind: panel-copy
+  - name: the panel carries no link
+    kind: no-link
+  - name: integrity added after mount announces once
+    kind: late-arrival
+  - name: an unflagged thinking-only group keeps its plain structure
+    kind: plain-thinking
+  - name: integrity present at mount fills its status after mount
+    kind: status-after-mount
+  - name: condensing the header closes an open panel
+    kind: fold-closes

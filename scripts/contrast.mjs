@@ -159,6 +159,12 @@ const PAIRS = [
   // accent-as-text — role/status accents are readable labels and must clear small-text AA.
   { fg: 'amber', bg: 'canvas', kind: 'text', note: 'links/accent text' },
   { fg: 'amber', bg: 'surface', kind: 'text', note: 'links/accent text' },
+  // the integrity flag: the badge edge, glyph and flagged-turn outline are --warning on the ground
+  { fg: 'warning', bg: 'canvas', kind: 'text', note: 'integrity flag glyph and mark' },
+  { fg: 'warning', bg: 'canvas', kind: 'nontext', note: 'integrity flag edge and dashed turn outline' },
+  { fg: 'warning', bg: 'surface', kind: 'nontext', note: 'integrity dashed turn outline on the surface' },
+  { fg: 'warning', bg: 'surface-2', kind: 'nontext', note: 'integrity badge edge and glyph while its panel is open' },
+  { fg: 'warning', bg: 'surface-hover', kind: 'nontext', note: 'integrity badge edge and glyph on hover' },
   { fg: 'amber-bright', bg: 'surface', kind: 'text', required: false, note: 'hover/highlight (large/bold)', large: true },
   { fg: 'teal', bg: 'surface', kind: 'text', note: 'user role text' },
   { fg: 'olive', bg: 'surface', kind: 'text', note: 'success/add text' },

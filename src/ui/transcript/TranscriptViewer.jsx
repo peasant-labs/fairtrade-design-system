@@ -18,6 +18,8 @@ import { actionGroups } from './action-groups.js'
 import { turnAtReadingLine } from './scroll-position.js'
 import useReaderWidthAnchor from './useReaderWidthAnchor.js'
 import TurnCard from './TurnCard.jsx'
+import IntegrityBadge from './IntegrityBadge.jsx'
+import { integrityView } from './integrity.js'
 import Collapsible from './Collapsible.jsx'
 import TranscriptContext from './TranscriptContext.jsx'
 import { UsageScopes } from './UsageDisclosure.jsx'
@@ -309,6 +311,9 @@ export default function TranscriptViewer({
   subtitle,
   pullRequests,
   headingLevel,
+  integrity,
+  transcriptContentHash,
+  contentHash,
 }) {
   if (breadcrumb != null && breadcrumbContext != null) {
     throw new TypeError('TranscriptViewer cannot use breadcrumb and breadcrumbContext together; pass either a complete breadcrumb or ancestor context, not both.')
@@ -321,6 +326,9 @@ export default function TranscriptViewer({
   const EmptyHeading = headingTag(pageLevel, 1)
   const vm = viewModel
   const tabsId = useId()
+  /* the served integrity flag: null draws nothing; otherwise the badge draws, and the listed
+     positions are marked only when the rendered content is the content the flag refers to */
+  const integrityState = useMemo(() => integrityView(integrity, transcriptContentHash, contentHash), [integrity, transcriptContentHash, contentHash])
   const caps = capabilities ?? {}
   /* the ledger presentation is a CHROME switch only: same view state, same capabilities,
      same callbacks; the root class scopes the ledger CSS block. */
@@ -1394,7 +1402,17 @@ export default function TranscriptViewer({
         </div>
 
         <Collapsible open={!heroCondensed} keepMounted className="txn-header-details">
-        <TitleHeading className="txn-title" title={title}>{title}</TitleHeading>
+        {/* a served integrity flag draws its badge on the title's line, one step after the text, and
+            wraps under it when the title fills the line or the screen is narrow; never in the
+            actions row, so the host's actions hold their place. It folds away with the title. */}
+        {integrityState
+          ? (
+            <div className="txn-title-row">
+              <TitleHeading className="txn-title" title={title}>{title}</TitleHeading>
+              <IntegrityBadge headingLevel={pageLevel + 1} folded={heroCondensed} />
+            </div>
+          )
+          : <TitleHeading className="txn-title" title={title}>{title}</TitleHeading>}
         {/* an optional one-line deck under the title (ledger reads it as the transcript's
             provenance line); render-when-supplied so classic is untouched. A div, not a
             paragraph: the prop takes a node, and a composed deck may hold block content. */}
@@ -1603,6 +1621,8 @@ export default function TranscriptViewer({
                             actionReveal={searchReveal && (ledger ? (actionLayout.locations.get(searchReveal.turn)?.owner ?? searchReveal.turn) === t.index : searchReveal.turn === t.index) ? searchReveal : undefined}
                             registerActionRef={registerActionRef}
                             suppressWork={suppressWork}
+                            flagged={integrityState?.positions.has(t.sourcePosition) ?? false}
+                            flaggedPositions={integrityState?.positions}
                           />
                           {/* host per-turn extension (touched-files panels etc.) —
                               rendered under the card, inside the turn's anchor block */}

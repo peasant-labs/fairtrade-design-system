@@ -1,0 +1,18 @@
+# Required-NAME manifest for transcript-integrity-journey.yaml: deletion protection. The journey
+# asserts the case names equal this list exactly, as a set.
+requiredCaseNames:
+  - desktop flagged header
+  - desktop classic flagged turns
+  - phone flagged header
+  - phone ledger folded mark
+  - axe on the open panel
+# Each case's kind is pinned by name, so a renamed kind cannot run with no assertions.
+requiredCaseKinds:
+  desktop flagged header: header-desktop
+  desktop classic flagged turns: classic-turns
+  phone flagged header: header-phone
+  phone ledger folded mark: folded-mark
+  axe on the open panel: axe-panel
+# The page mutations that prove the placement gate, by name.
+requiredPageMutationNames:
+  - the badge is back in the actions row

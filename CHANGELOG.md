@@ -4,6 +4,25 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.51 - 2026-10-28
+
+### Added
+
+- An integrity badge in the transcript header, drawn in every presentation and at every width when the transcript viewer receives a served integrity flag. The badge, reading "suspicious transcript" with a (?) glyph, sits inline to the right of the transcript title, 16px after it, and wraps under the title when the title fills its line and on a header narrower than 768px. It is never in the header actions row, so the host's actions keep their place when a transcript is flagged, and it keeps its words at every width. It is a single button that discloses a short explanation panel with no link, which opens toward the side of the badge that has room and stays inside the transcript viewer and the viewport. It never opens by itself or on hover, never traps focus, and closes on Escape or an outside press, with Escape returning focus to it. The badge folds away with the title when the header condenses on scroll, and an open panel closes with it. A visually hidden status line announces the flag to screen readers. Every string the badge, the panel and the turn marks show lives in `INTEGRITY_COPY`.
+- Three new transcript viewer props: `integrity` (the served integrity value, drawn and never decided by the viewer), `transcriptContentHash` (the content that flagged turn positions refer to) and `contentHash` (the content the rendered turns were cooked from).
+- A highlight on flagged turns, with one outline for a flagged prose turn whose work folds into an earlier group. Turns are marked only when both content hashes are non-empty and equal; any other combination draws the badge alone.
+- Demo data, stories and a phone and desktop journey for the badge and the highlight.
+
+### Changed
+
+- Cooked turns carry `sourcePosition`, their position in the wire `turns` array, recorded before any turn is dropped or merged. Earlier history carries no position.
+- Pinned `@peasant-labs/schema` to published version `0.37.0`.
+
+### Fixed
+
+- A transcript story that raced the opening of a tool body now waits for the opened body.
+- The repo picker story for an empty search now waits for the empty-search message.
+
 ## 0.0.50 - 2026-10-28
 
 ### Fixed

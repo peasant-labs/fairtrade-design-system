@@ -3,6 +3,9 @@ import TranscriptViewer from './TranscriptViewer.jsx'
 import { frame } from '../story-frame.jsx'
 import { piPayload } from '../../mockups/inuse/pi-fixture.js'
 import { adaptTranscript } from './adapter.js'
+import { readingPayload } from '../../mockups/inuse/reading-fixture.js'
+import { integrityBoundProps, integrityOtherHash } from '../../mockups/inuse/integrity-fixture.js'
+import { INTEGRITY_COPY } from './integrity.js'
 
 export const Pi = {
   args: { viewModel: adaptTranscript(piPayload) },
@@ -10,8 +13,9 @@ export const Pi = {
     const canvas = within(canvasElement)
     const tool = canvas.getByRole('button', { name: /Orchard.CheckPlan/ })
     await userEvent.click(tool)
-    await expect(canvas.getByText('error result')).toBeVisible()
-    await expect(canvas.getByText('recorded tool details')).toBeVisible()
+    /* the tool body opens with a height animation, so wait for it to be shown rather than assert on the first frame */
+    await waitFor(() => expect(canvas.getByText('error result')).toBeVisible())
+    await waitFor(() => expect(canvas.getByText('recorded tool details')).toBeVisible())
     await expect(canvas.queryByText('MetadataOnlyNeedle')).toBeNull()
   },
 }
@@ -442,6 +446,88 @@ export const PhoneHeader = {
       // the built sheet may merge this selector into an :is(...) list, so match inside the rule body
       expect(cssText).toMatch(/\.txn-hint[^{}]*{[^}]*display:\s*none/)
     }
+  },
+}
+
+/* ── integrity flag ───────────────────────────────────────────────────────────
+   A served integrity flag draws one outlined badge button on the title's line, right after the
+   title (under it on a phone), never in the header's actions row. It opens a short explanation, and a mark on each flagged turn (a glyph and a word, never a fill).
+   The reading session flags two turns: an assistant prose turn and the tool-only turn the ledger
+   folds into its action block. Without a bound content hash the badge draws alone. There is no
+   clean or verified state: a transcript with no flag draws nothing. */
+const integrityArgs = {
+  viewModel: adaptTranscript(readingPayload()),
+  capabilities: fullCaps,
+  presentation: 'ledger',
+  subtitle: 'a public transcript from fairtrade, read as a ledger.',
+  ...integrityBoundProps,
+}
+
+export const IntegrityFlagged = {
+  decorators: [ledgerFrame],
+  args: integrityArgs,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const help = canvas.getByRole('button', { name: INTEGRITY_COPY.helpName })
+    expect(canvasElement.querySelectorAll('.txn-integrity-badge')).toHaveLength(1)
+    expect(help.closest('.txn-integrity').previousElementSibling).toHaveClass('txn-title')
+    expect(help.closest('.txn-actions')).toBeNull()
+    expect(canvasElement.querySelectorAll('.txn-integrity-mark').length).toBeGreaterThan(0)
+    expect(help).toHaveAttribute('aria-expanded', 'false')
+    await userEvent.click(help)
+    expect(help).toHaveAttribute('aria-expanded', 'true')
+    // the panel fades in, so wait for it to settle before asserting it is visible
+    await waitFor(() => expect(canvas.getByRole('region', { name: INTEGRITY_COPY.panelHeading })).toBeVisible())
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(help).toHaveAttribute('aria-expanded', 'false'))
+    expect(help).toHaveFocus()
+  },
+}
+
+export const IntegrityFlaggedLight = { name: 'integrity flagged light', decorators: [ledgerFrame], args: { ...integrityArgs, theme: 'light' } }
+
+export const IntegrityFlaggedClassic = {
+  name: 'integrity flagged classic',
+  decorators: [ledgerFrame],
+  args: { ...integrityArgs, presentation: 'classic', subtitle: undefined },
+  play: async ({ canvasElement }) => {
+    expect(canvasElement.querySelectorAll('.txn-integrity-badge')).toHaveLength(1)
+    expect(canvasElement.querySelectorAll('.txn-integrity-mark').length).toBeGreaterThan(0)
+  },
+}
+
+export const IntegrityHashMismatch = {
+  name: 'integrity hash mismatch',
+  decorators: [ledgerFrame],
+  args: { ...integrityArgs, contentHash: integrityOtherHash },
+  play: async ({ canvasElement }) => {
+    expect(canvasElement.querySelectorAll('.txn-integrity-badge')).toHaveLength(1)
+    expect(canvasElement.querySelectorAll('.txn-integrity-mark')).toHaveLength(0)
+  },
+}
+
+export const IntegrityPhone = {
+  name: 'integrity phone',
+  decorators: [readingFrame],
+  parameters: { viewport: { defaultViewport: 'phone' } },
+  args: integrityArgs,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const help = canvas.getByRole('button', { name: INTEGRITY_COPY.helpName })
+    // the badge keeps its words at every width
+    expect(help.querySelector('.txn-integrity-label')).toBeVisible()
+    // the geometry depends on the fonts, so measure once they are in
+    await document.fonts.ready
+    await userEvent.click(help)
+    const panel = await canvas.findByRole('region', { name: INTEGRITY_COPY.panelHeading })
+    // the panel is placed in the same frame it opens: inside the canvas and the viewer's 16px gutters
+    const rect = panel.getBoundingClientRect()
+    const frame = canvasElement.getBoundingClientRect()
+    const viewer = panel.closest('.txn-app').getBoundingClientRect()
+    expect(rect.left).toBeGreaterThanOrEqual(frame.left - 1)
+    expect(rect.right).toBeLessThanOrEqual(frame.right + 1)
+    expect(rect.left).toBeGreaterThanOrEqual(Math.max(viewer.left, 0) + 16 - 1)
+    expect(rect.right).toBeLessThanOrEqual(Math.min(viewer.right, document.documentElement.clientWidth) - 16 + 1)
   },
 }
 

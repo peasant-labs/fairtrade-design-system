@@ -1,0 +1,130 @@
+# Required-NAME and required-KIND manifest for transcript-integrity-viewer.yaml: deletion
+# protection. The gate (scripts/transcript-integrity-viewer.test.mjs) asserts each family's names
+# equal these lists exactly and that every row's `kind` matches its name here.
+requiredCaseNames:
+  - no integrity renders nothing
+  - malformed integrity renders nothing
+  - ledger flagged with matching hash marks listed turns
+  - classic flagged with matching hash marks listed turns
+  - different hashes draw the badge only
+  - different hashes draw the badge only in classic
+  - sticky flag with no turns draws the badge only
+  - a filtered-out flagged turn leaves only the badge
+  - a hidden tool category leaves only the badge
+  - earlier history is never marked
+  - condensed header folds the badge away with the title
+  - zen keeps the badge
+requiredCaseKinds:
+  no integrity renders nothing: ledger
+  malformed integrity renders nothing: ledger
+  ledger flagged with matching hash marks listed turns: ledger
+  classic flagged with matching hash marks listed turns: classic
+  different hashes draw the badge only: ledger
+  different hashes draw the badge only in classic: classic
+  sticky flag with no turns draws the badge only: ledger
+  a filtered-out flagged turn leaves only the badge: ledger
+  a hidden tool category leaves only the badge: ledger
+  earlier history is never marked: ledger
+  condensed header folds the badge away with the title: ledger
+  zen keeps the badge: ledger
+requiredOutlineCaseNames:
+  - a flagged prose turn with work draws one outline
+  - a flagged work-only turn draws its row outline once
+  - two flagged turns in one group draw one outline each
+  - a flagged classic turn draws one outline
+  - a flagged system row draws one outline
+requiredInteractionNames:
+  - help click opens and closes the panel
+  - help keyboard
+  - outside pointer closes the panel
+  - escape closes the panel from outside the badge
+  - the badge is the only control
+  - the panel copy is the same with or without marks
+  - the panel carries no link
+  - integrity added after mount announces once
+  - an unflagged thinking-only group keeps its plain structure
+  - integrity present at mount fills its status after mount
+  - condensing the header closes an open panel
+requiredInteractionKinds:
+  help click opens and closes the panel: help-click
+  help keyboard: help-keyboard
+  outside pointer closes the panel: outside-pointer
+  escape closes the panel from outside the badge: escape-outside
+  the badge is the only control: badge-control
+  the panel copy is the same with or without marks: panel-copy
+  the panel carries no link: no-link
+  integrity added after mount announces once: late-arrival
+  an unflagged thinking-only group keeps its plain structure: plain-thinking
+  integrity present at mount fills its status after mount: status-after-mount
+  condensing the header closes an open panel: fold-closes
+requiredFoldedProseCaseName: a flagged prose turn whose work folds into an earlier group draws one outline
+requiredThinkingCaseName: a flagged turn in a thinking-only group is marked
+
+requiredMutationNames:
+  - the badge ignores the hash
+  - the folded work loses its mark
+  - the badge unmounts when condensed
+  - the badge leaves the title's line
+  - an open panel outlives the fold
+  - escape leaves focus in the panel
+  - the work block repeats the card outline
+  - the status is static text at mount
+  - the thinking-only group loses its mark
+  - every thinking block gains a row
+  - a folded prose turn is outlined twice
+mutations:
+  - name: the badge ignores the hash
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "integrityView(integrity, transcriptContentHash, contentHash)"
+    replace: "integrityView(integrity, transcriptContentHash, transcriptContentHash)"
+    expectedDiagnostic: "different hashes draw the badge only"
+  - name: the folded work loses its mark
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "flaggedPositions={integrityState?.positions}"
+    replace: "flaggedPositions={undefined}"
+    expectedDiagnostic: "group-row-2 must be present"
+  - name: the badge unmounts when condensed
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "{integrityState\n          ? ("
+    replace: "{integrityState && !heroCondensed\n          ? ("
+    expectedDiagnostic: "condensed header folds the badge away with the title: badge must be present"
+  - name: the badge leaves the title's line
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "<div className=\"txn-title-row\">"
+    replace: "<div className=\"txn-title-row-moved\">"
+    expectedDiagnostic: "ledger flagged with matching hash marks listed turns: badge must be present"
+  - name: an open panel outlives the fold
+    file: src/ui/transcript/IntegrityBadge.jsx
+    find: "if (folded) setOpen(false)"
+    replace: ""
+    expectedDiagnostic: "condensing the header closes an open panel"
+  - name: escape leaves focus in the panel
+    file: src/ui/transcript/IntegrityBadge.jsx
+    find: "badgeRef.current?.focus()"
+    replace: ""
+    expectedDiagnostic: "help keyboard"
+  - name: the work block repeats the card outline
+    file: src/index.css
+    find: ".txn-turnwrap.is-flagged > .txn-turnwork-solo,"
+    replace: ".txn-turnwrap.is-flagged > .txn-turnwork,"
+    expectedDiagnostic: "a flagged prose turn with work draws one outline"
+  - name: the status is static text at mount
+    file: src/ui/transcript/IntegrityBadge.jsx
+    find: "{announced ? INTEGRITY_COPY.statusText : ''}"
+    replace: "{INTEGRITY_COPY.statusText}"
+    expectedDiagnostic: "integrity present at mount fills its status after mount"
+  - name: the thinking-only group loses its mark
+    file: src/ui/transcript/WorkGroup.jsx
+    find: "<IntegrityMark decorative={false} />{thinking}"
+    replace: "{thinking}"
+    expectedDiagnostic: "a flagged turn in a thinking-only group is marked"
+  - name: every thinking block gains a row
+    file: src/ui/transcript/WorkGroup.jsx
+    find: "return isFlagged(turn) ? <div"
+    replace: "return true ? <div"
+    expectedDiagnostic: "an unflagged thinking-only group keeps its plain structure"
+  - name: a folded prose turn is outlined twice
+    file: src/ui/transcript/WorkGroup.jsx
+    find: " || turnHasProse(turn)"
+    replace: ""
+    expectedDiagnostic: "a flagged prose turn whose work folds into an earlier group draws one outline"

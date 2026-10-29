@@ -571,6 +571,32 @@ render the same system.
   `--surface-2` fill. A provider chip leads with its brand mark (`<Tag brand="claude">`).
 - **State:** outcome states (redacted, partial, failed) always pair an icon with the word.
 
+### Integrity flag
+- **Badge:** drawn only for a served flag, inline to the right of the transcript title on the
+  title's line, one `--sp-4` (16px) after its text: one outlined button reading the warning glyph,
+  the words suspicious transcript and a (?) glyph. No fill at rest, never amber-filled; the edge
+  and the warning glyph are `--warning`, the words are `--ink` and the (?) glyph is `--ink-2`. It
+  is the control height, so 44px on a coarse pointer.
+- **Placement:** never in the header's actions row, so the host's actions (not published, publish)
+  hold the same place whether or not a transcript is flagged. A title that fills its line, and
+  every header narrower than 768px, wraps the badge under the title at its left edge, one `--sp-4`
+  below. The badge keeps its words at every width. It sits with the title in the part of the header
+  that folds away on scroll, so a condensed header does not show it; the turn marks stay.
+- **Help:** the badge is the one control. Its accessible name is the help question, which contains
+  the visible words, and it opens a short explanation panel (`aria-expanded`, `aria-controls`). The
+  panel opens toward the side of the badge that has room and stays inside the transcript viewer and
+  the viewport by the page gutter. It never opens on its own or on hover, never moves focus, and
+  Escape or a press outside closes it; Escape returns focus to the badge. Folding the header away
+  closes it too.
+- **Wording:** every string the badge, the panel and the turn marks show lives in `INTEGRITY_COPY`
+  (`src/ui/transcript/integrity.js`), the one place to edit it.
+- **Turn mark:** a flagged turn carries the same glyph and the word flagged on its head, so the cue
+  is a shape and a word, not a colour. A ledger action block that folds a flagged turn says so.
+  Turns are marked only when the served content hash equals the hash of the rendered content;
+  otherwise the badge draws alone.
+- **No clean state:** a transcript without a flag draws nothing. There is no verified, clean or
+  checked state, because an absent flag proves nothing.
+
 ### Cards / Containers
 - **Corner Style:** square (0).
 - **Background:** `--surface` on the canvas.
