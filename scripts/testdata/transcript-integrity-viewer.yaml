@@ -196,6 +196,8 @@ interactions:
     kind: help-keyboard
   - name: outside pointer closes the panel
     kind: outside-pointer
+  - name: escape closes the panel from outside the badge
+    kind: escape-outside
   - name: the badge is not a control
     kind: badge-static
   - name: panel copy follows highlights

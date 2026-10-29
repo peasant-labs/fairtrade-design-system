@@ -37,6 +37,7 @@ requiredInteractionNames:
   - help click opens and closes the panel
   - help keyboard
   - outside pointer closes the panel
+  - escape closes the panel from outside the badge
   - the badge is not a control
   - panel copy follows highlights
   - help link only when supplied
@@ -47,6 +48,7 @@ requiredInteractionKinds:
   help click opens and closes the panel: help-click
   help keyboard: help-keyboard
   outside pointer closes the panel: outside-pointer
+  escape closes the panel from outside the badge: escape-outside
   the badge is not a control: badge-static
   panel copy follows highlights: panel-copy
   help link only when supplied: help-link

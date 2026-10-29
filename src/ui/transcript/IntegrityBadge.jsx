@@ -1,5 +1,5 @@
 import { CircleHelp, TriangleAlert } from 'lucide-react'
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { INTEGRITY_COPY } from './integrity.js'
 
 /* IntegrityBadge: the transcript's integrity flag: a static outlined badge, a (?) button that
@@ -34,8 +34,6 @@ export default function IntegrityBadge({ hasHighlights = false, helpHref, headin
   const headingId = useId()
   const Heading = `h${Math.min(6, Math.max(1, headingLevel))}`
 
-  const close = useCallback(() => setOpen(false), [])
-
   useEffect(() => {
     const timer = setTimeout(() => setAnnounced(true), ANNOUNCE_DELAY_MS)
     return () => clearTimeout(timer)
@@ -46,8 +44,20 @@ export default function IntegrityBadge({ hasHighlights = false, helpHref, headin
     const onPointerDown = (event) => {
       if (rootRef.current && !rootRef.current.contains(event.target)) setOpen(false)
     }
+    /* Escape is heard on the document: Safari does not focus a button on a mouse click, so after a
+       click-open focus may sit outside the badge and a handler on the badge would never see it */
+    const onKeyDown = (event) => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return
+      event.stopPropagation()
+      setOpen(false)
+      helpRef.current?.focus()
+    }
     document.addEventListener('pointerdown', onPointerDown)
-    return () => document.removeEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
   }, [open])
 
   /* measure after layout and shift the panel back inside the viewport; re-measure on resize */
@@ -72,15 +82,8 @@ export default function IntegrityBadge({ hasHighlights = false, helpHref, headin
     return () => window.removeEventListener('resize', place)
   }, [open])
 
-  const onKeyDown = (event) => {
-    if (event.key !== 'Escape' || !open) return
-    event.stopPropagation()
-    close()
-    helpRef.current?.focus()
-  }
-
   return (
-    <span className="txn-integrity" ref={rootRef} onKeyDown={onKeyDown}>
+    <span className="txn-integrity" ref={rootRef}>
       <span className="txn-integrity-badge">
         <TriangleAlert size={14} aria-hidden="true" />
         {INTEGRITY_COPY.badgeLabel}

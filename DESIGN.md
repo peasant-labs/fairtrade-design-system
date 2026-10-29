@@ -574,7 +574,7 @@ render the same system.
 ### Integrity flag
 - **Badge:** drawn only for a served flag, at the top right of the viewer's title row: a static
   outlined badge (warning glyph and the word flagged) with a (?) button beside it. No fill, never
-  amber-filled; the ink is the warning ink on `--canvas`.
+  amber-filled; the edge and the glyph are `--warning`, the word is `--ink`.
 - **Help:** the (?) opens a short explanation panel. It never opens on its own or on hover, never
   moves focus, and Escape closes it and returns focus to the (?).
 - **Turn mark:** a flagged turn carries the same glyph and the word flagged on its head, so the cue
