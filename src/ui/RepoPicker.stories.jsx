@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { expect, fn, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import RepoPicker from './RepoPicker.jsx'
 
 /* in use/RepoPicker: pick many repositories at once. Owners carry their identity (an organisation
@@ -53,6 +53,7 @@ export const EmptySearch = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement.ownerDocument.body)
     await userEvent.type(canvas.getByRole('searchbox', { name: 'search repos' }), 'zzz')
-    await expect(canvas.getByText('no repository matches “zzz”.')).toBeVisible()
+    /* the empty message is revealed after the search settles, so wait for it rather than assert on the first frame */
+    await waitFor(() => expect(canvas.getByText('no repository matches “zzz”.')).toBeVisible())
   },
 }
