@@ -6,6 +6,8 @@ package is pre-1.0, so minor/patch semantics are best-effort.
 
 ## 0.0.57
 
+- Wrap long file-diff failure messages inside the reading pane.
+
 - Show Changes annotation editing and removal only when the host supplies the corresponding action. Read-only saved annotations remain visible.
 
 ## 0.0.56
