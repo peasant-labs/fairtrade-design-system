@@ -1,0 +1,50 @@
+{
+  "mergedSource": "17d15986222e68908e1f550f4f85d9c4d12b9848",
+  "inspectedHead": "67f5e9ae938a766048286c742a1dff0cdd6ed2f9",
+  "sourceTree": "607e555bae9da9b1a81f5023e20eaae0a5099644",
+  "mergedTreeMatchesInspected": true,
+  "version": "0.0.57",
+  "integrity": "sha512-AkzT72kXsCQsoIx957/yEqwOI8NuneSLhtu94hOgpCGazqfOxBysoJE3eJDlgBpBePD1Nz/AX1N/FcDy5EASRg==",
+  "attestations": {
+    "url": "https://registry.npmjs.org/-/npm/v1/attestations/@peasant-labs%2ffairtrade@0.0.57",
+    "provenance": {
+      "predicateType": "https://slsa.dev/provenance/v1"
+    }
+  },
+  "npmWorkflow": {
+    "id": 41066392360,
+    "conclusion": "success"
+  },
+  "releaseWorkflow": {
+    "id": 41066392562,
+    "conclusion": "success"
+  },
+  "productionDeployment": {
+    "id": 7439891156,
+    "status": "success"
+  },
+  "defaultBuild": "normal build and prepack passed",
+  "localPreview": {
+    "pid": 5374,
+    "cwd": "/Users/vitorhugo/Documents/Projects/polyrepo/fairtrade-design-system/main",
+    "source": "17d15986222e68908e1f550f4f85d9c4d12b9848",
+    "port": 5197,
+    "log": "/Users/vitorhugo/Documents/Projects/polyrepo/.agents.local/fairtrade-preview.log",
+    "assets": [
+      {
+        "asset": "/assets/index-Q3lZMSGO.js",
+        "sha256": "9a1571a67a7725b50ed8bad99daf88ce39d8175979ac425d65e4e8d4b1ba294f"
+      },
+      {
+        "asset": "/assets/rolldown-runtime-aKtaBQYM.js",
+        "sha256": "cb2fb01f2064eb36487466778d2ffc4c97ad86af89be1635209de18f0b5b2236"
+      },
+      {
+        "asset": "/assets/index-DWhog3fZ.css",
+        "sha256": "84cc8761960e79a3ef65becaf64e3ca516af35af7bfe859a30b608d86926fcac"
+      }
+    ],
+    "fairtrade": "0.0.57",
+    "publication": "verified published with SLSA provenance"
+  }
+}

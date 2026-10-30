@@ -1,0 +1,24 @@
+{
+  "domain": "https://fairtrade.peasantlabs.org",
+  "source": "17d15986222e68908e1f550f4f85d9c4d12b9848",
+  "assets": [
+    {
+      "asset": "/assets/index-Q3lZMSGO.js",
+      "sha256": "9a1571a67a7725b50ed8bad99daf88ce39d8175979ac425d65e4e8d4b1ba294f",
+      "matchesSyncedBuild": true,
+      "statusWrapMarker": false
+    },
+    {
+      "asset": "/assets/rolldown-runtime-aKtaBQYM.js",
+      "sha256": "cb2fb01f2064eb36487466778d2ffc4c97ad86af89be1635209de18f0b5b2236",
+      "matchesSyncedBuild": true,
+      "statusWrapMarker": false
+    },
+    {
+      "asset": "/assets/index-DWhog3fZ.css",
+      "sha256": "84cc8761960e79a3ef65becaf64e3ca516af35af7bfe859a30b608d86926fcac",
+      "matchesSyncedBuild": true,
+      "statusWrapMarker": true
+    }
+  ]
+}
