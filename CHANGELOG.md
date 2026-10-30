@@ -8,6 +8,8 @@ package is pre-1.0, so minor/patch semantics are best-effort.
 
 - Keep turn-link navigation inside the reading pane so clipped layout containers cannot scroll and leave blank space below the transcript.
 
+- Let Changes header actions wrap as a group without shrinking their button labels out of their bounds.
+
 ## 0.0.55
 
 - Remove duplicate transcript separators where a phase heading or the ledger already owns the boundary.
