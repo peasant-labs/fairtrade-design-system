@@ -1,19 +1,19 @@
 {
-  "sourceCommit": "6f7a1f9215e00022d1f546a4030cdc71a886b065",
-  "sourceTree": "82ae04a25b7061f991212f053a85197675bd45fe",
+  "sourceCommit": "0065853cc5b3e532873aebe1ace66c9ee437b4dc",
+  "sourceTree": "fdc936c931477413f966ccb6cf3fa318986b2508",
   "fairtrade": "0.0.56",
   "assets": [
     {
-      "file": "/assets/index-Chnfi56y.js",
-      "sha256": "a3778c8f05084bcd8508566f575699cb7a0adb2060b8887540ceed6b278b8d8c"
+      "file": "/assets/index-B8HdiVdN.js",
+      "sha256": "1ff775fb0c5480116224f369e180206d953d0549d70e6b572df7292502b89146"
     },
     {
       "file": "/assets/rolldown-runtime-aKtaBQYM.js",
       "sha256": "cb2fb01f2064eb36487466778d2ffc4c97ad86af89be1635209de18f0b5b2236"
     },
     {
-      "file": "/assets/index-CYPyM_vy.css",
-      "sha256": "19003913046da224789a9462ca5e87177b7ca96bd421cc5db1fb295eaea28af1"
+      "file": "/assets/index-BUbUfKZY.css",
+      "sha256": "78eff64e850e6776ef36ab05c712de38e7fc0ce1ba6b47d65cf92b593c1d74b7"
     }
   ],
   "themes": [
@@ -24,7 +24,7 @@
     1440,
     390
   ],
-  "inspectedScreenshots": 8,
+  "inspectedScreenshots": 12,
   "centerScroll": 0,
   "streamFooterGap": 0,
   "ordinaryBordersRetained": true,
@@ -39,5 +39,6 @@
     "passed": 28,
     "configuredSkipped": 2
   },
-  "productionMutationsKilled": 41
+  "productionMutationsKilled": 41,
+  "handleClaim": "token measure cap and product-neutral helper"
 }

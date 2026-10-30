@@ -41,6 +41,20 @@
     "errors": []
   },
   {
+    "name": "handle-claim",
+    "theme": "light",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "metrics": {
+      "width": 497.65625,
+      "text": "your public handle is independent of the account you signed in with.",
+      "within": true
+    },
+    "errors": []
+  },
+  {
     "name": "turn-link",
     "theme": "light",
     "viewport": {
@@ -77,6 +91,20 @@
         "y": 228.5,
         "bottom": 246.5
       },
+      "within": true
+    },
+    "errors": []
+  },
+  {
+    "name": "handle-claim",
+    "theme": "light",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "metrics": {
+      "width": 316,
+      "text": "your public handle is independent of the account you signed in with.",
       "within": true
     },
     "errors": []
@@ -123,6 +151,20 @@
     "errors": []
   },
   {
+    "name": "handle-claim",
+    "theme": "dark",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "metrics": {
+      "width": 497.65625,
+      "text": "your public handle is independent of the account you signed in with.",
+      "within": true
+    },
+    "errors": []
+  },
+  {
     "name": "turn-link",
     "theme": "dark",
     "viewport": {
@@ -159,6 +201,20 @@
         "y": 228.5,
         "bottom": 246.5
       },
+      "within": true
+    },
+    "errors": []
+  },
+  {
+    "name": "handle-claim",
+    "theme": "dark",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "metrics": {
+      "width": 316,
+      "text": "your public handle is independent of the account you signed in with.",
       "within": true
     },
     "errors": []
