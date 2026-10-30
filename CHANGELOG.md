@@ -4,6 +4,11 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.55
+
+- Remove duplicate transcript separators where a phase heading or the ledger already owns the boundary.
+- Preserve ordinary role separators, standalone system-row borders, avatar and control borders, and active-turn markers.
+
 ## 0.0.54 - 2026-10-29
 
 ### Fixed
