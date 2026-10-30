@@ -4016,6 +4016,8 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 
 /* a system turn reads as one compact row; its recorded text opens one indent under it. */
 .txn-systemrow { margin-top: var(--sp-3); border-top: var(--bd); }
+/* The ledger owns separators between turns; standalone system rows retain their rule. */
+.txn-ledger .txn-systemrow { border-top: 0; }
 .txn-systemrow-head-row { display: flex; align-items: center; gap: var(--sp-2); }
 .txn-systemrow-head {
   display: flex; align-items: center; gap: var(--sp-2);

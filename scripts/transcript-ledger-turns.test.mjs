@@ -11,7 +11,8 @@
    Run: pnpm test:transcript-ledger-turns;
    mutations: node scripts/parts-mutations.mjs scripts/transcript-ledger-turns.test.mjs
    scripts/testdata/transcript-ledger-turns.manifest.yaml */
-import { loadFixturePair, assertExactNames, assertFields, withMountedSource, click, createReport } from './mounted-parts.mjs'
+import { readFileSync } from 'node:fs'
+import { ROOT, loadFixturePair, assertExactNames, assertFields, withMountedSource, click, createReport } from './mounted-parts.mjs'
 import { workSummary, workCountLabel, workMetaLabel, workActionsLabel } from '../src/ui/transcript/work-summary.js'
 import './transcript-search-ranges.test.mjs'
 
@@ -44,12 +45,22 @@ for (const row of fixture.cases) assertFields(row, ['name', 'kind'], `${FIXTURE}
 assertExactNames(Object.keys(fixture.mountedSummary), ['panel', 'grouped', 'afterUser'], `${FIXTURE} mountedSummary`)
 if (typeof fixture.revealQuery !== 'string' || fixture.revealQuery.length === 0) throw new Error(`${FIXTURE}: revealQuery must be a non-empty string`)
 
+const { fixture: separators } = loadFixturePair('scripts/testdata/transcript-ledger-turns-separators.yaml', MANIFEST, { cases: 'requiredSeparatorNames' })
+let css = readFileSync(`${ROOT}/src/index.css`, 'utf8')
+const mutation = process.env.FAIRTRADE_PARTS_MUTATION ? JSON.parse(process.env.FAIRTRADE_PARTS_MUTATION) : null
+if (mutation?.file === 'src/index.css') {
+  if (css.split(mutation.find).length !== 2) throw new Error('the CSS mutation must match exactly once')
+  css = css.replace(mutation.find, mutation.replace)
+}
+
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
 const text = (node) => (node?.textContent ?? '').replace(/\s+/g, ' ').trim()
 /* an idref may be a React useId value, which is not a plain CSS identifier. */
 const byId = (container, id) => (id ? [...container.querySelectorAll('[id]')].find((node) => node.id === id) ?? null : null)
 
 const report = createReport('transcript ledger turns')
+report.check(/\.txn-ledger \.txn-systemrow\s*\{\s*border-top:\s*0;\s*\}/.test(css), 'the ledger must relinquish the system row top border')
+report.check(/\.txn-systemrow\s*\{[^}]*border-top:\s*var\(--bd\)/.test(css), 'standalone system rows keep their own top border')
 
 /* ── the pure summary: no DOM, the same helpers the panel uses ───────────────── */
 for (const row of fixture.summaryCases) {
@@ -105,6 +116,16 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     presentation,
     ...extra,
   }))
+
+  for (const row of separators.cases) {
+    const sequence = adaptTranscript(separators.payload, undefined, separators.analytics)
+    const mounted = await mountViewer(row.presentation, { viewModel: sequence, filters: { ...separators.filters, views: { ...separators.filters.views, hidden: row.phases } } })
+    const actual = [...mounted.container.querySelectorAll('.txn-turn-rule')].map(rule => Number(rule.parentElement.querySelector('article[data-turn]')?.dataset.turn))
+    report.check(same(actual, row.ruleTurns), `${row.name}: exact role-rule destinations must be ${JSON.stringify(row.ruleTurns)}, received ${JSON.stringify(actual)}`)
+    report.check(mounted.container.querySelectorAll('.txn-phase').length === (row.phases ? separators.analytics.phases.length : 0), `${row.name}: all requested phase headings remain mounted`)
+    report.check(same([...mounted.container.querySelectorAll('article[data-turn]')].map(el => Number(el.dataset.turn)), separators.payload.turns.map(turn => turn.index)), `${row.name}: every recorded turn remains in source order`)
+    await mounted.unmount()
+  }
 
   const { fixture: nesting } = loadFixturePair('scripts/testdata/transcript-nesting.yaml', 'scripts/testdata/transcript-nesting.manifest.yaml', {
     cases: 'requiredCases',
@@ -246,7 +267,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       await mounted.unmount()
     } else if (row.kind === 'turn-rules') {
       /* the body rule separates a change of role; the sidebar cards carry their own rhythm */
-      const expectedRules = vm.turns.filter((turn, i) => i > 0 && vm.turns[i - 1].role !== turn.role).length
+      const phaseAt = turn => vm.analytics.phases?.find(phase => turn.index >= phase.from && turn.index <= phase.to)?.id
+      const expectedRules = vm.turns.filter((turn, i) => i > 0 && vm.turns[i - 1].role !== turn.role && (!phaseAt(turn) || phaseAt(turn) === phaseAt(vm.turns[i - 1]))).length
       if (expectedRules < 1) throw new Error(`${FIXTURE}: the payload must cook at least one role change`)
       const ledgerMount = await mountViewer('ledger')
       const rules = ledgerMount.container.querySelectorAll('.txn-turn-rule')
@@ -488,5 +510,5 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   }
 })
 
-report.finish(`${fixture.summaryCases.length} summary rows and ${fixture.cases.length} mounted cases.`)
+report.finish(`${fixture.summaryCases.length} summary rows and ${fixture.cases.length} mounted cases and ${separators.cases.length} separator sequences.`)
 await import('./transcript-action-ownership.test.mjs')
