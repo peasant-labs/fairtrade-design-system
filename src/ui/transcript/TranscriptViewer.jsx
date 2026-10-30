@@ -779,7 +779,8 @@ export default function TranscriptViewer({
     const projected = visibleTurns.find(turn => turn.index === position.turnIndex)
     const location = ledger && !String(projected?.displayContent ?? projected?.content ?? '').trim() ? actionLayout.locations.get(position.turnIndex) : null
     if (location) revealAction(position.turnIndex, location.where, { select: false })
-    else el.scrollIntoView({ block: 'start', behavior: 'auto' })
+    // Only the reading stream moves; scrollIntoView also scrolls clipped layout ancestors.
+    else sc.scrollTo({ top: turnScrollTop(sc, el), behavior: 'auto' })
     latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()
     return 'applied'
   }, [readTraceReadingSnapshot, tab, turns, viewMode, visibleTurns, ledger, actionLayout, setTab, setViewMode, setOpenTools, filters, session.id])

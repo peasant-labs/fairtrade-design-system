@@ -55,7 +55,7 @@ returnCases:
     destinationTurn: -1
     expectedTabs: [trace, diffs, trace]
     expectedTabChanges: []
-    expectedScrollCalls: [turn:1, top:211]
+    expectedScrollCalls: [top:100, top:211]
     expectedScrollTop: 211
     expectedFocus: tab
     expectedContains: txn-stream
