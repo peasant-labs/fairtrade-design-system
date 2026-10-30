@@ -1,0 +1,31 @@
+{
+  "sourceCommit": "1c10e64f36fc896e7f59a90c6a11bfa7982bd12c",
+  "sourceTree": "4c48fda328d4949ad1e08494d7a6be50c98564e1",
+  "fairtrade": "0.0.55",
+  "assets": [
+    {
+      "file": "assets/index-BEmzMRRL.css",
+      "sha256": "c1d08c542a8854ba713f73a23f06590dcd28a07555617b48cdfc184aab389c06"
+    },
+    {
+      "file": "assets/index-C6BBl4XE.js",
+      "sha256": "0a386bbe1cd1dcd22b37e8fb2421f6a921ef4e2d1d44a313b141668f2dd26fe3"
+    }
+  ],
+  "mountedJourneys": 4,
+  "themes": [
+    "light",
+    "dark"
+  ],
+  "widths": [
+    1440,
+    390
+  ],
+  "inspected": true,
+  "systemRowOwnTopBorderInLedger": 0,
+  "phaseRuleWidth": 1,
+  "ordinaryRoleRuleWidth": 1,
+  "activeInsetRetained": true,
+  "pageOverflow": false,
+  "fixture": "scripts/testdata/transcript-ledger-turns.manifest.yaml (synthetic)"
+}
