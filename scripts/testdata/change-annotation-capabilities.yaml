@@ -1,0 +1,23 @@
+payload:
+  baseRef: base
+  branch: feature
+  defaultBranch: develop
+  files: []
+  slice: {nodes: [], structureEdges: [], activityEdges: []}
+  newEdges: []
+  removedEdges: []
+  newNodes: []
+  removedNodes: []
+  violations: []
+  work: []
+  unrecordedCommits: []
+  unusual: []
+  frictions: []
+  filesChanged: 0
+  linesAdded: 0
+  linesRemoved: 0
+cases:
+  - {name: unavailable, annotation: '', save: false, remove: false, section: false}
+  - {name: read-only saved value, annotation: 'reviewed', save: false, remove: false, section: true}
+  - {name: writable, annotation: '', save: true, remove: false, section: true}
+  - {name: editable saved value, annotation: 'reviewed', save: true, remove: true, section: true}
