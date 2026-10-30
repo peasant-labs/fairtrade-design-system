@@ -3,6 +3,10 @@
 # exactly, as sets, and each case's `kind` against `requiredCaseKinds`, so a case cannot be
 # re-pointed at a cheaper assertion while its name stays in place. Membership is asserted,
 # never a bare count.
+requiredSeparatorNames:
+  - phase headings own role boundaries in the ledger
+  - hidden phase headings restore ordinary ledger role rules
+  - classic keeps phase headings without ledger role rules
 requiredSummaryNames:
   - mixed work counts commands files edits failures and duration
   - singular counts read as one
@@ -69,6 +73,8 @@ requiredCaseKinds:
 
 # Production mutations the gate must kill (scripts/parts-mutations.mjs).
 requiredMutationNames:
+  - phase boundaries regain a duplicate role rule
+  - ledger system rows regain their own top border
   - rapid keys read a stale selection
   - scroll feedback overrides requested turns
   - clicking a turn no longer selects it
@@ -219,7 +225,7 @@ mutations:
     expectedDiagnostic: "the system row preview reads plain text: the preview must read the rendered words"
   - name: the ledger draws no role rule
     file: src/ui/transcript/TranscriptViewer.jsx
-    find: "{ledger && prev && prev.role !== t.role && <hr className=\"txn-turn-rule\" aria-hidden=\"true\" />}"
+    find: "{ledger && !showPhase && prev && prev.role !== t.role && <hr className=\"txn-turn-rule\" aria-hidden=\"true\" />}"
     replace: "{false && <hr className=\"txn-turn-rule\" aria-hidden=\"true\" />}"
     expectedDiagnostic: "a role change draws one rule and the first turn draws none: the ledger must draw one rule at each role change"
   - name: the ledger head regains a collapse control
@@ -232,3 +238,14 @@ mutations:
     find: "  const ledgerDetail = ledger && !isUser && !hasProse"
     replace: "  const ledgerDetail = false"
     expectedDiagnostic: "a turn with no words is inline detail, not a card: a turn with no words must draw no card head"
+
+  - name: phase boundaries regain a duplicate role rule
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: '{ledger && !showPhase && prev && prev.role !== t.role && <hr'
+    replace: '{ledger && prev && prev.role !== t.role && <hr'
+    expectedDiagnostic: 'phase headings own role boundaries in the ledger: exact role-rule destinations'
+  - name: ledger system rows regain their own top border
+    file: src/index.css
+    find: '.txn-ledger .txn-systemrow { border-top: 0; }'
+    replace: '.txn-ledger .txn-systemrow { border-top: var(--bd); }'
+    expectedDiagnostic: 'the ledger must relinquish the system row top border'

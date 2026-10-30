@@ -1,0 +1,168 @@
+{
+  "payload": {
+    "id": "ledger-separators",
+    "harness": "claude-code",
+    "startTime": "2026-09-20T10:00:00Z",
+    "turnCount": 8,
+    "toolCallCount": 0,
+    "inputSubmissionCount": 1,
+    "turns": [
+      {
+        "index": 0,
+        "role": "assistant",
+        "content": "I will inspect the recorded changes before continuing.",
+        "timestamp": "2026-09-20T10:00:00Z",
+        "depth": 0
+      },
+      {
+        "index": 1,
+        "role": "system",
+        "content": "session resumed, worktree changed on disk",
+        "timestamp": "2026-09-20T10:01:00Z",
+        "depth": 0
+      },
+      {
+        "index": 2,
+        "role": "assistant",
+        "content": "The resumed session is ready for the next check.",
+        "timestamp": "2026-09-20T10:02:00Z",
+        "depth": 0
+      },
+      {
+        "index": 3,
+        "role": "user",
+        "content": "Check that the transcript remains readable.",
+        "timestamp": "2026-09-20T10:03:00Z",
+        "depth": 0
+      },
+      {
+        "index": 4,
+        "role": "assistant",
+        "content": "I will verify the ordinary role boundary too.",
+        "timestamp": "2026-09-20T10:04:00Z",
+        "depth": 0
+      },
+      {
+        "index": 5,
+        "role": "system",
+        "content": "The second phase starts with a system notice.",
+        "timestamp": "2026-09-20T10:05:00Z",
+        "depth": 0
+      },
+      {
+        "index": 6,
+        "role": "system",
+        "content": "The worktree check completed.",
+        "timestamp": "2026-09-20T10:06:00Z",
+        "depth": 0
+      },
+      {
+        "index": 7,
+        "role": "assistant",
+        "content": "All recorded messages remain in their original order.",
+        "timestamp": "2026-09-20T10:07:00Z",
+        "depth": 0
+      }
+    ],
+    "durationMins": 7,
+    "endTime": "2026-09-20T10:07:00Z",
+    "tokensIn": 0,
+    "tokensOut": 0,
+    "totalTokens": 0
+  },
+  "analytics": {
+    "phases": [
+      {
+        "id": "inspect",
+        "label": "inspection",
+        "from": 0,
+        "to": 1
+      },
+      {
+        "id": "check",
+        "label": "verification",
+        "from": 2,
+        "to": 4
+      },
+      {
+        "id": "finish",
+        "label": "completion",
+        "from": 5,
+        "to": 7
+      }
+    ]
+  },
+  "cases": [
+    {
+      "name": "phase headings own role boundaries in the ledger",
+      "presentation": "ledger",
+      "phases": true,
+      "ruleTurns": [
+        1,
+        3,
+        4,
+        7
+      ]
+    },
+    {
+      "name": "hidden phase headings restore ordinary ledger role rules",
+      "presentation": "ledger",
+      "phases": false,
+      "ruleTurns": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7
+      ]
+    },
+    {
+      "name": "classic keeps phase headings without ledger role rules",
+      "presentation": "classic",
+      "phases": true,
+      "ruleTurns": []
+    }
+  ],
+  "viewports": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "name": "phone",
+      "width": 390,
+      "height": 844
+    }
+  ],
+  "filters": {
+    "categories": {
+      "prompts": true,
+      "responses": true,
+      "thinking": true,
+      "toolcalls": true,
+      "system": true
+    },
+    "toolGroups": {
+      "edits": true,
+      "bash": true,
+      "read": true,
+      "search": true,
+      "fetch": true,
+      "tasks": true,
+      "other": true
+    },
+    "tags": {
+      "errors": false,
+      "retries": false,
+      "revert": false
+    },
+    "views": {
+      "hidden": true,
+      "expandAll": false,
+      "compact": false
+    },
+    "checkpoint": "all"
+  }
+}

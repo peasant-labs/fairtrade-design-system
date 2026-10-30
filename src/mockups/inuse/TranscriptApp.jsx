@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import separatorsRaw from '../../../scripts/testdata/transcript-ledger-turns-separators.yaml?raw'
+const separators = JSON.parse(separatorsRaw)
 import mermaidGlyphsRaw from '../../../scripts/testdata/transcript-mermaid-glyphs.yaml?raw'
 const mermaidGlyphs = JSON.parse(mermaidGlyphsRaw)
 // the only lucide glyphs the demo itself draws are the rewired trajectory-graph zoom controls;
@@ -772,6 +774,7 @@ function DefaultTranscriptApp({ theme }) {
   const flagged = search === 'flagged' || search === 'flagged-classic'
   const ledger = search !== 'classic' && search !== 'flagged-classic'
   const vm = useMemo(() => {
+    if (search === 'ledger-separators') return adaptTranscript(separators.payload, undefined, separators.analytics)
     if (search === 'ledger-nesting') return adaptTranscript(JSON.parse(nestingSource).payload)
     if (search === 'ledger-reading' || search === 'ledger-reading-short' || search === 'ledger-disclosure') return adaptTranscript(readingPayload({ short: search === 'ledger-reading-short', disclosure: search === 'ledger-disclosure' }))
     if (flagged) return adaptTranscript(readingPayload())

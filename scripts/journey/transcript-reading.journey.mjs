@@ -802,3 +802,31 @@ for (const row of glyphFixtures.cases) test(`mermaid ${row.name}`, async ({ page
   await page.screenshot({ path: test.info().outputPath('diagram-glyph-bounds.png') })
   await test.info().attach('diagram-glyph-bounds', { body: JSON.stringify(facts), contentType: 'application/json' })
 })
+
+// Separator ownership is visible geometry: the mounted-source ledger gate protects exact
+// destinations, while this existing browser journey proves no second border is painted.
+const { fixture: separators } = loadFixturePair('scripts/testdata/transcript-ledger-turns-separators.yaml', 'scripts/testdata/transcript-ledger-turns.manifest.yaml', { cases: 'requiredSeparatorNames' })
+for (const viewport of separators.viewports) test(`transcript separator ownership ${viewport.name}`, async ({ page }, info) => {
+  await page.setViewportSize({ width: viewport.width, height: viewport.height })
+  await page.goto(`${origin}/?app=transcript&transcript=ledger-separators&fb=off&theme=${info.project.name}#inuse`, { waitUntil: 'networkidle' })
+  const viewer = page.locator('.txn-app')
+  await expect(viewer.locator('article[data-turn]')).toHaveCount(separators.payload.turns.length)
+  await page.locator('#inuse').scrollIntoViewIfNeeded()
+  const borders = await viewer.evaluate(root => ({
+    system: [...root.querySelectorAll('.txn-systemrow')].map(el => getComputedStyle(el).borderTopWidth),
+    phase: [...root.querySelectorAll('.txn-phase')].map(el => getComputedStyle(el).borderBottomWidth),
+    rules: [...root.querySelectorAll('.txn-turn-rule')].map(el => ({ turn: Number(el.parentElement.querySelector('article[data-turn]').dataset.turn), width: getComputedStyle(el).borderTopWidth })),
+    overflow: document.documentElement.scrollWidth > window.innerWidth,
+    active: getComputedStyle(root.querySelector('.txn-active')).boxShadow,
+  }))
+  expect(borders.system).toEqual(['0px', '0px', '0px'])
+  expect(borders.phase).toEqual(['1px', '1px', '1px'])
+  expect(borders.rules.map(rule => rule.turn)).toEqual(separators.cases[0].ruleTurns)
+  expect(borders.rules.every(rule => rule.width === '1px')).toBe(true)
+  expect(borders.overflow).toBe(false)
+  expect(borders.active).not.toBe('none')
+  await expect(viewer.locator('#turn-1 .txn-anchor')).toBeVisible()
+  await viewer.locator('.txn-stream').evaluate(el => { el.scrollTop = 0 })
+  await page.screenshot({ path: info.outputPath('transcript-separators.png') })
+  await info.attach('separator-borders', { body: JSON.stringify(borders, null, 2), contentType: 'application/json' })
+})
