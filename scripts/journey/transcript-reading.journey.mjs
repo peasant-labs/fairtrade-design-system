@@ -197,9 +197,18 @@ for (const row of fixture.drawerMotion) test(`transcript drawer motion ${row.nam
     await page.evaluate(() => window.__drawerTransition)
     expect(await panel.evaluate(el => el.inert)).toBe(true)
     expect(await panel.evaluate(el => el.getAnimations().some(a => a.transitionProperty === 'transform'))).toBe(true)
-    const middle = await panel.evaluate(el => { const a = el.getAnimations().find(item => item.transitionProperty === 'transform'); a.currentTime = a.effect.getTiming().duration / 2; const x = new DOMMatrix(getComputedStyle(el).transform).m41; for (const item of el.closest('dialog').getAnimations({ subtree: true })) item.play(); return { x, width: el.getBoundingClientRect().width } })
+    const middle = await panel.evaluate(async el => {
+      const a = el.getAnimations().find(item => item.transitionProperty === 'transform')
+      a.currentTime = a.effect.getTiming().duration / 2
+      const middle = { x: new DOMMatrix(getComputedStyle(el).transform).m41, width: el.getBoundingClientRect().width }
+      const animations = el.closest('dialog').getAnimations({ subtree: true })
+      // Capture completion before resuming: the exit may unmount the panel immediately.
+      const finished = Promise.all(animations.map(item => item.finished.catch(() => {})))
+      for (const item of animations) item.play()
+      await finished
+      return middle
+    })
     expect(middle.x).toBeLessThan(0); expect(middle.x).toBeGreaterThan(-middle.width)
-    await panel.evaluate(async el => { await Promise.all(el.getAnimations().map(a => a.finished.catch(() => {}))) })
   }
   await expect(panel).toHaveCount(0)
   await menu.click(); await footer.getByRole('button', { name: row.drawer, exact: true }).click()

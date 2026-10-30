@@ -489,7 +489,7 @@
   .gmp-file-convos { color: var(--ink-4); flex: none; }
   .gmp-file-convos .lucide { color: var(--ink-4); }
   .gmp-file-body { border-top: var(--bd); background: var(--canvas); }
-  .gmp-diff-state { padding: var(--sp-2) var(--sp-3); font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-4); }
+  .gmp-diff-state { overflow-wrap: anywhere; padding: var(--sp-2) var(--sp-3); font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-4); }
   .gmp-diff-error { color: var(--danger); }
   .gmp-hunk { border-bottom: var(--bd); }
   .gmp-hunk:last-child { border-bottom: 0; }

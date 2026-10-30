@@ -272,21 +272,21 @@ export default function ChangeDetail({
       </div>
 
       {/* inline annotation chip + popover (host-owned value) */}
-      <div className="gmp-detail-sec">
+      {(annotation || onSaveAnnotation) && <div className="gmp-detail-sec">
         <div className="sb-head gmp-detail-sechead">your annotation</div>
         <div className="gmp-annot">
           {annotation && (
             <span className="gmp-label-chip gmp-annot-chip">
               <Tag size={14} aria-hidden="true" /> {annotation}
-              <button type="button" className="gmp-annot-x" aria-label="remove annotation" onClick={() => onRemoveAnnotation?.()}>
+              {onRemoveAnnotation && <button type="button" className="gmp-annot-x" aria-label="remove annotation" onClick={() => onRemoveAnnotation?.()}>
                 <X size={14} aria-hidden="true" />
-              </button>
+              </button>}
             </span>
           )}
-          <button type="button" className="gmp-annot-add" aria-expanded={annotOpen} onClick={() => setAnnotOpen((o) => !o)}>
+          {onSaveAnnotation && <button type="button" className="gmp-annot-add" aria-expanded={annotOpen} onClick={() => setAnnotOpen((o) => !o)}>
             <Tag size={14} aria-hidden="true" /> {annotation ? 'change label' : 'add a label'}
-          </button>
-          {annotOpen && (
+          </button>}
+          {onSaveAnnotation && annotOpen && (
             <form className="gmp-annot-pop" onSubmit={saveAnnotation}>
               <span className="label">user.custom_label</span>
               <input
@@ -307,7 +307,7 @@ export default function ChangeDetail({
             </form>
           )}
         </div>
-      </div>
+      </div>}
 
       {/* exits — the host owns each destination; dispatch via optional chaining so an
           un-wired host renders them inert rather than throwing. */}
