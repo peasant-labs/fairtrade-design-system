@@ -40,6 +40,7 @@ export {
 /** @typedef {import('./types.js').ExploreOwnerPayload} ExploreOwnerPayload */
 /** @typedef {import('./types.js').ExploreTranscriptPayload} ExploreTranscriptPayload */
 /** @typedef {import('./types.js').ExploreTranscriptListPayload} ExploreTranscriptListPayload */
+/** @typedef {import('./types.js').ExploreHarnessFacetPayload} ExploreHarnessFacetPayload */
 /** @typedef {import('./types.js').CollectiveResultPayload} CollectiveResultPayload */
 /** @typedef {import('./types.js').PopularTagPayload} PopularTagPayload */
 /** @typedef {import('./types.js').ExplorePayload} ExplorePayload */
