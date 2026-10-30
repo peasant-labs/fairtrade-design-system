@@ -345,6 +345,7 @@
   }
   .gmp-changes-head {
     display: flex;
+    flex-wrap: wrap;
     align-items: flex-start;
     justify-content: space-between;
     gap: var(--sp-4);
@@ -353,6 +354,9 @@
     background: var(--surface);
     flex: none;
   }
+  .gmp-changes-head > :first-child { flex: 1 1 calc(var(--sp-8) * 6); min-width: 0; overflow-wrap: anywhere; }
+  .gmp-changes-head .gmp-head-actions { flex: none; max-width: 100%; justify-content: flex-start; }
+  .gmp-changes-head .gmp-head-actions > .btn { flex: none; white-space: nowrap; }
   .gmp-changes-sub { font-size: var(--fs-label); color: var(--ink-4); margin-top: var(--sp-1); }
   .gmp-changes-body { padding: var(--sp-4) var(--gmp-pad-x); min-width: 0; }
 

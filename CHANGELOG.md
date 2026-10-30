@@ -4,6 +4,14 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.56
+
+- Keep turn-link navigation inside the reading pane so clipped layout containers cannot scroll and leave blank space below the transcript.
+
+- Let Changes header actions wrap as a group without shrinking their button labels out of their bounds.
+
+- Keep handle claiming at a readable width and use product-neutral helper copy for consuming apps.
+
 ## 0.0.55
 
 - Remove duplicate transcript separators where a phase heading or the ledger already owns the boundary.

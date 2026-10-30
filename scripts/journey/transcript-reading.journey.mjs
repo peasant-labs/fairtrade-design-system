@@ -637,7 +637,13 @@ test('search navigates repeated occurrences in one long section', async ({ page 
 for (const row of fixture.initial) test(`transcript rendered initial ${row.name}`, async ({ page }, info) => {
   await open(page, info.project.name, row.turn)
   const target = action(page, row)
-  await expect(target.locator('button').first()).toHaveAttribute('aria-expanded', 'true')
+  if (row.kind !== 'body') await expect(target.locator('button').first()).toHaveAttribute('aria-expanded', 'true')
+  const viewport = await page.locator('.txn-app').evaluate(root => {
+    const stream = root.querySelector('.txn-stream'), center = root.querySelector('.txn-center'), footer = root.querySelector('.txn-footer')
+    return { clippedAncestorOffset: center.scrollTop, bottomGap: footer.getBoundingClientRect().top - stream.getBoundingClientRect().bottom }
+  })
+  expect(viewport.clippedAncestorOffset).toBe(0)
+  expect(Math.abs(viewport.bottomGap)).toBeLessThanOrEqual(1)
   await expect.poll(async () => { const m = await inside(target); return m.shown && m.top >= m.viewTop - 1 && m.top < m.viewBottom }).toBe(true)
 })
 test('transcript real overflow user rail follows reading in both directions', async ({ page }, info) => {

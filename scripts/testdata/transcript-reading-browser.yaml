@@ -59,6 +59,7 @@
     {"name": "ordinary prose destination stays original", "query": "Later distinct prose target", "turn": 2, "kind": "body", "compact": false}
   ],
   "initial": [
+    {"name": "prose permalink keeps the complete reading viewport", "turn": 2, "kind": "body"},
     {"name": "wordless initial tool destination", "turn": 3, "command": "printf target-gamma", "kind": "tool"},
     {"name": "wordless initial Think destination", "turn": 4, "kind": "thinking"}
   ],

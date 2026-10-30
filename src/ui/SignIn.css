@@ -191,6 +191,7 @@
   gap: var(--sp-4);
   box-sizing: border-box;
   width: 100%;
+  max-inline-size: var(--measure-read);
   padding: var(--sp-6);
   border: var(--bd);
   background: var(--surface);

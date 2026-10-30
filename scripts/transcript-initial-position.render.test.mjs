@@ -131,6 +131,10 @@ for (const [key, value] of Object.entries({
   previousGlobals.set(key, Object.getOwnPropertyDescriptor(globalThis, key))
   Object.defineProperty(globalThis, key, { configurable: true, writable: true, value })
 }
+// JSDOM has no layout; give each recorded turn a distinct position in its stream.
+Object.defineProperty(dom.window.HTMLElement.prototype, 'offsetTop', { configurable: true, get() {
+  return this.dataset.turn == null ? 0 : Number(this.dataset.turn) * 100 + 12
+} })
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 globalThis.IntersectionObserver = class { observe() {} unobserve() {} disconnect() {} }
 globalThis.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} }
@@ -149,8 +153,12 @@ try {
     const callbacks = []
     const history = []
     const scrolls = []
-    dom.window.HTMLElement.prototype.scrollIntoView = function () { scrolls.push(`turn:${this.dataset.turn}`) }
-    dom.window.HTMLElement.prototype.scrollTo = function (options) { if (options?.top === 0) scrolls.push('top') }
+    dom.window.HTMLElement.prototype.scrollIntoView = function () { throw new Error('positioning must not scroll clipped ancestors') }
+    dom.window.HTMLElement.prototype.scrollTo = function (options) {
+      if (!this.matches('.txn-stream')) throw new Error('positioning must target the reading stream')
+      if (options?.top === 0) scrolls.push('top')
+      else if (Number.isFinite(options?.top)) scrolls.push(`turn:${options.top / 100}`)
+    }
     dom.window.history.pushState = () => { history.push('push') }
     dom.window.history.replaceState = () => { history.push('replace') }
     const turns = fixture.turns.map((index) => ({ index, role: 'user', label: String(index), content: `turn ${index}`, depth: 0, toolCalls: [], annotations: [] }))
@@ -239,9 +247,10 @@ try {
   for (const fixture of fixtures.returnCases) {
     const callbacks = []
     const scrolls = []
-    dom.window.HTMLElement.prototype.scrollIntoView = function () { scrolls.push(`turn:${this.dataset.turn}`) }
+    dom.window.HTMLElement.prototype.scrollIntoView = function () { throw new Error('positioning must not scroll clipped ancestors') }
     dom.window.HTMLElement.prototype.scrollTo = function (options) {
       if (options?.top != null) {
+        if (!this.matches('.txn-stream')) throw new Error('positioning must target the reading stream')
         this.scrollTop = options.top
         scrolls.push(`top:${options.top}`)
       }

@@ -4,6 +4,7 @@ requiredNavigationNames:
   - wordless Think destination in compact
   - ordinary prose destination stays original
 requiredInitialNames:
+  - prose permalink keeps the complete reading viewport
   - wordless initial tool destination
   - wordless initial Think destination
 requiredRailNames:
