@@ -343,8 +343,7 @@ export function HandleClaim({
         <span className="si-eyebrow">welcome</span>
         <h2 className="si-claim-title">claim your handle</h2>
         <p className="si-claim-note">
-          your public handle on fairtrade, <span className="si-mono">/@your-handle</span>. it is independent of the
-          account you signed in with.
+          your public handle is independent of the account you signed in with.
         </p>
       </div>
 

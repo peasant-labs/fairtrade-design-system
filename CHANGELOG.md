@@ -10,6 +10,8 @@ package is pre-1.0, so minor/patch semantics are best-effort.
 
 - Let Changes header actions wrap as a group without shrinking their button labels out of their bounds.
 
+- Keep handle claiming at a readable width and use product-neutral helper copy for consuming apps.
+
 ## 0.0.55
 
 - Remove duplicate transcript separators where a phase heading or the ledger already owns the boundary.
