@@ -1,0 +1,12 @@
+[
+  {
+    "theme": "light",
+    "save": true,
+    "remove": true
+  },
+  {
+    "theme": "dark",
+    "save": true,
+    "remove": true
+  }
+]
