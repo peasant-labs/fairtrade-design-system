@@ -1,5 +1,5 @@
 {
-  "source": "5221658f07eba7ab401464800bd7126e7ac5d2ae",
+  "source": "67f5e9ae938a766048286c742a1dff0cdd6ed2f9",
   "fairtrade": "0.0.57",
   "servedAssets": [
     {
@@ -16,5 +16,8 @@
     }
   ],
   "checks": "final normal build and prepack; full lib;446 journeys passed56 configured skips; finalCSS guards",
-  "review": "three fresh lenses accepted; all four mounted production captures inspected"
+  "review": "three fresh lenses accepted; all four mounted production captures inspected",
+  "captureSource": "5221658f07eba7ab401464800bd7126e7ac5d2ae",
+  "artifactByteIdenticalAfterTestOnlyDelta": true,
+  "testOnlyDelta": "Atomic exit-animation completion wait;24 cases passed across both themes/four repetitions. Independent review accepted."
 }
