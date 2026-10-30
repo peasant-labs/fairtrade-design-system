@@ -1,0 +1,16 @@
+{
+  "mergeCommit": "a603828eac77da0cb22ea565820dda6d7fc597b2",
+  "mergedTreeMatchesInspected": true,
+  "npmVersion": "0.0.55",
+  "npmPublishRun": 41015235759,
+  "releaseRun": 41015235790,
+  "postMergeCiRun": 41015210253,
+  "allRuns": "success",
+  "productionDeployment": 7432372891,
+  "productionDeploymentStatus": "success",
+  "stablePreviewPort": 5197,
+  "stablePreviewSource": "fairtrade-design-system/main",
+  "servedCssSha256": "c1d08c542a8854ba713f73a23f06590dcd28a07555617b48cdfc184aab389c06",
+  "servedCssMatchesInspected": true,
+  "checkedOn": "2026-10-30"
+}
