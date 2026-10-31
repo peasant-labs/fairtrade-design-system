@@ -1,10 +1,10 @@
 {
-  "source": "2574d901525136d3959924a486f78252d7ec7198",
+  "source": "f3b28239e9f68846df51bf5033ef12e676855afc",
   "sourceComponentSha256": "694abfb06038d3cbd18a845ce51a12e74718b2b3dff4d564c6b26547823aabd1",
   "builtAssets": {
     "dist/assets/index-wQvKjvY5.js": "5f49a1fda0ae70e8e21a13332917ddd1b22dd5c859764694aba581fb3a681ede"
   },
-  "scope": "canonical Fairtrade actual built app, not yet website consumer",
+  "scope": "canonical Fairtrade built from exact consolidated release branch; website consumer follows npm publication",
   "screenshotsInspected": [
     "embedded-dark.png",
     "embedded-light.png",
@@ -18,7 +18,11 @@
     "structured-shiki",
     "transcript-reading-layout: 280 checks",
     "targeted mutation killed on below/equal minimum",
-    "roomy keyboard Home/ArrowRight then pointer drag in both themes"
+    "roomy keyboard Home/ArrowRight then pointer drag in both themes",
+    "canonical prepack",
+    "40 adaptive journeys passed",
+    "both-theme full Storybook catalog smoke 2 passed after host framing and stale assertion corrections",
+    "fresh exact consolidated release build and 4 mounted captures"
   ],
   "temporaryPreviewPort": 3388,
   "previousWebsite3314": "unchanged"
