@@ -95,6 +95,17 @@ for (const row of fixture.cases) for (const motion of fixture.motion) {
     await expect(page.locator('.txn-search-count')).not.toHaveText('0 matches')
     await page.keyboard.press('Escape')
     const handle = page.getByRole('separator', { name: 'reading width' })
+    const hasWidthRange = async () => {
+      const bounds = await available()
+      return bounds.right - bounds.left > fixture.minimumReaderWidth
+    }
+    const collapsedForWidth = !(await hasWidthRange())
+    if (collapsedForWidth) {
+      await expect(handle, 'a viewport-bound reader has no adjustable width').toHaveCount(0)
+      await toggle('collapse user turns outline')
+      expect(await hasWidthRange(), 'collapsing the rail exposes an adjustable range').toBe(true)
+      await expect(handle, 'the width control returns when room is available').toBeVisible()
+    }
     await handle.focus()
     await page.keyboard.press('End')
     await expect(handle).toHaveAttribute('aria-valuetext', 'full width')
@@ -106,10 +117,12 @@ for (const row of fixture.cases) for (const motion of fixture.motion) {
     })).toBeLessThan(2)
     const fullBefore = await rect()
     await toggle('expand filters')
-    await expect(handle).toHaveAttribute('aria-valuetext', 'full width')
+    if (await hasWidthRange()) await expect(handle).toHaveAttribute('aria-valuetext', 'full width')
+    else await expect(handle, 'the width control leaves when the rail removes its range').toHaveCount(0)
     await expect.poll(async () => (await rect()).width).toBeLessThan(fullBefore.width - 1)
-    await toggle('collapse user turns outline')
+    if (!collapsedForWidth) await toggle('collapse user turns outline')
     await toggle('collapse filters')
+    await expect(handle, 'the width control is restored before keyboard and drag input').toBeVisible()
     await handle.focus()
     await page.keyboard.press('Home')
     await expect(handle).toHaveAttribute('aria-valuenow', '600')

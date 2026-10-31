@@ -244,9 +244,10 @@ const ledgerArgs = {
 
 // The ledger chrome lives in the pinned trace header, so its stories need the viewer to fill a
 // real height and the trace to actually scroll (a story height of `auto` leaves the stream with
-// nothing to scroll, and the pinned header is a scroll state).
+// nothing to scroll, and the pinned header is a scroll state). The column flex axis
+// stretches the viewer across its host instead of shrink-wrapping it around the reader width.
 const ledgerFrame = (Story) => (
-  <div style={{ height: '100vh', minHeight: 640, display: 'flex' }}>
+  <div style={{ height: '100vh', minHeight: 640, display: 'flex', flexDirection: 'column' }}>
     <Story />
   </div>
 )
@@ -296,7 +297,7 @@ export const LedgerLightTheme = { name: 'ledger light theme', decorators: [ledge
    the two geometry claims jsdom cannot see (the collapsed strip width and the shared work
    grid edge). */
 const readingFrame = (Story) => (
-  <div style={{ height: 720, display: 'flex' }}>
+  <div style={{ height: 720, display: 'flex', flexDirection: 'column' }}>
     <Story />
   </div>
 )
@@ -325,12 +326,32 @@ async function assertReadingGeometry(canvasElement) {
 
 async function readingLayoutPlay({ canvasElement }) {
   const canvas = within(canvasElement)
-  const handle = canvas.getByRole('separator', { name: 'reading width' })
+  // An embedded reader with no adjustable range has no width control. Collapsing the
+  // outline must expose a real range and restore the same keyboard control.
+  const stream = canvasElement.querySelector('.txn-stream')
+  const measuredWidth = () => {
+    const style = getComputedStyle(stream)
+    return Math.floor(stream.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight))
+  }
+  const outlineCollapsedForWidth = measuredWidth() <= 600
+  if (outlineCollapsedForWidth) {
+    expect(canvas.queryByRole('separator', { name: 'reading width' })).toBeNull()
+    await userEvent.click(canvas.getByRole('button', { name: 'collapse user turns outline' }))
+  }
+  const handle = await canvas.findByRole('separator', { name: 'reading width' })
+  const settleReadingLayout = async () => {
+    await new Promise(requestAnimationFrame)
+    await Promise.allSettled(canvasElement.getAnimations({ subtree: true })
+      .filter(animation => Number.isFinite(animation.effect?.getComputedTiming().endTime))
+      .map(animation => animation.finished))
+    await new Promise(requestAnimationFrame)
+  }
+  await settleReadingLayout()
+  expect(measuredWidth()).toBeGreaterThan(600)
   expect(handle).toHaveAttribute('aria-valuemin', '600')
   // the widest snap is the stream's whole content width, measured, not a fixed number.
-  const stream = canvasElement.querySelector('.txn-stream')
   const streamStyle = getComputedStyle(stream)
-  const fullWidth = Math.floor(stream.clientWidth - parseFloat(streamStyle.paddingLeft) - parseFloat(streamStyle.paddingRight))
+  const fullWidth = measuredWidth()
   await waitFor(() => expect(handle).toHaveAttribute('aria-valuemax', String(Math.max(600, fullWidth))))
   // the default 840 renders at the space it has when the stream is narrower than that.
   expect(handle).toHaveAttribute('aria-valuenow', String(Math.max(600, Math.min(840, fullWidth))))
@@ -340,32 +361,48 @@ async function readingLayoutPlay({ canvasElement }) {
   // there are no snaps: the arrows step by 40px, Home reaches the minimum and End reaches full.
   handle.focus()
   await userEvent.keyboard('{Home}')
+  await settleReadingLayout()
+  expect(handle).toHaveFocus()
   expect(handle).toHaveAttribute('aria-valuenow', '600')
+  const steppedRight = Math.min(640, Number(handle.getAttribute('aria-valuemax')))
   await userEvent.keyboard('{ArrowRight}')
-  expect(handle).toHaveAttribute('aria-valuenow', String(Math.min(640, Number(handle.getAttribute('aria-valuemax')))))
+  await settleReadingLayout()
+  expect(handle).toHaveFocus()
+  expect(handle).toHaveAttribute('aria-valuenow', String(steppedRight))
   await userEvent.keyboard('{End}')
+  await settleReadingLayout()
+  expect(handle).toHaveFocus()
   expect(handle).toHaveAttribute('aria-valuetext', 'full width')
   expect(handle).toHaveAttribute('aria-valuenow', handle.getAttribute('aria-valuemax'))
   // at full the column runs to the stream's content edge, up to the zen lane.
   const row = canvasElement.querySelector('.txn-ledger .txn-turnrow')
   const contentRight = stream.getBoundingClientRect().right - parseFloat(streamStyle.paddingRight) - (stream.offsetWidth - stream.clientWidth)
   expect(Math.abs(row.getBoundingClientRect().right - contentRight)).toBeLessThanOrEqual(2)
+  // The adaptive grid can change the available maximum after the step; the action
+  // subtracts 40 from the width at the keypress, not from that later layout's maximum.
+  const steppedLeft = Math.max(600, Number(handle.getAttribute('aria-valuenow')) - 40)
   await userEvent.keyboard('{ArrowLeft}')
-  expect(handle).toHaveAttribute('aria-valuenow', String(Math.max(600, Number(handle.getAttribute('aria-valuemax')) - 40)))
+  await settleReadingLayout()
+  expect(handle).toHaveFocus()
+  expect(handle).toHaveAttribute('aria-valuenow', String(steppedLeft))
   await userEvent.keyboard('{Home}')
+  await settleReadingLayout()
+  expect(handle).toHaveFocus()
   expect(handle).toHaveAttribute('aria-valuenow', '600')
   // collapse the outline, then change the width both ways: the strip must stay closed.
   // (the rail controls drop below the two-rail breakpoint, so the story drives the mounted
   // control directly rather than through the accessibility tree.)
-  const collapse = canvasElement.querySelector('.txn-rail-left .txn-rail-collapse')
-  expect(collapse).not.toBeNull()
-  await userEvent.click(collapse)
+  if (!outlineCollapsedForWidth) {
+    const collapse = canvasElement.querySelector('.txn-rail-left .txn-rail-collapse')
+    expect(collapse).not.toBeNull()
+    await userEvent.click(collapse)
+  }
   // the collapse is a committed re-render, so wait for the strip the collapsed grid produces
   // before measuring it: reading the computed width on the same tick intermittently observes the
   // pre-collapse 240px grid column.
   await waitFor(() => {
-    expect(canvasElement.querySelector('.txn-rail-strip-left')).not.toBeNull()
-    const strip = canvasElement.querySelector('.txn-rail-strip')
+    expect(canvasElement.querySelector('.txn-rail-strip-left:not([hidden])')).not.toBeNull()
+    const strip = canvasElement.querySelector('.txn-rail-strip:not([hidden])')
     expect(strip).not.toBeNull()
     // below the transcript's two-rail breakpoint the strips are dropped entirely; the story's
     // frame is desktop, where the collapsed strip measures the square hit target.
@@ -373,21 +410,25 @@ async function readingLayoutPlay({ canvasElement }) {
   })
   handle.focus()
   await userEvent.keyboard('{End}')
-  await waitFor(() => expect(canvasElement.querySelector('.txn-rail-strip-left')).not.toBeNull())
+  await waitFor(() => expect(canvasElement.querySelector('.txn-rail-strip-left:not([hidden])')).not.toBeNull())
   await userEvent.keyboard('{Home}')
-  await waitFor(() => expect(canvasElement.querySelector('.txn-rail-strip-left')).not.toBeNull())
+  await waitFor(() => expect(canvasElement.querySelector('.txn-rail-strip-left:not([hidden])')).not.toBeNull())
   // zen hides both rails and their strips; exiting restores the snapshot exactly.
   await userEvent.click(canvas.getByRole('button', { name: 'zen mode' }))
   await waitFor(() => {
-    expect(canvasElement.querySelector('.txn-rail')).toBeNull()
-    expect(canvasElement.querySelector('.txn-rail-strip')).toBeNull()
+    expect(canvasElement.querySelector('.txn-rail:not([hidden])')).toBeNull()
+    expect(canvasElement.querySelector('.txn-rail-strip:not([hidden])')).toBeNull()
+    for (const pane of canvasElement.querySelectorAll('.txn-rail, .txn-rail-strip')) {
+      expect(pane).toHaveAttribute('aria-hidden', 'true')
+      expect(pane).toHaveAttribute('inert')
+    }
   })
   expect(canvas.getByRole('button', { name: 'zen mode' })).toHaveAttribute('aria-pressed', 'true')
   await userEvent.click(canvas.getByRole('button', { name: 'zen mode' }))
   await waitFor(() => {
-    expect(canvasElement.querySelector('.txn-rail-left')).toBeNull()
-    expect(canvasElement.querySelector('.txn-rail-strip-left')).not.toBeNull()
-    expect(canvasElement.querySelector('.txn-rail-right')).not.toBeNull()
+    expect(canvasElement.querySelector('.txn-rail-left:not([hidden])')).toBeNull()
+    expect(canvasElement.querySelector('.txn-rail-strip-left:not([hidden])')).not.toBeNull()
+    expect(canvasElement.querySelector('.txn-rail-right:not([hidden])')).not.toBeNull()
   })
 }
 

@@ -1638,8 +1638,9 @@ export default function TranscriptViewer({
                 </div>
               )}
               {/* the reader's trailing edge: the one width control. It lives inside the trace
-                  (not the header) so it tracks the column, and only ever writes the width. */}
-              {ledger && viewMode === 'list' && (
+                  (not the header) so it tracks the column, and only ever writes the width.
+                  A viewport-bound column has no adjustable range, so it has no handle. */}
+              {ledger && viewMode === 'list' && readerFullPx != null && readerFullPx > READER_MIN && (
                 <div
                   className="txn-reader-handle"
                   role="separator"
