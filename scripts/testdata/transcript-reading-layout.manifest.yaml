@@ -34,6 +34,9 @@ requiredInteractionNames:
   - an interrupted pointer drag does not resize later
   - a controlled reader width above the range renders the full width
   - a controlled full reader width renders the measured stream width
+  - a reader narrower than the minimum has no width handle
+  - a reader exactly at the minimum has no width handle
+  - a reader above the minimum retains its width handle
   - a reader at full follows the stream when it resizes
   - a controlled reader width below the range renders the minimum
   - a controlled reader width inside the range renders as given
@@ -64,6 +67,9 @@ requiredInteractionKinds:
   an interrupted pointer drag does not resize later: width-drag-lifecycle
   a controlled reader width above the range renders the full width: width-controlled
   a controlled full reader width renders the measured stream width: width-controlled
+  a reader narrower than the minimum has no width handle: width-range
+  a reader exactly at the minimum has no width handle: width-range
+  a reader above the minimum retains its width handle: width-range
   a reader at full follows the stream when it resizes: width-full-follows
   a controlled reader width below the range renders the minimum: width-controlled
   a controlled reader width inside the range renders as given: width-controlled
@@ -79,6 +85,7 @@ requiredInteractionKinds:
 # mutations the mounted harness applies; the five stylesheet rows are applied to the gate's
 # own stylesheet read, which mirrors the harness transform for a file read from disk.
 requiredMutationNames:
+  - a viewport-bound reader renders a useless width handle
   - the turn hover stops fading
   - an open block row draws a rule again
   - the handle snaps on release again
@@ -218,3 +225,9 @@ mutations:
     find: "  width: 100%; min-height: var(--target-comfortable);\n  padding: var(--sp-2) var(--sp-4);"
     replace: "  width: 100%; min-height: var(--target-comfortable);\n  padding: var(--sp-2) var(--sp-1);"
     expectedDiagnostic: "the sidebar user-turn cards breathe"
+
+  - name: a viewport-bound reader renders a useless width handle
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "ledger && viewMode === 'list' && readerFullPx != null && readerFullPx > READER_MIN"
+    replace: "ledger && viewMode === 'list'"
+    expectedDiagnostic: "a reader narrower than the minimum has no width handle: a width handle must exist only when its measured range is adjustable"

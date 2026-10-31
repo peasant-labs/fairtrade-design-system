@@ -10,3 +10,6 @@ cases:
   - {name: phone drawer, width: 390, behavior: drawer}
 themes: [dark, light]
 motion: [reduce, no-preference]
+
+# The canonical ledger width range starts at this many pixels.
+minimumReaderWidth: 600

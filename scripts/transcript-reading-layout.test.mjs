@@ -63,7 +63,7 @@ for (const row of [fixture.defaultsCase, ...fixture.layoutCases]) {
     if (!RAIL_KEYS.includes(row.alias.rail) || typeof row.alias.open !== 'boolean') throw new Error(`${FIXTURE} ${row.name}: alias must name a rail and a boolean`)
   }
 }
-for (const row of fixture.interactions) assertFields(row, ['name', 'kind'], `${FIXTURE} ${row.name}`, ['readerWidth', 'expected'])
+for (const row of fixture.interactions) assertFields(row, ['name', 'kind'], `${FIXTURE} ${row.name}`, ['readerWidth', 'expected', 'streamWidth'])
 
 /* ── the shipped stylesheet, read from disk ─────────────────────────────────────
    A stylesheet cannot be loaded through vite's SSR module loader (it resolves to an empty
@@ -403,6 +403,15 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       await step('ArrowDown', FULL - STEP)
       await step('ArrowRight', FULL)
       report.check(same(widths, [start + STEP, start, MIN, MIN, MIN + STEP, 'full', 'full', FULL - STEP, 'full']), `${row.name}: the host must hear every keyboard snap, received ${JSON.stringify(widths)}`)
+      await mounted.unmount()
+    } else if (row.kind === 'width-range') {
+      streamWidth = row.streamWidth
+      const mounted = await mountViewer()
+      report.check(!!handleOf(mounted.container) === row.expected, `${row.name}: a width handle must exist only when its measured range is adjustable`)
+      // Re-measure the same mounted viewer: crossing the minimum must restore the control.
+      streamWidth = FULL
+      await mounted.act(() => window.dispatchEvent(new window.Event('resize')))
+      report.check(!!handleOf(mounted.container), `${row.name}: growing the viewport must restore the usable handle`)
       await mounted.unmount()
     } else if (row.kind === 'width-transition') {
       const block = ruleAt(css, '.txn-ledger :is(.txn-turnwrap-ledger, .txn-turnrow, .txn-turn-rule, .txn-phase) {')

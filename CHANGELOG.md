@@ -4,6 +4,10 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.58
+
+- Hide the transcript reading-width handle when its pane has no adjustable range. Wider panes retain pointer and keyboard resizing.
+
 ## 0.0.57
 
 - Wrap long file-diff failure messages inside the reading pane.
