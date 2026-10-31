@@ -1,0 +1,56 @@
+[
+  {
+    "name": "embedded-dark",
+    "width": 1280,
+    "theme": "dark",
+    "count": 0,
+    "stream": {
+      "width": 703,
+      "padding": "60px"
+    },
+    "range": null
+  },
+  {
+    "name": "embedded-light",
+    "width": 1280,
+    "theme": "light",
+    "count": 0,
+    "stream": {
+      "width": 703,
+      "padding": "60px"
+    },
+    "range": null
+  },
+  {
+    "name": "roomy-dark",
+    "width": 1920,
+    "theme": "dark",
+    "count": 1,
+    "stream": {
+      "width": 1311,
+      "padding": "60px"
+    },
+    "range": [
+      "600",
+      "1224"
+    ],
+    "keyboard": true,
+    "pointer": true
+  },
+  {
+    "name": "roomy-light",
+    "width": 1920,
+    "theme": "light",
+    "count": 1,
+    "stream": {
+      "width": 1311,
+      "padding": "60px"
+    },
+    "range": [
+      "600",
+      "1224"
+    ],
+    "keyboard": true,
+    "pointer": true
+  }
+]
