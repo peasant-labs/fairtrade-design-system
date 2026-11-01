@@ -3891,7 +3891,7 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 .txn-mobile-controls { display: none; }
 .txn-copy-toast { position: fixed; z-index: var(--z-toast); right: var(--sp-4); bottom: calc(var(--target-comfortable) * 2 + var(--sp-4)); }
 .txn-mobile-drawer:not([open]) { display: none; }
-@media (width < 768px) {
+.txn-app.txn-compact {
   .txn-footer { flex-direction: column; gap: 0; padding: 0 var(--sp-2) env(safe-area-inset-bottom, 0px); min-width: 0; }
   .txn-mobile-controls { display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: 0; min-width: 0; }
   .txn-mobile-controls > span { gap: 0; }
@@ -3925,6 +3925,8 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
   .txn-mobile-drawer-head button:last-child { margin-inline-start: auto; }
   .txn-mobile-drawer-head button[aria-pressed="true"] { box-shadow: inset 0 calc(-1 * var(--stroke-emphasis)) var(--amber); }
   .txn-mobile-drawer-body { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: var(--sp-3); }
+}
+@media (width < 768px) {
   .txn-turnhead-ledger { gap: var(--sp-1); }
   .txn-turnhead { margin-bottom: var(--sp-1); }
   .txn-body > .txn-md-prose:first-child { margin-block-start: 0; }
@@ -4143,6 +4145,21 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 /* with the handle gone the ledger stream needs no trailing lane: the reader takes the page inset
    and the phone stops paying for a control it cannot use. */
 @media (width < 768px) { .txn-ledger .txn-stream { padding-inline: var(--sp-4); } }
+
+/* Compact embeds reuse the same drawer controls as phones without shrinking the trace.
+   Rail openness stays stored for the next time this viewer has room for desktop rails. */
+.txn-app.txn-compact .txn-body-grid { grid-template-columns: 0 minmax(0, 1fr) 0; transition-property: none; }
+.txn-app.txn-compact .txn-body-grid[data-reader-fixed="true"] { --txn-left-space: 0px; --txn-right-space: 0px; }
+.txn-app.txn-compact :is(.txn-rail-left, .txn-rail-right, .txn-rail-strip, .txn-zen-control) { display: none; }
+.txn-app.txn-compact .txn-center { border-right: 0; --txn-zen-size: var(--sp-5); }
+/* A retained zen session still needs its exit when this viewer becomes compact.
+   Reuse its toggle in the footer so it cannot cover narrow conversation text. */
+.txn-app.txn-compact .txn-foot-tabs > .txn-zen-control { position: static; display: inline-flex; flex: none; inline-size: var(--target-comfortable); min-block-size: var(--target-comfortable); }
+.txn-app.txn-compact .txn-search-trigger { inline-size: var(--target-comfortable); padding-inline: 0; }
+.txn-app.txn-compact .txn-search-trigger-text { position: absolute; width: var(--stroke-hairline); height: var(--stroke-hairline); margin: 0; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.txn-app.txn-compact .txn-search-key { display: none; }
+.txn-foot-tabs .txn-tab { margin-bottom: 0; }
+.txn-foot-tabs .txn-tab:focus-visible { outline-offset: var(--focus-ring-offset-inset); }
 
 /* Mermaid charts remain inside the reading column, including wide diagrams. */
 .txn-mermaid { font-family: var(--font-body); font-size: var(--fs-body); min-width: 0; max-width: 100%; border: 1px solid var(--rule-strong); background: var(--surface); }

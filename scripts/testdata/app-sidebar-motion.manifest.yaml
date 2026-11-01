@@ -8,3 +8,4 @@ requiredMotionNames:
   - reduced
 requiredViewportCaseNames:
   - notice and zen stay within the viewport
+  - notice and compact tools stay within the viewport
