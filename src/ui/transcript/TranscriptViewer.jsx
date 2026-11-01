@@ -359,7 +359,9 @@ export default function TranscriptViewer({
   // the action-menu disclosures are view-state too (controllable; default CLOSED).
   const [shareOpen, setShareOpen] = useControllable(shareOpenProp, onShareOpenChange, false)
   const [moreOpen, setMoreOpen] = useControllable(moreOpenProp, onMoreOpenChange, false)
-  // Mobile overlays are transient and never update the persisted desktop rail layout.
+  // Compact overlays follow the viewer's own width, including a narrow embed on a
+  // wide screen. They never update the persisted desktop rail layout.
+  const viewerRef = useRef(null)
   const [mobile, setMobile] = useState(false)
   const [mobileToolsOpen, setMobileToolsOpen] = useState(false)
   const [mobileDrawer, setMobileDrawer] = useState(null)
@@ -369,6 +371,8 @@ export default function TranscriptViewer({
   const mobileOutlineRef = useRef(null)
   const mobileFiltersRef = useRef(null)
   const mobileToolsRef = useRef(null)
+  const mobileDrawerKindRef = useRef(null)
+  if (mobileDrawer) mobileDrawerKindRef.current = mobileDrawer
   const mobileDrawerId = useId()
   const closeMobileDrawer = useCallback(() => {
     setExitingMobileDrawer(mobileDrawer)
@@ -393,13 +397,24 @@ export default function TranscriptViewer({
     })
     return () => { cancelled = true; cancelAnimationFrame(frame) }
   }, [mobileDrawer, exitingMobileDrawer])
-  useEffect(() => {
-    const media = window.matchMedia?.('(min-width: 768px)')
-    if (!media) return
-    const onResize = () => { setMobile(!media.matches); if (media.matches) { setMobileDrawer(null); setMobileToolsOpen(false) } }
-    onResize()
-    media.addEventListener('change', onResize)
-    return () => media.removeEventListener('change', onResize)
+  useLayoutEffect(() => {
+    const viewer = viewerRef.current
+    if (!viewer) return undefined
+    const update = () => {
+      // The established two-rail fit width is the laptop token plus one large inset.
+      const style = getComputedStyle(viewer)
+      const railFit = parseFloat(style.getPropertyValue('--bp-lg')) + parseFloat(style.getPropertyValue('--sp-8'))
+      // Server/test renders without layout keep their desktop presentation.
+      if (!viewer.clientWidth || !Number.isFinite(railFit)) return
+      const compact = viewer.clientWidth < railFit
+      setMobile(compact)
+      if (!compact) { setMobileDrawer(null); setMobileToolsOpen(false) }
+    }
+    update()
+    const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(update) : null
+    observer?.observe(viewer)
+    window.addEventListener('resize', update)
+    return () => { observer?.disconnect(); window.removeEventListener('resize', update) }
   }, [])
   useEffect(() => { setMobileDrawer(null); setMobileToolsOpen(false) }, [vm?.session?.id])
   useEffect(() => {
@@ -409,12 +424,7 @@ export default function TranscriptViewer({
     return () => window.removeEventListener('keydown', onKey)
   }, [mobileToolsOpen])
   useEffect(() => {
-    if (!mobile) return
-    const item = tabRefs.current[tab], strip = item?.parentElement
-    if (!item || !strip) return
-    const view = strip.getBoundingClientRect(), box = item.getBoundingClientRect()
-    if (box.left < view.left) strip.scrollLeft -= view.left - box.left
-    else if (box.right > view.right) strip.scrollLeft += box.right - view.right
+    revealTab(tabRefs.current[tab])
   }, [mobile, tab])
 
   /* ── the sidebar layout view model ──────────────────────────────────────────
@@ -570,6 +580,15 @@ export default function TranscriptViewer({
     }
   }, [ledger, tab, viewMode, readerRoom, leftRailOpen, rightRailOpen])
   const tabRefs = useRef({})
+  // Scroll only the strip: scrollIntoView would also move the host/page. The
+  // canonical inset focus ring stays inside the revealed tab's border box.
+  function revealTab(item) {
+    const strip = item?.parentElement
+    if (!item || !strip) return
+    const view = strip.getBoundingClientRect(), box = item.getBoundingClientRect()
+    if (box.left < view.left) strip.scrollLeft -= view.left - box.left
+    else if (box.right > view.right) strip.scrollLeft += box.right - view.right
+  }
   const traceReadingPositionIdRef = useRef(0)
   /** @type {import('react').MutableRefObject<TraceReadingSnapshot | null>} */
   const latestTraceReadingSnapshotRef = useRef(null)
@@ -1112,7 +1131,7 @@ export default function TranscriptViewer({
     e.preventDefault()
     captureTraceReadingPosition()
     selectTab(TAB_ORDER[j])
-    tabRefs.current[TAB_ORDER[j]]?.focus()
+    tabRefs.current[TAB_ORDER[j]]?.focus({ preventScroll: true })
   }
 
   /* the one way search opens: the ⌘F shortcut and the optional header trigger share it, so the
@@ -1251,7 +1270,7 @@ export default function TranscriptViewer({
 
   const tabHasFilters = tab === 'trace' || tab === 'highlights'
   const tabStrip = (
-    <div className="tabs txn-tabs" role="tablist" aria-label="session views" onKeyDown={onTabKey}>
+    <div className="tabs txn-tabs" role="tablist" aria-label="session views" onKeyDown={onTabKey} onFocusCapture={event => revealTab(event.target)}>
       {TAB_ORDER.map((id) => {
         const on = tab === id
         const count = id === 'highlights' ? highlights.length
@@ -1320,7 +1339,8 @@ export default function TranscriptViewer({
 
   return (
     <div
-      className={'txn-app' + (theme === 'light' ? ' txn-light' : '') + (ledger ? ' txn-ledger' : '') + (ledger && zen ? ' txn-zen' : '') + (heroCondensed ? ' txn-app-condensed' : '')}
+      ref={viewerRef}
+      className={'txn-app' + (theme === 'light' ? ' txn-light' : '') + (ledger ? ' txn-ledger' : '') + (ledger && zen ? ' txn-zen' : '') + (mobile ? ' txn-compact' : '') + (heroCondensed ? ' txn-app-condensed' : '')}
       data-theme={theme}
       data-host-visible={!zenActive && sidebarLayout.host ? 'true' : 'false'}
       style={ledger ? { '--txn-reader-width': readerPx != null ? `${readerPx}px` : '100%' } : undefined}
@@ -1851,6 +1871,14 @@ export default function TranscriptViewer({
         className="txn-mobile-drawer"
         aria-label={mobileDrawer === 'outline' ? 'user turns' : 'filters'}
         onTransitionEnd={(event) => { if (event.target === event.currentTarget && event.propertyName === 'display' && !mobileDrawer) setExitingMobileDrawer(null) }}
+        onClose={() => {
+          // Resizing out of compact mode removes its opener. Return to the
+          // corresponding desktop rail instead of leaving focus on the page body.
+          if (!mobile) {
+            const side = mobileDrawerKindRef.current === 'outline' ? 'left' : 'right'
+            viewerRef.current?.querySelector(`.txn-rail-${side}[aria-hidden="false"] .txn-rail-collapse, .txn-rail-strip-${side}[aria-hidden="false"] .txn-rail-reopen`)?.focus({ preventScroll: true })
+          }
+        }}
         onCancel={(event) => { event.preventDefault(); closeMobileDrawer() }}
         onClick={(event) => { if (event.target === event.currentTarget) closeMobileDrawer() }}
       >

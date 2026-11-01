@@ -699,6 +699,10 @@ sign) and code blocks. Syntax highlighting renders structured output only
 evidence is disclosed by owner and scope. Recorded costs stay strings, labeled as harness estimates,
 not billing. Structured native details stay outside conversation counts and search. The Pi fixture
 shows this at `?app=transcript&transcript=pi#inuse`.
+The viewer uses its own available width for the two-rail layout. A compact embed keeps the
+reading column whole and exposes outline and filters through the same modal drawer used on
+phones, without changing stored desktop rail choices. Keyboard navigation reveals each focused
+session-view tab inside its own scrolling strip, with the inset focus ring and no host-page scroll.
 
 ### Canvas and graph
 The map and graph surface: a dot-grid background, square nodes (intensity fill, selected in amber),
