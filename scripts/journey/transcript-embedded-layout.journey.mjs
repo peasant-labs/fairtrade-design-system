@@ -93,3 +93,58 @@ for (const row of fixture.cases) for (const motion of fixture.motion) {
     }
   })
 }
+
+assertExactNames(fixture.zenCases.map(row => row.name), manifest.requiredZenCases, 'retained zen cases')
+for (const row of fixture.zenCases) for (const motion of fixture.motion) {
+  test(`embedded transcript ${row.name} ${motion}`, async ({ page }, info) => {
+    expect(fixture.themes).toContain(info.project.name)
+    await page.setViewportSize({ width: 1440, height: 1000 })
+    await page.emulateMedia({ reducedMotion: motion })
+    await page.goto(`${origin}/?app=transcript&transcript=ledger-actions&fb=off&theme=${info.project.name}#inuse`)
+    const viewer = page.locator('.txn-app'), grid = viewer.locator('.txn-body-grid')
+    await expect(viewer).toHaveAttribute('data-theme', info.project.name)
+    await page.evaluate(() => document.fonts.ready)
+    for (const name of row.collapse) await viewer.getByRole('button', { name, exact: true }).click()
+    const layout = () => viewer.evaluate(element => ({
+      left: element.querySelector('.txn-body-grid').dataset.leftRail,
+      right: element.querySelector('.txn-body-grid').dataset.rightRail,
+      host: element.dataset.hostVisible,
+    }))
+    const saved = await layout()
+    const zen = viewer.getByRole('button', { name: 'zen mode', exact: true })
+    await zen.click()
+    await expect(zen).toHaveAttribute('aria-pressed', 'true')
+    await expect(viewer).toHaveAttribute('data-host-visible', 'false')
+    await viewer.evaluate((element, width) => { element.parentElement.style.maxWidth = `${width}px` }, row.hostWidth)
+    await page.setViewportSize({ width: row.viewport, height: 1000 })
+    await expect.poll(() => viewer.evaluate(element => element.clientWidth)).toBe(row.hostWidth)
+    await expect(viewer).toHaveClass(/txn-compact/)
+    await expect(grid).toHaveAttribute('data-zen', 'true')
+    await expect(zen).toBeVisible()
+    await expect(zen).toHaveAttribute('aria-pressed', 'true')
+    await expect(viewer.locator('.txn-foot-tabs').getByRole('button', { name: 'zen mode', exact: true })).toHaveCount(1)
+    const geometry = await zen.evaluate(control => {
+      const frame = control.closest('.txn-app'), stream = frame.querySelector('.txn-stream')
+      const body = [...frame.querySelectorAll('.txn-body')].find(element => element.getBoundingClientRect().width > 0)
+      const button = control.getBoundingClientRect(), reader = stream.getBoundingClientRect(), owner = frame.getBoundingClientRect()
+      return { prose: body.getBoundingClientRect().width, controlBelowReader: button.top >= reader.bottom - 1,
+        inside: button.left >= owner.left && button.right <= owner.right && button.top >= owner.top && button.bottom <= owner.bottom,
+        overflow: frame.scrollWidth - frame.clientWidth }
+    })
+    expect(geometry.prose, 'retained zen keeps the reading width').toBeGreaterThanOrEqual(row.minimumProse)
+    expect(geometry.controlBelowReader, 'the zen exit does not cover conversation text').toBe(true)
+    expect(geometry.inside, 'the exit stays inside the viewer').toBe(true)
+    expect(geometry.overflow).toBe(0)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0)
+    await zen.click()
+    await expect(grid).toHaveAttribute('data-zen', 'false')
+    await expect.poll(layout, 'leaving zen restores the exact saved rails and host state').toEqual(saved)
+    await expect(viewer.getByRole('button', { name: 'transcript tools', exact: true })).toBeFocused()
+    await expect(zen, 'the default compact footer has no extra zen action').toHaveCount(0)
+    await page.setViewportSize({ width: 1440, height: 1000 })
+    await viewer.evaluate(element => { element.parentElement.style.maxWidth = '' })
+    await expect(viewer).not.toHaveClass(/txn-compact/)
+    await expect.poll(layout, 'the saved state also survives returning to desktop').toEqual(saved)
+    await expect(zen).toHaveAttribute('aria-pressed', 'false')
+  })
+}

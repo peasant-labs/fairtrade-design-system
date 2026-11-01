@@ -8,3 +8,8 @@ requiredCases:
   - phone utilities
 requiredThemes: [dark, light]
 requiredMotion: [reduce, no-preference]
+requiredZenCases:
+  - retained zen in narrow desktop embed
+  - retained zen in small desktop embed
+  - retained zen in tablet viewport
+  - retained zen in phone viewport

@@ -1280,6 +1280,23 @@ export default function TranscriptViewer({
   ])
 
   const tabHasFilters = tab === 'trace' || tab === 'highlights'
+  const zenControl = ledger && (
+    <button
+      type="button"
+      className="txn-zen-control"
+      aria-pressed={zen}
+      aria-label="zen mode"
+      onClick={() => {
+        setZen(!zen)
+        // The compact exit leaves once zen is off, so keep keyboard focus in
+        // the persistent footer controls instead of dropping it on the page.
+        if (mobile && zen) requestAnimationFrame(() => mobileToolsRef.current?.focus({ preventScroll: true }))
+      }}
+    >
+      <span className="txn-zen-label">zen</span>
+      <span className="txn-zen-switch" aria-hidden="true" />
+    </button>
+  )
   const tabStrip = (
     <div className="tabs txn-tabs" role="tablist" aria-label="session views" onKeyDown={onTabKey} onFocusCapture={event => revealTab(event.target)}>
       {TAB_ORDER.map((id) => {
@@ -1824,22 +1841,11 @@ export default function TranscriptViewer({
 
           {/* ===================== ZEN ===================== */}
           {/* ledger only: the reading layout is the surface zen belongs to, so classic gains no
-              control, no mode class and no reserved gutter. The only way out of zen. It lives in
-              the center column, and the ledger stream reserves its gutter, so it never covers
-              the reader. It is one stable toggle: the word "zen" never changes, the switch tracks
+              control, no mode class and no reserved gutter. The only way out of zen normally lives
+              in the center column, with a reserved gutter. A compact retained zen session puts
+              this same control in the footer until zen is off. It is one stable toggle: the word "zen" never changes, the switch tracks
               the pressed state, and its accessible name stays "zen mode" in both states. */}
-          {ledger && (
-            <button
-              type="button"
-              className="txn-zen-control"
-              aria-pressed={zen}
-              aria-label="zen mode"
-              onClick={() => setZen(!zen)}
-            >
-              <span className="txn-zen-label">zen</span>
-              <span className="txn-zen-switch" aria-hidden="true" />
-            </button>
-          )}
+          {!(mobile && zenActive) && zenControl}
         </section>
 
         {/* RIGHT: filters */}
@@ -1929,6 +1935,7 @@ export default function TranscriptViewer({
         </Collapsible>
         <div className="txn-foot-tabs">
           {tabStrip}
+          {mobile && zenActive && zenControl}
           {showSearchTrigger && (
             <button
               type="button"

@@ -8,3 +8,24 @@ cases:
   - { name: phone utilities, viewport: 390, hostWidth: 358, compact: true, minimumProse: 260 }
 themes: [dark, light]
 motion: [reduce, no-preference]
+zenCases:
+  - name: retained zen in narrow desktop embed
+    viewport: 1440
+    hostWidth: 544
+    collapse: [collapse user turns outline]
+    minimumProse: 400
+  - name: retained zen in small desktop embed
+    viewport: 1440
+    hostWidth: 320
+    collapse: [collapse filters]
+    minimumProse: 180
+  - name: retained zen in tablet viewport
+    viewport: 1024
+    hostWidth: 960
+    collapse: [collapse user turns outline, collapse filters]
+    minimumProse: 700
+  - name: retained zen in phone viewport
+    viewport: 320
+    hostWidth: 296
+    collapse: []
+    minimumProse: 200
