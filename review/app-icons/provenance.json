@@ -1,0 +1,123 @@
+{
+  "sources": {
+    "fairtrade-design-system": "78af8677e5847a7319b4dbc3072a792d3fe982ed",
+    "website": "8ff54cfd73298fe95cfe56f66397888c2fbf56fa",
+    "village": "c1d9eeba8a14caa5c1fbcba324843658adaa2e29"
+  },
+  "mountedIcons": [
+    {
+      "app": "website",
+      "route": "/",
+      "theme": "dark",
+      "link": {
+        "href": "/icon.svg?0647037f3943a014",
+        "type": "image/svg+xml"
+      },
+      "status": 200,
+      "sha256": "32d89b81d15a8e8e1d06ea5b061caefdc8b724fe61ae888b25656ced579a27cd",
+      "sourceSha256": "32d89b81d15a8e8e1d06ea5b061caefdc8b724fe61ae888b25656ced579a27cd",
+      "screenshot": "mounted-website-dark.png",
+      "sourceWorktree": "website/website-60--fix--unified-app-icons"
+    },
+    {
+      "app": "website",
+      "route": "/",
+      "theme": "light",
+      "link": {
+        "href": "/icon.svg?0647037f3943a014",
+        "type": "image/svg+xml"
+      },
+      "status": 200,
+      "sha256": "32d89b81d15a8e8e1d06ea5b061caefdc8b724fe61ae888b25656ced579a27cd",
+      "sourceSha256": "32d89b81d15a8e8e1d06ea5b061caefdc8b724fe61ae888b25656ced579a27cd",
+      "screenshot": "mounted-website-light.png",
+      "sourceWorktree": "website/website-60--fix--unified-app-icons"
+    },
+    {
+      "app": "website",
+      "route": "/docs",
+      "theme": "dark",
+      "link": {
+        "href": "/icon.svg?0647037f3943a014",
+        "type": "image/svg+xml"
+      },
+      "status": 200,
+      "sha256": "32d89b81d15a8e8e1d06ea5b061caefdc8b724fe61ae888b25656ced579a27cd",
+      "sourceSha256": "32d89b81d15a8e8e1d06ea5b061caefdc8b724fe61ae888b25656ced579a27cd",
+      "screenshot": "mounted-website-docs-dark.png",
+      "sourceWorktree": "website/website-60--fix--unified-app-icons"
+    },
+    {
+      "app": "website",
+      "route": "/docs",
+      "theme": "light",
+      "link": {
+        "href": "/icon.svg?0647037f3943a014",
+        "type": "image/svg+xml"
+      },
+      "status": 200,
+      "sha256": "32d89b81d15a8e8e1d06ea5b061caefdc8b724fe61ae888b25656ced579a27cd",
+      "sourceSha256": "32d89b81d15a8e8e1d06ea5b061caefdc8b724fe61ae888b25656ced579a27cd",
+      "screenshot": "mounted-website-docs-light.png",
+      "sourceWorktree": "website/website-60--fix--unified-app-icons"
+    },
+    {
+      "app": "fairtrade",
+      "route": "/?theme=dark#inuse",
+      "theme": "dark",
+      "link": {
+        "href": "/favicon.svg",
+        "type": "image/svg+xml"
+      },
+      "status": 200,
+      "sha256": "ca2f526a71b53fc1cfd1d5e51f729cbace834d78ff445123931907e75aa549c6",
+      "sourceSha256": "ca2f526a71b53fc1cfd1d5e51f729cbace834d78ff445123931907e75aa549c6",
+      "screenshot": "mounted-fairtrade-dark.png",
+      "sourceWorktree": "fairtrade-design-system/website-60--fix--unified-app-icons"
+    },
+    {
+      "app": "fairtrade",
+      "route": "/?theme=dark#inuse",
+      "theme": "light",
+      "link": {
+        "href": "/favicon.svg",
+        "type": "image/svg+xml"
+      },
+      "status": 200,
+      "sha256": "ca2f526a71b53fc1cfd1d5e51f729cbace834d78ff445123931907e75aa549c6",
+      "sourceSha256": "ca2f526a71b53fc1cfd1d5e51f729cbace834d78ff445123931907e75aa549c6",
+      "screenshot": "mounted-fairtrade-light.png",
+      "sourceWorktree": "fairtrade-design-system/website-60--fix--unified-app-icons"
+    },
+    {
+      "app": "village",
+      "route": "/collectives",
+      "theme": "dark",
+      "link": {
+        "href": "/icon.svg?icon.c2357ae3.svg",
+        "type": "image/svg+xml"
+      },
+      "status": 200,
+      "sha256": "a008c172b9f79e53fca591916cd2404ea899766ff956cd3703dcf3c892335862",
+      "sourceSha256": "a008c172b9f79e53fca591916cd2404ea899766ff956cd3703dcf3c892335862",
+      "screenshot": "mounted-village-dark.png",
+      "sourceWorktree": "village/website-60--fix--unified-app-icons/frontend"
+    },
+    {
+      "app": "village",
+      "route": "/collectives",
+      "theme": "light",
+      "link": {
+        "href": "/icon.svg?icon.c2357ae3.svg",
+        "type": "image/svg+xml"
+      },
+      "status": 200,
+      "sha256": "a008c172b9f79e53fca591916cd2404ea899766ff956cd3703dcf3c892335862",
+      "sourceSha256": "a008c172b9f79e53fca591916cd2404ea899766ff956cd3703dcf3c892335862",
+      "screenshot": "mounted-village-light.png",
+      "sourceWorktree": "village/website-60--fix--unified-app-icons/frontend"
+    }
+  ],
+  "inspection": "Both-theme mounted shells and 16/32/64 icon previews inspected.",
+  "scope": "Static favicon assets; existing header glyphs and production hero unchanged."
+}
