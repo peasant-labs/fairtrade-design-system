@@ -1,0 +1,16 @@
+{
+  "builtHead": "a7f662acae1c7a043fda5a7a70c16ea0468f572f",
+  "currentHead": "fa729733d7a88cf6f1a8cd4db6a90cafba053132",
+  "runtimeTreeIdentical": true,
+  "images": [
+    {
+      "file": "light/in-use-transcript-transcriptviewer--ledger-reading-layout.png",
+      "sha256": "13659c49726e8568ca4e385b9cde51d2b7cfc0495b4e492ae1eb7abcbe090ecc"
+    },
+    {
+      "file": "dark/in-use-transcript-transcriptviewer--ledger-reading-layout.png",
+      "sha256": "bc35ea2420f48348fdf05a4fdd14c4e7ead091704bbed4c4fd5945e363b5fb54"
+    }
+  ],
+  "inspection": "Both raw Storybook component captures individually inspected; mounted production evidence is primary in sibling fairtrade-confirmation."
+}
