@@ -1,0 +1,83 @@
+{
+  "verifiedAt": "2026-11-02 Asia/Bangkok",
+  "merges": [
+    {
+      "repository": "peasant-labs/fairtrade-design-system",
+      "pr": 226,
+      "merge": "040fdbbdd7a5b2e0a413409b86470cba761b8a48",
+      "url": "https://github.com/peasant-labs/fairtrade-design-system/pull/226",
+      "defaultCleanAndSynced": true,
+      "fairtrade": "0.0.59"
+    },
+    {
+      "repository": "peasant-labs/website",
+      "pr": 47,
+      "merge": "546e3586fb08824b2dfe5ce5788b89dfddbd4cda",
+      "url": "https://github.com/peasant-labs/website/pull/47",
+      "defaultCleanAndSynced": true,
+      "fairtrade": "0.0.59"
+    },
+    {
+      "repository": "peasant-labs/peasant",
+      "pr": 818,
+      "merge": "a97425338e3e9ec8bcf37770ce23e8e85afd2eab",
+      "url": "https://github.com/peasant-labs/peasant/pull/818",
+      "defaultCleanAndSynced": true,
+      "fairtrade": "0.0.59"
+    },
+    {
+      "repository": "peasant-labs/village",
+      "pr": 357,
+      "merge": "122301eb0e518568a80249a6af86b447f589910a",
+      "url": "https://github.com/peasant-labs/village/pull/357",
+      "defaultCleanAndSynced": true,
+      "fairtrade": "0.0.59"
+    }
+  ],
+  "stablePreviews": [
+    {
+      "port": 3314,
+      "route": "/",
+      "status": 200,
+      "syntheticAuthCookie": false
+    },
+    {
+      "port": 3310,
+      "route": "/transcripts/long-demo",
+      "status": 200,
+      "syntheticAuthCookie": true
+    },
+    {
+      "port": 5197,
+      "route": "/",
+      "status": 200,
+      "syntheticAuthCookie": false
+    },
+    {
+      "port": 8691,
+      "route": "/",
+      "status": 200,
+      "syntheticAuthCookie": false
+    },
+    {
+      "port": 8698,
+      "route": "/",
+      "status": 200,
+      "syntheticAuthCookie": false
+    },
+    {
+      "port": 3395,
+      "route": "/village-handoff-preview.html",
+      "status": 200,
+      "syntheticAuthCookie": false
+    }
+  ],
+  "ownedTemporaryListenersStopped": true,
+  "sourceBuildsPassed": true,
+  "allRequiredPremergeCIAndFreshThreeAxisReviewsPassed": true,
+  "publicExactHTMLBytesClaimed": false,
+  "limits": [
+    "Existing local Darwin full-gate failures are recorded separately; required Linux gates passed.",
+    "Beads service and tracker read:project permission limits remain recorded; no lifecycle/auth changes made."
+  ]
+}

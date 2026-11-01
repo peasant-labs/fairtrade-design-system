@@ -1,0 +1,16 @@
+{
+  "source": "546e3586fb08824b2dfe5ce5788b89dfddbd4cda",
+  "buildId": "0vBCMFsrWwm676BMkIFwd",
+  "routes200": [
+    "/",
+    "/docs",
+    "/docs/guides/evals",
+    "/docs/guides/reviews",
+    "/docs/guides/classroom",
+    "/docs/guides/onboarding",
+    "/docs/guides/find-sessions"
+  ],
+  "servedAssetsByteMatched": 34,
+  "defaultFrontMarker": true,
+  "layeredGridMarker": true
+}

@@ -1,0 +1,10 @@
+{
+  "source": "885f386877a50f5b0ec177d65b55bcde9b5beb78",
+  "route": "/transcripts/long-demo",
+  "turns": 84,
+  "interaction": "Use view diagram in the mermaid block; source is the default.",
+  "svgPresent": true,
+  "stageWidth": 525,
+  "svgWidth": 540.265625,
+  "localOverflow": 0
+}

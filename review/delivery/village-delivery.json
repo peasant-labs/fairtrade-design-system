@@ -1,0 +1,17 @@
+{
+  "source": "122301eb0e518568a80249a6af86b447f589910a",
+  "defaultFrontendAndBackendBuilds": "passed",
+  "finalCI": "all checks passed on885f386",
+  "fullLocalJourneys": 150,
+  "freshReviewAxes": "A/B/C all clean",
+  "mainPreview": 3310,
+  "bothThemeNativeControlsFooterMermaid": "passed",
+  "assetsMatched": 57,
+  "fixtureMetadataContentHistoryUnchanged": true,
+  "deployment": {
+    "id": 7478136369,
+    "state": "success"
+  },
+  "ownedFeatureAndProofServersRemoved": true,
+  "originalFixtureServicesPreserved": true
+}

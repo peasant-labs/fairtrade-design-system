@@ -1,0 +1,23 @@
+{
+  "source": "a97425338e3e9ec8bcf37770ce23e8e85afd2eab",
+  "fairtrade": "0.0.59",
+  "results": [
+    {
+      "port": 8691,
+      "healthStatus": 200,
+      "health": {
+        "status": "ok"
+      },
+      "rootAssetsByteMatched": 23
+    },
+    {
+      "port": 8698,
+      "healthStatus": 200,
+      "health": {
+        "status": "ok"
+      },
+      "rootAssetsByteMatched": 23
+    }
+  ],
+  "originalArgumentsPreserved": true
+}

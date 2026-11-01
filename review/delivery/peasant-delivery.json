@@ -1,0 +1,14 @@
+{
+  "source": "a97425338e3e9ec8bcf37770ce23e8e85afd2eab",
+  "syncedAndNormallyBuilt": true,
+  "previewPorts": [
+    8691,
+    8698
+  ],
+  "healthAnd23AssetsEachVerified": true,
+  "originalArgumentsPreserved": true,
+  "ownedFeatureRemoved": true,
+  "ownedProof8705Stopped": true,
+  "privateFailureReportPreserved": "peasant-testgate/report.json",
+  "recoveryRefsAndPrivateConfigBackupPreserved": true
+}
