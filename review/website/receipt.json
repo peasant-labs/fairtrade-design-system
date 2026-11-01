@@ -1,0 +1,551 @@
+{
+  "source": "e00b61741e9bf02f1f5e1b675d58fb82265d56b7",
+  "buildId": "0A5gvfDgkCbzkl2ggiwlR",
+  "fairtrade": "0.0.59",
+  "publishedPackageReceipt": "final-wrapup/published-package.json",
+  "servedWebsiteAssets": [
+    {
+      "path": "/_next/static/css/e1ca4a7f35ff7017.css",
+      "sha256": "20b27aa89705062268c11d0768451e95a6adffda927297b9316637f23db26b6b"
+    },
+    {
+      "path": "/_next/static/css/508d11f51c7fa509.css",
+      "sha256": "cb71b7bbdecce851ec4544732615e532ec2232e7d6805d7fb3a98e9657a335fa"
+    },
+    {
+      "path": "/_next/static/css/d065d856523d0d9b.css",
+      "sha256": "2d57cf93e4bee096284f9b891088a2aee47acb708a090ba8d0bf32f4b41fd67a"
+    },
+    {
+      "path": "/_next/static/css/d130a0bf2e6ad487.css",
+      "sha256": "199ac3aa8012e378f1031eb15b5e516b8a55e558fa68bc061372a7f6327da08c"
+    },
+    {
+      "path": "/_next/static/css/f505c5205671eb79.css",
+      "sha256": "42d9f3fd6d77a1934c04e854de66903c92673605007933fe3718a4aa92288ba5"
+    },
+    {
+      "path": "/_next/static/css/6d9d8256903444dc.css",
+      "sha256": "ad30a3a1e18ed6ffafeae36e135652bf4a34cd541a5ee476cebc565b54975edf"
+    },
+    {
+      "path": "/_next/static/css/acd68af486ce2177.css",
+      "sha256": "0a2e6f40933b7ee5a455fdf1577a3d1280f725c0674d84e738fa0659964450b2"
+    },
+    {
+      "path": "/_next/static/chunks/webpack-4c39f26cab468a5a.js",
+      "sha256": "983dd9f2abb152dbfbc15c118cd2b16f610ca9d58dda4368a5100834bec9a29f"
+    },
+    {
+      "path": "/_next/static/chunks/18bad13d-801de1ca2fb94551.js",
+      "sha256": "b91198d73599cb60bf5795912a75f284e125aa0c50415123468f1e5c04702b28"
+    },
+    {
+      "path": "/_next/static/chunks/368-ce6821a876415a95.js",
+      "sha256": "f96dc70fc8fdb29f59a0c78f98fef9825a9049610760a81a3c275c77a3569c79"
+    },
+    {
+      "path": "/_next/static/chunks/main-app-38e238391a24e960.js",
+      "sha256": "aafc46e15f65b8a8d3789493da7b5b1e734fb88067e77b41496acf6ec8e54e01"
+    },
+    {
+      "path": "/_next/static/chunks/app/layout-4a66370255c3555a.js",
+      "sha256": "7e3a17494f75b10fa7ab29ef016d8a17ab6d7c8127163e44f343cce9f7d813bc"
+    },
+    {
+      "path": "/_next/static/chunks/335b9414-c3298510c80fa84c.js",
+      "sha256": "b804937546a4a95b6878e5799ecbeaaa73892e1c541d7314e01ad938524910a3"
+    },
+    {
+      "path": "/_next/static/chunks/f777d375-e7c98ff759489d2c.js",
+      "sha256": "4fb0f61479b6cd0e91ba0a509e0ebfc346662fcf120da6fef33554cf391ef4ea"
+    },
+    {
+      "path": "/_next/static/chunks/77d3b4b7-0a729972948fb933.js",
+      "sha256": "ad82774d90e788369445f49065c50ef5b7e4d2ae8244eb5e9934b21f65754c51"
+    },
+    {
+      "path": "/_next/static/chunks/349-b2c0f7af17e850aa.js",
+      "sha256": "2fff72ebafc4a3fa5c489f51f4142beb9795e2dd4b4b29611334df8bcdd33eff"
+    },
+    {
+      "path": "/_next/static/chunks/2167-e2a28884c56d2c6d.js",
+      "sha256": "b40a510225f66908c7102d2472807b3ee434f411d284c1307b02a026f7889fe4"
+    },
+    {
+      "path": "/_next/static/chunks/7686-0706444e566035c8.js",
+      "sha256": "d526ccfdc9b0608cf42b067491ac567a0fce135dc00e098cd373b446eb6bc8a7"
+    },
+    {
+      "path": "/_next/static/chunks/app/error-b9d79f46db42925e.js",
+      "sha256": "f59b35737eaee3a45b8279e4631beebc1d241334e84301596fad92cd3e4a3480"
+    },
+    {
+      "path": "/_next/static/chunks/9216-f8398bede6a99f77.js",
+      "sha256": "4a1996899eca169a8fb3e302f5a1a11ec728ccf0e56ff0f2c3fb9b57fb663467"
+    },
+    {
+      "path": "/_next/static/chunks/6716-53ebfd668b8bd83e.js",
+      "sha256": "490c6af45a414ad6a644701c53d85157c2151e60e4aa07a7d65111b0e8fd85c9"
+    },
+    {
+      "path": "/_next/static/chunks/9793-0fd090b4d50d8693.js",
+      "sha256": "e36f151e79d13bec9168a24b1e33e7cd983a12aee4261d77947385d9028854f2"
+    },
+    {
+      "path": "/_next/static/chunks/app/page-75cc8b6773614c4a.js",
+      "sha256": "02158414c45f4548a18f3a517afe4acae4d72455baea7fce8702acdb0d76de00"
+    },
+    {
+      "path": "/_next/static/chunks/app/global-error-1be991ff395694f5.js",
+      "sha256": "fea48b2a9b10e2bc30cfafba972eebfb7a445466b82a793d1ba99c214bc1a58d"
+    },
+    {
+      "path": "/_next/static/css/640d3b3894fc812f.css",
+      "sha256": "16b63888a36cd181093065e3e060058a96fd6bd256910545366ba0af14ecf72a"
+    },
+    {
+      "path": "/_next/static/chunks/app/docs/page-4f2bcb28403b25fb.js",
+      "sha256": "097ed33da22974b226734f084653de640c24b24ae7336ca5493617b54054cd98"
+    },
+    {
+      "path": "/_next/static/chunks/app/docs/layout-5c5b38b0155583c9.js",
+      "sha256": "385c05230af08772ddc4cd7e964d4d4a999b07b04c4034f482b3193b74cfdbc4"
+    },
+    {
+      "path": "/_next/static/chunks/9420-52e96f1475941b36.js",
+      "sha256": "08580dbf66250eae9fdf7d320adfa789feb8700901550db087e79ae82a0d5130"
+    },
+    {
+      "path": "/_next/static/chunks/app/blog/layout-2f2faba0e724a7b7.js",
+      "sha256": "3579f9b054a0d5a737ef93558fc866df4ae404818ce3577d2ffd4c00f53ea5fa"
+    },
+    {
+      "path": "/_next/static/chunks/app/blog/page-994ad1a0c57f9629.js",
+      "sha256": "8aba7d03377c8933ec23b597125716772533045032e0ba226a4b20e54370927b"
+    }
+  ],
+  "servedCanonicalAssets": [
+    {
+      "path": "/assets/rolldown-runtime-aKtaBQYM.js",
+      "sha256": "cb2fb01f2064eb36487466778d2ffc4c97ad86af89be1635209de18f0b5b2236"
+    },
+    {
+      "path": "/assets/index-B4ASkWsq.css",
+      "sha256": "879bd0fd15aaf3c78325a6298043dc08684766eb5e34c6e0badbc20ce4a01ecc"
+    },
+    {
+      "path": "/assets/index-IaxkBlsC.js",
+      "sha256": "44a84b79c3e3ec6dd91d3400be0802919ceac482da86db839ad7816919eddef8"
+    }
+  ],
+  "images": [
+    {
+      "file": "hero-1440-light.png",
+      "sha256": "9677ce9dbef1292cd816f624053f6e646f88271de24a9aacaa583cfaea506e71"
+    },
+    {
+      "file": "hero-390-light.png",
+      "sha256": "7b0d97b76ebf4fe54fee74a13bdb86d76893bab55e5b02ca2441327d32e1ff7e"
+    },
+    {
+      "file": "session-layers-light.png",
+      "sha256": "2e91d33a2cb18173762dc7276bc41b8d82d6693cabf3dca7edd678e42f0d430c"
+    },
+    {
+      "file": "session-filters-light.png",
+      "sha256": "3965f6bcb718ef501b6aeee4a304fc37555951364f67f029b995f4b0dcd671fb"
+    },
+    {
+      "file": "session-footer-light.png",
+      "sha256": "21dfef184373a10cab3a90284a02ac95af62fe9ad154642b837be4abaf2595cc"
+    },
+    {
+      "file": "viewer-app-light.png",
+      "sha256": "f26711f1534cf8b249db6be1296628d70c228fa46e5e433cc68583edb081d4c2"
+    },
+    {
+      "file": "viewer-canonical-light.png",
+      "sha256": "25255fbd28c3f5715ac3b169ba1e09ab8ab8adf28e532d20b4aa0d083e94e697"
+    },
+    {
+      "file": "viewer-sxs-light.png",
+      "sha256": "8127389693aeb06037385b5435a0699baadbd9abe8cacb8f90ea9d61089b57b2"
+    },
+    {
+      "file": "hero-1440-dark.png",
+      "sha256": "f17cbab11013a957b7ace8fd14cf4cd6f98201dd2a668e1ecc42d38e8ba0da56"
+    },
+    {
+      "file": "hero-390-dark.png",
+      "sha256": "8c459c7a56a7a642bc329c75d09fbe7ffcb960dfb2d60c2193844cb8ae17bd11"
+    },
+    {
+      "file": "session-layers-dark.png",
+      "sha256": "f86eb07767d92e5c2154883261dcf4583b5178317428b40461330efbe5d7f7f2"
+    },
+    {
+      "file": "session-filters-dark.png",
+      "sha256": "8e0b2c6bd8eeb856918930acb7e28d25a6d21126c8e7f63111700ecbd90be541"
+    },
+    {
+      "file": "session-footer-dark.png",
+      "sha256": "fd893a8926e6b8d6b2b7c83ca075b31ca763de2dde8f690f60defa5057788fde"
+    },
+    {
+      "file": "viewer-app-dark.png",
+      "sha256": "cf523b2b4ab80ab3e5a2f53cbbea55aa65be916cac59e9964c90ca5d427e5872"
+    },
+    {
+      "file": "viewer-canonical-dark.png",
+      "sha256": "49d5b4618611555acbe128192a970e2ffd29eea16ff76510e0bdc286947cbcf0"
+    },
+    {
+      "file": "viewer-sxs-dark.png",
+      "sha256": "046d0f9e0db80b15e9d68d22304cb2f5e3a94caa04ff515f22e3f9b9e5cc014f"
+    }
+  ],
+  "results": [
+    {
+      "case": "hero-shell",
+      "theme": "light",
+      "width": 1440,
+      "staticRest": "0.900",
+      "art": {
+        "x": 45,
+        "y": 33,
+        "right": 948.8999633789062,
+        "bottom": 347.5199890136719,
+        "viewWidth": 960,
+        "viewHeight": 360,
+        "inside": true,
+        "invalid": false
+      },
+      "plantedMembers": [
+        "back-reader",
+        "front-reader",
+        "printer"
+      ],
+      "ratio": 2.6666666666666665,
+      "viewBox": "0 0 960 360",
+      "overflow": 0,
+      "fonts": [
+        "Atkinson Hyperlegible",
+        "Atkinson Hyperlegible",
+        "Atkinson Hyperlegible Mono",
+        "Atkinson Hyperlegible Mono",
+        "Atkinson Hyperlegible Mono"
+      ]
+    },
+    {
+      "case": "hero-shell",
+      "theme": "light",
+      "width": 390,
+      "staticRest": "0.900",
+      "art": {
+        "x": 15,
+        "y": 33,
+        "right": 468,
+        "bottom": 347.1300048828125,
+        "viewWidth": 480,
+        "viewHeight": 360,
+        "inside": true,
+        "invalid": false
+      },
+      "plantedMembers": [
+        "back-reader",
+        "front-reader",
+        "printer"
+      ],
+      "ratio": 1.3333333333333333,
+      "viewBox": "0 0 480 360",
+      "overflow": 0,
+      "fonts": [
+        "Atkinson Hyperlegible",
+        "Atkinson Hyperlegible",
+        "Atkinson Hyperlegible Mono",
+        "Atkinson Hyperlegible Mono",
+        "Atkinson Hyperlegible Mono"
+      ]
+    },
+    {
+      "case": "mounted-viewer-and-layers",
+      "theme": "light",
+      "width": 1440,
+      "viewerWidth": 825.609375,
+      "threePointerSwitches": true,
+      "fixedGeometry": true,
+      "nativeFilterDrawer": true,
+      "drawerEscapeReturn": true,
+      "proseWidth": 713.609375,
+      "footer": {
+        "text": "annotations 0",
+        "outlineWidth": "3px",
+        "outlineOffset": "-3px",
+        "focused": true,
+        "inside": true,
+        "scrollLeft": 0,
+        "hostPositionPreserved": true
+      },
+      "canonicalTokens": {
+        "bodyFont": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "bodySize": "16px",
+        "bodyLine": "24px",
+        "roleWidth": "24px",
+        "roleHeight": "24px",
+        "roleBorder": "rgb(127, 119, 98)",
+        "roleBorderWidth": "1px",
+        "roleRadius": "0px",
+        "tabFont": "\"Atkinson Hyperlegible Mono\", ui-monospace, Menlo, Consolas, monospace",
+        "tabSize": "14px",
+        "compact": true
+      },
+      "appTokens": {
+        "bodyFont": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "bodySize": "16px",
+        "bodyLine": "24px",
+        "roleWidth": "24px",
+        "roleHeight": "24px",
+        "roleBorder": "rgb(127, 119, 98)",
+        "roleBorderWidth": "1px",
+        "roleRadius": "0px",
+        "tabFont": "\"Atkinson Hyperlegible Mono\", ui-monospace, Menlo, Consolas, monospace",
+        "tabSize": "14px",
+        "compact": true
+      },
+      "tokenParity": true,
+      "fontBoundary": {
+        "actualText": "hey claude, run our billing retry suite against each model, same seed, and write a table of pass rate, tokens and wall time per model",
+        "actualTextFont": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "loadedAtkinson": true,
+        "mockWindow": "-apple-system, \"system-ui\", \"SF Pro Text\", \"SF Pro\", \"Helvetica Neue\", Helvetica, Arial, sans-serif",
+        "xThread": "-apple-system, \"system-ui\", \"SF Pro Text\", \"SF Pro\", \"Helvetica Neue\", Helvetica, Arial, sans-serif"
+      },
+      "referenceOrigin": "canonical Fairtrade5412 left; Website3412 right"
+    },
+    {
+      "case": "hero-shell",
+      "theme": "dark",
+      "width": 1440,
+      "staticRest": "0.900",
+      "art": {
+        "x": 45,
+        "y": 33,
+        "right": 948.8999633789062,
+        "bottom": 347.5199890136719,
+        "viewWidth": 960,
+        "viewHeight": 360,
+        "inside": true,
+        "invalid": false
+      },
+      "plantedMembers": [
+        "back-reader",
+        "front-reader",
+        "printer"
+      ],
+      "ratio": 2.6666666666666665,
+      "viewBox": "0 0 960 360",
+      "overflow": 0,
+      "fonts": [
+        "Atkinson Hyperlegible",
+        "Atkinson Hyperlegible",
+        "Atkinson Hyperlegible Mono",
+        "Atkinson Hyperlegible Mono",
+        "Atkinson Hyperlegible Mono"
+      ]
+    },
+    {
+      "case": "hero-shell",
+      "theme": "dark",
+      "width": 390,
+      "staticRest": "0.900",
+      "art": {
+        "x": 15,
+        "y": 33,
+        "right": 468,
+        "bottom": 347.1300048828125,
+        "viewWidth": 480,
+        "viewHeight": 360,
+        "inside": true,
+        "invalid": false
+      },
+      "plantedMembers": [
+        "back-reader",
+        "front-reader",
+        "printer"
+      ],
+      "ratio": 1.3333333333333333,
+      "viewBox": "0 0 480 360",
+      "overflow": 0,
+      "fonts": [
+        "Atkinson Hyperlegible",
+        "Atkinson Hyperlegible",
+        "Atkinson Hyperlegible Mono",
+        "Atkinson Hyperlegible Mono",
+        "Atkinson Hyperlegible Mono"
+      ]
+    },
+    {
+      "case": "mounted-viewer-and-layers",
+      "theme": "dark",
+      "width": 1440,
+      "viewerWidth": 825.609375,
+      "threePointerSwitches": true,
+      "fixedGeometry": true,
+      "nativeFilterDrawer": true,
+      "drawerEscapeReturn": true,
+      "proseWidth": 713.609375,
+      "footer": {
+        "text": "annotations 0",
+        "outlineWidth": "3px",
+        "outlineOffset": "-3px",
+        "focused": true,
+        "inside": true,
+        "scrollLeft": 0,
+        "hostPositionPreserved": true
+      },
+      "canonicalTokens": {
+        "bodyFont": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "bodySize": "16px",
+        "bodyLine": "24px",
+        "roleWidth": "24px",
+        "roleHeight": "24px",
+        "roleBorder": "rgb(118, 113, 101)",
+        "roleBorderWidth": "1px",
+        "roleRadius": "0px",
+        "tabFont": "\"Atkinson Hyperlegible Mono\", ui-monospace, Menlo, Consolas, monospace",
+        "tabSize": "14px",
+        "compact": true
+      },
+      "appTokens": {
+        "bodyFont": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "bodySize": "16px",
+        "bodyLine": "24px",
+        "roleWidth": "24px",
+        "roleHeight": "24px",
+        "roleBorder": "rgb(118, 113, 101)",
+        "roleBorderWidth": "1px",
+        "roleRadius": "0px",
+        "tabFont": "\"Atkinson Hyperlegible Mono\", ui-monospace, Menlo, Consolas, monospace",
+        "tabSize": "14px",
+        "compact": true
+      },
+      "tokenParity": true,
+      "fontBoundary": {
+        "actualText": "hey claude, run our billing retry suite against each model, same seed, and write a table of pass rate, tokens and wall time per model",
+        "actualTextFont": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "loadedAtkinson": true,
+        "mockWindow": "-apple-system, \"system-ui\", \"SF Pro Text\", \"SF Pro\", \"Helvetica Neue\", Helvetica, Arial, sans-serif",
+        "xThread": "-apple-system, \"system-ui\", \"SF Pro Text\", \"SF Pro\", \"Helvetica Neue\", Helvetica, Arial, sans-serif"
+      },
+      "referenceOrigin": "canonical Fairtrade5412 left; Website3412 right"
+    }
+  ],
+  "errors": [],
+  "findings": [],
+  "verdict": "SHIP \u2014 canonical transcript body font restored; surrounding mock chrome, tabs and mounted control behavior retained",
+  "inspection": {
+    "method": "All 16 raw PNGs directly viewed individually on exact frozen final build. No source, build, server or visibility changes.",
+    "images": [
+      {
+        "file": "hero-1440-dark.png",
+        "sha256": "f17cbab11013a957b7ace8fd14cf4cd6f98201dd2a668e1ecc42d38e8ba0da56",
+        "directlyInspected": true
+      },
+      {
+        "file": "hero-1440-light.png",
+        "sha256": "9677ce9dbef1292cd816f624053f6e646f88271de24a9aacaa583cfaea506e71",
+        "directlyInspected": true
+      },
+      {
+        "file": "hero-390-dark.png",
+        "sha256": "8c459c7a56a7a642bc329c75d09fbe7ffcb960dfb2d60c2193844cb8ae17bd11",
+        "directlyInspected": true
+      },
+      {
+        "file": "hero-390-light.png",
+        "sha256": "7b0d97b76ebf4fe54fee74a13bdb86d76893bab55e5b02ca2441327d32e1ff7e",
+        "directlyInspected": true
+      },
+      {
+        "file": "session-filters-dark.png",
+        "sha256": "8e0b2c6bd8eeb856918930acb7e28d25a6d21126c8e7f63111700ecbd90be541",
+        "directlyInspected": true
+      },
+      {
+        "file": "session-filters-light.png",
+        "sha256": "3965f6bcb718ef501b6aeee4a304fc37555951364f67f029b995f4b0dcd671fb",
+        "directlyInspected": true
+      },
+      {
+        "file": "session-footer-dark.png",
+        "sha256": "fd893a8926e6b8d6b2b7c83ca075b31ca763de2dde8f690f60defa5057788fde",
+        "directlyInspected": true
+      },
+      {
+        "file": "session-footer-light.png",
+        "sha256": "21dfef184373a10cab3a90284a02ac95af62fe9ad154642b837be4abaf2595cc",
+        "directlyInspected": true
+      },
+      {
+        "file": "session-layers-dark.png",
+        "sha256": "f86eb07767d92e5c2154883261dcf4583b5178317428b40461330efbe5d7f7f2",
+        "directlyInspected": true
+      },
+      {
+        "file": "session-layers-light.png",
+        "sha256": "2e91d33a2cb18173762dc7276bc41b8d82d6693cabf3dca7edd678e42f0d430c",
+        "directlyInspected": true
+      },
+      {
+        "file": "viewer-app-dark.png",
+        "sha256": "cf523b2b4ab80ab3e5a2f53cbbea55aa65be916cac59e9964c90ca5d427e5872",
+        "directlyInspected": true
+      },
+      {
+        "file": "viewer-app-light.png",
+        "sha256": "f26711f1534cf8b249db6be1296628d70c228fa46e5e433cc68583edb081d4c2",
+        "directlyInspected": true
+      },
+      {
+        "file": "viewer-canonical-dark.png",
+        "sha256": "49d5b4618611555acbe128192a970e2ffd29eea16ff76510e0bdc286947cbcf0",
+        "directlyInspected": true
+      },
+      {
+        "file": "viewer-canonical-light.png",
+        "sha256": "25255fbd28c3f5715ac3b169ba1e09ab8ab8adf28e532d20b4aa0d083e94e697",
+        "directlyInspected": true
+      },
+      {
+        "file": "viewer-sxs-dark.png",
+        "sha256": "046d0f9e0db80b15e9d68d22304cb2f5e3a94caa04ff515f22e3f9b9e5cc014f",
+        "directlyInspected": true
+      },
+      {
+        "file": "viewer-sxs-light.png",
+        "sha256": "8127389693aeb06037385b5435a0699baadbd9abe8cacb8f90ea9d61089b57b2",
+        "directlyInspected": true
+      }
+    ]
+  },
+  "scope": {
+    "directMounted": [
+      "actual prose text element with nonempty user text, loaded Atkinson family, exact canonical font/16px/24px parity in both themes",
+      "SF Pro system family preserved on mock macOS window and X thread; Atkinson Mono14 tabs retained",
+      "actual overlapping three-window geometry and pointer switching preserved",
+      "native compact filter drawer, Escape focus return, prose width retained",
+      "footer End full-label/focus-ring containment with page scroll unchanged",
+      "canonical5412left versus actualWebsite3412right SxS in both themes",
+      "1440px and390px fullshell hero both themes, staticrest and SVG containment"
+    ],
+    "unchangedHistoricalCoverage": [
+      "Earlier initial24captures and15functional cases remain historical evidence from91bd2e3, not recaptioned as final source. Motion, setup and nonfont content unchanged by the one-line host font fix.",
+      "Root normalbuild/tsc/lint plus fullbrowser suite are separate evidence, not claimed as this agent execution."
+    ],
+    "limitations": [
+      "Public Cloudflare protected HTML not exact-byte verified; local immutable production JS/CSS verified.",
+      "This bounded confirmation did not re-run unrelated PR/review/settings/sidebar/tutorial flows."
+    ]
+  }
+}

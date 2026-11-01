@@ -1,0 +1,218 @@
+{
+  "source": "aed53660023f5e0393f235f1b1d7ccf7300e2dae",
+  "fairtrade": "0.0.59",
+  "binarySha256": "cea2d6da8f63c3143bb39640204ebe35a0e763fd1406940d6d42854e7185ce6d",
+  "version": "peasant v0.13.6-dev.40+aed536600",
+  "servedAssetsByteMatched": 23,
+  "rows": [
+    {
+      "name": "desktop-dark",
+      "theme": "dark",
+      "width": 1280,
+      "height": 720,
+      "proseWidth": 808,
+      "compact": true,
+      "drawerContained": true,
+      "openerFocusReturned": true,
+      "footerTextAndRingVisible": true,
+      "pagePositionPreserved": true,
+      "readingStyles": {
+        "font": "atkinsonHyperlegible, \"atkinsonHyperlegible Fallback\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "size": "16px",
+        "lineHeight": "24px"
+      },
+      "selectedPanelStyles": {
+        "font": "atkinsonHyperlegible, \"atkinsonHyperlegible Fallback\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "size": "16px",
+        "viewerOverflow": 0
+      },
+      "pageErrors": [],
+      "images": [
+        "filters-desktop-dark.png",
+        "footer-end-desktop-dark.png"
+      ]
+    },
+    {
+      "name": "desktop-light",
+      "theme": "light",
+      "width": 1280,
+      "height": 720,
+      "proseWidth": 808,
+      "compact": true,
+      "drawerContained": true,
+      "openerFocusReturned": true,
+      "footerTextAndRingVisible": true,
+      "pagePositionPreserved": true,
+      "readingStyles": {
+        "font": "atkinsonHyperlegible, \"atkinsonHyperlegible Fallback\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "size": "16px",
+        "lineHeight": "24px"
+      },
+      "selectedPanelStyles": {
+        "font": "atkinsonHyperlegible, \"atkinsonHyperlegible Fallback\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "size": "16px",
+        "viewerOverflow": 0
+      },
+      "pageErrors": [],
+      "images": [
+        "filters-desktop-light.png",
+        "footer-end-desktop-light.png"
+      ]
+    },
+    {
+      "name": "mobile-dark",
+      "theme": "dark",
+      "width": 390,
+      "height": 844,
+      "proseWidth": 326,
+      "compact": true,
+      "drawerContained": true,
+      "openerFocusReturned": true,
+      "footerTextAndRingVisible": true,
+      "pagePositionPreserved": true,
+      "readingStyles": {
+        "font": "atkinsonHyperlegible, \"atkinsonHyperlegible Fallback\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "size": "16px",
+        "lineHeight": "24px"
+      },
+      "selectedPanelStyles": {
+        "font": "atkinsonHyperlegible, \"atkinsonHyperlegible Fallback\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "size": "16px",
+        "viewerOverflow": 0
+      },
+      "pageErrors": [],
+      "images": [
+        "filters-mobile-dark.png",
+        "footer-end-mobile-dark.png"
+      ]
+    },
+    {
+      "name": "mobile-light",
+      "theme": "light",
+      "width": 390,
+      "height": 844,
+      "proseWidth": 326,
+      "compact": true,
+      "drawerContained": true,
+      "openerFocusReturned": true,
+      "footerTextAndRingVisible": true,
+      "pagePositionPreserved": true,
+      "readingStyles": {
+        "font": "atkinsonHyperlegible, \"atkinsonHyperlegible Fallback\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "size": "16px",
+        "lineHeight": "24px"
+      },
+      "selectedPanelStyles": {
+        "font": "atkinsonHyperlegible, \"atkinsonHyperlegible Fallback\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+        "size": "16px",
+        "viewerOverflow": 0
+      },
+      "pageErrors": [],
+      "images": [
+        "filters-mobile-light.png",
+        "footer-end-mobile-light.png"
+      ]
+    }
+  ],
+  "inspectedRawImages": [
+    {
+      "file": "filters-desktop-dark.png",
+      "sha256": "f13fc297e7e73d17a406f7a9b5c94acbdde000da7ff6f5b7f421332f0f015ec4"
+    },
+    {
+      "file": "footer-end-desktop-dark.png",
+      "sha256": "5937d01241de0a11169ea5d74c8b5a472a7e7d5afc931b9749005ad241bbb38e"
+    },
+    {
+      "file": "filters-desktop-light.png",
+      "sha256": "fd7192427b91213dc5a048a4a3474f65258b32d8f0174f69c4a73af153d39fb6"
+    },
+    {
+      "file": "footer-end-desktop-light.png",
+      "sha256": "5ab9e06ed22431c78761a026682e45c761da04450133b188118b686b423edbb0"
+    },
+    {
+      "file": "filters-mobile-dark.png",
+      "sha256": "0146213afc42b2798dc9a7ed8e037547622dea431bd720e69ab99d6e0e576840"
+    },
+    {
+      "file": "footer-end-mobile-dark.png",
+      "sha256": "ed52f355224a444d217067cf83bf17c8bd723dacccaf8967558876599b3682f3"
+    },
+    {
+      "file": "filters-mobile-light.png",
+      "sha256": "83ba15001075255d3669c0e267b9537fbe724805bd3e8f747a9de12233031eac"
+    },
+    {
+      "file": "footer-end-mobile-light.png",
+      "sha256": "2d690b27496704b7c678b64cb3cdd7235dc3583cdd5e5b5dd21f859f7dd34b83"
+    },
+    {
+      "file": "clean-desktop-dark.png",
+      "sha256": "33b0828fad8cc6f4ac7b9169e62f8a6728ae82126bf98c76729541920dbc0739"
+    },
+    {
+      "file": "clean-desktop-light.png",
+      "sha256": "33d51d3ab16312f4bf694ddf6c0eae8e27bd911c1577a940458f843b2b1fc840"
+    },
+    {
+      "file": "clean-mobile-dark.png",
+      "sha256": "76849cf30c2e8cb38adaeb23177f6426e75f17d9d8b899d730d9c57c23762152"
+    },
+    {
+      "file": "clean-mobile-light.png",
+      "sha256": "96a2f954e3fce8c32b8d754ea3d071fb3d5a7c4e8513315e7e8c23427217d061"
+    }
+  ],
+  "normalBuild": "passed on restored exact head",
+  "typecheck": "passed",
+  "frontendTests": {
+    "files": 125,
+    "passed": 1669
+  },
+  "mountedJourney": {
+    "passed": 12,
+    "seconds": 12.7
+  },
+  "tokenSnapshotByteIdentical": true,
+  "treeIdentity": "Whole tree equals the previously validated db55b76c tree; restored authorship/metadata only.",
+  "recoveryRecord": "peasant-source-restored.json",
+  "localRaceGate": {
+    "status": "failed",
+    "report": "worktree .agents.local/testgate/20261101T185741Z/report.json",
+    "log": "peasant-check-reviewed.log",
+    "failedEntries": 129,
+    "invocationErrors": 0,
+    "screenFindings": 0,
+    "note": "No full local pass claimed. Representative Darwin physical-path, lock ENOENT, GNU realpath and TUI-spacing failures reported to parent; required Linux CI remains parent-owned."
+  },
+  "actualProseTextNode": {
+    "tag": "P",
+    "className": "txn-md-prose",
+    "text": "Implement the auth module",
+    "fontFamily": "atkinsonHyperlegible, \"atkinsonHyperlegible Fallback\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+    "fontSize": "16px",
+    "lineHeight": "24px",
+    "fontWeight": "400",
+    "letterSpacing": "0.48px",
+    "wordSpacing": "2.56px",
+    "fontLoaded": true
+  },
+  "visualVerdict": "SHIP for canonical viewer adoption in the local shell",
+  "inspection": "All12 restored-head captures are byte-identical to their individually inspected prior captures. The four original trace captures and eight native-filter/footer captures were each viewed directly; no element was hidden for capture. Metadata/authorship restoration changed no product/tree bytes.",
+  "restoredCaptureImageByteIdentity": true,
+  "comparisons": [
+    {
+      "file": "local-sxs-light.png",
+      "sha256": "76461efafe86b97474f28840057a1933200bc86828a1f06e5091043cb25a9e8f"
+    },
+    {
+      "file": "local-sxs-dark.png",
+      "sha256": "2bd4cad6eede583c7afc42341e69a6145ec882cdadd9b12ef93a818f23cb6287"
+    }
+  ],
+  "parentInspectedComparisons": [
+    "local-sxs-light.png",
+    "local-sxs-dark.png"
+  ]
+}
