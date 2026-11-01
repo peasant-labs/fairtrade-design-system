@@ -1,0 +1,1 @@
+Final inspected canonical mounted in-use viewer, source a7f662acae1c7a043fda5a7a70c16ea0468f572f. Both themes, desktop/embedded/phone, native drawers, footer focus and retained zen exit. Full initial visual batch found a hidden retained-zen exit; the one source correction is included here and final confirmation has no findings.

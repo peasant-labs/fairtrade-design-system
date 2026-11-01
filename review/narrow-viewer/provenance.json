@@ -1,0 +1,1270 @@
+{
+  "phase": "single Fairtrade confirmation after retained-zen correction; website pending",
+  "reviewedHead": "a7f662acae1c7a043fda5a7a70c16ea0468f572f",
+  "builtHead": "a7f662acae1c7a043fda5a7a70c16ea0468f572f",
+  "runtimeIdentity": "git diff --quiet a7f662a HEAD --src/public passed before and after; exact frozen runtime verified via served asset bytes",
+  "servedAssetMatches": [
+    {
+      "path": "/assets/rolldown-runtime-aKtaBQYM.js",
+      "sha256": "cb2fb01f2064eb36487466778d2ffc4c97ad86af89be1635209de18f0b5b2236"
+    },
+    {
+      "path": "/assets/index-B4ASkWsq.css",
+      "sha256": "879bd0fd15aaf3c78325a6298043dc08684766eb5e34c6e0badbc20ce4a01ecc"
+    },
+    {
+      "path": "/assets/index-IaxkBlsC.js",
+      "sha256": "44a84b79c3e3ec6dd91d3400be0802919ceac482da86db839ad7816919eddef8"
+    }
+  ],
+  "introducedCompactMarkerVerified": true,
+  "images": [
+    {
+      "file": "fairtrade-wide-light.png",
+      "sha256": "194c0043cb64cbf1636ad85df00ac5a518fa1e949d352d9dc3fb3760804841f9"
+    },
+    {
+      "file": "fairtrade-1024-tools-light.png",
+      "sha256": "930feba08c6bbbfa0749399554a573cac817cc902fcca900e1a412dda90a7b6a"
+    },
+    {
+      "file": "fairtrade-390-tools-light.png",
+      "sha256": "e9cf695498404c3fa14a48c8a7efc063f2fcae6c4246626dac241fb2620b6c32"
+    },
+    {
+      "file": "fairtrade-544-filters-light.png",
+      "sha256": "f7e3cfb530e8abd40f64f7b881dfcf57a815bf1156dd67848921bdb9e60dbe8f"
+    },
+    {
+      "file": "fairtrade-544-footer-end-light.png",
+      "sha256": "67948e66aca5e163bd7480faa6b2f18e19c4c25dd210ec6d2809e93ea6b365fc"
+    },
+    {
+      "file": "fairtrade-544-outline-light.png",
+      "sha256": "8bce202713f6df9790ce6341b24ba095ad147be651cb90e2799dc2f0d1961002"
+    },
+    {
+      "file": "fairtrade-544-retained-zen-light.png",
+      "sha256": "d6482333decbccf32ed4fc9cc827ae585496fff8821ebde7c9d8784b6e8e691c"
+    },
+    {
+      "file": "fairtrade-320-retained-zen-light.png",
+      "sha256": "cf86fbf13abc7ae10d58738f8c3e2b30f2817223d1e2ffcf29b901aec6758b85"
+    },
+    {
+      "file": "fairtrade-wide-dark.png",
+      "sha256": "8089e154a64e22542c4d0f17d5d420288167f9c800405d1480ca63b3f655e35a"
+    },
+    {
+      "file": "fairtrade-1024-tools-dark.png",
+      "sha256": "da66435919ff1f8af81ee5d23876a5d1474e501c4ccbed40449acd185dbd9bcb"
+    },
+    {
+      "file": "fairtrade-390-tools-dark.png",
+      "sha256": "211575524371db7a1672694873fb5da5f00f8a1ef594882302f7a3a3045b42d3"
+    },
+    {
+      "file": "fairtrade-544-filters-dark.png",
+      "sha256": "f79db032b36009e7e114ca4bccd5bb7b02a06ad240d0f97470378d77cedcaf6a"
+    },
+    {
+      "file": "fairtrade-544-footer-end-dark.png",
+      "sha256": "9a0a8ec751cf93e4f549ecb31da00ae389bb1309637f929cbf5b3545d2191c29"
+    },
+    {
+      "file": "fairtrade-544-outline-dark.png",
+      "sha256": "232d2b96afd55890f96e61fde5c08b131509d1a97342aa5d0df57aa51bafa30c"
+    },
+    {
+      "file": "fairtrade-544-retained-zen-dark.png",
+      "sha256": "7466bd0dbf8b78be5ec3a657fc9686cecb4f51120f442e38bb315aa148670614"
+    },
+    {
+      "file": "fairtrade-320-retained-zen-dark.png",
+      "sha256": "02b58711c7537e8228f85a22c1d30e32a00bc410efc65b229e92331038f43a35"
+    }
+  ],
+  "results": [
+    {
+      "case": "wide",
+      "theme": "light",
+      "viewer": {
+        "width": 1376,
+        "compact": false,
+        "overflow": 0,
+        "theme": "light"
+      },
+      "prose": {
+        "width": 711,
+        "fontSize": "16px",
+        "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif"
+      },
+      "document": {
+        "overflow": 0,
+        "x": 0,
+        "y": 75592
+      },
+      "fonts": [
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        }
+      ]
+    },
+    {
+      "case": "viewport-tools",
+      "width": 1024,
+      "theme": "light",
+      "viewer": {
+        "width": 960,
+        "compact": true,
+        "overflow": 0,
+        "theme": "light"
+      },
+      "prose": {
+        "width": 808,
+        "fontSize": "16px",
+        "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif"
+      },
+      "document": {
+        "overflow": 0,
+        "x": 0,
+        "y": 78954
+      },
+      "fonts": [
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        }
+      ]
+    },
+    {
+      "case": "viewport-tools",
+      "width": 390,
+      "theme": "light",
+      "viewer": {
+        "width": 366,
+        "compact": true,
+        "overflow": 0,
+        "theme": "light"
+      },
+      "prose": {
+        "width": 302,
+        "fontSize": "16px",
+        "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif"
+      },
+      "document": {
+        "overflow": 0,
+        "x": 0,
+        "y": 105381
+      },
+      "fonts": [
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        }
+      ]
+    },
+    {
+      "case": "embedded-544",
+      "theme": "light",
+      "hostConstraint": "only parent max-width544px on1440px browser; no viewer style overrides",
+      "viewer": {
+        "width": 544,
+        "compact": true,
+        "overflow": 0,
+        "theme": "light"
+      },
+      "prose": {
+        "width": 432,
+        "fontSize": "16px",
+        "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif"
+      },
+      "document": {
+        "overflow": 0,
+        "x": 0,
+        "y": 75592
+      },
+      "fonts": [
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        }
+      ],
+      "drawer": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 1200
+      },
+      "drawerFocusTrap": true,
+      "filterStateRetained": true,
+      "drawerEscapeReturn": true,
+      "hostPositionPreserved": true,
+      "footer": {
+        "text": "annotations 3",
+        "scrollLeft": 132,
+        "scrollWidth": 572,
+        "clientWidth": 440,
+        "tab": {
+          "left": 361.75,
+          "right": 479.9375,
+          "top": 1153.734375,
+          "bottom": 1199.734375
+        },
+        "clip": {
+          "left": 40,
+          "right": 480,
+          "top": 1153.734375,
+          "bottom": 1199.734375
+        },
+        "outlineWidth": "3px",
+        "outlineOffset": "-3px",
+        "focused": true,
+        "fullyVisible": true,
+        "hostPositionPreserved": true
+      },
+      "desktopRailsRestored": true
+    },
+    {
+      "case": "retained-zen",
+      "theme": "light",
+      "hostWidth": 544,
+      "zenGeometry": {
+        "left": 404,
+        "right": 448,
+        "top": 1153.734375,
+        "bottom": 1199.734375,
+        "width": 44,
+        "height": 46,
+        "inside": true,
+        "belowReadingStream": true
+      },
+      "singleUsableExit": true,
+      "keyboardExit": true,
+      "exactSavedStateRestored": true,
+      "focusReturnedToTools": true,
+      "noExtraDefaultCompactAction": true,
+      "wideStateRestored": true
+    },
+    {
+      "case": "retained-zen",
+      "theme": "light",
+      "hostWidth": 320,
+      "zenGeometry": {
+        "left": 212,
+        "right": 256,
+        "top": 1153.734375,
+        "bottom": 1199.734375,
+        "width": 44,
+        "height": 46,
+        "inside": true,
+        "belowReadingStream": true
+      },
+      "singleUsableExit": true,
+      "keyboardExit": true,
+      "exactSavedStateRestored": true,
+      "focusReturnedToTools": true,
+      "noExtraDefaultCompactAction": true,
+      "wideStateRestored": true
+    },
+    {
+      "case": "embedded-320-functional",
+      "theme": "light",
+      "viewer": {
+        "width": 320,
+        "compact": true,
+        "overflow": 0,
+        "theme": "light"
+      },
+      "prose": {
+        "width": 208,
+        "fontSize": "16px",
+        "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif"
+      },
+      "document": {
+        "overflow": 0,
+        "x": 0,
+        "y": 75592
+      },
+      "fonts": [
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        }
+      ],
+      "drawerEscapeReturn": true,
+      "footer": {
+        "text": "annotations 3",
+        "scrollLeft": 356,
+        "scrollWidth": 572,
+        "clientWidth": 216,
+        "tab": {
+          "left": 137.75,
+          "right": 255.9375,
+          "top": 1153.734375,
+          "bottom": 1199.734375
+        },
+        "clip": {
+          "left": 40,
+          "right": 256,
+          "top": 1153.734375,
+          "bottom": 1199.734375
+        },
+        "outlineWidth": "3px",
+        "outlineOffset": "-3px",
+        "focused": true,
+        "fullyVisible": true,
+        "hostPositionPreserved": true
+      }
+    },
+    {
+      "case": "wide",
+      "theme": "dark",
+      "viewer": {
+        "width": 1376,
+        "compact": false,
+        "overflow": 0,
+        "theme": "dark"
+      },
+      "prose": {
+        "width": 711,
+        "fontSize": "16px",
+        "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif"
+      },
+      "document": {
+        "overflow": 0,
+        "x": 0,
+        "y": 75592
+      },
+      "fonts": [
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        }
+      ]
+    },
+    {
+      "case": "viewport-tools",
+      "width": 1024,
+      "theme": "dark",
+      "viewer": {
+        "width": 960,
+        "compact": true,
+        "overflow": 0,
+        "theme": "dark"
+      },
+      "prose": {
+        "width": 808,
+        "fontSize": "16px",
+        "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif"
+      },
+      "document": {
+        "overflow": 0,
+        "x": 0,
+        "y": 78954
+      },
+      "fonts": [
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        }
+      ]
+    },
+    {
+      "case": "viewport-tools",
+      "width": 390,
+      "theme": "dark",
+      "viewer": {
+        "width": 366,
+        "compact": true,
+        "overflow": 0,
+        "theme": "dark"
+      },
+      "prose": {
+        "width": 302,
+        "fontSize": "16px",
+        "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif"
+      },
+      "document": {
+        "overflow": 0,
+        "x": 0,
+        "y": 105381
+      },
+      "fonts": [
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        }
+      ]
+    },
+    {
+      "case": "embedded-544",
+      "theme": "dark",
+      "hostConstraint": "only parent max-width544px on1440px browser; no viewer style overrides",
+      "viewer": {
+        "width": 544,
+        "compact": true,
+        "overflow": 0,
+        "theme": "dark"
+      },
+      "prose": {
+        "width": 432,
+        "fontSize": "16px",
+        "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif"
+      },
+      "document": {
+        "overflow": 0,
+        "x": 0,
+        "y": 75592
+      },
+      "fonts": [
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        }
+      ],
+      "drawer": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 1200
+      },
+      "drawerFocusTrap": true,
+      "filterStateRetained": true,
+      "drawerEscapeReturn": true,
+      "hostPositionPreserved": true,
+      "footer": {
+        "text": "annotations 3",
+        "scrollLeft": 132,
+        "scrollWidth": 572,
+        "clientWidth": 440,
+        "tab": {
+          "left": 361.75,
+          "right": 479.9375,
+          "top": 1153.734375,
+          "bottom": 1199.734375
+        },
+        "clip": {
+          "left": 40,
+          "right": 480,
+          "top": 1153.734375,
+          "bottom": 1199.734375
+        },
+        "outlineWidth": "3px",
+        "outlineOffset": "-3px",
+        "focused": true,
+        "fullyVisible": true,
+        "hostPositionPreserved": true
+      },
+      "desktopRailsRestored": true
+    },
+    {
+      "case": "retained-zen",
+      "theme": "dark",
+      "hostWidth": 544,
+      "zenGeometry": {
+        "left": 436,
+        "right": 480,
+        "top": 1153.734375,
+        "bottom": 1199.734375,
+        "width": 44,
+        "height": 46,
+        "inside": true,
+        "belowReadingStream": true
+      },
+      "singleUsableExit": true,
+      "keyboardExit": true,
+      "exactSavedStateRestored": true,
+      "focusReturnedToTools": true,
+      "noExtraDefaultCompactAction": true,
+      "wideStateRestored": true
+    },
+    {
+      "case": "retained-zen",
+      "theme": "dark",
+      "hostWidth": 320,
+      "zenGeometry": {
+        "left": 212,
+        "right": 256,
+        "top": 1153.734375,
+        "bottom": 1199.734375,
+        "width": 44,
+        "height": 46,
+        "inside": true,
+        "belowReadingStream": true
+      },
+      "singleUsableExit": true,
+      "keyboardExit": true,
+      "exactSavedStateRestored": true,
+      "focusReturnedToTools": true,
+      "noExtraDefaultCompactAction": true,
+      "wideStateRestored": true
+    },
+    {
+      "case": "embedded-320-functional",
+      "theme": "dark",
+      "viewer": {
+        "width": 320,
+        "compact": true,
+        "overflow": 0,
+        "theme": "dark"
+      },
+      "prose": {
+        "width": 208,
+        "fontSize": "16px",
+        "fontFamily": "\"Atkinson Hyperlegible\", ui-sans-serif, system-ui, -apple-system, sans-serif"
+      },
+      "document": {
+        "overflow": 0,
+        "x": 0,
+        "y": 75592
+      },
+      "fonts": [
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "unloaded"
+        },
+        {
+          "family": "Atkinson Hyperlegible Mono",
+          "status": "loaded"
+        }
+      ],
+      "drawerEscapeReturn": true,
+      "footer": {
+        "text": "annotations 3",
+        "scrollLeft": 356,
+        "scrollWidth": 572,
+        "clientWidth": 216,
+        "tab": {
+          "left": 137.75,
+          "right": 255.9375,
+          "top": 1153.734375,
+          "bottom": 1199.734375
+        },
+        "clip": {
+          "left": 40,
+          "right": 256,
+          "top": 1153.734375,
+          "bottom": 1199.734375
+        },
+        "outlineWidth": "3px",
+        "outlineOffset": "-3px",
+        "focused": true,
+        "fullyVisible": true,
+        "hostPositionPreserved": true
+      }
+    }
+  ],
+  "errors": [],
+  "rawImageInspection": "All16 final raw confirmationimages directly inspected individually. Two immediate320pxresizecaptures and one settledtitle diagnostic also inspected; immediatefiles preserved separately and replaced by samebuild settledprimarycaptures.",
+  "verdict": "SHIP: canonical narrow container drawers, keyboard footer reveal and retained zen exit",
+  "findings": [],
+  "resolvedFindings": [
+    {
+      "original": "Retained zen at544px hid its only exit",
+      "result": "One44pxexit appears in compactfooter only whilezenactive at544/320hosts; Enter exits, exact savedrail/hoststate returns, focus returns totools, no extra defaultcompactaction remains; returningwide preservesstate."
+    }
+  ],
+  "inspectedRawImages": [
+    "fairtrade-wide-light.png",
+    "fairtrade-1024-tools-light.png",
+    "fairtrade-390-tools-light.png",
+    "fairtrade-544-filters-light.png",
+    "fairtrade-544-footer-end-light.png",
+    "fairtrade-544-outline-light.png",
+    "fairtrade-544-retained-zen-light.png",
+    "fairtrade-320-retained-zen-light.png",
+    "fairtrade-wide-dark.png",
+    "fairtrade-1024-tools-dark.png",
+    "fairtrade-390-tools-dark.png",
+    "fairtrade-544-filters-dark.png",
+    "fairtrade-544-footer-end-dark.png",
+    "fairtrade-544-outline-dark.png",
+    "fairtrade-544-retained-zen-dark.png",
+    "fairtrade-320-retained-zen-dark.png"
+  ],
+  "additionalInspectedDiagnostics": [
+    "resize-diagnostics/immediate-320-retained-zen-light.png",
+    "resize-diagnostics/immediate-320-retained-zen-dark.png",
+    "320-title-diagnostic.png"
+  ],
+  "resizeCaptureCorrection": "Immediatehostresize images briefly painted onlytitlelastline. A fresha7fbuildDOMprobe found full3line title insidevisible ancestors and unchangedscrolloffsets. Samebuildfreshcaptures after200mslayoutsettling show fulltitle; no source/CSSchanges or hiddenelements. Originalimmediateimages preserved separately.",
+  "inspectionNotes": "Warm/dark tokens, normal role/controlborders, compactturnheaders, proportional16pxbody, toggle-onlystates and tabularcounts retained. Compactnative drawers areviewportpositioned inside1440pxbrowser anddonotsqueeze432pxprose in544pxhost. FooterEndfocusedtext/ring staysinsideonlyitsownscroller; no hostpagescroll. ExplicitonlyparentmaxWidthmodelsnarrowembedding; viewerinternalsunmodified. Entirestandingrequestregister considered; app-onlyPR/settings/sidebar routes are notclaimed newlyexercised bythiscanonicalbatch."
+}
