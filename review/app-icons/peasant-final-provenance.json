@@ -1,8 +1,8 @@
 {
-  "sourceCommit": "466b91be8a52bd45adc998a36f2bb92cf35a614a",
-  "binarySha256": "9d1fa9757f4102f5a960b8027d9b23df89802cd5989d5d3d88a8ca7f50fb093b",
+  "sourceCommit": "0e45a527f3cc104cc829a017f3f11652a53e4bc6",
+  "binarySha256": "5de248f644c2ea400b3529b14e7660089bc1644ed5f6c9407a17b93935baa46d",
   "goVersion": "go1.25.8",
-  "vcsRevision": "466b91be8a52bd45adc998a36f2bb92cf35a614a",
+  "vcsRevision": "0e45a527f3cc104cc829a017f3f11652a53e4bc6",
   "vcsModified": "false",
   "mounted": [
     {
