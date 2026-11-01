@@ -1,0 +1,36 @@
+{
+  "source": {
+    "repository": "peasant-labs/website",
+    "revision": "cac4786",
+    "path": "components/mark.tsx",
+    "sha256": "85e386081d9381146de6af760b10f5e1c61e0e1d4e8ce47997c9cde14f8fd0b6"
+  },
+  "viewBox": "0 0 18 22",
+  "strokeWidth": 1.6,
+  "strokeLinecap": "square",
+  "stem": "M9 21V3",
+  "branchPairs": [
+    [
+      "M9 7 5 4",
+      "M9 7l4-3"
+    ],
+    [
+      "M9 11 5 8",
+      "M9 11l4-3"
+    ],
+    [
+      "M9 15l-4-3",
+      "M9 15l4-3"
+    ],
+    [
+      "M9 19l-4-3",
+      "M9 19l4-3"
+    ]
+  ],
+  "variants": {
+    "peasant": 1,
+    "village": 2,
+    "website": 3,
+    "fairtrade": 4
+  }
+}

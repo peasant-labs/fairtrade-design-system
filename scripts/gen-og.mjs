@@ -4,11 +4,12 @@
 
    outputs:
      public/og-image.png         1200x630  open-graph / twitter summary_large_image card
-     public/apple-touch-icon.png  180x180   the wheat-stalk brand mark on the dark canvas
+     app icons via gen-app-icons.mjs (the canonical LP-based icon family)
 
    colors + fonts below are the REAL values read from src/index.css :root (dark, the default theme)
    and the @theme font stack - keep them in sync if the tokens move. usage: node scripts/gen-og.mjs */
 import puppeteer from 'puppeteer-core'
+import { execFileSync } from 'node:child_process'
 import { mkdirSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
@@ -41,7 +42,7 @@ const FONT_LINK = `
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;500;700&display=swap" rel="stylesheet">`
 
-/* the wheat stalk = the inline #logo brand mark (public/favicon.svg), drawn in amber on the dark canvas. */
+/* Retained OG-card glyph. App icons are generated separately from the LP mark. */
 function stalk(stroke) {
   return `<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
     <g stroke="${stroke}" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -110,16 +111,6 @@ const ogHtml = `<!doctype html><html><head><meta charset="utf-8">${FONT_LINK}
   </div>
 </body></html>`
 
-/* 180x180 apple-touch-icon: the wheat stalk centered on the dark canvas, matching favicon.svg. */
-const iconHtml = `<!doctype html><html><head><meta charset="utf-8">
-<style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  html,body { width:180px; height:180px; }
-  body { background:${T.canvas}; display:flex; align-items:center; justify-content:center; }
-  svg { width:96px; height:130px; display:block; }
-</style></head>
-<body>${stalk(T.amber)}</body></html>`
-
 async function shoot(browser, html, width, height, out) {
   const page = await browser.newPage()
   // render at 2x for crisp text, capture as a data url, then downscale to the EXACT declared
@@ -151,5 +142,5 @@ async function shoot(browser, html, width, height, out) {
 
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new' })
 await shoot(browser, ogHtml, 1200, 630, resolve(PUBLIC, 'og-image.png'))
-await shoot(browser, iconHtml, 180, 180, resolve(PUBLIC, 'apple-touch-icon.png'))
 await browser.close()
+execFileSync(process.execPath, [resolve(ROOT, 'scripts/gen-app-icons.mjs')], { stdio: 'inherit' })
