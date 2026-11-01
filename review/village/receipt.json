@@ -344,7 +344,7 @@
     }
   ],
   "errors": [],
-  "reviewedHead": "f4d2226c900755fbc93ab6f0685129832c0d5b2c",
+  "reviewedHead": "885f386877a50f5b0ec177d65b55bcde9b5beb78",
   "runtimeIdentity": "Only fixture/journey tests changed after build; production sources, public assets, backend token snapshot and dependency pins are byte-identical.",
   "visualVerdict": "SHIP; ten raw full-shell captures and both canonical-left consumer-right composites individually inspected; no product finding.",
   "inspectedImages": [

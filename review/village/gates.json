@@ -1,5 +1,5 @@
 {
-  "reviewedHead": "f4d2226c900755fbc93ab6f0685129832c0d5b2c",
+  "reviewedHead": "885f386877a50f5b0ec177d65b55bcde9b5beb78",
   "sourceBuilt": "300d58a334aafefbcd89415c71528620df23ae8b",
   "frontendBuild": "passed with populated read-only API8810",
   "frontendTypes": "passed",
@@ -10,5 +10,7 @@
   "browserpageFreshness": "exact installed0.0.59 tokens; focused race tests passed",
   "focusedMountedTranscript": "12 passed in both themes, desktop zen contexts preserved plus compact home/pending-collective native settings and footer focus",
   "visual": "SHIP;12 inspected images,41 served assets byte-matched,zero page errors",
-  "schemaApiDatabaseChanges": false
+  "schemaApiDatabaseChanges": false,
+  "fullMountedJourney": "150 passed on final source in3.9minutes; zero retries, two themes; desktop owner actions and compact1280 owner utilities retained; canonical final URL context asserted",
+  "priorCIFinding": "10 legacy owner desktop assumptions resolved in test-only commits; full final Linux CI required before merge"
 }
