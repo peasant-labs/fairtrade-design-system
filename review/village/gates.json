@@ -1,0 +1,14 @@
+{
+  "reviewedHead": "f4d2226c900755fbc93ab6f0685129832c0d5b2c",
+  "sourceBuilt": "300d58a334aafefbcd89415c71528620df23ae8b",
+  "frontendBuild": "passed with populated read-only API8810",
+  "frontendTypes": "passed",
+  "frontendLint": "zero errors; two pre-existing warnings",
+  "frontendUnit": "1279 passed; three existing Linux flock/proc lifecycle tests fail on Darwin; full Linux CI required before merge",
+  "frontendMutation": "passed all three required mutation suites",
+  "backend": "go build, full go test -race, gofmt and go vet passed",
+  "browserpageFreshness": "exact installed0.0.59 tokens; focused race tests passed",
+  "focusedMountedTranscript": "12 passed in both themes, desktop zen contexts preserved plus compact home/pending-collective native settings and footer focus",
+  "visual": "SHIP;12 inspected images,41 served assets byte-matched,zero page errors",
+  "schemaApiDatabaseChanges": false
+}
