@@ -1,0 +1,27 @@
+{
+  "source": {
+    "repository": "peasant-labs/website",
+    "revision": "cac4786",
+    "path": "components/mark.tsx",
+    "sha256": "85e386081d9381146de6af760b10f5e1c61e0e1d4e8ce47997c9cde14f8fd0b6"
+  },
+  "familySha256": "bec42f81b9db494763b1382032272346889c70630ad2ee950f90fdc18d61f366",
+  "colors": {
+    "dark": {
+      "canvas": "#0b0b0a",
+      "amber": "#d6ae66"
+    },
+    "light": {
+      "canvas": "#fbfaf7",
+      "amber": "#8a5f1f"
+    }
+  },
+  "assets": {
+    "public/brand/peasant.svg": "4a2242da06d69779a70249d43949dcac92ec6f539f1699fce815aeae2c63c6d3",
+    "public/brand/village.svg": "a008c172b9f79e53fca591916cd2404ea899766ff956cd3703dcf3c892335862",
+    "public/brand/website.svg": "32d89b81d15a8e8e1d06ea5b061caefdc8b724fe61ae888b25656ced579a27cd",
+    "public/brand/fairtrade.svg": "ca2f526a71b53fc1cfd1d5e51f729cbace834d78ff445123931907e75aa549c6",
+    "public/favicon.svg": "ca2f526a71b53fc1cfd1d5e51f729cbace834d78ff445123931907e75aa549c6",
+    "public/apple-touch-icon.png": "f699f5c9040f97f1dacdf7f7bf9b0a24d9cbcdfa4c20226522ef4d435a9605d5"
+  }
+}
