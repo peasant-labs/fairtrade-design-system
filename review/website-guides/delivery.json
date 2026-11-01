@@ -1,0 +1,251 @@
+{
+  "source": "b00c23ab98a02f10dfceb60488de4def9d65346e",
+  "buildId": "E8C_F9U9PNdtQniidsaYX",
+  "routes": [
+    {
+      "route": "/",
+      "status": 200,
+      "title": "peasant: the open-source commons for agent transcripts"
+    },
+    {
+      "route": "/docs",
+      "status": 200,
+      "title": "docs | peasant"
+    },
+    {
+      "route": "/docs/guides/evals",
+      "status": 200,
+      "title": "run an agent eval | peasant docs"
+    },
+    {
+      "route": "/docs/guides/reviews",
+      "status": 200,
+      "title": "review pull requests | peasant docs"
+    },
+    {
+      "route": "/docs/guides/classroom",
+      "status": 200,
+      "title": "run a class with agent use | peasant docs"
+    },
+    {
+      "route": "/docs/guides/onboarding",
+      "status": 200,
+      "title": "onboard from real history | peasant docs"
+    },
+    {
+      "route": "/docs/guides/find-sessions",
+      "status": 200,
+      "title": "find a past session | peasant docs"
+    }
+  ],
+  "iconSha256": "32d89b81d15a8e8e1d06ea5b061caefdc8b724fe61ae888b25656ced579a27cd",
+  "reviewedTreeMatchesMerge": true,
+  "publicDeployments": [
+    7474458157,
+    7474458163
+  ],
+  "deploymentStatus": "success",
+  "publicFetchLimitation": "Cloudflare1010 rejects automated HTTP from this environment; no exact public HTML-byte assertion.",
+  "servedAssets": [
+    {
+      "path": "/_next/static/chunks/18bad13d-801de1ca2fb94551.js",
+      "sha256": "b91198d73599cb60bf5795912a75f284e125aa0c50415123468f1e5c04702b28",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": true
+    },
+    {
+      "path": "/_next/static/chunks/1980-64de895f8cffacbb.js",
+      "sha256": "5e63fe00ce07a21a0ed93db07b5cf7e42e879a1b6f6a3333e0a5c703f46ff268",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": false
+    },
+    {
+      "path": "/_next/static/chunks/2167-e2a28884c56d2c6d.js",
+      "sha256": "b40a510225f66908c7102d2472807b3ee434f411d284c1307b02a026f7889fe4",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": true
+    },
+    {
+      "path": "/_next/static/chunks/368-ce6821a876415a95.js",
+      "sha256": "f96dc70fc8fdb29f59a0c78f98fef9825a9049610760a81a3c275c77a3569c79",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": true
+    },
+    {
+      "path": "/_next/static/chunks/511-39d1a3cb9eccddb0.js",
+      "sha256": "5a8ab5a604ce37c72bb040dca383b37e244b3fff791b47e31cbc267a4c9f3c69",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": true
+    },
+    {
+      "path": "/_next/static/chunks/58ac6b17-82feeddbdcbf252b.js",
+      "sha256": "7b78c2666afe4ae239a3fce28e1cdad5ea587cad73b09948aa838b957d0f2022",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": true
+    },
+    {
+      "path": "/_next/static/chunks/7686-5f6413d85d3abae6.js",
+      "sha256": "635413d0b035b3308fafb60b1bcd73d31ff06957c9925e062c1b7d083f57870f",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": true
+    },
+    {
+      "path": "/_next/static/chunks/77d3b4b7-0a729972948fb933.js",
+      "sha256": "ad82774d90e788369445f49065c50ef5b7e4d2ae8244eb5e9934b21f65754c51",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": true
+    },
+    {
+      "path": "/_next/static/chunks/8287-1064709916455b4a.js",
+      "sha256": "6a54ae87c5e809498083a83044f5aa216ed2673043774eb0422cf99b91bd0178",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": true
+    },
+    {
+      "path": "/_next/static/chunks/9216-f8398bede6a99f77.js",
+      "sha256": "4a1996899eca169a8fb3e302f5a1a11ec728ccf0e56ff0f2c3fb9b57fb663467",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": true
+    },
+    {
+      "path": "/_next/static/chunks/95ffabff-176c950ec23f152e.js",
+      "sha256": "36c7da5e3f82b8025c5ff534f960c0c92c799b8e20b4d659087f698378c0ee5b",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": true
+    },
+    {
+      "path": "/_next/static/chunks/9793-405c103b894a99cb.js",
+      "sha256": "ca23a8932cacf2ed2b279973ababec35c89f74c18d02d2691ca3ba3f84f5bd34",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": true
+    },
+    {
+      "path": "/_next/static/chunks/app/docs/guides/classroom/page-6e9c2666976bcf9b.js",
+      "sha256": "79dcd4558af8b41b2507d51ec92b578b2f79699d560c831555e1aa505c794730",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": false
+    },
+    {
+      "path": "/_next/static/chunks/app/docs/guides/evals/page-6e9c2666976bcf9b.js",
+      "sha256": "79dcd4558af8b41b2507d51ec92b578b2f79699d560c831555e1aa505c794730",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": false
+    },
+    {
+      "path": "/_next/static/chunks/app/docs/guides/find-sessions/page-6e9c2666976bcf9b.js",
+      "sha256": "79dcd4558af8b41b2507d51ec92b578b2f79699d560c831555e1aa505c794730",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": false
+    },
+    {
+      "path": "/_next/static/chunks/app/docs/guides/onboarding/page-6e9c2666976bcf9b.js",
+      "sha256": "79dcd4558af8b41b2507d51ec92b578b2f79699d560c831555e1aa505c794730",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": false
+    },
+    {
+      "path": "/_next/static/chunks/app/docs/guides/reviews/page-6e9c2666976bcf9b.js",
+      "sha256": "79dcd4558af8b41b2507d51ec92b578b2f79699d560c831555e1aa505c794730",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": false
+    },
+    {
+      "path": "/_next/static/chunks/app/docs/layout-0c25d7b8c52efc9e.js",
+      "sha256": "af5153b3747116214a167259b649fc8b7b8d6e420e5831f64f8858f132025538",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": false
+    },
+    {
+      "path": "/_next/static/chunks/app/docs/page-227efa5b6c87fcd5.js",
+      "sha256": "2c0622741f85f3a2a864540cc4e3e6f0f43119c505fcf140b90d73c277576a29",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": false
+    },
+    {
+      "path": "/_next/static/chunks/app/error-5e3e1722dd988923.js",
+      "sha256": "150ec13c23772de1ea13d1ade40cbc59e798b66ff1b18f459f179b53dc04b493",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": false
+    },
+    {
+      "path": "/_next/static/chunks/app/global-error-97b94796941e3a1c.js",
+      "sha256": "bfd0e98b6f40f9caf21dde287b8c02919d5b449d80e63bae6d50477f0940cf0f",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": false
+    },
+    {
+      "path": "/_next/static/chunks/app/layout-81a66a34c698c9c8.js",
+      "sha256": "8486e89c2a7596126bc5f3e3866616fbf9e3c9e7515839274fcf36bf5e589d41",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": false
+    },
+    {
+      "path": "/_next/static/chunks/app/page-e6833a2dc19de8d4.js",
+      "sha256": "70e82bc652a22c16fe5a1ebd515fc21d991053a23453ebcf8b5ef267482c10f6",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": false
+    },
+    {
+      "path": "/_next/static/chunks/main-app-47d71ef97e7b1074.js",
+      "sha256": "8d41d8ebd8a45fa336c6f8d376dde88e082005b88389f64c341bf9a8ff317aa0",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": false
+    },
+    {
+      "path": "/_next/static/chunks/polyfills-42372ed130431b0a.js",
+      "sha256": "0973c1d64c88adc8e3c950410cb58b288f72118d5965b78049438deb8f2f9683",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": true
+    },
+    {
+      "path": "/_next/static/chunks/webpack-43fa2e8b0b9cf858.js",
+      "sha256": "ac74dbda2e729280529d4862ca9f059c95d7f8b6253a3c694a0e8cb5a77f399d",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": false
+    },
+    {
+      "path": "/_next/static/css/3a52afd4d70244ed.css",
+      "sha256": "884c969d1831e1e722c0be1b470ab88724625979b1740f3f58d9f088a3040c4a",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": true
+    },
+    {
+      "path": "/_next/static/css/508d11f51c7fa509.css",
+      "sha256": "cb71b7bbdecce851ec4544732615e532ec2232e7d6805d7fb3a98e9657a335fa",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": true
+    },
+    {
+      "path": "/_next/static/css/640d3b3894fc812f.css",
+      "sha256": "16b63888a36cd181093065e3e060058a96fd6bd256910545366ba0af14ecf72a",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": true
+    },
+    {
+      "path": "/_next/static/css/756aee017256b120.css",
+      "sha256": "129dc3f9054a73f96f398ec22c5d1ca1a7e821cf3dc0db1a613c75a474c6a17f",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": true
+    },
+    {
+      "path": "/_next/static/css/d065d856523d0d9b.css",
+      "sha256": "2d57cf93e4bee096284f9b891088a2aee47acb708a090ba8d0bf32f4b41fd67a",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": true
+    },
+    {
+      "path": "/_next/static/css/e1ca4a7f35ff7017.css",
+      "sha256": "20b27aa89705062268c11d0768451e95a6adffda927297b9316637f23db26b6b",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": true
+    },
+    {
+      "path": "/_next/static/css/f505c5205671eb79.css",
+      "sha256": "42d9f3fd6d77a1934c04e854de66903c92673605007933fe3718a4aa92288ba5",
+      "matchesBuiltMain": true,
+      "identicalToReviewedAsset": true
+    }
+  ],
+  "servedAssetCount": 33,
+  "allServedAssetsMatchBuiltMain": true
+}

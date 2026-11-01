@@ -1,0 +1,9 @@
+{
+  "reviewedHead": "466b91be8a52bd45adc998a36f2bb92cf35a614a",
+  "goldenFilesChanged": 42,
+  "borderRgbReplacements": 1931,
+  "otherBytesChanged": 0,
+  "verification": "Pinned Go1.25.8 full TUI race suite and all-package Golden race tests passed; zero-diff regeneration; all three fresh independent review axes clean.",
+  "ci": "Current-head Linux make check, real web build, lockfiles, Windows and built-binary journeys passed.",
+  "baselineLimitation": "Full Darwin gate has unrelated filesystem/concurrency and Unix-script assumptions, tracked separately in Peasant issue816; not claimed as a passing local full gate."
+}

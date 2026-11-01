@@ -1,8 +1,8 @@
 {
-  "sourceCommit": "d851ab009e8cbdb0cff6a25b6d12f9864e285ac0",
-  "binarySha256": "2e192e31ec491a7f8fc6c884d22b512ef4823bd2c318a0720ca309d91a2107a7",
+  "sourceCommit": "466b91be8a52bd45adc998a36f2bb92cf35a614a",
+  "binarySha256": "9d1fa9757f4102f5a960b8027d9b23df89802cd5989d5d3d88a8ca7f50fb093b",
   "goVersion": "go1.25.8",
-  "vcsRevision": "d851ab009e8cbdb0cff6a25b6d12f9864e285ac0",
+  "vcsRevision": "466b91be8a52bd45adc998a36f2bb92cf35a614a",
   "vcsModified": "false",
   "mounted": [
     {
@@ -32,5 +32,9 @@
       "screenshot": "mounted-peasant-light.png"
     }
   ],
-  "inspection": "Both-theme populated transcript screenshots inspected; web content unchanged apart from canonical static icon."
+  "inspection": "Both-theme populated transcript screenshots inspected; web content unchanged apart from canonical static icon.",
+  "screenshotSha256": {
+    "mounted-peasant-dark.png": "f39ebc981adc77c83e545af706435a3b49d3c7421f7165cfa1b71c80bef090b5",
+    "mounted-peasant-light.png": "e577454c43293284eb5295b9fd6e37a03182bf4f7a8a20a2501602068e85e70a"
+  }
 }
