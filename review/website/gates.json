@@ -1,0 +1,17 @@
+{
+  "source": "e00b61741e9bf02f1f5e1b675d58fb82265d56b7",
+  "normalBuild": "passed",
+  "types": "passed",
+  "lint": "zero errors;6 existing warnings",
+  "browserSuite": {
+    "startTime": "2026-11-01T19:08:11.985Z",
+    "duration": 377171.775,
+    "expected": 182,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "fontRegression": "new actual .txn-md-prose assertion failed both themes on prior build; passes final full suite",
+  "visual": "SHIP;16 raw images inspected,33 served assets matched",
+  "independentReview": "fresh A/B/C all clean on exact head; posted as COMMENT reviews"
+}
