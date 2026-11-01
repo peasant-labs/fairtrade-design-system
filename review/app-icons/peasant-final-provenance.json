@@ -1,18 +1,12 @@
 {
-  "repository": "peasant-labs/peasant",
-  "sourceCommit": "6faed96089e98fda5a3e8bf624eda43073171cbb",
-  "sourceTree": "2fbc5a8bf1302243ba333d8da7781df95db0d07c",
-  "treeEquivalentToReviewedSource": true,
-  "binarySha256": "8029128234100bc4043fa63cf3760c649ebeb4aac8eddcf1cf56ae204ab5f02c",
-  "version": "peasant v0.13.6-dev.40+6faed9608",
-  "goToolchain": "go1.25.8",
-  "embeddedVCSRevision": "6faed96089e98fda5a3e8bf624eda43073171cbb",
-  "embeddedVCSMatchesSourceCommit": true,
-  "vcsModified": false,
-  "iconPath": "web/src/app/icon.svg",
-  "iconSha256": "4a2242da06d69779a70249d43949dcac92ec6f539f1699fce815aeae2c63c6d3",
-  "mountedChecks": [
+  "sourceCommit": "d851ab009e8cbdb0cff6a25b6d12f9864e285ac0",
+  "binarySha256": "2e192e31ec491a7f8fc6c884d22b512ef4823bd2c318a0720ca309d91a2107a7",
+  "goVersion": "go1.25.8",
+  "vcsRevision": "d851ab009e8cbdb0cff6a25b6d12f9864e285ac0",
+  "vcsModified": "false",
+  "mounted": [
     {
+      "app": "peasant",
       "route": "/projects/fortuna/sess-c3d4e5f6-a7b8-9012-cdef-123456789012/",
       "theme": "dark",
       "link": {
@@ -25,6 +19,7 @@
       "screenshot": "mounted-peasant-dark.png"
     },
     {
+      "app": "peasant",
       "route": "/projects/fortuna/sess-c3d4e5f6-a7b8-9012-cdef-123456789012/",
       "theme": "light",
       "link": {
@@ -36,5 +31,6 @@
       "sourceSha256": "4a2242da06d69779a70249d43949dcac92ec6f539f1699fce815aeae2c63c6d3",
       "screenshot": "mounted-peasant-light.png"
     }
-  ]
+  ],
+  "inspection": "Both-theme populated transcript screenshots inspected; web content unchanged apart from canonical static icon."
 }

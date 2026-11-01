@@ -1,0 +1,6 @@
+{
+  "captureSource": "52b0e1fc690fa1cb57d59a5eecaa5f0a4239b035",
+  "integratedHead": "d851ab009e8cbdb0cff6a25b6d12f9864e285ac0",
+  "verification": "Generated palette and snapshot byte-identical between capture and integrated heads; pinned theme race test, mounted guided race test and zero-diff regeneration passed; seven screenshots inspected.",
+  "scope": "Existing pinned Fairtrade palette freshness; no store changes."
+}
