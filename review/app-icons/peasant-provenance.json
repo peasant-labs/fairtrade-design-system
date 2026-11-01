@@ -1,0 +1,37 @@
+{
+  "commit": "bd89661ce49c2d96b9e68c4672ebd72c770f7d46",
+  "binarySha256": "83e129bb93d9e1722be3a0df7e466a627693acb5c22e4912bae36264eaa6783e",
+  "version": "peasant v0.13.6-dev.38+bd89661ce",
+  "iconSha256": "4a2242da06d69779a70249d43949dcac92ec6f539f1699fce815aeae2c63c6d3",
+  "vcsModified": false,
+  "mountedChecks": [
+    {
+      "app": "peasant",
+      "route": "/projects/fortuna/sess-c3d4e5f6-a7b8-9012-cdef-123456789012/",
+      "theme": "dark",
+      "link": {
+        "href": "/icon.svg?e1f2176d27fdb41a",
+        "type": "image/svg+xml"
+      },
+      "status": 200,
+      "sha256": "4a2242da06d69779a70249d43949dcac92ec6f539f1699fce815aeae2c63c6d3",
+      "sourceSha256": "4a2242da06d69779a70249d43949dcac92ec6f539f1699fce815aeae2c63c6d3",
+      "screenshot": "mounted-peasant-dark.png",
+      "sourceWorktree": "peasant/website-60--fix--unified-app-icons"
+    },
+    {
+      "app": "peasant",
+      "route": "/projects/fortuna/sess-c3d4e5f6-a7b8-9012-cdef-123456789012/",
+      "theme": "light",
+      "link": {
+        "href": "/icon.svg?e1f2176d27fdb41a",
+        "type": "image/svg+xml"
+      },
+      "status": 200,
+      "sha256": "4a2242da06d69779a70249d43949dcac92ec6f539f1699fce815aeae2c63c6d3",
+      "sourceSha256": "4a2242da06d69779a70249d43949dcac92ec6f539f1699fce815aeae2c63c6d3",
+      "screenshot": "mounted-peasant-light.png",
+      "sourceWorktree": "peasant/website-60--fix--unified-app-icons"
+    }
+  ]
+}
