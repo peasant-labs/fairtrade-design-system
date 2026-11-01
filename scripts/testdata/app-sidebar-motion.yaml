@@ -25,4 +25,9 @@ motions:
 viewportCases:
   - name: notice and zen stay within the viewport
     story: in-use-appsidebar--transcript-viewport
+    viewport: {width: 1440, height: 633}
+    controls: rails
+  - name: notice and compact tools stay within the viewport
+    story: in-use-appsidebar--transcript-viewport
     viewport: {width: 1280, height: 633}
+    controls: drawer
