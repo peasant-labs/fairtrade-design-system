@@ -379,6 +379,17 @@ export default function TranscriptViewer({
     setMobileDrawer(null)
     requestAnimationFrame(() => mobileOpenerRef.current?.focus())
   }, [mobileDrawer])
+  const onDrawerKey = event => {
+    if (event.key !== 'Tab') return
+    const controls = [...event.currentTarget.querySelectorAll('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])')]
+      .filter(element => element.getClientRects().length > 0 && !element.closest('[inert]'))
+    const first = controls[0], last = controls[controls.length - 1]
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault(); last?.focus({ preventScroll: true })
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault(); first?.focus({ preventScroll: true })
+    }
+  }
   useEffect(() => {
     const dialog = mobileDialogRef.current
     if (!dialog) return
@@ -1880,6 +1891,7 @@ export default function TranscriptViewer({
           }
         }}
         onCancel={(event) => { event.preventDefault(); closeMobileDrawer() }}
+        onKeyDown={onDrawerKey}
         onClick={(event) => { if (event.target === event.currentTarget) closeMobileDrawer() }}
       >
         {(mobileDrawer || exitingMobileDrawer) && <div className="txn-mobile-drawer-panel" inert={!mobileDrawer} onTransitionEnd={(event) => { if (event.target === event.currentTarget && event.propertyName === 'transform' && !mobileDrawer) setExitingMobileDrawer(null) }}>
