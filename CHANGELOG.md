@@ -4,6 +4,11 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.59
+
+- Adapt transcript rails and native drawers to the viewer container, preserving readable content and access to tools in narrow embeddings.
+- Keep keyboard-focused footer tabs and their focus rings visible without scrolling the page, and retain focus within compact drawers.
+
 ## 0.0.58
 
 - Hide the transcript reading-width handle when its pane has no adjustable range. Wider panes retain pointer and keyboard resizing.
