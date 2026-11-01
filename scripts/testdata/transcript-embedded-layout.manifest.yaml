@@ -1,0 +1,10 @@
+requiredCases:
+  - narrow desktop embed
+  - small desktop embed
+  - compact desktop embed
+  - below container rail fit
+  - container rail fit
+  - tablet utilities
+  - phone utilities
+requiredThemes: [dark, light]
+requiredMotion: [reduce, no-preference]

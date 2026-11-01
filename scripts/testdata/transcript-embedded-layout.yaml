@@ -1,0 +1,10 @@
+cases:
+  - { name: narrow desktop embed, viewport: 1440, hostWidth: 544, compact: true, minimumProse: 400, resizeHostWidth: 1376 }
+  - { name: small desktop embed, viewport: 1440, hostWidth: 320, compact: true, minimumProse: 180 }
+  - { name: compact desktop embed, viewport: 1440, hostWidth: 900, compact: true, minimumProse: 600 }
+  - { name: below container rail fit, viewport: 1440, hostWidth: 1079, compact: true, minimumProse: 600 }
+  - { name: container rail fit, viewport: 1440, hostWidth: 1080, compact: false, minimumProse: 350 }
+  - { name: tablet utilities, viewport: 1024, hostWidth: 960, compact: true, minimumProse: 600 }
+  - { name: phone utilities, viewport: 390, hostWidth: 358, compact: true, minimumProse: 260 }
+themes: [dark, light]
+motion: [reduce, no-preference]
