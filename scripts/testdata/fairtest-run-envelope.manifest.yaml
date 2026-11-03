@@ -95,7 +95,7 @@ mutations:
     kind: trailing-document
     target: document
     expectedField: document[1]
-expectedWorkflowMutationCount: 14
+expectedWorkflowMutationCount: 16
 requiredWorkflowMutationNames:
   - workflow-upload-pin-becomes-a-tag
   - workflow-upload-drops-no-files-error
@@ -104,6 +104,8 @@ requiredWorkflowMutationNames:
   - workflow-budget-env-drifts
   - workflow-drops-the-verification-step
   - workflow-drops-the-journey-gates
+  - workflow-journey-unbounded-workers
+  - workflow-journey-adds-filter
   - workflow-drops-the-envelope-guard
   - workflow-drops-the-compat-gate
   - workflow-drops-the-type-program-gate
@@ -137,8 +139,16 @@ workflowMutations:
     replace: ''
     expectedField: Fairtest evidence verification
   - name: workflow-drops-the-journey-gates
-    find: "      - name: Journey gates\n        run: pnpm journey:ci\n"
+    find: "      - name: Journey gates\n        run: pnpm journey:ci --workers=3\n"
     replace: ''
+    expectedField: pnpm journey:ci
+  - name: workflow-journey-unbounded-workers
+    find: "        run: pnpm journey:ci --workers=3\n"
+    replace: "        run: pnpm journey:ci --workers=100%\n"
+    expectedField: pnpm journey:ci
+  - name: workflow-journey-adds-filter
+    find: "        run: pnpm journey:ci --workers=3\n"
+    replace: "        run: pnpm journey:ci --workers=3 --grep=token\n"
     expectedField: pnpm journey:ci
   - name: workflow-drops-the-envelope-guard
     find: "          pnpm test:fairtest:envelope\n"
