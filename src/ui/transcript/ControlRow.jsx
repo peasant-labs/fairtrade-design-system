@@ -21,7 +21,7 @@ import { formatRelative, isKnownTime } from './time.js'
 /** @typedef {import('./view-model.js').TurnVM} TurnVM */
 
 /** The longest value that still reads as a single line; past it the row discloses. */
-export const CONTROL_ROW_SINGLE_LINE_MAX = 160
+const CONTROL_ROW_SINGLE_LINE_MAX = 160
 
 /**
  * @param {object} props
