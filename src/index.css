@@ -4084,6 +4084,8 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 
 /* the empty reading state's one action: reveal the bookkeeping the default hides */
 .txn-empty-show-system {
+  display: inline-flex; align-items: center;
+  min-height: var(--target-min);
   margin-top: var(--sp-3);
   background: transparent; border: 0; padding: 0;
   font-family: var(--font-mono); font-size: var(--fs-label);
