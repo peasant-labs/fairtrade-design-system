@@ -25,7 +25,7 @@ const text = (node) => (node?.textContent ?? '').replace(/\s+/g, ' ').trim()
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
 
 assertExactNames(fixture.cases.map((row) => row.name), manifest.requiredCaseNames, `${FIXTURE} cases`)
-for (const row of fixture.cases) assertFields(row, ['name', 'kind'], `${FIXTURE} ${row.name}`, ['groups', 'members', 'expected', 'query', 'turn'])
+for (const row of fixture.cases) assertFields(row, ['name', 'kind'], `${FIXTURE} ${row.name}`, ['groups', 'members', 'expected', 'query', 'turn', 'count'])
 
 const CAPABILITIES = { canEdit: false, canLabel: false, canContribute: false, canChangeVisibility: false, canExport: false }
 const TOOL_GROUPS = ['edits', 'bash', 'read', 'search', 'fetch', 'tasks', 'other']
@@ -54,6 +54,22 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   const vm = adaptTranscript(fixture.payload)
   const unclassified = adaptTranscript(fixture.unclassifiedPayload)
   const systemOnly = adaptTranscript(fixture.systemOnlyPayload)
+  const singleSystemOnly = adaptTranscript(fixture.singleSystemOnlyPayload)
+
+  /* jsdom has no layout, so give every recorded turn a distinct position in its
+     stream and record each scroll request. A landing that targets the wrong turn
+     then reads as a different number instead of a silent 0. */
+  Object.defineProperty(window.HTMLElement.prototype, 'offsetTop', {
+    configurable: true,
+    get() { return this.dataset.turn == null ? 0 : Number(this.dataset.turn) * 100 + 12 },
+  })
+  const scrolls = []
+  window.HTMLElement.prototype.scrollTo = function (options) {
+    if (options?.top != null) {
+      this.scrollTop = options.top
+      scrolls.push(options.top)
+    }
+  }
 
   /* ── the pure summary ────────────────────────────────────────────────────── */
   for (const row of fixture.summaryCases) {
@@ -62,6 +78,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     report.check(actual === row.expected, `${row.name}: summary must read ${JSON.stringify(row.expected)}, received ${JSON.stringify(actual)}`)
     if (row.name !== 'summary_plus_more') {
       for (const kind of row.kinds) {
+        if (kind == null) continue
         report.check(actual.includes(kind), `${row.name}: summary must keep the recorded kind ${JSON.stringify(kind)} verbatim, received ${JSON.stringify(actual)}`)
       }
     }
@@ -162,6 +179,9 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       const mounted = await mountCase(vm)
       const head = text(mounted.container.querySelector('.txn-systemgroup-summary'))
       report.check(head === row.expected, `${name}: the group head must read ${JSON.stringify(row.expected)}, received ${JSON.stringify(head)}`)
+      /* the ratified group noun is user-facing copy: a change back to "system records" must fail here */
+      const label = text(mounted.container.querySelector('.txn-systemgroup-label'))
+      report.check(label === 'system entries', `${name}: the group noun must be "system entries", received ${JSON.stringify(label)}`)
       await mounted.unmount()
     } else if (row.kind === 'search-reveal') {
       const mounted = await mountCase(vm, { filters: filtersWith({ categories: { system: false } }), search: row.query, showSearchTrigger: true })
@@ -176,11 +196,19 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(checkbox?.checked === false, `${name}: the system category must stay unchecked after the reveal`)
       await mounted.unmount()
     } else if (row.kind === 'member-landing' || row.kind === 'initial-position') {
+      scrolls.length = 0
       const mounted = await mountCase(vm, { initialPosition: { kind: 'turn', turnIndex: row.turn } })
-      await mounted.settle()
+      await mounted.settle(20)
       const head = groupHead(mounted.container)
       report.check(head?.getAttribute('aria-expanded') === 'true', `${name}: landing on a grouped member must open its group`)
-      report.check(!isInert(article(mounted.container, row.turn)), `${name}: the landed member must not stay inert`)
+      const landed = article(mounted.container, row.turn)
+      report.check(!!landed && !isInert(landed), `${name}: the landed member must be mounted and not inert`)
+      /* the owner is the run's first member and sits directly under the head; the
+         landed article must be the member the position named, never the owner. */
+      const owner = head?.nextElementSibling
+      report.check(!!owner && owner !== landed, `${name}: the landed member must not be the run's owner`)
+      const target = scrolls.at(-1)
+      report.check(target === row.turn * 100, `${name}: the landing must scroll to the member's own anchor (turn:${row.turn}), received ${JSON.stringify(scrolls)}`)
       await mounted.unmount()
     } else if (row.kind === 'keyboard') {
       const selections = []
@@ -207,6 +235,21 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       await mounted.settle()
       await press('k')
       report.check(selections[selections.length - 1] === 3, `${name}: opening the group must add member 3 as the next stop, received ${JSON.stringify(selections)}`)
+      await mounted.unmount()
+    } else if (row.kind === 'group-navigation-count') {
+      const mounted = await mountCase(vm, { footer: { progress: true } })
+      const stream = mounted.container.querySelector('.txn-stream')
+      /* the pinned bar and the footer progress only mount once the stream is
+         scrolled past the sticky threshold; that same list feeds the minimap. */
+      await mounted.act(() => {
+        stream.scrollTop = 60
+        stream.dispatchEvent(new window.Event('scroll', { bubbles: true }))
+      })
+      await mounted.settle(20)
+      const progress = text(mounted.container.querySelector('.txn-progress'))
+      report.check(progress === row.expected, `${name}: a closed group is one progress count, expected ${JSON.stringify(row.expected)}, received ${JSON.stringify(progress)}`)
+      const ticks = mounted.container.querySelectorAll('.txn-minimap-seg').length
+      report.check(ticks === row.count, `${name}: a closed group is one minimap tick, expected ${row.count} ticks, received ${ticks}`)
       await mounted.unmount()
     } else if (row.kind === 'control-css') {
       const headRule = css.match(/\.txn-control-head\s*\{[^}]*\}/)?.[0] ?? ''
@@ -253,6 +296,13 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       if (button) await mounted.act(() => click(window, button))
       await mounted.settle()
       report.check(mounted.container.querySelectorAll('.txn-systemgroup, .txn-systemrow, .txn-control-row').length > 0, `${name}: the control must reveal the hidden records`)
+      await mounted.unmount()
+    } else if (row.kind === 'empty-state-singular') {
+      const mounted = await mountCase(singleSystemOnly, { controlled: false })
+      const empty = mounted.container.querySelector('.empty')
+      report.check(!!empty && text(empty).includes('1 system entry is hidden by the system filter.'), `${name}: the empty state must use the singular sentence for one hidden entry, received ${JSON.stringify(text(empty))}`)
+      const button = mounted.container.querySelector('.txn-empty-show-system')
+      report.check(!!button && !button.closest('[hidden]'), `${name}: the empty state must offer a visible reveal control`)
       await mounted.unmount()
     } else if (row.kind === 'empty-no-affordance') {
       const payload = { id: 'empty-no-system', harness: 'claude-code', turns: [{ index: 0, role: 'user', content: 'the only turn', depth: 0 }] }

@@ -4,6 +4,7 @@
 requiredCaseNames:
   - session metadata records are control records
   - a control record carries its producer kind
+  - a short control record survives the short-banner prefilter
   - the same text without a producer kind stays an ordinary system turn
   - an unknown turn time is dropped
   - an unknown session time is empty
@@ -18,6 +19,7 @@ requiredCaseNames:
 requiredMutationNames:
   - a control record loses its producer kind
   - every system turn becomes a control row
+  - a short control record is dropped by the banner heuristic
   - an unknown turn time is kept
   - an unknown session time is kept
   - the meta row shows raw minutes
@@ -37,6 +39,11 @@ mutations:
     find: "    if (t.controlKind) {\n      turnVM.controlKind = t.controlKind"
     replace: "    if (t.role === 'system' || t.controlKind) {\n      turnVM.controlKind = t.controlKind"
     expectedDiagnostic: "a control record carries its producer kind: turn"
+  - name: a short control record is dropped by the banner heuristic
+    file: src/ui/transcript/adapter.js
+    find: "    if (t.controlKind) return true"
+    replace: "    void t.controlKind"
+    expectedDiagnostic: "a short control record survives the short-banner prefilter"
   - name: an unknown turn time is kept
     file: src/ui/transcript/adapter.js
     find: "      const copy = withKnownTime(turn)"

@@ -14,7 +14,8 @@ payload:
   totalTokens: 0
   tokensIn: 0
   tokensOut: 0
-  turnCount: 9
+  # conversation turns only: the four non-system entries, per the header rule
+  turnCount: 4
   toolCallCount: 0
   turns:
     - {index: 0, role: user, content: 'run the checks', timestamp: '2026-10-06T12:00:00Z', depth: 0}
@@ -30,7 +31,7 @@ payload:
 unclassifiedPayload:
   id: system-groups-unclassified
   harness: claude-code
-  turnCount: 2
+  turnCount: 1
   turns:
     - {index: 0, role: system, content: 'session title: an old producer', timestamp: '2026-10-06T12:00:00Z', depth: 0}
     - {index: 1, role: assistant, content: 'old but readable', timestamp: '2026-10-06T12:01:00Z', depth: 0}
@@ -42,6 +43,13 @@ systemOnlyPayload:
   turns:
     - {index: 0, role: system, content: 'mode: normal', controlKind: mode, timestamp: '2026-10-06T12:00:00Z', depth: 0}
     - {index: 1, role: system, content: 'permission mode: auto', controlKind: permission-mode, timestamp: '2026-10-06T12:01:00Z', depth: 0}
+# one hidden system entry: the empty state must use the singular sentence
+singleSystemOnlyPayload:
+  id: system-groups-empty-one
+  harness: claude-code
+  turnCount: 0
+  turns:
+    - {index: 0, role: system, content: 'mode: normal', controlKind: mode, timestamp: '2026-10-06T12:00:00Z', depth: 0}
 
 summaryCases:
   - name: summary_singular
@@ -50,6 +58,9 @@ summaryCases:
   - name: summary_kinds_verbatim
     kinds: [permission-mode, custom-title]
     expected: '2 entries: 1 custom-title, 1 permission-mode'
+  - name: summary_system_fallback
+    kinds: [mode, null]
+    expected: '2 entries: 1 mode, 1 system'
   - name: summary_plus_more
     kinds: [mode, permission-mode, custom-title, agent-name, attachment, artifact-transcript]
     expected: '6 entries: 1 agent-name, 1 artifact-transcript, 1 attachment, 1 custom-title, +2 more'
@@ -82,7 +93,7 @@ cases:
     kind: search-reveal
     query: 'ordinary system message'
     turn: 5
-  - name: copy_anchor_on_grouped_member_reveals
+  - name: initial_position_on_grouped_member_reveals
     kind: member-landing
     turn: 2
   - name: initial_turn_inside_closed_group_opens_before_scroll
@@ -90,6 +101,10 @@ cases:
     turn: 3
   - name: closed_group_is_one_keyboard_stop
     kind: keyboard
+  - name: closed_group_is_one_minimap_tick_and_one_progress_count
+    kind: group-navigation-count
+    count: 7
+    expected: '1 of 7'
   - name: control_row_draws_no_card
     kind: control-css
   - name: control_row_value_is_never_lowercased
@@ -98,5 +113,7 @@ cases:
     kind: control-line
   - name: empty_reading_state_names_hidden_system_records
     kind: empty-state
+  - name: empty_reading_state_names_one_hidden_system_record
+    kind: empty-state-singular
   - name: nothing_hidden_shows_no_affordance
     kind: empty-no-affordance

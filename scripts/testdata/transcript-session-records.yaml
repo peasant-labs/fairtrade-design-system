@@ -44,6 +44,14 @@ cases:
       - {index: 0, kind: custom-title}
       - {index: 1, kind: agent-name}
     noneFor: [2, 3, 4, 5, 6]
+  - name: a short control record survives the short-banner prefilter
+    kind: turns
+    # 'mode' is shorter than the 8-character banner threshold; the producer kind
+    # is what keeps it, so this fails if the controlKind branch is removed.
+    turns:
+      - {index: 0, role: system, content: 'mode', depth: 0, controlKind: mode}
+      - {index: 1, role: assistant, content: 'Done.', timestamp: '2026-10-06T12:01:00Z', depth: 0}
+    expected: [0, 1]
   - name: the same text without a producer kind stays an ordinary system turn
     kind: turns
     harness: codex

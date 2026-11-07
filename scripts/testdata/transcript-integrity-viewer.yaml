@@ -11,7 +11,8 @@ payload:
   totalTokens: 0
   tokensIn: 0
   tokensOut: 0
-  turnCount: 8
+  # conversation turns only (six non-system entries), per the header rule
+  turnCount: 6
   toolCallCount: 2
   outcome: resolved
   turns:

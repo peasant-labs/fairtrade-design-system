@@ -59,10 +59,17 @@ for (const row of spec.cases) for (const theme of spec.themes) {
         const row = root.locator('.txn-catlist .txn-checkrow').filter({ has: page.locator('.txn-cr-label', { hasText: /^system$/ }) })
         await row.locator('input[type="checkbox"]').check()
         await expect(root.locator('.txn-systemgroup'), reason).toHaveCount(1)
+        /* the group body is keep-mounted but hidden while closed: prove the
+           closed state by visibility, so the open step below cannot pass on a
+           node that was already in the DOM. */
+        await expect(root.locator('.txn-systemgroup-head').first(), reason).toHaveAttribute('aria-expanded', 'false')
+        await expect(root.locator('.txn-systemrow'), reason).toBeHidden()
       } else if (step.action === 'open group') {
-        await root.locator('.txn-systemgroup-head').first().click()
-        await expect(root.locator('.txn-control-row'), reason).toHaveCount(1)
-        await expect(root.locator('.txn-systemrow'), reason).toHaveCount(1)
+        const head = root.locator('.txn-systemgroup-head').first()
+        await head.click()
+        await expect(head, reason).toHaveAttribute('aria-expanded', 'true')
+        await expect(root.locator('.txn-control-row'), reason).toBeVisible()
+        await expect(root.locator('.txn-systemrow'), reason).toBeVisible()
       } else {
         throw new Error(`${row.name}: unknown demo-truth step action ${JSON.stringify(step.action)}`)
       }

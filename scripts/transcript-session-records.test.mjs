@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-/* Mounted-source gate for how the transcript treats session records and times: Claude Code's
-   session metadata records are not turns (a real system turn and another harness's text stay),
+/* Mounted-source gate for how the transcript treats session records and times: a depth-0
+   system record with no content is not a turn (a system record with content stays, and a
+   producer-classified control record keeps its kind),
    an unknown timestamp (missing, zero, epoch, Go zero-time) is no time in the cooked model and
    shows no "ago" label in the mounted turn, the session duration reads in the one short format,
    and the user-turn steps list leaves out a zero duration. It cooks the REAL adapter and mounts
