@@ -50,6 +50,42 @@ singleSystemOnlyPayload:
   turnCount: 0
   turns:
     - {index: 0, role: system, content: 'mode: normal', controlKind: mode, timestamp: '2026-10-06T12:00:00Z', depth: 0}
+# a session that opens with harness bookkeeping: the leading system entry is not a user
+# turn, so it must not become a task card in the "user turns" navigator.
+leadingControlPayload:
+  id: system-groups-leading-control
+  harness: claude-code
+  startTime: '2026-10-06T12:00:00Z'
+  endTime: '2026-10-06T12:02:00Z'
+  turnCount: 2
+  turns:
+    - {index: 0, role: system, content: 'mode: normal', controlKind: mode, timestamp: '2026-10-06T12:00:00Z', depth: 0}
+    - {index: 1, role: user, content: 'run the checks', timestamp: '2026-10-06T12:01:00Z', depth: 0}
+    - {index: 2, role: assistant, content: 'checks are running', timestamp: '2026-10-06T12:02:00Z', depth: 0}
+
+# The value a control row prints beside its kind. Only a leading phrase that names the
+# kind is dropped; everything else stays as recorded.
+controlValueCases:
+  - name: a value that repeats the kind drops only the phrase
+    kind: mode
+    value: 'mode: normal'
+    expected: normal
+  - name: a value spelled with a space names the kind
+    kind: permission-mode
+    value: 'permission mode: auto'
+    expected: auto
+  - name: a value equal to the kind prints once
+    kind: atis-latch
+    value: 'atis-latch'
+    expected: ''
+  - name: a value that does not name the kind stays verbatim
+    kind: custom-title
+    value: 'session title: Peasant Session'
+    expected: 'session title: Peasant Session'
+  - name: a kind prefix that continues into another word is not a match
+    kind: mode
+    value: 'model: claude-opus-5'
+    expected: 'model: claude-opus-5'
 
 summaryCases:
   - name: summary_singular
@@ -109,8 +145,16 @@ cases:
     kind: control-css
   - name: control_row_value_is_never_lowercased
     kind: control-case
+  - name: control_row_drops_the_repeated_kind
+    kind: control-value
   - name: control_row_single_line_boundary_at_160
     kind: control-line
+  - name: owner_row_shares_the_folded_inset
+    kind: owner-inset
+  - name: rail_lists_only_conversation_turns
+    kind: navigator
+  - name: turn_counts_report_conversation_turns_only
+    kind: counts
   - name: empty_reading_state_names_hidden_system_records
     kind: empty-state
   - name: empty_reading_state_names_one_hidden_system_record

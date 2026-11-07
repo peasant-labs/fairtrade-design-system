@@ -4065,7 +4065,8 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 .txn-control-body { margin-top: var(--sp-1); padding-inline-start: var(--sp-5); border-inline-start: var(--bd); }
 
 /* a run of consecutive system entries folds into one head; the owner renders in place under
-   it and members 2..N inside the disclosure, so a closed group is one laid-out row. */
+   it and members 2..N inside the disclosure, so a closed group is one laid-out row. Both the
+   owner row and the folded members share one inset, so the run reads as one aligned column. */
 .txn-systemgroup { margin-top: var(--sp-3); }
 .txn-systemgroup-head {
   display: flex; align-items: center; gap: var(--sp-2);
@@ -4080,6 +4081,9 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 .txn-systemgroup-head:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
 .txn-systemgroup-label { flex: none; font-weight: 700; color: var(--ink-2); }
 .txn-systemgroup-summary { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: none; }
+/* one inset for the owner row and its folded siblings: the run is one aligned column under
+   the group head, and a change to one side cannot move the other without failing the gate. */
+.txn-systemgroup-owner,
 .txn-systemgroup-rows { padding-inline-start: var(--sp-4); }
 
 /* the empty reading state's one action: reveal the bookkeeping the default hides */

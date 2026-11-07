@@ -10,7 +10,9 @@ import { systemGroupSummary } from './system-summary.js'
    the reading line, the keyboard step, the minimap and a copied anchor. Members 2..N
    render inside a disclosure that is mounted but inert while closed: their `#turn-N`
    anchors exist, so a search hit or an initial position can land on one by opening the
-   group first.
+   group first. The owner and the folded members sit in the same inset column (one
+   declared padding), so a group reads as one aligned run rather than one row at the
+   group's edge and the rest indented under it.
 
    DUMB: it renders cooked turns and owns only the disclosure. The viewer owns which
    groups are open, because opening one changes the navigation list. */
@@ -55,7 +57,7 @@ export default function TranscriptSystemGroup({ group, open: openProp, onToggle,
         <span className="txn-systemgroup-label">system entries</span>
         <span className="txn-systemgroup-summary tnum">{systemGroupSummary(group.members)}</span>
       </button>
-      {owner}
+      {owner && <div className="txn-systemgroup-owner">{owner}</div>}
       <Collapsible id={bodyId} open={shown} keepMounted animateSize={false}>
         <div className="txn-systemgroup-rows">{children}</div>
       </Collapsible>

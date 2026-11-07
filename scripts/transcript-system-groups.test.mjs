@@ -2,10 +2,13 @@
 /* Mounted-source gate for system-entry grouping and control rows. It cooks the REAL adapter,
    mounts the REAL TranscriptViewer through vite, and asserts what a reader reaches: the default
    hides system entries; a run of two or more visible system entries folds into one group whose
-   owner renders in place and whose closed members are inert; a search hit or an initial position
-   can land on a hidden member without writing the reader's filters; a closed group is one
-   keyboard stop; and a producer-classified control record renders as a compact row, never a card,
-   with its recorded value's case intact.
+   owner renders in place, at the same inset as its folded siblings, and whose closed members are
+   inert; a search hit or an initial position can land on a hidden member without writing the
+   reader's filters; a closed group is one keyboard stop; a producer-classified control record
+   renders as a compact row, never a card, with its recorded value's case intact and the leading
+   phrase that repeats its kind dropped; the "user turns" navigator lists conversation turns only;
+   and every turn count reports conversation turns, while the system filter still reveals the
+   entries.
    Cases: scripts/testdata/transcript-system-groups.yaml (+ .manifest.yaml).
    Run: pnpm test:transcript-system-groups;
    mutations: node scripts/parts-mutations.mjs scripts/transcript-system-groups.test.mjs
@@ -18,6 +21,7 @@ const MANIFEST = 'scripts/testdata/transcript-system-groups.manifest.yaml'
 const { fixture, manifest } = loadFixturePair(FIXTURE, MANIFEST, {
   cases: 'requiredCaseNames',
   summaryCases: 'requiredSummaryNames',
+  controlValueCases: 'requiredControlValueNames',
 })
 
 const report = createReport('transcript system groups')
@@ -26,6 +30,8 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
 
 assertExactNames(fixture.cases.map((row) => row.name), manifest.requiredCaseNames, `${FIXTURE} cases`)
 for (const row of fixture.cases) assertFields(row, ['name', 'kind'], `${FIXTURE} ${row.name}`, ['groups', 'members', 'expected', 'query', 'turn', 'count'])
+assertExactNames(fixture.controlValueCases.map((row) => row.name), manifest.requiredControlValueNames, `${FIXTURE} control values`)
+for (const row of fixture.controlValueCases) assertFields(row, ['name', 'kind', 'value', 'expected'], `${FIXTURE} ${row.name}`)
 
 const CAPABILITIES = { canEdit: false, canLabel: false, canContribute: false, canChangeVisibility: false, canExport: false }
 const TOOL_GROUPS = ['edits', 'bash', 'read', 'search', 'fetch', 'tasks', 'other']
@@ -45,16 +51,41 @@ if (mutation?.file === 'src/index.css') {
   css = css.replace(mutation.find, mutation.replace)
 }
 
+/* jsdom performs no layout, so an offset is read from the declarations that apply to each
+   box: the inline-start insets a row sits behind between its group and itself. Two rows in
+   the same column produce the same list; a row that loses (or gains) an inset does not.
+   Comments are stripped first: one written between rules would otherwise lead the next
+   rule's selector list. */
+const rulesCss = css.replace(/\/\*[\s\S]*?\*\//g, '')
+function inlineStartDeclarations(element) {
+  const selectorsFor = [...element.classList].map((name) => `.${name}`)
+  const declarations = []
+  for (const rule of rulesCss.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const selectors = rule[1].split(',').map((selector) => selector.trim())
+    if (!selectors.some((selector) => selectorsFor.includes(selector))) continue
+    const declared = rule[2].match(/(?:^|;)\s*padding-inline-start\s*:\s*([^;]+)/)
+    if (declared) declarations.push(declared[1].trim())
+  }
+  return declarations
+}
+function inlineStartPath(element, stopAt) {
+  const path = []
+  for (let node = element; node && node !== stopAt; node = node.parentElement) path.push(...inlineStartDeclarations(node))
+  return path
+}
+
 await withMountedSource(async ({ load, mount, window, React }) => {
   const { adaptTranscript } = await load('/src/ui/transcript/adapter.js')
   const { default: TranscriptViewer } = await load('/src/ui/transcript/TranscriptViewer.jsx')
   const { systemGroupSummary } = await load('/src/ui/transcript/system-summary.js')
   const { systemGroups } = await load('/src/ui/transcript/system-groups.js')
+  const { controlValueRemainder } = await load('/src/ui/transcript/control-value.js')
 
   const vm = adaptTranscript(fixture.payload)
   const unclassified = adaptTranscript(fixture.unclassifiedPayload)
   const systemOnly = adaptTranscript(fixture.systemOnlyPayload)
   const singleSystemOnly = adaptTranscript(fixture.singleSystemOnlyPayload)
+  const leadingControl = adaptTranscript(fixture.leadingControlPayload)
 
   /* jsdom has no layout, so give every recorded turn a distinct position in its
      stream and record each scroll request. A landing that targets the wrong turn
@@ -82,6 +113,12 @@ await withMountedSource(async ({ load, mount, window, React }) => {
         report.check(actual.includes(kind), `${row.name}: summary must keep the recorded kind ${JSON.stringify(kind)} verbatim, received ${JSON.stringify(actual)}`)
       }
     }
+  }
+
+  /* ── the pure control value ──────────────────────────────────────────────── */
+  for (const row of fixture.controlValueCases) {
+    const actual = controlValueRemainder(row.kind, row.value)
+    report.check(actual === row.expected, `${row.name}: expected ${JSON.stringify(row.expected)}, received ${JSON.stringify(actual)}`)
   }
 
   /* ── mounted helpers ─────────────────────────────────────────────────────── */
@@ -160,9 +197,11 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     } else if (row.kind === 'owner') {
       const mounted = await mountCase(vm)
       const owner = article(mounted.container, 1)
+      const ownerBox = owner?.parentElement
       const head = groupHead(mounted.container)
-      report.check(owner?.parentElement?.classList.contains('txn-systemgroup'), `${name}: the owner must render in place directly under the group`)
-      report.check(head?.nextElementSibling === owner, `${name}: the group head must sit immediately above the owner`)
+      report.check(ownerBox?.classList.contains('txn-systemgroup-owner'), `${name}: the owner must render in place in the group's inset column`)
+      report.check(ownerBox?.parentElement?.classList.contains('txn-systemgroup'), `${name}: the owner's inset box must sit directly under the group`)
+      report.check(head?.nextElementSibling === ownerBox, `${name}: the group head must sit immediately above the owner`)
       /* each member is mounted exactly once, inside its group */
       for (const index of [1, 2, 3]) {
         report.check(mounted.container.querySelectorAll(`article[data-turn="${index}"]`).length === 1, `${name}: turn ${index} must mount exactly once`)
@@ -205,8 +244,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(!!landed && !isInert(landed), `${name}: the landed member must be mounted and not inert`)
       /* the owner is the run's first member and sits directly under the head; the
          landed article must be the member the position named, never the owner. */
-      const owner = head?.nextElementSibling
-      report.check(!!owner && owner !== landed, `${name}: the landed member must not be the run's owner`)
+      const ownerRow = head?.nextElementSibling?.querySelector('article[data-turn]')
+      report.check(!!ownerRow && ownerRow !== landed, `${name}: the landed member must not be the run's owner`)
       const target = scrolls.at(-1)
       report.check(target === row.turn * 100, `${name}: the landing must scroll to the member's own anchor (turn:${row.turn}), received ${JSON.stringify(scrolls)}`)
       await mounted.unmount()
@@ -251,6 +290,53 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       const ticks = mounted.container.querySelectorAll('.txn-minimap-seg').length
       report.check(ticks === row.count, `${name}: a closed group is one minimap tick, expected ${row.count} ticks, received ${ticks}`)
       await mounted.unmount()
+    } else if (row.kind === 'owner-inset') {
+      const mounted = await mountCase(vm)
+      const group = mounted.container.querySelector('.txn-systemgroup')
+      const owner = article(mounted.container, 1)
+      const member = article(mounted.container, 2)
+      /* jsdom has no layout: an "offset" is the declarations a row sits behind between its
+         group and itself. The owner must sit behind the same inline-start inset as a member,
+         so the run reads as one column instead of a row at the edge and the rest indented. */
+      const ownerPath = inlineStartPath(owner, group)
+      const memberPath = inlineStartPath(member, group)
+      report.check(ownerPath.length > 0, `${name}: the owner row must sit behind an inline-start inset`)
+      report.check(same(ownerPath, memberPath), `${name}: the owner row must share the folded members' inline-start inset, owner=${JSON.stringify(ownerPath)} member=${JSON.stringify(memberPath)}`)
+      report.check(ownerPath.every((value) => !/^0(?:px)?$/.test(value)), `${name}: the shared inset must not collapse to zero, received ${JSON.stringify(ownerPath)}`)
+      await mounted.unmount()
+    } else if (row.kind === 'navigator') {
+      const mounted = await mountCase(leadingControl)
+      const cards = [...mounted.container.querySelectorAll('.txn-rail-left .txn-rail-turn')]
+      const prompts = cards.map((card) => text(card.querySelector('.txn-rail-turn-copy')))
+      report.check(same(prompts, ['run the checks']), `${name}: the navigator must list only the conversation's own turns, received ${JSON.stringify(prompts)}`)
+      report.check(cards.length === 1 && text(cards[0].querySelector('.txn-rail-turn-top b')) === '#2', `${name}: the sole card must still carry the user turn's own label, received ${JSON.stringify(cards.map((card) => text(card)))}`)
+      report.check(cards.every((card) => !text(card).includes('mode')), `${name}: a system entry must never become a navigator card`)
+      report.check(leadingControl.tasks.length === 1, `${name}: the cooked task list must drop the bookkeeping-only span, received ${leadingControl.tasks.length}`)
+      report.check(leadingControl.tasks.every((task) => leadingControl.turns.find((turn) => turn.index === task.turnIndices[0])?.role !== 'system'), `${name}: every navigator task must open on a conversation turn`)
+      await mounted.unmount()
+    } else if (row.kind === 'counts') {
+      const tabText = (container) => text([...container.querySelectorAll('[role="tab"]')].find((button) => text(button).startsWith('full trace')))
+      const traceText = (container) => text(container.querySelector('.txn-trace-count'))
+      const conversation = vm.turns.filter((turn) => turn.role !== 'system').length
+      const expectedTab = `full trace ${conversation}`
+      const expectedTrace = `${conversation} turns`
+      /* the ratified rule: system entries are not turns. With the system filter off (the
+         default reading) the count is still the conversation's; turning the filter on
+         reveals the entries without inflating any turn count. */
+      const off = await mountCase(vm, { filters: filtersWith({ categories: { system: false } }) })
+      report.check(tabText(off.container) === expectedTab, `${name}: the tab must count conversation turns with system off, expected ${JSON.stringify(expectedTab)}, received ${JSON.stringify(tabText(off.container))}`)
+      report.check(traceText(off.container) === expectedTrace, `${name}: the sub-header must count conversation turns with system off, expected ${JSON.stringify(expectedTrace)}, received ${JSON.stringify(traceText(off.container))}`)
+      await off.unmount()
+      const on = await mountCase(vm)
+      report.check(tabText(on.container) === expectedTab, `${name}: the tab must count conversation turns with system on, expected ${JSON.stringify(expectedTab)}, received ${JSON.stringify(tabText(on.container))}`)
+      report.check(traceText(on.container) === expectedTrace, `${name}: the sub-header must count conversation turns with system on, expected ${JSON.stringify(expectedTrace)}, received ${JSON.stringify(traceText(on.container))}`)
+      await on.unmount()
+      /* a narrowed reading still states its share of the CONVERSATION, never of every entry */
+      const narrowed = await mountCase(vm, { filters: filtersWith({ categories: { prompts: false } }) })
+      const visibleConversation = vm.turns.filter((turn) => turn.role !== 'system' && turn.role !== 'user').length
+      const expectedNarrowed = `${visibleConversation} of ${conversation} turns`
+      report.check(traceText(narrowed.container) === expectedNarrowed, `${name}: a narrowed reading must state its share of the conversation, expected ${JSON.stringify(expectedNarrowed)}, received ${JSON.stringify(traceText(narrowed.container))}`)
+      await narrowed.unmount()
     } else if (row.kind === 'control-css') {
       const headRule = css.match(/\.txn-control-head\s*\{[^}]*\}/)?.[0] ?? ''
       report.check(/background:\s*transparent/.test(headRule), `${name}: a control head must draw no ground`)
@@ -266,9 +352,32 @@ await withMountedSource(async ({ load, mount, window, React }) => {
         turns: [{ index: 0, role: 'system', content: 'Permission Mode: Auto', controlKind: 'permission-mode', depth: 0 }],
       }
       const mounted = await mountCase(adaptTranscript(payload))
-      const value = text(mounted.container.querySelector('.txn-control-value'))
-      report.check(value === 'Permission Mode: Auto', `${name}: the recorded value must keep its case, received ${JSON.stringify(value)}`)
+      const head = mounted.container.querySelector('.txn-control-row')
+      /* the kind is printed once, and the remainder keeps the recorded case: "Auto", never "auto" */
+      report.check(text(head?.querySelector('.txn-control-kind')) === 'permission-mode', `${name}: the kind must be printed once, received ${JSON.stringify(text(head?.querySelector('.txn-control-kind')))}`)
+      const value = text(head?.querySelector('.txn-control-value'))
+      report.check(value === 'Auto', `${name}: the recorded value must keep its case beside the kind, received ${JSON.stringify(value)}`)
       report.check(/\.txn-control-value\s*\{[^}]*text-transform:\s*none/.test(css), `${name}: the value must opt out of any lowercase chrome transform`)
+      await mounted.unmount()
+    } else if (row.kind === 'control-value') {
+      const payload = {
+        id: 'control-value',
+        harness: 'claude-code',
+        turns: [
+          { index: 0, role: 'system', content: 'mode: normal', controlKind: 'mode', depth: 0 },
+          { index: 1, role: 'system', content: 'permission mode: auto', controlKind: 'permission-mode', depth: 0 },
+          { index: 2, role: 'system', content: 'atis-latch', controlKind: 'atis-latch', depth: 0 },
+          { index: 3, role: 'system', content: 'session title: Peasant Session', controlKind: 'custom-title', depth: 0 },
+        ],
+      }
+      const mounted = await mountCase(adaptTranscript(payload))
+      const rowOf = (index) => article(mounted.container, index)?.querySelector('.txn-control-row')
+      const kindOf = (index) => text(rowOf(index)?.querySelector('.txn-control-kind'))
+      const valueOf = (index) => text(rowOf(index)?.querySelector('.txn-control-value'))
+      report.check(kindOf(0) === 'mode' && valueOf(0) === 'normal', `${name}: a value that repeats the kind must print it once, received ${JSON.stringify([kindOf(0), valueOf(0)])}`)
+      report.check(kindOf(1) === 'permission-mode' && valueOf(1) === 'auto', `${name}: "permission mode: auto" must print as its kind plus "auto", received ${JSON.stringify([kindOf(1), valueOf(1)])}`)
+      report.check(kindOf(2) === 'atis-latch' && rowOf(2)?.querySelector('.txn-control-value') == null, `${name}: a value equal to its kind must print the kind alone, received ${JSON.stringify(valueOf(2))}`)
+      report.check(kindOf(3) === 'custom-title' && valueOf(3) === 'session title: Peasant Session', `${name}: a value that does not name its kind must stay verbatim, received ${JSON.stringify([kindOf(3), valueOf(3)])}`)
       await mounted.unmount()
     } else if (row.kind === 'control-line') {
       const payload = {

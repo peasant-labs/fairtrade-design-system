@@ -696,6 +696,13 @@ export default function TranscriptViewer({
   }, [turns, filters, commits, vm, searchReveal, systemReveal, session.id])
   const actionLayout = useMemo(() => actionGroups(turns, visibleTurns), [turns, visibleTurns])
 
+  /* Conversation turns. The ratified rule: a system entry is harness bookkeeping,
+     not a turn, so every turn COUNT reports this set. The system filter still
+     reveals the entries, and the system category's badge keeps their entry count.
+     Mirrors the canonical producer rule (`role !== system`). */
+  const conversationTurns = useMemo(() => turns.filter((turn) => turn.role !== 'system'), [turns])
+  const visibleConversationCount = useMemo(() => visibleTurns.filter((turn) => turn.role !== 'system').length, [visibleTurns])
+
   /* Runs of consecutive visible system turns. Ledger-only: classic keeps its full cards, so
      there is nothing to fold there. */
   const systemGroups = useMemo(() => (ledger ? groupSystemTurns(visibleTurns) : new Map()), [ledger, visibleTurns])
@@ -1395,7 +1402,7 @@ export default function TranscriptViewer({
       {TAB_ORDER.map((id) => {
         const on = tab === id
         const count = id === 'highlights' ? highlights.length
-          : id === 'trace' ? turns.length
+          : id === 'trace' ? conversationTurns.length
           : id === 'diffs' ? diffs.length
           : id === 'files' ? files.length
           : annotations.length
@@ -1676,7 +1683,7 @@ export default function TranscriptViewer({
               </Collapsible>
               <div className={"txn-trace-head" + (viewMode === 'graph' ? ' txn-trace-head-graph' : '')}>
                 <span className="txn-trace-count tnum">
-                  {visibleTurns.length === turns.length ? `${turns.length} turns` : `${visibleTurns.length} of ${turns.length} turns`}
+                  {visibleConversationCount === conversationTurns.length ? `${conversationTurns.length} turns` : `${visibleConversationCount} of ${conversationTurns.length} turns`}
                 </span>
                 <div className="txn-trace-actions">
                   <div className="bs-seg txn-viewtoggle" role="group" aria-label="view mode">

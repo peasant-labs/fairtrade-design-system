@@ -16,10 +16,21 @@ requiredCaseNames:
   - closed_group_is_one_minimap_tick_and_one_progress_count
   - control_row_draws_no_card
   - control_row_value_is_never_lowercased
+  - control_row_drops_the_repeated_kind
   - control_row_single_line_boundary_at_160
+  - owner_row_shares_the_folded_inset
+  - rail_lists_only_conversation_turns
+  - turn_counts_report_conversation_turns_only
   - empty_reading_state_names_hidden_system_records
   - empty_reading_state_names_one_hidden_system_record
   - nothing_hidden_shows_no_affordance
+
+requiredControlValueNames:
+  - a value that repeats the kind drops only the phrase
+  - a value spelled with a space names the kind
+  - a value equal to the kind prints once
+  - a value that does not name the kind stays verbatim
+  - a kind prefix that continues into another word is not a match
 
 requiredSummaryNames:
   - summary_singular
@@ -37,6 +48,10 @@ requiredMutationNames:
   - a grouped member landing scrolls to its owner
   - the group noun becomes system records
   - a closed group counts every member
+  - the owner row loses its inset
+  - the control row repeats the kind in its value
+  - a bookkeeping-only span becomes a user turn again
+  - a turn count counts every entry again
 
 mutations:
   - name: the default shows system entries again
@@ -84,3 +99,23 @@ mutations:
     find: "      return group.owner.index === turn.index || openSystemGroups[group.id] === true"
     replace: "      return true"
     expectedDiagnostic: "closed_group_is_one_minimap_tick_and_one_progress_count"
+  - name: the owner row loses its inset
+    file: src/index.css
+    find: ".txn-systemgroup-owner,\n.txn-systemgroup-rows { padding-inline-start: var(--sp-4); }"
+    replace: ".txn-systemgroup-owner { padding-inline-start: 0; }\n.txn-systemgroup-rows { padding-inline-start: var(--sp-4); }"
+    expectedDiagnostic: "owner_row_shares_the_folded_inset"
+  - name: the control row repeats the kind in its value
+    file: src/ui/transcript/ControlRow.jsx
+    find: "const value = controlValueRemainder(kind, recorded)"
+    replace: "const value = recorded"
+    expectedDiagnostic: "control_row_drops_the_repeated_kind"
+  - name: a bookkeeping-only span becomes a user turn again
+    file: src/ui/transcript/analytics.js
+    find: ".filter(({ tg }) => turns[tg.startIndex]?.role !== 'system')"
+    replace: ".filter(() => true)"
+    expectedDiagnostic: "rail_lists_only_conversation_turns"
+  - name: a turn count counts every entry again
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: ": id === 'trace' ? conversationTurns.length"
+    replace: ": id === 'trace' ? turns.length"
+    expectedDiagnostic: "turn_counts_report_conversation_turns_only"
