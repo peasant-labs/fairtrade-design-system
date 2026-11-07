@@ -20,7 +20,7 @@ requiredCaseNames:
   - transcript demo defaults to ledger
   - transcript demo supports explicit classic
   - transcript demo opts into the ledger presentation
-  - transcript demo renders the ledger system row
+  - transcript demo hides system entries on load
 requiredMutationNames:
   - the typical pair is slashed
   - stale published vocabulary

@@ -60,7 +60,7 @@ const CAPABILITIES = { canEdit: false, canLabel: false, canContribute: true, can
 const SUBTITLE = 'a public transcript from fairtrade, read as a ledger.'
 
 const FILTERS = {
-  categories: { prompts: true, responses: true, thinking: true, toolcalls: true },
+  categories: { prompts: true, responses: true, thinking: true, toolcalls: true, system: true },
   toolGroups: { edits: true, bash: true, read: true, search: true, fetch: true, tasks: true, other: true },
   tags: { errors: false, retries: false, revert: false },
   views: { hidden: false, expandAll: false, compact: false },
@@ -134,7 +134,9 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   }
 
   async function mountViewer(props = {}) {
-    const mounted = await mount(React.createElement(TranscriptViewer, { viewModel: vm, capabilities: CAPABILITIES, ...props }))
+    /* Every mounted case reads the full turn list, so it runs with the complete filters object
+       (system on); the default hides system entries. */
+    const mounted = await mount(React.createElement(TranscriptViewer, { viewModel: vm, capabilities: CAPABILITIES, filters: FILTERS, ...props }))
     return pinHeader(mounted)
   }
 
@@ -143,7 +145,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     function Controlled() {
       const [activeTurn, setActiveTurn] = React.useState(startTurn)
       return React.createElement(TranscriptViewer, {
-        viewModel: vm, capabilities: CAPABILITIES, ...props, activeTurn, onActiveTurnChange: setActiveTurn,
+        viewModel: vm, capabilities: CAPABILITIES, filters: FILTERS, ...props, activeTurn, onActiveTurnChange: setActiveTurn,
       })
     }
     const mounted = await mount(React.createElement(Controlled))

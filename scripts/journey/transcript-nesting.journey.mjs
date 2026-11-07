@@ -15,6 +15,13 @@ for (const viewport of fixture.viewports) test(`nested agent insets ${viewport.n
   await page.setViewportSize(viewport)
   await page.goto(`${origin}/?app=transcript&transcript=ledger-nesting&fb=off&theme=${info.project.name}#inuse`)
   await expect(page.locator('.txn-app')).toHaveAttribute('data-theme', info.project.name)
+  // The canonical default hides system entries; this geometry journey reads every turn.
+  if (viewport.width < 1024) {
+    await page.locator('.txn-footer').getByRole('button', { name: 'filters', exact: true }).click()
+    await expect(page.locator('.txn-mobile-drawer')).toBeVisible()
+  }
+  await page.locator('.txn-catlist .txn-checkrow').filter({ has: page.locator('.txn-cr-label', { hasText: /^system$/ }) }).locator('input[type="checkbox"]').check()
+  if (viewport.width < 1024) await page.getByRole('button', { name: 'close drawer' }).click()
   await page.evaluate(async () => { await document.fonts.ready; document.getElementById('inuse').scrollIntoView({ block: 'start', behavior: 'instant' }) })
   for (const row of fixture.cases) {
     const article = page.locator(`#turn-${row.index}`)

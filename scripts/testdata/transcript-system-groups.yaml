@@ -1,0 +1,102 @@
+# Cases for system-entry grouping and control rows (adaptTranscript -> TranscriptViewer).
+# scripts/transcript-system-groups.test.mjs cooks the payload below, mounts the REAL viewer through
+# vite, and asserts what a reader reaches: the default hides system entries, a run of two or more
+# folds into one group with a producer-neutral summary, the owner renders in place, closed members
+# are inert, search can reveal a hidden entry without writing the reader's filters, a grouped
+# member is one keyboard stop while its group is closed, and a control row is a row (no card) whose
+# recorded value keeps its case.
+payload:
+  id: system-groups
+  harness: claude-code
+  startTime: '2026-10-06T12:00:00Z'
+  endTime: '2026-10-06T12:10:00Z'
+  durationMins: 10
+  totalTokens: 0
+  tokensIn: 0
+  tokensOut: 0
+  turnCount: 9
+  toolCallCount: 0
+  turns:
+    - {index: 0, role: user, content: 'run the checks', timestamp: '2026-10-06T12:00:00Z', depth: 0}
+    - {index: 1, role: system, content: 'mode: normal', controlKind: mode, timestamp: '2026-10-06T12:01:00Z', depth: 0}
+    - {index: 2, role: system, content: 'permission mode: auto', controlKind: permission-mode, timestamp: '2026-10-06T12:02:00Z', depth: 0}
+    - {index: 3, role: system, content: 'session title: Peasant Session', controlKind: custom-title, timestamp: '2026-10-06T12:03:00Z', depth: 0}
+    - {index: 4, role: assistant, content: 'checks are running', timestamp: '2026-10-06T12:04:00Z', depth: 0}
+    - {index: 5, role: system, content: 'the ordinary system message is long enough to keep', timestamp: '2026-10-06T12:05:00Z', depth: 0}
+    - {index: 6, role: user, content: 'run them again', timestamp: '2026-10-06T12:06:00Z', depth: 0}
+    - {index: 7, role: system, content: 'agent name: Explorer', controlKind: agent-name, timestamp: '2026-10-06T12:07:00Z', depth: 0}
+    - {index: 8, role: assistant, content: 'done', timestamp: '2026-10-06T12:08:00Z', depth: 0}
+# a payload from a producer that predates controlKind: every system turn is ordinary
+unclassifiedPayload:
+  id: system-groups-unclassified
+  harness: claude-code
+  turnCount: 2
+  turns:
+    - {index: 0, role: system, content: 'session title: an old producer', timestamp: '2026-10-06T12:00:00Z', depth: 0}
+    - {index: 1, role: assistant, content: 'old but readable', timestamp: '2026-10-06T12:01:00Z', depth: 0}
+# only system entries: with system off the reading pane is empty and names what is hidden
+systemOnlyPayload:
+  id: system-groups-empty
+  harness: claude-code
+  turnCount: 0
+  turns:
+    - {index: 0, role: system, content: 'mode: normal', controlKind: mode, timestamp: '2026-10-06T12:00:00Z', depth: 0}
+    - {index: 1, role: system, content: 'permission mode: auto', controlKind: permission-mode, timestamp: '2026-10-06T12:01:00Z', depth: 0}
+
+summaryCases:
+  - name: summary_singular
+    kinds: [mode]
+    expected: '1 entry: 1 mode'
+  - name: summary_kinds_verbatim
+    kinds: [permission-mode, custom-title]
+    expected: '2 entries: 1 custom-title, 1 permission-mode'
+  - name: summary_plus_more
+    kinds: [mode, permission-mode, custom-title, agent-name, attachment, artifact-transcript]
+    expected: '6 entries: 1 agent-name, 1 artifact-transcript, 1 attachment, 1 custom-title, +2 more'
+
+cases:
+  - name: control_kind_present_renders_control_row
+    kind: classification
+  - name: no_control_kind_renders_system_row
+    kind: system-row
+  - name: payload_without_control_kind_classifies_nothing
+    kind: downgrade
+  - name: run_of_three_is_one_group
+    kind: group-count
+    groups: 1
+    members: 3
+  - name: singleton_is_not_grouped
+    kind: singleton
+  - name: user_turn_splits_runs
+    kind: split
+  - name: hidden_turn_splits_runs
+    kind: hidden-merge
+  - name: owner_renders_in_place
+    kind: owner
+  - name: closed_group_members_are_inert
+    kind: inert
+  - name: summary_mounted_head
+    kind: mounted-summary
+    expected: '3 entries: 1 custom-title, 1 mode, 1 permission-mode'
+  - name: search_hit_in_hidden_system_turn_reveals_without_writing_filters
+    kind: search-reveal
+    query: 'ordinary system message'
+    turn: 5
+  - name: copy_anchor_on_grouped_member_reveals
+    kind: member-landing
+    turn: 2
+  - name: initial_turn_inside_closed_group_opens_before_scroll
+    kind: initial-position
+    turn: 3
+  - name: closed_group_is_one_keyboard_stop
+    kind: keyboard
+  - name: control_row_draws_no_card
+    kind: control-css
+  - name: control_row_value_is_never_lowercased
+    kind: control-case
+  - name: control_row_single_line_boundary_at_160
+    kind: control-line
+  - name: empty_reading_state_names_hidden_system_records
+    kind: empty-state
+  - name: nothing_hidden_shows_no_affordance
+    kind: empty-no-affordance

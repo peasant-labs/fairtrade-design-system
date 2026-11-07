@@ -1,0 +1,65 @@
+requiredCaseNames:
+  - control_kind_present_renders_control_row
+  - no_control_kind_renders_system_row
+  - payload_without_control_kind_classifies_nothing
+  - run_of_three_is_one_group
+  - singleton_is_not_grouped
+  - user_turn_splits_runs
+  - hidden_turn_splits_runs
+  - owner_renders_in_place
+  - closed_group_members_are_inert
+  - summary_mounted_head
+  - search_hit_in_hidden_system_turn_reveals_without_writing_filters
+  - copy_anchor_on_grouped_member_reveals
+  - initial_turn_inside_closed_group_opens_before_scroll
+  - closed_group_is_one_keyboard_stop
+  - control_row_draws_no_card
+  - control_row_value_is_never_lowercased
+  - control_row_single_line_boundary_at_160
+  - empty_reading_state_names_hidden_system_records
+  - nothing_hidden_shows_no_affordance
+
+requiredSummaryNames:
+  - summary_singular
+  - summary_kinds_verbatim
+  - summary_plus_more
+
+requiredMutationNames:
+  - the default shows system entries again
+  - groups are computed over every turn instead of the visible set
+  - grouped members render alongside the owner
+  - the control and system row branches are swapped
+  - the closed group loses its inert wrapper
+  - the empty reading state loses its reveal control
+
+mutations:
+  - name: the default shows system entries again
+    file: src/ui/transcript/filters.js
+    find: "toolcalls: true, system: false"
+    replace: "toolcalls: true, system: true"
+    expectedDiagnostic: "empty_reading_state_names_hidden_system_records"
+  - name: groups are computed over every turn instead of the visible set
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "ledger ? groupSystemTurns(visibleTurns) : new Map()"
+    replace: "ledger ? groupSystemTurns(turns) : new Map()"
+    expectedDiagnostic: "hidden_turn_splits_runs"
+  - name: grouped members render alongside the owner
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "if (group && group.owner.index !== t.index) return null"
+    replace: "if (group && group.owner.index !== t.index) return renderTurn(t)"
+    expectedDiagnostic: "owner_renders_in_place"
+  - name: the control and system row branches are swapped
+    file: src/ui/transcript/TurnCard.jsx
+    find: "const controlRow = systemRow && !!turn.controlKind"
+    replace: "const controlRow = systemRow && !turn.controlKind"
+    expectedDiagnostic: "no_control_kind_renders_system_row"
+  - name: the closed group loses its inert wrapper
+    file: src/ui/transcript/SystemGroup.jsx
+    find: "<Collapsible id={bodyId} open={shown} keepMounted animateSize={false}>"
+    replace: "<Collapsible id={bodyId} open={shown} animateSize={false}>"
+    expectedDiagnostic: "closed_group_members_are_inert"
+  - name: the empty reading state loses its reveal control
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: 'className="txn-empty-show-system"'
+    replace: 'className="txn-empty-show-system" hidden'
+    expectedDiagnostic: "empty_reading_state_names_hidden_system_records"

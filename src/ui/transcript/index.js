@@ -34,7 +34,11 @@ export { TOOL_GROUPS } from './view-model.js'
    legacy-git normalisation site — plus the single-session analytics util. The
    analytics helpers keep their canonical wire-shaped signatures so consumers
    import one stable contract. Pure-render derivations live in the adapter. ─────────── */
-export { adaptTranscript, prefilterTurns, isSessionMetadataTurn, diffLines } from './adapter.js'
+export { adaptTranscript, prefilterTurns, diffLines } from './adapter.js'
+export { default as TranscriptControlRow } from './ControlRow.jsx'
+export { default as TranscriptSystemGroup } from './SystemGroup.jsx'
+export { systemGroups } from './system-groups.js'
+export { systemGroupSummary } from './system-summary.js'
 export {
   computeTasks,
   computeTurnLabels,

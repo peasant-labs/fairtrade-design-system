@@ -1,8 +1,9 @@
 # Cases for how the transcript treats session records and times (adaptTranscript ->
 # TranscriptViewer). scripts/transcript-session-records.test.mjs cooks the payload below for each
 # case, then checks the cooked view model or the REAL mounted viewer:
-#   - Claude Code's session metadata records ("custom-title: ...", "agent name: ...") are not
-#     turns, while a real system turn and the same text from another harness stay turns;
+#   - Claude Code's control records ("custom-title: ...", "agent name: ...") are turns that
+#     carry their producer kind, while the same text without a kind stays an ordinary system
+#     turn; the adapter never re-derives the producer's classification;
 #   - a missing, zero, epoch or Go zero-time timestamp is no time: the cooked turn carries none
 #     and the mounted turn shows no "ago" label;
 #   - the session duration reads in the one short format, never as raw minutes;
@@ -24,8 +25,8 @@ payload:
   turnCount: 6
   toolCallCount: 0
   turns:
-    - {index: 0, role: system, content: 'custom-title: EnCUCA · Contador', timestamp: '0001-01-01T00:00:00Z', depth: 0}
-    - {index: 1, role: system, content: 'agent name: EnCUCA · Contador', timestamp: '0001-01-01T00:00:00Z', depth: 0}
+    - {index: 0, role: system, content: 'custom-title: EnCUCA · Contador', timestamp: '0001-01-01T00:00:00Z', depth: 0, controlKind: custom-title}
+    - {index: 1, role: system, content: 'agent name: EnCUCA · Contador', timestamp: '0001-01-01T00:00:00Z', depth: 0, controlKind: agent-name}
     - {index: 2, role: user, content: 'Quero um app bem simples para mostrar numa apresentação', timestamp: '2026-10-06T12:00:00Z', depth: 0}
     - {index: 3, role: assistant, content: 'Vou criar o contador agora.', timestamp: '2026-10-06T12:04:30Z', depth: 0}
     - {index: 4, role: system, content: "the conversation was compacted.\nsummary: the counter app was built.", timestamp: '2026-10-06T12:05:00Z', depth: 0}
@@ -33,16 +34,28 @@ payload:
     - {index: 6, role: assistant, content: 'Pronto.', depth: 0}
 
 cases:
-  - name: session metadata records are not turns
+  - name: session metadata records are control records
     kind: turns
-    expected: [2, 3, 4, 5, 6]
-  - name: the same text from another harness stays a turn
+    # A control record is a turn the producer classified; it is no longer dropped.
+    expected: [0, 1, 2, 3, 4, 5, 6]
+  - name: a control record carries its producer kind
+    kind: control
+    expected:
+      - {index: 0, kind: custom-title}
+      - {index: 1, kind: agent-name}
+    noneFor: [2, 3, 4, 5, 6]
+  - name: the same text without a producer kind stays an ordinary system turn
     kind: turns
     harness: codex
-    expected: [0, 1, 2, 3, 4, 5, 6]
+    turns:
+      - {index: 0, role: system, content: 'custom-title: EnCUCA · Contador', timestamp: '0001-01-01T00:00:00Z', depth: 0}
+      - {index: 1, role: system, content: 'agent name: EnCUCA · Contador', timestamp: '0001-01-01T00:00:00Z', depth: 0}
+      - {index: 2, role: user, content: 'Quero um app bem simples para mostrar numa apresentação', timestamp: '2026-10-06T12:00:00Z', depth: 0}
+      - {index: 3, role: assistant, content: 'Vou criar o contador agora.', timestamp: '2026-10-06T12:04:30Z', depth: 0}
+    expected: [0, 1, 2, 3]
   - name: an unknown turn time is dropped
     kind: times
-    expected: {'2': '2026-10-06T12:00:00Z', '3': '2026-10-06T12:04:30Z', '4': '2026-10-06T12:05:00Z', '5': null, '6': null}
+    expected: {'0': null, '1': null, '2': '2026-10-06T12:00:00Z', '3': '2026-10-06T12:04:30Z', '4': '2026-10-06T12:05:00Z', '5': null, '6': null}
   - name: an unknown session time is empty
     kind: session
     expected: {startTime: '', endTime: '2026-10-06T12:04:30Z'}

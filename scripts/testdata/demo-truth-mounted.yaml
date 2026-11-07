@@ -71,6 +71,18 @@ cases:
     root: .pub-bar
     text: [published]
     absent: [not published]
+  - name: transcript demo reveals grouped system entries
+    query: 'app=transcript&transcript=ledger-system'
+    width: 1440
+    root: .txn-app
+    text: [assistant]
+    steps:
+      - action: load
+        expect: zero system rows and no group
+      - action: tick system
+        expect: exactly one system group, closed
+      - action: open group
+        expect: one control row and one system row
   - name: returned provider
     query: app=commons&commons=explore-transcript
     width: 1440

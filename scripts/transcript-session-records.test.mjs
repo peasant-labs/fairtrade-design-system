@@ -35,6 +35,16 @@ await withMountedSource(async ({ load, mount, React }) => {
     if (row.kind === 'turns') {
       const indices = vm.turns.map((turn) => turn.index)
       report.check(same(indices, row.expected), `${name}: cooked turns must be ${JSON.stringify(row.expected)}, received ${JSON.stringify(indices)}`)
+    } else if (row.kind === 'control') {
+      for (const expected of row.expected) {
+        const turn = vm.turns.find((entry) => entry.index === expected.index)
+        const actual = JSON.stringify({ kind: turn?.controlKind, isControl: turn?.isControl })
+        report.check(turn?.controlKind === expected.kind && turn?.isControl === true, `${name}: cooked controlKind ${actual} must read ${JSON.stringify({ kind: expected.kind, isControl: true })}`)
+      }
+      for (const index of row.noneFor) {
+        const turn = vm.turns.find((entry) => entry.index === index)
+        report.check(turn?.controlKind === undefined && !turn?.isControl, `${name}: turn ${index} must classify no control kind, received ${JSON.stringify({ kind: turn?.controlKind, isControl: turn?.isControl })}`)
+      }
     } else if (row.kind === 'times') {
       const times = Object.fromEntries(vm.turns.map((turn) => [String(turn.index), turn.timestamp ?? null]))
       report.check(same(times, row.expected), `${name}: cooked times must be ${JSON.stringify(row.expected)}, received ${JSON.stringify(times)}`)

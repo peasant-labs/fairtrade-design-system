@@ -12,8 +12,7 @@ import {
 } from 'lucide-react'
 import ProviderIcon from '../ProviderIcon.jsx'
 import { formatDurationMins, formatDurationMs } from './time.js'
-import { TOOL_GROUPS } from './view-model.js'
-import { categoryCounts, projectTurn } from './filters.js'
+import { DEFAULT_TRANSCRIPT_FILTERS, categoryCounts, filtersActive as countActiveFilters, projectTurn } from './filters.js'
 import { actionGroups } from './action-groups.js'
 import { turnAtReadingLine } from './scroll-position.js'
 import useReaderWidthAnchor from './useReaderWidthAnchor.js'
@@ -26,6 +25,8 @@ import { UsageScopes } from './UsageDisclosure.jsx'
 import DiffEntryCard from './DiffEntryCard.jsx'
 import OutlineRail from './OutlineRail.jsx'
 import FiltersRail from './FiltersRail.jsx'
+import TranscriptSystemGroup from './SystemGroup.jsx'
+import { systemGroups as groupSystemTurns } from './system-groups.js'
 import TranscriptMinimap from './Minimap.jsx'
 import Scrubber from './Scrubber.jsx'
 import Scorecard from './Scorecard.jsx'
@@ -182,14 +183,9 @@ const ANNOTATION_META = {
   subagent: { label: 'subagent', icon: CornerDownRight, chip: '', tip: 'a Task spawned a nested subagent at depth > 0' },
 }
 
-/* the canonical default view-state (so the viewer "just works" unmanaged). */
-const DEFAULT_FILTERS = Object.freeze({
-  categories: { prompts: true, responses: true, thinking: true, toolcalls: true, system: true },
-  toolGroups: Object.fromEntries(TOOL_GROUPS.map((id) => [id, true])),
-  tags: { errors: false, retries: false, revert: false },
-  views: { hidden: true, expandAll: false, compact: false },
-  checkpoint: 'all',
-})
+/* the canonical default view-state lives in filters.js so the rail's fallback, this
+   viewer's unmanaged state, and every host's onClear reset cannot disagree. */
+const DEFAULT_FILTERS = DEFAULT_TRANSCRIPT_FILTERS
 
 // Controlled hosts may recreate equivalent filter objects on every render.
 const filterFingerprint = (filters) => JSON.stringify([
@@ -428,6 +424,16 @@ export default function TranscriptViewer({
     return () => { observer?.disconnect(); window.removeEventListener('resize', update) }
   }, [])
   useEffect(() => { setMobileDrawer(null); setMobileToolsOpen(false) }, [vm?.session?.id])
+  // Open groups and a temporary system reveal belong to one transcript. Reset on a session
+  // CHANGE only: a passive reset on mount would close a group an initial position just opened.
+  const groupStateSessionRef = useRef(vm?.session?.id ?? '')
+  useEffect(() => {
+    const sessionId = vm?.session?.id ?? ''
+    if (groupStateSessionRef.current === sessionId) return
+    groupStateSessionRef.current = sessionId
+    setOpenSystemGroups({})
+    setSystemReveal(null)
+  }, [vm?.session?.id])
   useEffect(() => {
     if (!mobileToolsOpen) return
     const onKey = (event) => { if (event.key === 'Escape' && !event.defaultPrevented) { setMobileToolsOpen(false); mobileToolsRef.current?.focus() } }
@@ -512,6 +518,12 @@ export default function TranscriptViewer({
   const [matchIdx, setMatchIdx] = useState(0)
   const [searchNavigation, setSearchNavigation] = useState(0)
   const [searchReveal, setSearchReveal] = useState(null)
+  /* a session-scoped temporary reveal for a turn hidden ONLY by the system category: a
+     search hit or a copied anchor must be able to land on it without writing the reader's
+     persisted filter choice. Ended by any filter change (the fingerprint stops matching)
+     or a session switch. */
+  const [systemReveal, setSystemReveal] = useState(null)
+  const [openSystemGroups, setOpenSystemGroups] = useState({})
   const [searchUnrendered, setSearchUnrendered] = useState(false)
   const [searchMeasurements, setSearchMeasurements] = useState({ query: '', sections: {} })
   const [selectedSearchRange, setSelectedSearchRange] = useState(null)
@@ -663,8 +675,14 @@ export default function TranscriptViewer({
       checkpointTurn: selCommit?.turn ?? null, // adapter-joined anchor; scopes only when present
     }
     const sourceFiltersMatch = searchReveal?.sourceIndex != null && searchReveal.filterFingerprint === filterFingerprint(filters)
+    const systemRevealMatch = systemReveal != null && systemReveal.sessionId === session.id && systemReveal.filterFingerprint === filterFingerprint(filters)
     return turns.map((t) => {
-      const projected = projectTurn(t, filters, ctx)
+      // A temporary system reveal projects exactly its one turn with the system category
+      // on; every other filter dimension stays the reader's, so nothing else appears.
+      const effectiveFilters = systemRevealMatch && systemReveal.turn === t.index && t.role === 'system'
+        ? { ...filters, categories: { ...filters.categories, system: true } }
+        : filters
+      const projected = projectTurn(t, effectiveFilters, ctx)
       // A deliberate source jump may temporarily reveal exactly its readable
       // call without changing the reader's persisted filter choices. A later
       // filter change or session switch ends that exception.
@@ -675,8 +693,48 @@ export default function TranscriptViewer({
       const base = projected ?? { ...t, content: '', displayContent: '', thinking: undefined, toolCalls: [] }
       return { ...base, toolCalls: [...(base.toolCalls ?? []), call].sort((a, b) => a.sourceIndex - b.sourceIndex) }
     }).filter((t) => t != null)
-  }, [turns, filters, commits, vm, searchReveal, session.id])
+  }, [turns, filters, commits, vm, searchReveal, systemReveal, session.id])
   const actionLayout = useMemo(() => actionGroups(turns, visibleTurns), [turns, visibleTurns])
+
+  /* Runs of consecutive visible system turns. Ledger-only: classic keeps its full cards, so
+     there is nothing to fold there. */
+  const systemGroups = useMemo(() => (ledger ? groupSystemTurns(visibleTurns) : new Map()), [ledger, visibleTurns])
+
+  /* A model-actions block is not a turn: only a turn that draws a card (prose, or the system
+     row) owns the reading position and the keyboard step. */
+  const cardTurns = useMemo(
+    () => visibleTurns.filter((t) => t.role === 'system' || String(t.displayContent ?? t.content ?? '').trim() !== ''),
+    [visibleTurns],
+  )
+
+  /* The navigable list: the drawn cards, with a system-entry group collapsed to one stop at
+     its owner plus the members of groups the reader has opened. Progress, the keyboard step,
+     the reading line, the minimap and jump-latest all read this one list, so a closed group
+     is one stop and opening it adds its members. */
+  const navigableTurns = useMemo(() => {
+    if (systemGroups.size === 0) return cardTurns
+    return cardTurns.filter((turn) => {
+      const group = systemGroups.get(turn.index)
+      if (!group) return true
+      return group.owner.index === turn.index || openSystemGroups[group.id] === true
+    })
+  }, [cardTurns, systemGroups, openSystemGroups])
+
+  /* Turns hidden ONLY by the system category: re-project with system on and every other
+     filter unchanged. Search enumerates this set so a hit can never exist that no reveal can
+     show, and an initial position can reveal one of these without writing the reader's filters. */
+  const systemHiddenTurns = useMemo(() => {
+    if (filters.categories?.system !== false) return []
+    const { checkpoint } = filters
+    const selCommit = checkpoint !== 'all' ? commits.find((c) => c.shortHash === checkpoint || c.hash === checkpoint) : null
+    const ctx = {
+      annotationsByTurn: vm?.filterIndex?.annotationsByTurn ?? {},
+      checkpointTurn: selCommit?.turn ?? null,
+    }
+    const revealFilters = { ...filters, categories: { ...filters.categories, system: true } }
+    const shown = new Set(visibleTurns.map((turn) => turn.index))
+    return turns.map((turn) => projectTurn(turn, revealFilters, ctx)).filter((turn) => turn != null && !shown.has(turn.index))
+  }, [turns, filters, commits, vm, visibleTurns])
   const readerAnchor = useReaderWidthAnchor({ readerPx, scrollRef, activeTurnRef, turnRefs, actionRefs, actionLayout, visibleTurns, ledger, sessionId: session.id, tab, viewMode, onSettle: () => { if (scrollRef.current) syncScrollChrome(scrollRef.current) } })
   useEffect(() => {
     readerDragRef.current = null
@@ -790,6 +848,12 @@ export default function TranscriptViewer({
       return 'applied'
     }
     const sc = scrollRef.current
+    // A turn hidden only by the system category is not mounted; reveal it temporarily and
+    // let the readiness pass retry once it is present. The reader's filters are untouched.
+    if (position.kind === 'turn' && systemHiddenTurns.some((turn) => turn.index === position.turnIndex)) {
+      setSystemReveal({ turn: position.turnIndex, sessionId: session.id, filterFingerprint: filterFingerprint(filters), sequence: ++revealSequence.current })
+      return 'pending'
+    }
     const el = position.kind === 'turn' ? turnRefs.current[position.turnIndex] : null
     const result = transcriptInitialPositionReadiness(position, {
       authoritativeTurnIndices: turns.map((turn) => turn.index),
@@ -808,12 +872,20 @@ export default function TranscriptViewer({
 
     const projected = visibleTurns.find(turn => turn.index === position.turnIndex)
     const location = ledger && !String(projected?.displayContent ?? projected?.content ?? '').trim() ? actionLayout.locations.get(position.turnIndex) : null
+    const group = openGroupForTurn(position.turnIndex)
     if (location) revealAction(position.turnIndex, location.where, { select: false })
+    else if (group) {
+      // The member's own anchor, after the fold commits.
+      requestAnimationFrame(() => {
+        const memberEl = turnRefs.current[position.turnIndex]
+        if (memberEl) sc.scrollTo({ top: turnScrollTop(sc, memberEl), behavior: 'auto' })
+      })
+    }
     // Only the reading stream moves; scrollIntoView also scrolls clipped layout ancestors.
     else sc.scrollTo({ top: turnScrollTop(sc, el), behavior: 'auto' })
     latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()
     return 'applied'
-  }, [readTraceReadingSnapshot, tab, turns, viewMode, visibleTurns, ledger, actionLayout, setTab, setViewMode, setOpenTools, filters, session.id])
+  }, [readTraceReadingSnapshot, tab, turns, viewMode, visibleTurns, systemHiddenTurns, ledger, actionLayout, setTab, setViewMode, setOpenTools, filters, session.id, systemGroups])
 
   const applyTraceReadingPosition = useCallback((position) => {
     const target = traceReadingPositionRef.current ?? traceReadingPosition
@@ -831,9 +903,16 @@ export default function TranscriptViewer({
     sc.scrollTo({ top: target.scrollTop, behavior: 'auto' })
     if (target.focusOrigin.kind === 'scroller') sc.focus({ preventScroll: true })
     else if (target.focusOrigin.kind === 'descendant') {
-      const turn = turnRefs.current[target.focusOrigin.turnIndex]
-      const control = turn?.querySelector?.(`.txn-anchor[data-turn-control="${target.focusOrigin.turnIndex}"]`)
-      ;(control ?? tabRefs.current.trace)?.focus({ preventScroll: true })
+      const idx = target.focusOrigin.turnIndex
+      const group = openGroupForTurn(idx)
+      const focusAnchor = () => {
+        const turn = turnRefs.current[idx]
+        const control = turn?.querySelector?.(`.txn-anchor[data-turn-control="${idx}"]`)
+        ;(control ?? tabRefs.current.trace)?.focus({ preventScroll: true })
+      }
+      // A grouped member is inert until its group opens; focus on the next frame.
+      if (group) requestAnimationFrame(focusAnchor)
+      else focusAnchor()
     } else tabRefs.current.trace?.focus({ preventScroll: true })
     latestTraceReadingSnapshotRef.current = {
       scrollTop: target.scrollTop,
@@ -867,54 +946,48 @@ export default function TranscriptViewer({
     toolGroups: toolGroupCounts,
   }), [turns, toolGroupCounts])
 
-  /* The "clear (N)" badge counts filters the user can still undo. Tool groups
-     count only while `tool calls` is on: once the umbrella is off it has already
-     cascaded every group to false, and counting those would report 8 active
-     filters for one click. */
-  const filtersActive =
-    (filters.categories.prompts ? 0 : 1) +
-    (filters.categories.responses ? 0 : 1) +
-    (filters.categories.thinking ? 0 : 1) +
-    (filters.categories.toolcalls ? 0 : 1) +
-    (filters.categories.system === false ? 1 : 0) +
-    (filters.tags.errors ? 1 : 0) +
-    (filters.tags.retries ? 1 : 0) +
-    (filters.tags.revert ? 1 : 0) +
-    (filters.categories.toolcalls ? Object.values(filters.toolGroups).filter((v) => !v).length : 0)
+  /* The "clear (N)" badge counts how many choices deviate from the canonical default.
+     The rule lives in filters.js beside the default it compares against, so the rail's
+     fallback and this count cannot drift. */
+  const filtersActive = countActiveFilters(filters)
 
   /* search matches: substring across turn content + tool previews/output. */
   const matches = useMemo(() => {
     if (!query.trim()) return []
     const found = []
-    const append = (turn, where, text) => {
+    const append = (turn, where, text, hiddenSystem = false) => {
       let raw = 0
       for (const _match of text.matchAll(searchExpression(query))) raw++
       if (!raw) return
       const measured = searchMeasurements.query === query ? searchMeasurements.sections[`${turn}:${where}`] : undefined
       const rendered = measured ?? raw
-      for (let occurrence = 0; occurrence < rendered; occurrence++) found.push({ turn, where, occurrence, sourceOnly: false })
-      if (measured !== undefined) for (let occurrence = 0; occurrence < Math.max(0, raw - rendered); occurrence++) found.push({ turn, where, occurrence, sourceOnly: true })
+      for (let occurrence = 0; occurrence < rendered; occurrence++) found.push({ turn, where, occurrence, sourceOnly: false, hiddenSystem })
+      if (measured !== undefined) for (let occurrence = 0; occurrence < Math.max(0, raw - rendered); occurrence++) found.push({ turn, where, occurrence, sourceOnly: true, hiddenSystem })
     }
-    for (const t of visibleTurns) {
-      append(t.index, 'body', t.displayContent ?? t.content ?? '')
-      append(t.index, 'thinking', t.thinking?.text || '')
+    const appendTurn = (t, hiddenSystem) => {
+      append(t.index, 'body', t.displayContent ?? t.content ?? '', hiddenSystem)
+      append(t.index, 'thinking', t.thinking?.text || '', hiddenSystem)
       for (const tc of t.toolCalls || []) {
         const out = typeof tc.output === 'string' ? tc.output : tc.output != null ? JSON.stringify(tc.output) : ''
         const hay = [tc.preview, out].filter(Boolean).join(' ')
-        if (tc.id || tc.sourceIndex != null) append(t.index, tc.id || `source:${tc.sourceIndex}`, hay)
+        if (tc.id || tc.sourceIndex != null) append(t.index, tc.id || `source:${tc.sourceIndex}`, hay, hiddenSystem)
       }
     }
+    for (const t of visibleTurns) appendTurn(t, false)
+    // A hit the system category hides is revealable by the session-scoped temporary reveal;
+    // a turn hidden by any other dimension stays out, exactly as before.
+    for (const t of systemHiddenTurns) appendTurn(t, true)
     return found
-  }, [query, visibleTurns, searchMeasurements])
+  }, [query, visibleTurns, systemHiddenTurns, searchMeasurements])
 
   const progress = useMemo(() => {
-    const idx = visibleTurns.findIndex((t) => t.index === activeTurn)
-    return { cur: Math.max(1, idx + 1), total: visibleTurns.length }
-  }, [activeTurn, visibleTurns])
+    const idx = navigableTurns.findIndex((t) => t.index === activeTurn)
+    return { cur: Math.max(1, idx + 1), total: navigableTurns.length }
+  }, [activeTurn, navigableTurns])
   /* The bottom bar's quiet row is host opt-in: a host that wants the shortcut hint or the position
      counter passes `footer` with that flag; both stay out of the surface by default. */
   const footerHints = footer?.hints === true
-  const footerProgress = footer?.progress === true && tab === 'trace' && viewMode === 'list' && visibleTurns.length > 0
+  const footerProgress = footer?.progress === true && tab === 'trace' && viewMode === 'list' && navigableTurns.length > 0
 
   /* ── navigation + interactions (effects/handlers only; safe under static render) ── */
   function selectTurn(idx) {
@@ -927,20 +1000,34 @@ export default function TranscriptViewer({
     readerAnchor.clear()
     navigationTargetRef.current = null
   }
+  /* A member of a system-entry group resolves to its owner for selection and readiness, but a
+     landing still targets the member's own anchor. */
+  function openGroupForTurn(idx) {
+    const group = systemGroups.get(idx)
+    // The owner IS the group's one stop, so landing on it leaves the group closed; landing on
+    // a folded member opens the group so that member can be reached.
+    if (group && group.owner.index !== idx) setOpenSystemGroups((previous) => (previous[group.id] ? previous : { ...previous, [group.id]: true }))
+    return group
+  }
   function jumpTo(idx, { switchTab = true } = {}) {
     if (switchTab && tab !== 'trace') {
       skipTraceRestoreRef.current = true
       setTab('trace')
     }
     setViewMode('list')
-    selectTurn(idx)
-    const projected = visibleTurns.find(turn => turn.index === idx)
-    const location = ledger && !String(projected?.displayContent ?? projected?.content ?? '').trim() ? actionLayout.locations.get(idx) : null
-    if (location) { revealAction(idx, location.where); return }
+    const group = openGroupForTurn(idx)
+    // A closed group is one stop at its owner; once opened, its members are stops of their own.
+    const groupOpen = group ? openSystemGroups[group.id] === true : false
+    const owner = group && !groupOpen ? group.owner.index : idx
+    selectTurn(owner)
+    const projected = visibleTurns.find(turn => turn.index === owner)
+    const location = ledger && !String(projected?.displayContent ?? projected?.content ?? '').trim() ? actionLayout.locations.get(owner) : null
+    if (location) { revealAction(owner, location.where); return }
     if (typeof requestAnimationFrame === 'function') {
       requestAnimationFrame(() => {
-        if (navigationTargetRef.current !== idx) return
-        const el = turnRefs.current[idx]
+        if (navigationTargetRef.current !== owner) return
+        // The group's fold commits before this frame, so a member inside it is laid out now.
+        const el = turnRefs.current[idx] ?? turnRefs.current[owner]
         const sc = scrollRef.current
         if (el && sc) {
           const reduce = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -950,7 +1037,7 @@ export default function TranscriptViewer({
     }
   }
   function stepTurn(dir) {
-    const ids = (cardTurns.length ? cardTurns : visibleTurns).map((t) => t.index)
+    const ids = (navigableTurns.length ? navigableTurns : visibleTurns).map((t) => t.index)
     const cur = ids.indexOf(activeTurnRef.current)
     if (cur < 0) {
       // Search may select a wordless source whose actions render in another card.
@@ -1012,13 +1099,6 @@ export default function TranscriptViewer({
     const focusInHeader = !!header && typeof document !== 'undefined' && header.contains(document.activeElement)
     setHeroHidden(pinned && !focusInHeader && overflowAfterRelease > STICKY_SCROLL_THRESHOLD + HERO_RELEASE_SLACK)
   }
-  /* A model-actions block is not a turn: only a turn that draws a card (prose, or the system
-     row) owns the reading position and the keyboard step. */
-  const cardTurns = useMemo(
-    () => visibleTurns.filter((t) => t.role === 'system' || String(t.displayContent ?? t.content ?? '').trim() !== ''),
-    [visibleTurns],
-  )
-
   function onScroll() {
     const sc = scrollRef.current
     if (!sc) return
@@ -1029,7 +1109,7 @@ export default function TranscriptViewer({
     // selection through the smooth scroll; a real wheel, touch or scrollbar gesture releases it.
     if (navigationTargetRef.current != null && visibleTurns.some(t => t.index === navigationTargetRef.current)) return
     navigationTargetRef.current = null
-    setActiveTurn(turnAtReadingLine(cardTurns,
+    setActiveTurn(turnAtReadingLine(navigableTurns,
       index => turnRefs.current[index]?.offsetTop ?? Infinity,
       sc.scrollTop + sc.clientHeight * 0.4))
   }
@@ -1184,9 +1264,22 @@ export default function TranscriptViewer({
   useLayoutEffect(() => {
     if (!searchOpen || matches.length === 0) return
     const m = matches[Math.min(matchIdx, matches.length - 1)]
+    if (m.hiddenSystem) {
+      // Temporary, session-scoped reveal: it never writes onFiltersChange, and any filter
+      // change ends it (the fingerprint stops matching).
+      setSystemReveal({ turn: m.turn, sessionId: session.id, filterFingerprint: filterFingerprint(filters), sequence: ++revealSequence.current })
+    }
     revealAction(m.turn, m.where, { search: true, occurrence: m.occurrence, sourceOnly: m.sourceOnly })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchNavigation])
+
+  /* A reveal that lands on a grouped member opens its group first, so the member is laid out
+     and no longer inert before the scroll measures it. */
+  useLayoutEffect(() => {
+    if (!searchReveal) return
+    const group = systemGroups.get(searchReveal.turn)
+    if (group && group.owner.index !== searchReveal.turn) setOpenSystemGroups((previous) => (previous[group.id] ? previous : { ...previous, [group.id]: true }))
+  }, [searchReveal, systemGroups])
 
   /* The matching card opens in its layout effect before this scroll action. */
   useEffect(() => {
@@ -1568,7 +1661,7 @@ export default function TranscriptViewer({
                     /* the pinned bar is the timeline alone: the title already sits in the
                        breadcrumb and the page header above the trace. */
                     <TranscriptMinimap
-                      turns={visibleTurns}
+                      turns={navigableTurns}
                       activeTurn={activeTurn}
                       onJump={(idx) => jumpTo(idx, { switchTab: false })}
                     />
@@ -1621,7 +1714,28 @@ export default function TranscriptViewer({
                       toggleTool={toggleTool}
                     />
                     {visibleTurns.length === 0 && (
-                      <div className="empty"><div className="ring"><FilterIcon size={20} aria-hidden="true" /></div><EmptyHeading>no turns to display</EmptyHeading><p>every turn is filtered out. clear a filter to bring them back.</p></div>
+                      <div className="empty"><div className="ring"><FilterIcon size={20} aria-hidden="true" /></div><EmptyHeading>no turns to display</EmptyHeading>
+                        {filters.categories.system === false && counts.categories.system > 0 ? (
+                          <>
+                            <p>
+                              {counts.categories.system === 1
+                                ? '1 system entry is hidden by the system filter.'
+                                : `${counts.categories.system} system entries are hidden by the system filter.`}
+                            </p>
+                            {/* The one control that makes the hidden records reachable. It writes the
+                                reader's filters because this is the reader asking to see them. */}
+                            <button
+                              type="button"
+                              className="txn-empty-show-system"
+                              onClick={() => setFilters({ ...filters, categories: { ...filters.categories, system: true } })}
+                            >
+                              show system entries
+                            </button>
+                          </>
+                        ) : (
+                          <p>every turn is filtered out. clear a filter to bring them back.</p>
+                        )}
+                      </div>
                     )}
                     {(() => {
                       /* In the ledger every action the model takes for one user turn shares one
@@ -1631,15 +1745,43 @@ export default function TranscriptViewer({
                          turn in the group draws no work of its own, so no action renders twice. */
                       const groups = ledger ? actionLayout.groups : new Map()
                       const foldedWork = ledger ? actionLayout.folded : new Set()
+                      const renderTurn = (t) => (
+                        <TurnCard
+                          headingLevel={pageLevel + 2}
+                          presentation={presentation}
+                          turn={t}
+                          active={activeTurn === t.index}
+                          onSelect={ledger ? selectTurn : undefined}
+                          revealRequest={searchReveal?.turn === t.index ? searchReveal.sequence : 0}
+                          openTools={openTools}
+                          toggleTool={toggleTool}
+                          onCopyAnchor={copyAnchor}
+                          copied={copiedTurn === t.index}
+                          registerRef={registerRef}
+                          onLabel={labelTurn}
+                          renderActions={renderTurnActions}
+                          savedLabel={savedLabels[t.index]}
+                          compact={filters.views.compact}
+                          expandAll={filters.views.expandAll}
+                          modelActions={groups.get(t.index)}
+                          actionReveal={searchReveal && (ledger ? (actionLayout.locations.get(searchReveal.turn)?.owner ?? searchReveal.turn) === t.index : searchReveal.turn === t.index) ? searchReveal : undefined}
+                          registerActionRef={registerActionRef}
+                          suppressWork={foldedWork.has(t.index)}
+                          flagged={integrityState?.positions.has(t.sourcePosition) ?? false}
+                          flaggedPositions={integrityState?.positions}
+                        />
+                      )
                       return visibleTurns.map((t, i) => {
+                      const group = systemGroups.get(t.index)
+                      /* members 2..N render inside the owner's fold, never as their own row */
+                      if (group && group.owner.index !== t.index) return null
                       const prev = visibleTurns[i - 1]
-                      const actionRun = groups.get(t.index)
-                      const suppressWork = foldedWork.has(t.index)
                       const phase = phases.find((p) => t.index >= p.from && t.index <= p.to)
                       const prevPhase = prev ? phases.find((p) => prev.index >= p.from && prev.index <= p.to) : null
                       const showPhase = filters.views.hidden && phase && (!prevPhase || prevPhase.id !== phase.id)
                       const task = taskByFirstTurn.get(t.index)
                       const turnCommits = anchoredCommits.filter((c) => c.turn === t.index)
+                      const groupReveal = group && searchReveal && group.owner.index !== searchReveal.turn && group.members.some((member) => member.index === searchReveal.turn) ? searchReveal.sequence : 0
                       return (
                         <div key={t.identity ?? t.index} className={ledger ? 'txn-turnrow' : undefined}>
                           {showPhase && <PhaseDivider phase={phase} heading={PhaseHeading} />}
@@ -1649,30 +1791,19 @@ export default function TranscriptViewer({
                               the turn head carries the per-turn identity, so the classic
                               boundary would repeat both before the first line of prose. */}
                           {!ledger && t.role === 'user' && task && <TaskBoundary task={task} />}
-                          <TurnCard
-                            headingLevel={pageLevel + 2}
-                            presentation={presentation}
-                            turn={t}
-                            active={activeTurn === t.index}
-                            onSelect={ledger ? selectTurn : undefined}
-                            revealRequest={searchReveal?.turn === t.index ? searchReveal.sequence : 0}
-                            openTools={openTools}
-                            toggleTool={toggleTool}
-                            onCopyAnchor={copyAnchor}
-                            copied={copiedTurn === t.index}
-                            registerRef={registerRef}
-                            onLabel={labelTurn}
-                            renderActions={renderTurnActions}
-                            savedLabel={savedLabels[t.index]}
-                            compact={filters.views.compact}
-                            expandAll={filters.views.expandAll}
-                            modelActions={actionRun}
-                            actionReveal={searchReveal && (ledger ? (actionLayout.locations.get(searchReveal.turn)?.owner ?? searchReveal.turn) === t.index : searchReveal.turn === t.index) ? searchReveal : undefined}
-                            registerActionRef={registerActionRef}
-                            suppressWork={suppressWork}
-                            flagged={integrityState?.positions.has(t.sourcePosition) ?? false}
-                            flaggedPositions={integrityState?.positions}
-                          />
+                          {group ? (
+                            <TranscriptSystemGroup
+                              group={group}
+                              open={openSystemGroups[group.id] === true}
+                              onToggle={(open) => setOpenSystemGroups((previous) => ({ ...previous, [group.id]: open }))}
+                              owner={renderTurn(t)}
+                              revealRequest={groupReveal}
+                            >
+                              {group.members.slice(1).map((member) => (
+                                <div key={member.identity ?? member.index}>{renderTurn(member)}</div>
+                              ))}
+                            </TranscriptSystemGroup>
+                          ) : renderTurn(t)}
                           {/* host per-turn extension (touched-files panels etc.) —
                               rendered under the card, inside the turn's anchor block */}
                           {renderTurnPanel ? renderTurnPanel(t) : null}
@@ -1866,9 +1997,9 @@ export default function TranscriptViewer({
                 counts={counts}
                 checkpoints={commits}
                 filtersActive={filtersActive}
-                onClear={() => setFilters({ ...DEFAULT_FILTERS, toolGroups: Object.fromEntries(TOOL_GROUPS.map((id) => [id, true])) })}
-                onJumpStart={() => jumpTo(visibleTurns[0]?.index ?? 0, { switchTab: false })}
-                onJumpLatest={() => jumpTo(visibleTurns[visibleTurns.length - 1]?.index ?? 0, { switchTab: false })}
+                onClear={() => setFilters(DEFAULT_FILTERS)}
+                onJumpStart={() => jumpTo(navigableTurns[0]?.index ?? 0, { switchTab: false })}
+                onJumpLatest={() => jumpTo(navigableTurns[navigableTurns.length - 1]?.index ?? 0, { switchTab: false })}
               />
             </div>
           </Collapsible>
@@ -1910,9 +2041,9 @@ export default function TranscriptViewer({
             {(mobileDrawer || exitingMobileDrawer) === 'outline'
               ? <OutlineRail viewModel={vm} tab={tab} presentation={presentation} activeTurn={activeTurn} onJump={(idx) => { jumpTo(idx, { switchTab: false }); closeMobileDrawer() }} />
               : <FiltersRail tab={tab} filters={filters} onFiltersChange={setFilters} counts={counts} checkpoints={commits} filtersActive={filtersActive}
-                onClear={() => setFilters({ ...DEFAULT_FILTERS, toolGroups: Object.fromEntries(TOOL_GROUPS.map((id) => [id, true])) })}
-                onJumpStart={() => { jumpTo(visibleTurns[0]?.index ?? 0, { switchTab: false }); closeMobileDrawer() }}
-                onJumpLatest={() => { jumpTo(visibleTurns[visibleTurns.length - 1]?.index ?? 0, { switchTab: false }); closeMobileDrawer() }} />}
+                onClear={() => setFilters(DEFAULT_FILTERS)}
+                onJumpStart={() => { jumpTo(navigableTurns[0]?.index ?? 0, { switchTab: false }); closeMobileDrawer() }}
+                onJumpLatest={() => { jumpTo(navigableTurns[navigableTurns.length - 1]?.index ?? 0, { switchTab: false }); closeMobileDrawer() }} />}
           </div>
         </div>}
       </dialog>

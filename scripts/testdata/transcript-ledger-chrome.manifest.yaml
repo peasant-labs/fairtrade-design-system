@@ -94,9 +94,9 @@ mutations:
     expectedDiagnostic: "a pointer press selects the turn under the cursor: expected the press at the middle of the track to select turn 2"
   - name: the minimap ignores the visible turn set
     file: src/ui/transcript/TranscriptViewer.jsx
-    find: "turns={visibleTurns}"
+    find: "turns={navigableTurns}"
     replace: "turns={turns}"
-    expectedDiagnostic: "the minimap follows the visible turns: tick count expected 3 visible turns"
+    expectedDiagnostic: "the minimap follows the visible turns: tick count expected"
   - name: the minimap mis-kinds a system turn
     file: src/ui/transcript/Minimap.jsx
     find: "  if (turn.role === 'system') return 'tool'"

@@ -33,7 +33,7 @@ payload:
     - {index: 3, role: system, content: 'the workspace check completed', timestamp: '2026-09-20T10:03:00Z', depth: 0}
     - {index: 4, role: assistant, content: 'the explorer found two callers.', timestamp: '2026-09-20T10:04:00Z', depth: 1, agentName: explorer}
     - {index: 5, role: user, content: 'run it again and show me the result', timestamp: '2026-09-20T10:05:00Z', depth: 0}
-    - {index: 6, role: system, content: 'custom-title: a name', timestamp: '2026-09-20T10:06:00Z', depth: 0}
+    - {index: 6, role: system, content: 'custom-title: a name', timestamp: '2026-09-20T10:06:00Z', depth: 0, controlKind: custom-title}
     - {index: 7, role: assistant, content: 'the check passed.', timestamp: '2026-09-20T10:07:00Z', depth: 0}
   earlierHistory:
     - state: uncertain_unresolved

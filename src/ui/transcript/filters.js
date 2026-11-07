@@ -20,10 +20,56 @@
    Claude Code shape, where nearly every assistant turn is text plus tool calls:
    `tool calls` off would either delete the text too or do nothing.
 
-   System turns have their own category, enabled unless explicitly unchecked, including
-   when a host restores filter state saved before the category existed. */
+   System turns have their own category and are HIDDEN by default: harness bookkeeping is
+   not conversation, so the reader opts into it. A host that restores filter state saved
+   before the category existed keeps that older state's explicit choice. */
 
 import { TOOL_GROUPS } from './view-model.js'
+
+/**
+ * The canonical filter state every consumer starts from. Complete (every category,
+ * every tool group, every tag, every view) because the viewer's controllable state
+ * does not merge a partial object: a host that supplies filters owns every key.
+ * Deep-frozen so a handler cannot mutate the default through a spread-by-reference.
+ *
+ * `system` is FALSE: system entries are harness bookkeeping, not conversation, and a
+ * reader reveals them from the rail when they want the evidence.
+ */
+export const DEFAULT_TRANSCRIPT_FILTERS = Object.freeze({
+  categories: Object.freeze({ prompts: true, responses: true, thinking: true, toolcalls: true, system: false }),
+  toolGroups: Object.freeze(
+    /** @type {Record<ToolGroup, boolean>} */ (Object.fromEntries(TOOL_GROUPS.map((id) => [id, true]))),
+  ),
+  tags: Object.freeze({ errors: false, retries: false, revert: false }),
+  views: Object.freeze({ hidden: true, expandAll: false, compact: false }),
+  checkpoint: 'all',
+})
+
+/**
+ * How many filter choices deviate from {@link DEFAULT_TRANSCRIPT_FILTERS}: the number
+ * the rail's "clear (N)" badge shows. Tool groups count only while `tool calls` is on,
+ * because the umbrella has already cascaded every group off and counting those would
+ * report eight active filters for one click.
+ *
+ * @param {TranscriptFilters} [filters]
+ * @returns {number}
+ */
+export function filtersActive(filters = DEFAULT_TRANSCRIPT_FILTERS) {
+  const defaults = DEFAULT_TRANSCRIPT_FILTERS
+  let count = 0
+  for (const key of ['prompts', 'responses', 'thinking', 'toolcalls', 'system']) {
+    if ((filters.categories?.[key] !== false) !== defaults.categories[key]) count += 1
+  }
+  if (filters.categories?.toolcalls !== false) {
+    for (const id of TOOL_GROUPS) {
+      if ((filters.toolGroups?.[id] !== false) !== defaults.toolGroups[id]) count += 1
+    }
+  }
+  for (const key of ['errors', 'retries', 'revert']) {
+    if (!!filters.tags?.[key] !== defaults.tags[key]) count += 1
+  }
+  return count
+}
 
 /** Filter-state tag key → the `AnnotationVM.kind` the adapter emits for it. */
 const TAG_KIND = { errors: 'error', retries: 'retry', revert: 'revert' }
