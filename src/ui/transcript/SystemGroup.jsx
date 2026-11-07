@@ -58,7 +58,7 @@ export default function TranscriptSystemGroup({ group, open: openProp, onToggle,
         <span className="txn-systemgroup-summary tnum">{systemGroupSummary(group.members)}</span>
       </button>
       {owner && <div className="txn-systemgroup-owner">{owner}</div>}
-      <Collapsible id={bodyId} open={shown} keepMounted animateSize={false}>
+      <Collapsible id={bodyId} open={shown} keepMounted>
         <div className="txn-systemgroup-rows">{children}</div>
       </Collapsible>
     </div>

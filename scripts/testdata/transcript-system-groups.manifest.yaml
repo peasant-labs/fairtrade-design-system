@@ -76,8 +76,8 @@ mutations:
     expectedDiagnostic: "no_control_kind_renders_system_row"
   - name: the closed group loses its inert wrapper
     file: src/ui/transcript/SystemGroup.jsx
-    find: "<Collapsible id={bodyId} open={shown} keepMounted animateSize={false}>"
-    replace: "<Collapsible id={bodyId} open={shown} animateSize={false}>"
+    find: "<Collapsible id={bodyId} open={shown} keepMounted>"
+    replace: "<Collapsible id={bodyId} open={shown}>"
     expectedDiagnostic: "closed_group_members_are_inert"
   - name: the empty reading state loses its reveal control
     file: src/ui/transcript/TranscriptViewer.jsx

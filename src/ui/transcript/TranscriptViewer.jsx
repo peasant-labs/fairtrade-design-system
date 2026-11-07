@@ -882,10 +882,21 @@ export default function TranscriptViewer({
     const group = openGroupForTurn(position.turnIndex)
     if (location) revealAction(position.turnIndex, location.where, { select: false })
     else if (group) {
-      // The member's own anchor, after the fold commits.
+      // The member's own anchor, after the fold commits. The fold's own height motion
+      // changes the scroller's anchor while it runs, so measure and scroll once that
+      // motion settles; scrolling on the first frame lands the member one fold-height off.
       requestAnimationFrame(() => {
         const memberEl = turnRefs.current[position.turnIndex]
-        if (memberEl) sc.scrollTo({ top: turnScrollTop(sc, memberEl), behavior: 'auto' })
+        if (!memberEl) return
+        const scrollToMember = () => {
+          if (!memberEl.isConnected) return
+          sc.scrollTo({ top: turnScrollTop(sc, memberEl), behavior: 'auto' })
+          latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()
+        }
+        const fold = memberEl.closest('.txn-systemgroup')?.querySelector('.txn-disclosure')
+        const motion = fold?.getAnimations?.() ?? []
+        if (motion.length) Promise.allSettled(motion.map((animation) => animation.finished)).then(scrollToMember)
+        else scrollToMember()
       })
     }
     // Only the reading stream moves; scrollIntoView also scrolls clipped layout ancestors.
