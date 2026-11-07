@@ -956,7 +956,6 @@ ${mermaidGlyphs.source}
         time: '1m ago',
         content: 'mode: normal',
         controlKind: 'mode',
-        isControl: true,
         toolCalls: [],
       },
       {
