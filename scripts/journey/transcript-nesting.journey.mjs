@@ -17,10 +17,14 @@ for (const viewport of fixture.viewports) test(`nested agent insets ${viewport.n
   await expect(page.locator('.txn-app')).toHaveAttribute('data-theme', info.project.name)
   // The canonical default hides system entries; this geometry journey reads every turn.
   if (viewport.width < 1024) {
-    await page.locator('.txn-footer').getByRole('button', { name: 'filters', exact: true }).click()
-    await expect(page.locator('.txn-mobile-drawer')).toBeVisible()
+    await page.getByRole('button', { name: 'transcript tools', exact: true }).click()
+    await page.locator('.txn-app').getByRole('button', { name: 'filters', exact: true }).click()
+    await expect(page.getByRole('dialog', { name: 'filters' })).toBeVisible()
   }
-  await page.locator('.txn-catlist .txn-checkrow').filter({ has: page.locator('.txn-cr-label', { hasText: /^system$/ }) }).locator('input[type="checkbox"]').check()
+  const systemCategory = viewport.width < 1024
+    ? page.getByRole('dialog', { name: 'filters' }).locator('.txn-catlist .txn-checkrow').filter({ has: page.locator('.txn-cr-label', { hasText: /^system$/ }) }).locator('input[type="checkbox"]')
+    : page.locator('.txn-catlist .txn-checkrow').filter({ has: page.locator('.txn-cr-label', { hasText: /^system$/ }) }).locator('input[type="checkbox"]')
+  await systemCategory.check()
   if (viewport.width < 1024) await page.getByRole('button', { name: 'close drawer' }).click()
   await page.evaluate(async () => { await document.fonts.ready; document.getElementById('inuse').scrollIntoView({ block: 'start', behavior: 'instant' }) })
   for (const row of fixture.cases) {
