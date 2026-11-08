@@ -32,7 +32,8 @@ const wireBase = {
 const turn = (index, role, content, extra = {}) => ({ index, role, content, timestamp: '2026-09-20T10:01:00Z', depth: 0, ...extra })
 const BUILDERS = {
   plain: () => [turn(0, 'user', 'first prompt'), turn(1, 'assistant', 'first answer'), turn(2, 'user', 'second prompt')],
-  metadataBetween: () => [turn(0, 'user', 'first prompt'), turn(1, 'system', 'custom-title: a name'), turn(2, 'assistant', 'an answer')],
+  // a control record is a turn now, so the prefilter case uses an empty row that is still dropped
+  metadataBetween: () => [turn(0, 'user', 'first prompt'), turn(1, 'assistant', ''), turn(2, 'assistant', 'an answer')],
   repeatedIndex: () => [turn(5, 'user', 'first prompt'), turn(5, 'assistant', 'an answer')],
   unknownTimestamp: () => [turn(0, 'user', 'first prompt'), turn(1, 'assistant', 'flagged answer', { timestamp: '0001-01-01T00:00:00Z' }), turn(2, 'user', 'second prompt')],
   earlierHistory: () => [turn(0, 'user', 'first prompt')],

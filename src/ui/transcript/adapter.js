@@ -199,29 +199,6 @@ function validateTurnEvidence(turns) {
   })
 }
 
-/* Claude Code writes session metadata as records of their own (a custom title, an agent name, an
-   ai title); peasant keeps each as a top-level system entry whose whole content is the record's
-   preview: "custom-title: <title>", "agent name: <name>", "session title: <title>", or the bare
-   "agent renamed" / "session title set" when the record carries no value. They describe the
-   session, not the conversation, so they are not turns. Matched only on that exact shape: a real
-   system turn (several lines, tool calls, another harness, a sub-agent) is never dropped. */
-const SESSION_METADATA_PREVIEW = /^(custom-title|agent name|session title): \S/
-const SESSION_METADATA_BARE = new Set(['agent renamed', 'session title set'])
-
-/**
- * Is this wire turn one of Claude Code's session metadata records rather than conversation?
- * @param {TurnDetail} turn
- * @param {string | undefined} harness  the session's harness
- * @returns {boolean}
- */
-export function isSessionMetadataTurn(turn, harness) {
-  if (harness !== 'claude-code' || turn.role !== 'system') return false
-  if ((turn.depth ?? 0) !== 0 || (turn.toolCalls?.length ?? 0) > 0) return false
-  const content = (turn.content ?? '').trim()
-  if (content === '' || content.includes('\n')) return false
-  return SESSION_METADATA_PREVIEW.test(content) || SESSION_METADATA_BARE.has(content)
-}
-
 /**
  * A turn whose timestamp is unknown (missing, zero, epoch or Go zero-time) carries none at all,
  * so no relative time, date or duration is ever derived from it. Fails closed: the turn is kept,
@@ -248,6 +225,10 @@ export function prefilterTurns(turns) {
   validateTurnEvidence(turns)
   const filtered = turns.filter((t) => {
     if (protectedTurn(t)) return true
+    // A producer-classified control record is a record the server chose to serve.
+    // The short-banner heuristic is for unlabelled legacy rows only; a control
+    // record with a short value is not a stray banner.
+    if (t.controlKind) return true
     const hasContent = !!t.content?.trim()
     const hasTools = (t.toolCalls?.length ?? 0) > 0
     if (!hasContent && !hasTools) return false
@@ -926,9 +907,8 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
   /** @type {Map<TurnDetail, number>} */
   const sourcePositions = new Map()
   if (partition === 'main') completeTurns.forEach((turn, i) => sourcePositions.set(turn, i))
-  // session metadata records are not conversation, and an unknown time is no time at all
+  // an unknown time is no time at all
   const filteredTurns = (payload.harness === 'pi' ? completeTurns : prefilterTurns(completeTurns))
-    .filter((turn) => !isSessionMetadataTurn(turn, payload.harness))
     .map((turn) => {
       const copy = withKnownTime(turn)
       const position = sourcePositions.get(turn)
@@ -1022,6 +1002,10 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
     if (sourcePositions.has(t)) turnVM.sourcePosition = sourcePositions.get(t)
     if (depth === 0 && t.role === 'assistant') turnVM.provider = provider
     if (t.agentName) turnVM.agentName = t.agentName
+    if (t.controlKind) {
+      turnVM.controlKind = t.controlKind
+      turnVM.isControl = true
+    }
     if (thinking) turnVM.thinking = thinking
     const shown = displayedPrompt(t.role, content, provider)
     if (shown !== undefined) turnVM.displayContent = shown

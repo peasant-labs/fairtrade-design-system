@@ -4,6 +4,12 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.60
+
+- Hide system entries by default. A reader reveals them from the system filter. Consecutive visible system entries fold into one group headed "system entries", with the first entry in place and the rest behind a disclosure.
+- A producer-classified control record renders as a compact ledger row, not a card. A single-line value has no disclosure; a longer or multi-line value expands. Recorded kinds and values keep their case.
+- `isSessionMetadataTurn` is no longer exported. The adapter no longer drops session records by matching their text. A producer classifies those records with `controlKind`; an unlabelled row stays in the transcript.
+
 ## 0.0.59
 
 - Adapt transcript rails and native drawers to the viewer container, preserving readable content and access to tools in narrow embeddings.

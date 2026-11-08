@@ -48,6 +48,32 @@ for (const row of spec.cases) for (const theme of spec.themes) {
       if (row.actionStatus) await expect(root.getByRole('status')).toContainText(row.actionStatus)
       else await expect(action.locator('..')).toHaveAttribute('open', '')
     }
+    /* A staged probe list proves a state change the initial text cannot: load, reveal, open.
+       The action vocabulary is closed here so a fixture cannot name a step nothing runs. */
+    for (const step of row.steps ?? []) {
+      const reason = `${row.name}: ${step.action} must prove ${step.expect}`
+      if (step.action === 'load') {
+        await expect(root.locator('.txn-systemrow'), reason).toHaveCount(0)
+        await expect(root.locator('.txn-systemgroup'), reason).toHaveCount(0)
+      } else if (step.action === 'tick system') {
+        const row = root.locator('.txn-catlist .txn-checkrow').filter({ has: page.locator('.txn-cr-label', { hasText: /^system$/ }) })
+        await row.locator('input[type="checkbox"]').check()
+        await expect(root.locator('.txn-systemgroup'), reason).toHaveCount(1)
+        /* the group body is keep-mounted but hidden while closed: prove the
+           closed state by visibility, so the open step below cannot pass on a
+           node that was already in the DOM. */
+        await expect(root.locator('.txn-systemgroup-head').first(), reason).toHaveAttribute('aria-expanded', 'false')
+        await expect(root.locator('.txn-systemrow'), reason).toBeHidden()
+      } else if (step.action === 'open group') {
+        const head = root.locator('.txn-systemgroup-head').first()
+        await head.click()
+        await expect(head, reason).toHaveAttribute('aria-expanded', 'true')
+        await expect(root.locator('.txn-control-row'), reason).toBeVisible()
+        await expect(root.locator('.txn-systemrow'), reason).toBeVisible()
+      } else {
+        throw new Error(`${row.name}: unknown demo-truth step action ${JSON.stringify(step.action)}`)
+      }
+    }
     await page.evaluate(() => document.fonts.ready)
     // Hash navigation can happen before React mounts the target. Explicitly move
     // the mounted demo into the viewport; visibility alone permits offscreen DOM.

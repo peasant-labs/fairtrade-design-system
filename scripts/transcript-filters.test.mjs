@@ -16,6 +16,7 @@
 
 import assert from 'node:assert/strict'
 import {
+  DEFAULT_TRANSCRIPT_FILTERS,
   categoryCounts,
   kindsOf,
   cascadeToolGroups,
@@ -29,14 +30,10 @@ import { TOOL_GROUPS } from '../src/ui/transcript/view-model.js'
 
 const allGroups = (on) => Object.fromEntries(TOOL_GROUPS.map((id) => [id, on]))
 
-/** A filter state with everything visible — the viewer's DEFAULT_FILTERS. */
-const OPEN = Object.freeze({
-  categories: { prompts: true, responses: true, thinking: true, toolcalls: true },
-  toolGroups: allGroups(true),
-  tags: { errors: false, retries: false, revert: false },
-  views: { hidden: true, expandAll: false, compact: false },
-  checkpoint: 'all',
-})
+/* The viewer's default filter state, imported rather than restated: system entries are
+   hidden until the reader reveals them, and a case that means "the default" has to move
+   with the default. */
+const DEFAULT_FILTERS = DEFAULT_TRANSCRIPT_FILTERS
 
 /* One turn per part kind, plus turns that hold several parts (7, 8, 9), which
    is the ordinary Claude Code shape: text, then tool calls, in one folded turn.
@@ -60,8 +57,8 @@ const ANNOTATIONS = { 3: [{ kind: 'retry' }], 4: [{ kind: 'revert' }], 5: [{ kin
 const visible = (filters, ctx = { annotationsByTurn: ANNOTATIONS }) =>
   TURNS.filter((t) => matchesFilters(t, filters, ctx)).map((t) => t.index)
 
-const withCategories = (patch) => ({ ...OPEN, categories: { ...OPEN.categories, ...patch } })
-const withTags = (patch) => ({ ...OPEN, tags: { ...OPEN.tags, ...patch } })
+const withCategories = (patch) => ({ ...DEFAULT_FILTERS, categories: { ...DEFAULT_FILTERS.categories, ...patch } })
+const withTags = (patch) => ({ ...DEFAULT_FILTERS, tags: { ...DEFAULT_FILTERS.tags, ...patch } })
 
 const failures = []
 const check = (name, fn) => {
@@ -81,36 +78,39 @@ check('each turn reports every kind it carries', () => {
   ])
 })
 
-check('an open filter shows every turn', () => {
-  assert.deepEqual(visible(OPEN), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+check('the default filter shows every conversation turn', () => {
+  assert.deepEqual(visible(DEFAULT_FILTERS), [0, 1, 2, 3, 4, 5, 7, 8, 9])
 })
 
 check('unchecking prompts hides only user turns', () => {
-  assert.deepEqual(visible(withCategories({ prompts: false })), [1, 2, 3, 4, 5, 6, 7, 8, 9])
+  assert.deepEqual(visible(withCategories({ prompts: false })), [1, 2, 3, 4, 5, 7, 8, 9])
 })
 
 check('unchecking responses hides text responses but KEEPS tool + thinking turns', () => {
   // The pre-fix predicate matched `role === 'assistant'`, which took 3, 4 and 5
   // with it and made the tool-call checkbox unobservable.
-  assert.deepEqual(visible(withCategories({ responses: false })), [0, 2, 3, 4, 5, 6, 7, 8, 9])
+  assert.deepEqual(visible(withCategories({ responses: false })), [0, 2, 3, 4, 5, 7, 8, 9])
 })
 
 check('unchecking thinking drops thinking-only turns, not a reply that thought first', () => {
-  assert.deepEqual(visible(withCategories({ thinking: false })), [0, 1, 3, 4, 5, 6, 7, 8, 9])
+  assert.deepEqual(visible(withCategories({ thinking: false })), [0, 1, 3, 4, 5, 7, 8, 9])
 })
 
 check('unchecking tool calls drops tool-only turns, not the text beside a call', () => {
-  assert.deepEqual(visible(withCategories({ toolcalls: false })), [0, 1, 2, 6, 7, 8, 9])
+  assert.deepEqual(visible(withCategories({ toolcalls: false })), [0, 1, 2, 7, 8, 9])
 })
 
 check('system turns survive older filter state with the other categories off', () => {
-  const none = withCategories({ prompts: false, responses: false, thinking: false, toolcalls: false })
-  assert.deepEqual(visible(none), [6])
+  // State saved before the category existed carries no `system` key, and an
+  // absent key is enabled: only an explicit false hides the bookkeeping.
+  const older = { ...DEFAULT_FILTERS.categories, prompts: false, responses: false, thinking: false, toolcalls: false }
+  delete older.system
+  assert.deepEqual(visible({ ...DEFAULT_FILTERS, categories: older }), [6])
 })
 
 check('a multi-part turn leaves only when every part it carries is unwanted', () => {
-  assert.deepEqual(visible(withCategories({ responses: false, thinking: false })), [0, 3, 4, 5, 6, 8, 9])
-  assert.deepEqual(visible(withCategories({ responses: false, toolcalls: false })), [0, 2, 6, 7])
+  assert.deepEqual(visible(withCategories({ responses: false, thinking: false })), [0, 3, 4, 5, 8, 9])
+  assert.deepEqual(visible(withCategories({ responses: false, toolcalls: false })), [0, 2, 7])
 })
 
 check('category counts are turn-based; a compound turn counts under each kind it carries', () => {
@@ -139,7 +139,7 @@ check('thinking off strips the block and keeps the text', () => {
 })
 
 check('a group off drops only that group\'s calls inside a turn', () => {
-  const t = projectTurn(TURNS[9], { ...OPEN, toolGroups: { ...allGroups(true), edits: false } })
+  const t = projectTurn(TURNS[9], { ...DEFAULT_FILTERS, toolGroups: { ...allGroups(true), edits: false } })
   assert.deepEqual(t.toolCalls.map((c) => c.id), ['e'])
   assert.equal(t.content, 'two tools')
 })
@@ -151,28 +151,28 @@ check('a projection keeps the turn identity fields', () => {
 })
 
 check('an untouched turn is returned as the same object', () => {
-  assert.equal(projectTurn(TURNS[9], OPEN), TURNS[9])
+  assert.equal(projectTurn(TURNS[9], DEFAULT_FILTERS), TURNS[9])
 })
 
 /* ── tool groups narrow tool turns ───────────────────────────────────────────── */
 
 check('a single tool group narrows to its own turns', () => {
-  assert.deepEqual(visible({ ...OPEN, toolGroups: { ...allGroups(false), bash: true } }), [0, 1, 2, 3, 6, 7, 8, 9])
+  assert.deepEqual(visible({ ...DEFAULT_FILTERS, toolGroups: { ...allGroups(false), bash: true } }), [0, 1, 2, 3, 7, 8, 9])
 })
 
 check('tool groups do not affect non-tool turns', () => {
-  const noGroups = { ...OPEN, toolGroups: allGroups(false) }
-  assert.deepEqual(visible(noGroups), [0, 1, 2, 6, 7, 8, 9])
+  const noGroups = { ...DEFAULT_FILTERS, toolGroups: allGroups(false) }
+  assert.deepEqual(visible(noGroups), [0, 1, 2, 7, 8, 9])
 })
 
 check('a group absent from the map counts as enabled', () => {
-  assert.deepEqual(visible({ ...OPEN, toolGroups: {} }), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+  assert.deepEqual(visible({ ...DEFAULT_FILTERS, toolGroups: {} }), [0, 1, 2, 3, 4, 5, 7, 8, 9])
 })
 
 /* ── semantic tags narrow everything ─────────────────────────────────────────── */
 
-check('no tag checked keeps every turn', () => {
-  assert.deepEqual(visible(OPEN), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+check('no tag checked keeps every conversation turn', () => {
+  assert.deepEqual(visible(DEFAULT_FILTERS), [0, 1, 2, 3, 4, 5, 7, 8, 9])
 })
 
 check('retries narrows to retry-annotated turns', () => {
@@ -194,7 +194,7 @@ check('two tags checked are a union, not an intersection', () => {
 /* ── checkpoint scoping ──────────────────────────────────────────────────────── */
 
 check('a checkpoint anchor scopes to a prefix', () => {
-  const seen = TURNS.filter((t) => matchesFilters(t, OPEN, { annotationsByTurn: ANNOTATIONS, checkpointTurn: 3 }))
+  const seen = TURNS.filter((t) => matchesFilters(t, DEFAULT_FILTERS, { annotationsByTurn: ANNOTATIONS, checkpointTurn: 3 }))
   assert.deepEqual(seen.map((t) => t.index), [0, 1, 2, 3])
 })
 
@@ -203,25 +203,25 @@ check('a checkpoint anchor scopes to a prefix', () => {
 const counts = { edits: 1, bash: 1, read: 1, search: 0, fetch: 0, tasks: 0, other: 0 }
 
 check('unchecking the umbrella unchecks every child', () => {
-  const next = setToolCalls(OPEN, false)
+  const next = setToolCalls(DEFAULT_FILTERS, false)
   assert.equal(next.categories.toolcalls, false)
   for (const id of TOOL_GROUPS) assert.equal(next.toolGroups[id], false, `${id} should be off`)
 })
 
 check('re-checking the umbrella re-checks every child', () => {
-  const next = setToolCalls(setToolCalls(OPEN, false), true)
+  const next = setToolCalls(setToolCalls(DEFAULT_FILTERS, false), true)
   assert.equal(next.categories.toolcalls, true)
   for (const id of TOOL_GROUPS) assert.equal(next.toolGroups[id], true, `${id} should be on`)
 })
 
 check('unchecking the last live group turns the umbrella off', () => {
-  let f = OPEN
+  let f = DEFAULT_FILTERS
   for (const id of ['edits', 'bash', 'read']) f = toggleToolGroup(f, id, counts)
   assert.equal(f.categories.toolcalls, false)
 })
 
 check('re-checking any group turns the umbrella back on', () => {
-  let f = setToolCalls(OPEN, false)
+  let f = setToolCalls(DEFAULT_FILTERS, false)
   f = toggleToolGroup(f, 'bash', counts)
   assert.equal(f.categories.toolcalls, true)
   assert.equal(f.toolGroups.bash, true)
@@ -231,7 +231,7 @@ check('a click under a legacy unchecked umbrella enables that one group only', (
   // Filter state persisted before the cascade existed: umbrella off over an
   // all-true map. The rail shows every child unchecked; the user's click on
   // `bash` must yield bash alone, not the other six.
-  const legacy = { ...OPEN, categories: { ...OPEN.categories, toolcalls: false }, toolGroups: allGroups(true) }
+  const legacy = { ...DEFAULT_FILTERS, categories: { ...DEFAULT_FILTERS.categories, toolcalls: false }, toolGroups: allGroups(true) }
   const next = toggleToolGroup(legacy, 'bash', counts)
   assert.equal(next.categories.toolcalls, true)
   assert.deepEqual(next.toolGroups, { ...allGroups(false), bash: true })
@@ -258,7 +258,8 @@ check('cascade writes every group, including ones with no matches', () => {
 /* ── the rail and the trace agree ────────────────────────────────────────────── */
 
 check('umbrella off hides exactly the tool-only turns its badge counted', () => {
-  const off = setToolCalls(OPEN, false)
+  // Reveal the system turn first so the only thing this case removes is tool calls.
+  const off = setToolCalls(withCategories({ system: true }), false)
   const hidden = TURNS.filter((t) => !matchesFilters(t, off, { annotationsByTurn: ANNOTATIONS }))
   const toolOnly = TURNS.filter((t) => kindsOf(t).length === 1 && kindsOf(t)[0] === 'toolcalls')
   assert.equal(hidden.length, toolOnly.length)

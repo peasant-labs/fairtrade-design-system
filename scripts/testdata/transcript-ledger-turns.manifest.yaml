@@ -157,7 +157,7 @@ mutations:
     file: src/ui/transcript/filters.js
     find: "  if (turn.role === 'system') return categories.system === false ? null : turn"
     replace: "  if (turn.role === 'system') return turn"
-    expectedDiagnostic: "the unchecked system category must hide every system row"
+    expectedDiagnostic: "the system category hides and restores only system turns: system rows must be absent at rest"
   - name: Bash input regains its icon
     file: src/ui/transcript/ToolBody.jsx
     find: '<div className="txn-term">'
@@ -175,8 +175,8 @@ mutations:
     expectedDiagnostic: "the row must show the time spent"
   - name: a folded turn keeps its own work beside the block
     file: src/ui/transcript/TranscriptViewer.jsx
-    find: "const suppressWork = foldedWork.has(t.index)"
-    replace: "const suppressWork = false"
+    find: "suppressWork={foldedWork.has(t.index)}"
+    replace: "suppressWork={false}"
     expectedDiagnostic: "no ledger turn keeps a work row of its own beside the block"
   - name: a user turn does not start a new block
     file: src/ui/transcript/action-groups.js

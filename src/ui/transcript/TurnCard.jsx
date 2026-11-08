@@ -7,6 +7,7 @@ import { MemoMarkdown as Markdown } from './Markdown.jsx'
 import Thinking from './Thinking.jsx'
 import ToolCall from './ToolCall.jsx'
 import TranscriptSystemRow from './SystemRow.jsx'
+import TranscriptControlRow from './ControlRow.jsx'
 import TranscriptWorkGroup, { ModelActions } from './WorkGroup.jsx'
 import { turnHasProse } from './work-summary.js'
 import UsageDisclosure from './UsageDisclosure.jsx'
@@ -292,6 +293,9 @@ export default function TurnCard({
      the copy anchor plus the host's own per-turn actions, so a host extension survives the role
      switch. */
   const systemRow = ledger && turn.role === 'system'
+  /* The server says which system rows are control records. Only a ledger system row with
+     a producer kind becomes a control row; every other system row keeps the system row. */
+  const controlRow = systemRow && !!turn.controlKind
 
   return (
     <article
@@ -308,11 +312,19 @@ export default function TurnCard({
       {systemRow ? (
         <>
           <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}{flagName}</TurnHeading>
-          <TranscriptSystemRow
-            turn={turn}
-            revealRequest={revealRequest}
-            actions={<>{flagMark}{anchorButton}{renderActions ? renderActions(turn) : null}</>}
-          />
+          {controlRow ? (
+            <TranscriptControlRow
+              turn={turn}
+              revealRequest={revealRequest}
+              actions={<>{flagMark}{anchorButton}{renderActions ? renderActions(turn) : null}</>}
+            />
+          ) : (
+            <TranscriptSystemRow
+              turn={turn}
+              revealRequest={revealRequest}
+              actions={<>{flagMark}{anchorButton}{renderActions ? renderActions(turn) : null}</>}
+            />
+          )}
           {workBlock}
         </>
       ) : (

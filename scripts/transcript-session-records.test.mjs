@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-/* Mounted-source gate for how the transcript treats session records and times: Claude Code's
-   session metadata records are not turns (a real system turn and another harness's text stay),
+/* Mounted-source gate for how the transcript treats session records and times: a depth-0
+   system record with no content is not a turn (a system record with content stays, and a
+   producer-classified control record keeps its kind),
    an unknown timestamp (missing, zero, epoch, Go zero-time) is no time in the cooked model and
    shows no "ago" label in the mounted turn, the session duration reads in the one short format,
    and the user-turn steps list leaves out a zero duration. It cooks the REAL adapter and mounts
@@ -35,6 +36,16 @@ await withMountedSource(async ({ load, mount, React }) => {
     if (row.kind === 'turns') {
       const indices = vm.turns.map((turn) => turn.index)
       report.check(same(indices, row.expected), `${name}: cooked turns must be ${JSON.stringify(row.expected)}, received ${JSON.stringify(indices)}`)
+    } else if (row.kind === 'control') {
+      for (const expected of row.expected) {
+        const turn = vm.turns.find((entry) => entry.index === expected.index)
+        const actual = JSON.stringify({ kind: turn?.controlKind, isControl: turn?.isControl })
+        report.check(turn?.controlKind === expected.kind && turn?.isControl === true, `${name}: cooked controlKind ${actual} must read ${JSON.stringify({ kind: expected.kind, isControl: true })}`)
+      }
+      for (const index of row.noneFor) {
+        const turn = vm.turns.find((entry) => entry.index === index)
+        report.check(turn?.controlKind === undefined && !turn?.isControl, `${name}: turn ${index} must classify no control kind, received ${JSON.stringify({ kind: turn?.controlKind, isControl: turn?.isControl })}`)
+      }
     } else if (row.kind === 'times') {
       const times = Object.fromEntries(vm.turns.map((turn) => [String(turn.index), turn.timestamp ?? null]))
       report.check(same(times, row.expected), `${name}: cooked times must be ${JSON.stringify(row.expected)}, received ${JSON.stringify(times)}`)

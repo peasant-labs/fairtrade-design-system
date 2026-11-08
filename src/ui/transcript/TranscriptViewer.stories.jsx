@@ -235,11 +235,22 @@ const ledgerViewModel = {
   ],
 }
 
+/* The ledger stories read the full turn list, so they run with the complete filters object:
+   the canonical default hides system entries, and this story's play asserts a system row. */
+const ledgerFilters = {
+  categories: { prompts: true, responses: true, thinking: true, toolcalls: true, system: true },
+  toolGroups: { edits: true, bash: true, read: true, search: true, fetch: true, tasks: true, other: true },
+  tags: { errors: false, retries: false, revert: false },
+  views: { hidden: true, expandAll: false, compact: false },
+  checkpoint: 'all',
+}
+
 const ledgerArgs = {
   viewModel: ledgerViewModel,
   capabilities: fullCaps,
   presentation: 'ledger',
   subtitle: 'a public transcript from fairtrade, read as a ledger.',
+  filters: ledgerFilters,
 }
 
 // The ledger chrome lives in the pinned trace header, so its stories need the viewer to fill a

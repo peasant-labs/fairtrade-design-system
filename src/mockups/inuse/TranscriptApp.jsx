@@ -767,8 +767,9 @@ export function demoTranscriptViewModel() {
 function DefaultTranscriptApp({ theme }) {
   const search = new URLSearchParams(window.location.search).get('transcript')
   // `?transcript=ledger` reads the same demo session through the ledger presentation.
-  // `?transcript=ledger-system` keeps that canonical session and appends one synthetic system
-  // turn, so the built app renders the compact system row (the canonical demo has none).
+  // `?transcript=ledger-system` keeps that canonical session and appends two adjacent system
+  // entries — one producer-classified control record and one ordinary multi-line system message —
+  // so the built app renders one folded group with a control row and a system row.
   // `?transcript=flagged` and `?transcript=flagged-classic` read the reading session with a served
   // integrity flag on two of its turns, in the ledger and the classic presentation.
   const flagged = search === 'flagged' || search === 'flagged-classic'
@@ -943,6 +944,9 @@ ${mermaidGlyphs.source}
       return { ...base, turns, session: { ...base.session, turnCount: turns.length } }
     }
     if (search !== 'ledger-system') return base
+    // Two ADJACENT system entries: the first is a control record the producer classified, the
+    // second an ordinary multi-line system message. The ledger folds the run into one group, and
+    // opening it must show one control row and one system row.
     const turns = [
       ...base.turns,
       {
@@ -950,11 +954,25 @@ ${mermaidGlyphs.source}
         role: 'system',
         label: String(base.turns.length + 1),
         time: '1m ago',
-        content: 'session resumed, worktree changed on disk',
+        content: 'mode: normal',
+        controlKind: 'mode',
+        toolCalls: [],
+      },
+      {
+        index: base.turns.length + 1,
+        role: 'system',
+        label: String(base.turns.length + 2),
+        time: '1m ago',
+        content: 'the workspace check completed.\nthe session resumed with the worktree changed on disk.',
         toolCalls: [],
       },
     ]
-    return { ...base, turns, session: { ...base.session, turnCount: turns.length } }
+    return {
+      ...base,
+      turns,
+      // system entries are not conversation: the header counts the real turns only
+      session: { ...base.session, turnCount: turns.filter((turn) => turn.role !== 'system').length },
+    }
   }, [search])
   // Tool details start collapsed; the reader opens them on demand.
   const [openTools, setOpenTools] = useState({})

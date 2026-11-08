@@ -825,6 +825,18 @@ for (const viewport of separators.viewports) test(`transcript separator ownershi
   await page.setViewportSize({ width: viewport.width, height: viewport.height })
   await page.goto(`${origin}/?app=transcript&transcript=ledger-separators&fb=off&theme=${info.project.name}#inuse`, { waitUntil: 'networkidle' })
   const viewer = page.locator('.txn-app')
+  /* The canonical default hides system entries. This journey reads the full turn list, so it
+     ticks the system category first (opening the compact drawer at phone width). */
+  if (viewport.width < 1024) {
+    await page.getByRole('button', { name: 'transcript tools', exact: true }).click()
+    await page.locator('.txn-app').getByRole('button', { name: 'filters', exact: true }).click()
+    await expect(page.getByRole('dialog', { name: 'filters' })).toBeVisible()
+  }
+  const systemCategory = viewport.width < 1024
+    ? page.getByRole('dialog', { name: 'filters' }).locator('.txn-catlist .txn-checkrow').filter({ has: page.locator('.txn-cr-label', { hasText: /^system$/ }) }).locator('input[type="checkbox"]')
+    : page.locator('.txn-catlist .txn-checkrow').filter({ has: page.locator('.txn-cr-label', { hasText: /^system$/ }) }).locator('input[type="checkbox"]')
+  await systemCategory.check()
+  if (viewport.width < 1024) await page.getByRole('button', { name: 'close drawer' }).click()
   await expect(viewer.locator('article[data-turn]')).toHaveCount(separators.payload.turns.length)
   await page.locator('#inuse').scrollIntoViewIfNeeded()
   const borders = await viewer.evaluate(root => ({

@@ -5,7 +5,7 @@ import {
   ArrowUpToLine, ArrowDownToLine,
 } from 'lucide-react'
 import { TOOL_GROUPS } from './view-model.js'
-import { setToolCalls, toggleToolGroup, toolGroupsState } from './filters.js'
+import { DEFAULT_TRANSCRIPT_FILTERS, setToolCalls, toggleToolGroup, toolGroupsState } from './filters.js'
 import FilterSection from './FilterSection.jsx'
 import CheckRow from './CheckRow.jsx'
 import ViewSwitch from './ViewSwitch.jsx'
@@ -48,15 +48,10 @@ const TOOL_GROUP_META = {
  * @param {Function} [props.onJumpStart]
  * @param {Function} [props.onJumpLatest]
  */
-/* a self-sufficient default so the rail renders standalone (the composite always passes a
-   cooked TranscriptFilters; this is the unmanaged fallback). */
-const DEFAULT_FILTERS = {
-  categories: { prompts: true, responses: true, thinking: true, toolcalls: true, system: true },
-  toolGroups: {},
-  tags: { errors: false, retries: false, revert: false },
-  views: { hidden: true, expandAll: false, compact: false },
-  checkpoint: 'all',
-}
+/* The canonical default, imported from filters.js so the rail's standalone fallback and the
+   viewer's unmanaged state can never disagree (the composite always passes a cooked
+   TranscriptFilters; this is the unmanaged fallback). */
+const DEFAULT_FILTERS = DEFAULT_TRANSCRIPT_FILTERS
 
 export default function FiltersRail({
   tab,

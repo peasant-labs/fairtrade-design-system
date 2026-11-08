@@ -4038,6 +4038,65 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 .txn-systemrow-time { flex: none; color: var(--ink-4); }
 .txn-systemrow-body { margin-top: var(--sp-1); padding-inline-start: var(--sp-5); border-inline-start: var(--bd); }
 
+/* a producer-classified control record reads as one compact row, not a card: kind, recorded
+   value, time, and the same trailing cluster. The recorded value is EVIDENCE and keeps its
+   case; the lowercase chrome rule applies to chrome only. A value that needs more than one
+   line discloses its body one indent under the row, like the system row. */
+.txn-control-row { margin-top: var(--sp-2); }
+.txn-control-head-row { display: flex; align-items: center; gap: var(--sp-2); }
+.txn-control-head {
+  display: flex; align-items: center; gap: var(--sp-2);
+  flex: 1 1 auto; min-width: 0;
+  min-height: var(--target-comfortable);
+  padding: 0;
+  background: transparent; border: 0;
+  font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-mono);
+  color: var(--ink-3);
+  text-align: left; cursor: pointer;
+}
+.txn-control-head:hover { color: var(--ink-2); }
+.txn-control-head:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
+.txn-control-kind { flex: none; font-weight: 700; color: var(--ink-2); white-space: nowrap; text-transform: none; }
+.txn-control-value {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  text-transform: none;
+}
+.txn-control-time { flex: none; color: var(--ink-4); }
+.txn-control-body { margin-top: var(--sp-1); padding-inline-start: var(--sp-5); border-inline-start: var(--bd); }
+
+/* a run of consecutive system entries folds into one head; the owner renders in place under
+   it and members 2..N inside the disclosure, so a closed group is one laid-out row. Both the
+   owner row and the folded members share one inset, so the run reads as one aligned column. */
+.txn-systemgroup { margin-top: var(--sp-3); }
+.txn-systemgroup-head {
+  display: flex; align-items: center; gap: var(--sp-2);
+  width: 100%; min-height: var(--target-comfortable);
+  padding: 0;
+  background: transparent; border: 0;
+  font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-mono);
+  color: var(--ink-3);
+  text-align: left; cursor: pointer;
+}
+.txn-systemgroup-head:hover { color: var(--ink-2); }
+.txn-systemgroup-head:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
+.txn-systemgroup-label { flex: none; font-weight: 700; color: var(--ink-2); }
+.txn-systemgroup-summary { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: none; }
+/* one inset for the owner row and its folded siblings: the run is one aligned column under
+   the group head, and a change to one side cannot move the other without failing the gate. */
+.txn-systemgroup-owner,
+.txn-systemgroup-rows { padding-inline-start: var(--sp-4); }
+
+/* the empty reading state's one action: reveal the bookkeeping the default hides */
+.txn-empty-show-system {
+  display: inline-flex; align-items: center;
+  min-height: var(--target-min);
+  margin-top: var(--sp-3);
+  background: transparent; border: 0; padding: 0;
+  font-family: var(--font-mono); font-size: var(--fs-label);
+  color: var(--ink-2); text-decoration: underline; cursor: pointer;
+}
+.txn-empty-show-system:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
+
 /* ---- reading layout: width, zen, and the rails -----------------------------------
    Openness is USER STATE, never a function of the reading width. The handle writes ONLY
    --txn-reader-width; the reader column follows it and no rail folds because of it. Zen

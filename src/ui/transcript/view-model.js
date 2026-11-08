@@ -203,6 +203,10 @@ export const TOOL_GROUPS = Object.freeze([
  * @property {string} [modelChangedFrom]     prior root model when this turn carries the observation that changed it
  * @property {import('@peasant-labs/schema').Harness} [provider] canonical provider identity for a top-level assistant turn
  * @property {string} [agentName]           subagent name when depth > 0
+ * @property {string} [controlKind]         the producer's control-record kind for this turn, when the
+ *                                          server classified it (mode / permission-mode / attachment /
+ *                                          agent-name / custom-title); never inferred from any other field
+ * @property {boolean} [isControl]          true exactly when `controlKind` is present
  * @property {ThinkingVM} [thinking]
  * @property {import('@peasant-labs/schema').UsageDetail} [usage]
  * @property {ToolCallVM[]} toolCalls

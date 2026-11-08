@@ -64,7 +64,7 @@ for (const row of fixture.interactions) assertFields(row, ['name', 'kind'], `${F
 
 const CAPABILITIES = { canEdit: false, canLabel: false, canContribute: true, canChangeVisibility: false, canExport: true }
 const FILTERS = {
-  categories: { prompts: true, responses: true, thinking: true, toolcalls: true },
+  categories: { prompts: true, responses: true, thinking: true, toolcalls: true, system: true },
   toolGroups: { edits: true, bash: true, read: true, search: true, fetch: true, tasks: true, other: true },
   tags: { errors: false, retries: false, revert: false },
   views: { hidden: false, expandAll: false, compact: false },
@@ -85,8 +85,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   const { INTEGRITY_COPY } = await load('/src/ui/transcript/integrity.js')
   const vm = adaptTranscript(fixture.payload)
   const positions = vm.turns.map((turn) => [turn.index, turn.sourcePosition])
-  if (JSON.stringify(positions) !== JSON.stringify([[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [7, 7]])) {
-    throw new Error(`${FIXTURE}: the payload must cook to seven main turns at positions 0 to 5 and 7, received ${JSON.stringify(positions)}`)
+  if (JSON.stringify(positions) !== JSON.stringify([[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7, 7]])) {
+    throw new Error(`${FIXTURE}: the payload must cook to eight main turns at positions 0 to 7, received ${JSON.stringify(positions)}`)
   }
   if (!vm.earlierHistory?.[0]?.id) throw new Error(`${FIXTURE}: the payload must cook one earlier-history section`)
   const earlierOpen = { [vm.earlierHistory[0].id]: true }
@@ -139,8 +139,10 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   }
 
   async function mountViewer(props = {}, { condensed = false } = {}) {
-    const { hashes, integrity, toolcalls, ...rest } = props
-    const filters = toolcalls === false ? { ...FILTERS, categories: { ...FILTERS.categories, toolcalls: false } } : undefined
+    const { hashes, integrity, toolcalls, system, ...rest } = props
+    const filters = toolcalls === false || system === true
+      ? { ...FILTERS, categories: { ...FILTERS.categories, ...(toolcalls === false ? { toolcalls: false } : {}), ...(system === true ? { system: true } : {}) } }
+      : undefined
     const viewerProps = {
       viewModel: vm,
       capabilities: CAPABILITIES,
@@ -160,7 +162,9 @@ await withMountedSource(async ({ load, mount, window, React }) => {
 
   for (const row of fixture.cases) {
     const { condensed, zen, presentation, ...props } = row.props
-    const mounted = await mountViewer({ ...props, ...(zen ? { zen } : {}), presentation: row.kind }, { condensed })
+    /* a case that asserts a system row's mark runs with the complete filters object (system on);
+       the cases that prove a hidden row stay on the unmanaged default */
+    const mounted = await mountViewer({ ...props, ...(row.present.includes('mark-3') ? { system: true } : {}), ...(zen ? { zen } : {}), presentation: row.kind }, { condensed })
     if (condensed) report.check(!!mounted.container.querySelector('.txn-app-condensed'), `${row.name}: the fixture must condense the header`)
     for (const name of row.present) report.check(!!CONTROLS[name](mounted.container), `${row.name}: ${name} must be present`)
     for (const name of row.absent) report.check(!CONTROLS[name](mounted.container), `${row.name}: ${name} must be absent`)
@@ -170,7 +174,9 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   /* the outline: the rule's own selectors, run against the mounted viewer */
   const selectors = outlineSelectors()
   for (const row of fixture.outlineCases) {
-    const mounted = await mountViewer({ integrity: { flagged_turns: row.flagged }, hashes: 'same', presentation: row.kind })
+    /* the outlined system row is only mounted when system content is shown; every outline row
+       runs with the complete filters object so a hidden row cannot make a case vacuous */
+    const mounted = await mountViewer({ integrity: { flagged_turns: row.flagged }, hashes: 'same', presentation: row.kind, system: row.kind === 'ledger' ? true : undefined })
     const edges = new Set()
     for (const selector of selectors) for (const node of mounted.container.querySelectorAll(selector)) edges.add(node)
     report.check(edges.size === row.outlines, `${row.name}: expected ${row.outlines} outlined elements, received ${edges.size} (${[...edges].map((node) => node.className).join(' | ')})`)

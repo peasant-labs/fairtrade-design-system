@@ -246,20 +246,31 @@ payload:
 cases:
   - name: classic keeps the turn's tools flat
     kind: classic
+    mountFilters: &system_on
+      categories: {prompts: true, responses: true, thinking: true, toolcalls: true, system: true}
+      toolGroups: {edits: true, bash: true, read: true, search: true, fetch: true, tasks: true, other: true}
+      tags: {errors: false, retries: false, revert: false}
+      views: {hidden: true, expandAll: false, compact: false}
+      checkpoint: all
   - name: ledger groups one turn's tools into one panel
     kind: ledger-panel
+    mountFilters: *system_on
   - name: ledger tool rows open and close
     kind: ledger-disclosure
+    mountFilters: *system_on
     input: pnpm -r typecheck
   - name: the system category hides and restores only system turns
     kind: system-filter
   - name: compact mode collapses action lists without opening their contents
     kind: compact-actions
+    mountFilters: *system_on
   - name: clicking prose selects that turn without making its action list a turn
     kind: turn-selection
+    mountFilters: *system_on
     turn: 3
   - name: rapid turn keys recover from both scroll limits
     kind: turn-keys
+    mountFilters: *system_on
     keyboardSteps:
       - {keys: [j, j, j, j, j, j, j, j], expected: 6}
       - {keys: [k, k], expected: 3}
@@ -268,33 +279,45 @@ cases:
     manualScrollExpected: 1
   - name: ledger renders a system turn as a row
     kind: system
+    mountFilters: *system_on
   - name: the system row disclosure is controllable by the host
     kind: system-controlled
+    mountFilters: *system_on
   - name: a search hit opens the system row
     kind: system-reveal
+    mountFilters: *system_on
     # only the revealed system row opens; the other system turn stays collapsed
     revealedTurn: 2
     closedTurn: 6
   # the preview reads the rendered words, not the Markdown source
   - name: the system row preview reads plain text
     kind: system-preview
+    mountFilters: *system_on
     turn: 6
     preview: 'see the fixture guide for emphasis, stress, inline code, and struck text, plus raw html.'
   - name: ledger keeps a turn's thinking disclosure
     kind: thinking
+    mountFilters: *system_on
   - name: a turn without tools has no work group
     kind: no-tools
+    mountFilters: *system_on
   - name: the ledger head carries only the role line and its controls
     kind: ledger-head
+    mountFilters: *system_on
   - name: host turn actions survive on every role
     kind: host-actions
+    mountFilters: *system_on
   - name: a role change draws one rule and the first turn draws none
     kind: turn-rules
+    mountFilters: *system_on
   - name: a user turn's actions share one block after its first prose turn
     kind: model-actions
+    mountFilters: *system_on
   - name: a turn with no words is inline detail, not a card
     kind: detail-turns
+    mountFilters: *system_on
   - name: the system turn's heading follows the page level
     kind: heading-level
+    mountFilters: *system_on
     # the viewer's page level; its turn headings sit two levels below it (1 -> h3, 2 -> h4)
     headingLevel: 1

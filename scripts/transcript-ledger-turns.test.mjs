@@ -41,7 +41,29 @@ for (const row of fixture.summaryCases) {
   assertFields(row, ['name', 'tools', 'expected', 'countLabel', 'metaLabel', 'actionsLabel'], `${FIXTURE} ${row.name}`)
   assertExactNames(Object.keys(row.expected), SUMMARY_FIELDS, `${FIXTURE} ${row.name} expected`)
 }
-for (const row of fixture.cases) assertFields(row, ['name', 'kind'], `${FIXTURE} ${row.name}`, ['headingLevel', 'turn', 'preview', 'revealedTurn', 'closedTurn', 'input', 'keyboardSteps', 'manualScrollExpected'])
+/* A4: system content is asserted only with a COMPLETE filters object. The default hides
+   system entries, so a case that mounts the viewer and reads the full turn list must name
+   every key; only the case that proves the unmanaged default may omit it. */
+const UNMANAGED_FILTER_KINDS = new Set(['system-filter'])
+const FILTER_KEYS = ['categories', 'toolGroups', 'tags', 'views', 'checkpoint']
+const CATEGORY_KEYS = ['prompts', 'responses', 'thinking', 'toolcalls', 'system']
+const TOOL_GROUP_KEYS = ['edits', 'bash', 'read', 'search', 'fetch', 'tasks', 'other']
+const TAG_KEYS = ['errors', 'retries', 'revert']
+const VIEW_KEYS = ['hidden', 'expandAll', 'compact']
+for (const row of fixture.cases) {
+  assertFields(row, ['name', 'kind'], `${FIXTURE} ${row.name}`, ['headingLevel', 'turn', 'preview', 'revealedTurn', 'closedTurn', 'input', 'keyboardSteps', 'manualScrollExpected', 'mountFilters'])
+  if (UNMANAGED_FILTER_KINDS.has(row.kind)) {
+    if ('mountFilters' in row) throw new Error(`${FIXTURE} ${row.name}: a case that proves the unmanaged default must omit mountFilters`)
+    continue
+  }
+  if (!row.mountFilters) throw new Error(`${FIXTURE} ${row.name}: a case that asserts system content must carry a complete mountFilters object`)
+  assertExactNames(Object.keys(row.mountFilters), FILTER_KEYS, `${FIXTURE} ${row.name} mountFilters`)
+  assertExactNames(Object.keys(row.mountFilters.categories), CATEGORY_KEYS, `${FIXTURE} ${row.name} mountFilters.categories`)
+  assertExactNames(Object.keys(row.mountFilters.toolGroups), TOOL_GROUP_KEYS, `${FIXTURE} ${row.name} mountFilters.toolGroups`)
+  assertExactNames(Object.keys(row.mountFilters.tags), TAG_KEYS, `${FIXTURE} ${row.name} mountFilters.tags`)
+  assertExactNames(Object.keys(row.mountFilters.views), VIEW_KEYS, `${FIXTURE} ${row.name} mountFilters.views`)
+  if (row.mountFilters.categories.system !== true) throw new Error(`${FIXTURE} ${row.name}: this case asserts system content, so mountFilters.categories.system must be true`)
+}
 assertExactNames(Object.keys(fixture.mountedSummary), ['panel', 'grouped', 'afterUser'], `${FIXTURE} mountedSummary`)
 if (typeof fixture.revealQuery !== 'string' || fixture.revealQuery.length === 0) throw new Error(`${FIXTURE}: revealQuery must be a non-empty string`)
 
@@ -110,12 +132,21 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     value: { writeText: (value) => { copied.push(value); return Promise.resolve() } },
   })
 
-  const mountViewer = (presentation, extra = {}) => mount(React.createElement(TranscriptViewer, {
-    viewModel: vm,
-    capabilities: CAPABILITIES,
-    presentation,
-    ...extra,
-  }))
+  /* The case's own complete filters object; the unmanaged-default case passes none so the
+     viewer's canonical default (system hidden) is what it proves. A case that interacts with
+     the rail owns the state, so the interaction is real rather than a frozen prop. */
+  let caseFilters
+  const mountViewer = (presentation, extra = {}) => {
+    const props = { viewModel: vm, capabilities: CAPABILITIES, presentation, ...extra }
+    if (caseFilters && extra.filters === undefined) {
+      const Harness = () => {
+        const [filters, setFilters] = React.useState(caseFilters)
+        return React.createElement(TranscriptViewer, { ...props, filters, onFiltersChange: setFilters })
+      }
+      return mount(React.createElement(Harness))
+    }
+    return mount(React.createElement(TranscriptViewer, props))
+  }
 
   for (const row of separators.cases) {
     const sequence = adaptTranscript(separators.payload, undefined, separators.analytics)
@@ -132,7 +163,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   })
   for (const theme of nesting.themes) for (const presentation of nesting.presentations) {
     const nestedVM = adaptTranscript(nesting.payload)
-    const mounted = await mountViewer(presentation, { viewModel: nestedVM, theme })
+    const mounted = await mountViewer(presentation, { viewModel: nestedVM, theme, filters: separators.filters })
     const articles = [...mounted.container.querySelectorAll('article[data-turn]')]
     report.check(same(articles.map(el => Number(el.dataset.turn)), nesting.payload.turns.map(turn => turn.index)), `${theme}/${presentation}: nesting preserves source order and turn navigation identities`)
     for (const row of nesting.cases) {
@@ -148,6 +179,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   }
 
   for (const row of fixture.cases) {
+    caseFilters = row.mountFilters
     if (row.kind === 'classic') {
       const mounted = await mountViewer('classic', { savedLabels: { 1: { outcome: 'good' } } })
       const workPanels = mounted.container.querySelectorAll('.txn-work')
@@ -379,27 +411,36 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(list()?.closest('[hidden]') != null, `${row.name}: compact mode must collapse the list even with expand all enabled`)
       await mounted.unmount()
     } else if (row.kind === 'system-filter') {
+      /* The unmanaged default: system entries hidden, nothing to clear. One tick reveals them
+         and makes exactly that choice clearable; clear restores the default. */
       const mounted = await mountViewer('ledger')
       const container = mounted.container
       const systemCheck = () => [...container.querySelectorAll('.txn-catlist .txn-checkrow')].find((el) => text(el.querySelector('.txn-cr-label')) === 'system')
       const checkbox = () => systemCheck()?.querySelector('input[type="checkbox"]')
       const visibleIndices = () => [...container.querySelectorAll('.txn-stream [data-turn]')].map((el) => Number(el.getAttribute('data-turn')))
-      const baseline = visibleIndices()
       const systemTurns = vm.turns.filter((turn) => turn.role === 'system')
-      report.check(checkbox()?.checked === true, `${row.name}: system must start checked`)
-      report.check(text(systemCheck()?.querySelector('.txn-cr-count')) === String(systemTurns.length), `${row.name}: the badge must count system turns`)
+      const hiddenBaseline = visibleIndices()
+      report.check(checkbox()?.checked === false, `${row.name}: the system category must start unchecked`)
+      report.check(container.querySelector('.txn-stream .txn-systemrow') === null, `${row.name}: system rows must be absent at rest`)
+      report.check(container.querySelector('.txn-clear') === null, `${row.name}: the default state must not offer a clear control`)
+      report.check(text(systemCheck()?.querySelector('.txn-cr-count')) === String(systemTurns.length), `${row.name}: the badge must still count the hidden system turns`)
       if (checkbox()) await mounted.act(() => click(window, checkbox()))
       await mounted.settle()
-      report.check(container.querySelector('.txn-stream .txn-systemrow') === null, `${row.name}: the unchecked system category must hide every system row`)
-      report.check(same(visibleIndices(), baseline.filter((index) => !systemTurns.some((turn) => turn.index === index))), `${row.name}: hiding system must preserve every other turn`)
-      report.check(text(container.querySelector('.txn-clear')) === 'clear (1)', `${row.name}: hiding system must count as one active filter`)
-      if (checkbox()) await mounted.act(() => click(window, checkbox()))
-      await mounted.settle()
-      report.check(same(visibleIndices(), baseline), `${row.name}: checking system must restore the original turn order`)
-      if (checkbox()) await mounted.act(() => click(window, checkbox()))
+      report.check(checkbox()?.checked === true, `${row.name}: ticking system must check the category`)
+      report.check(container.querySelectorAll('.txn-stream .txn-systemrow').length === systemTurns.length, `${row.name}: ticking system must reveal every system row`)
+      report.check(text(container.querySelector('.txn-clear')) === 'clear (1)', `${row.name}: ticking system must count as one active filter`)
       await mounted.act(() => click(window, container.querySelector('.txn-clear')))
       await mounted.settle()
-      report.check(checkbox()?.checked === true && same(visibleIndices(), baseline), `${row.name}: clear must restore system turns and its checked state`)
+      report.check(checkbox()?.checked === false, `${row.name}: clear must restore the system category to unchecked`)
+      report.check(same(visibleIndices(), hiddenBaseline), `${row.name}: clear must restore the default turn list`)
+      report.check(container.querySelector('.txn-clear') === null, `${row.name}: clear must leave nothing to clear`)
+      /* another category unchecked leaves system off: the default is not a one-time state */
+      const promptsCheck = () => [...container.querySelectorAll('.txn-catlist .txn-checkrow')].find((el) => text(el.querySelector('.txn-cr-label')) === 'prompts')
+      await mounted.act(() => click(window, promptsCheck()?.querySelector('input[type="checkbox"]')))
+      await mounted.settle()
+      report.check(checkbox()?.checked === false, `${row.name}: another category's choice must leave system off`)
+      report.check(container.querySelector('.txn-stream .txn-systemrow') === null, `${row.name}: another category's choice must not reveal system rows`)
+      report.check(text(container.querySelector('.txn-clear')) === 'clear (1)', `${row.name}: the other category's choice is the one active filter`)
       await mounted.unmount()
     } else if (row.kind === 'system') {
       const mounted = await mountViewer('ledger')

@@ -821,11 +821,20 @@ function taskToVM(tg, i, turns) {
  * The cooked task groups for a turn list (`computeTasks` mapped onto
  * `TaskGroupVM`). Exported so the adapter can populate the always-present
  * `vm.tasks` from the same single computation `computeAnalytics` uses.
+ *
+ * The list is the user turns: a session that opens with harness bookkeeping gets a
+ * leading span that starts on a system entry and has no prompt. That entry is not a
+ * user turn, so it never becomes a task card; the spans that survive keep their
+ * ORIGINAL ordinal so a card's `#` and the classic turn-boundary chip still agree
+ * with the turn labels they were cooked beside.
  * @param {TurnDetail[]} turns
  * @returns {TaskGroupVM[]}
  */
 export function computeTaskGroups(turns) {
-  return computeTasks(turns).map((tg, i) => taskToVM(tg, i, turns))
+  return computeTasks(turns)
+    .map((tg, i) => ({ tg, i }))
+    .filter(({ tg }) => turns[tg.startIndex]?.role !== 'system')
+    .map(({ tg, i }) => taskToVM(tg, i, turns))
 }
 
 /**
