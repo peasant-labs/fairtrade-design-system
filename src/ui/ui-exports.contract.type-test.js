@@ -5,7 +5,7 @@
    host imports it from `@peasant-labs/fairtrade/ui`. This file imports the BARREL,
    not the deep module, and asserts every type a host needs resolves through it:
 
-     - `SavedView` for the host's composed URL grouping + device columns/open;
+     - `SavedView` for the host's composed URL grouping + device columns/collapsed;
      - `TranscriptLibraryTableProps` for the mounted component;
      - `TranscriptLibraryColumn` for a host column;
      - `TranscriptLibraryPage` for the offset page;
@@ -24,12 +24,12 @@ const OtherGroupBy = closed('agent', 'agent')
 const ColumnId = closed('transcript', 'transcript')
 
 /** @type {import('./index.js').SavedView<typeof GroupBy, typeof ColumnId>} */
-const view = { groupBy: GroupBy, visibleColumns: [ColumnId], open: ['project:alpha'] }
+const view = { groupBy: GroupBy, visibleColumns: [ColumnId], collapsed: [] }
 void view
 
-/** @type {import('./index.js').SavedView<typeof GroupBy, typeof ColumnId>} */
-const viewWithoutOpen = { groupBy: GroupBy, visibleColumns: [ColumnId] }
-void viewWithoutOpen
+// @ts-expect-error - collapsed is required; an empty list means every group is open
+const viewWithoutCollapsed = /** @type {import('./index.js').SavedView<typeof GroupBy, typeof ColumnId>} */ ({ groupBy: GroupBy, visibleColumns: [ColumnId] })
+void viewWithoutCollapsed
 
 /** @type {readonly import('./index.js').TranscriptLibraryColumn<Row, typeof ColumnId>[]} */
 const columns = [{ id: ColumnId, label: 'transcript', align: ColumnAlign.Start, render: (row) => row.title }]

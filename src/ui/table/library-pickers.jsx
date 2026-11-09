@@ -10,7 +10,7 @@
 
    Nothing here reads or writes storage, a URL, or history. Every change is
    reported to the host through the picker's callback; the host owns the URL
-   `groupBy` and the device `visibleColumns` and `open`. */
+   `groupBy` and the device `visibleColumns` and `collapsed`. */
 
 import { useEffect, useId, useRef, useState } from 'react'
 import { ChevronDown } from 'lucide-react'

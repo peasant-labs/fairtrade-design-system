@@ -24,9 +24,27 @@ export { default as DataTable } from './DataTable.jsx'
 export { DataTableToolbar, DataTablePaginationControls } from './DataTableControls.jsx'
 /* the shared transcript library table: the table, the two grouping helpers a host uses to
    build a page's key unions, the contract types a host annotates its composed view with,
-   and the ColumnAlign closed set a host column declares. the star export carries the
-   component, the helpers, and the prop/view/page typedefs in one place. */
-export * from './TranscriptLibraryTable.jsx'
+   and the ColumnAlign closed set a host column declares. the named value export keeps the
+   grouping helpers visible to the component manifest; the typedef aliases carry the
+   generic types a host imports from ./ui. */
+export { TranscriptLibraryTable, groupPageRows, groupKeysFor } from './TranscriptLibraryTable.jsx'
+/**
+ * @template {import('./closed-value.js').ClosedValue<string, string>} GroupBy
+ * @template {import('./closed-value.js').ClosedValue<string, string>} ColumnId
+ * @typedef {import('./TranscriptLibraryTable.jsx').SavedView<GroupBy, ColumnId>} SavedView
+ */
+/**
+ * @template Row
+ * @template {import('./closed-value.js').ClosedValue<string, string>} ColumnId
+ * @typedef {import('./TranscriptLibraryTable.jsx').TranscriptLibraryColumn<Row, ColumnId>} TranscriptLibraryColumn
+ */
+/**
+ * @template Row
+ * @template {import('./closed-value.js').ClosedValue<string, string>} GroupBy
+ * @template {import('./closed-value.js').ClosedValue<string, string>} ColumnId
+ * @typedef {import('./TranscriptLibraryTable.jsx').TranscriptLibraryTableProps<Row, GroupBy, ColumnId>} TranscriptLibraryTableProps
+ */
+/** @typedef {import('./TranscriptLibraryTable.jsx').TranscriptLibraryPage} TranscriptLibraryPage */
 /**
  * @template Row
  * @typedef {import('./groupPageRows.js').TranscriptLibraryGroup<Row>} TranscriptLibraryGroup

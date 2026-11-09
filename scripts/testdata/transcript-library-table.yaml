@@ -3,7 +3,7 @@
 # Every case mounts the REAL component (src/ui/TranscriptLibraryTable.jsx) through
 # the shared mounted-source harness and asserts the rows a reader reaches: group
 # headers, the one compact continuation row, the end-of-page continues marker, the
-# numbered pager, and the table's caption/role.
+# numbered pager, the table's caption, and its named scroll region.
 #
 # The host sets mirror what Peasant and Village pass: bare group keys
 # (`projects: [alpha]`), a qualified label map keyed by `${groupBy.wire}:${key}`,
@@ -258,7 +258,7 @@ cases:
       - { kind: group, text: 'project:alpha' }
       - { kind: row, text: alpha one }
 
-  - name: an explicit empty open list collapses every group
+  - name: an explicit collapsed list closes the named groups
     rows:
       - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
       - { key: b1, title: beta one, turns: 1, projects: [beta] }
@@ -266,7 +266,7 @@ cases:
     continuedGroupKeys: null
     page: { index: 1, size: 25, total: 2 }
     expectedPage: page 1 of 1
-    view: { groupBy: project, visibleColumns: [transcript, turns], open: [] }
+    view: { groupBy: project, visibleColumns: [transcript, turns], collapsed: [project:alpha, project:beta] }
     expectColumns: [transcript, turns]
     expectedExpanded: [false, false]
     expectedRenderedRows: 0
@@ -274,7 +274,7 @@ cases:
       - { kind: group, text: 'project:alpha' }
       - { kind: group, text: 'project:beta' }
 
-  - name: a saved view without open renders every group open
+  - name: an empty collapsed list renders every group open
     rows:
       - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
       - { key: b1, title: beta one, turns: 1, projects: [beta] }
@@ -282,7 +282,7 @@ cases:
     continuedGroupKeys: null
     page: { index: 1, size: 25, total: 2 }
     expectedPage: page 1 of 1
-    view: { groupBy: project, visibleColumns: [transcript, turns] }
+    view: { groupBy: project, visibleColumns: [transcript, turns], collapsed: [] }
     expectColumns: [transcript, turns]
     expectedExpanded: [true, true]
     expectedRows:
@@ -291,7 +291,7 @@ cases:
       - { kind: group, text: 'project:beta' }
       - { kind: row, text: beta one }
 
-  - name: a group toggle from no preference reports the open groups
+  - name: a group toggle reports the collapsed group
     rows:
       - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
       - { key: b1, title: beta one, turns: 1, projects: [beta] }
@@ -299,10 +299,10 @@ cases:
     continuedGroupKeys: null
     page: { index: 1, size: 25, total: 2 }
     expectedPage: page 1 of 1
-    view: { groupBy: project, visibleColumns: [transcript, turns] }
+    view: { groupBy: project, visibleColumns: [transcript, turns], collapsed: [] }
     clickGroup: project:beta
     expectedViewChanges:
-      - { groupBy: project, visibleColumns: [transcript, turns], open: [project:alpha] }
+      - { groupBy: project, visibleColumns: [transcript, turns], collapsed: [project:beta] }
     expectedRows:
       - { kind: group, text: 'project:alpha' }
       - { kind: row, text: alpha one }
@@ -316,7 +316,7 @@ cases:
     continuedGroupKeys: null
     page: { index: 1, size: 25, total: 1 }
     expectedPage: page 1 of 1
-    view: { groupBy: project, visibleColumns: [turns], open: [project:alpha] }
+    view: { groupBy: project, visibleColumns: [turns], collapsed: [] }
     expectColumns: [transcript, turns]
     expectedRows:
       - { kind: group, text: 'project:alpha' }
@@ -329,7 +329,7 @@ cases:
     continuedGroupKeys: null
     page: { index: 1, size: 25, total: 1 }
     expectedPage: page 1 of 1
-    view: { groupBy: project, visibleColumns: [unknown], open: [project:alpha] }
+    view: { groupBy: project, visibleColumns: [unknown], collapsed: [] }
     expectColumns: [transcript, turns]
     expectedRows:
       - { kind: group, text: 'project:alpha' }
@@ -365,7 +365,7 @@ cases:
     continuedGroupKeys: null
     page: { index: 1, size: 25, total: 1 }
     expectedPage: page 1 of 1
-    view: { groupBy: project, visibleColumns: [transcript], open: [project:alpha] }
+    view: { groupBy: project, visibleColumns: [transcript], collapsed: [] }
     expectColumns: [transcript]
     expectedExpanded: [true]
     expectedRows:
@@ -379,12 +379,12 @@ cases:
     continuedGroupKeys: null
     page: { index: 1, size: 25, total: 1 }
     expectedPage: page 1 of 1
-    view: { groupBy: batch, visibleColumns: [unknown], open: [] }
+    view: { groupBy: batch, visibleColumns: [unknown], collapsed: [project:alpha] }
     expectColumns: [transcript, turns]
     expectGroupByLabel: 'group by: project'
     expectedExpanded: [false]
     expectedViewChanges:
-      - { groupBy: project, visibleColumns: [transcript, turns], open: [] }
+      - { groupBy: project, visibleColumns: [transcript, turns], collapsed: [project:alpha] }
     expectedRows:
       - { kind: group, text: 'project:alpha' }
 
@@ -395,7 +395,7 @@ cases:
     nextGroupKeys: null
     continuedGroupKeys: null
     page: { index: 1, size: 25, total: 1 }
-    view: { groupBy: project, visibleColumns: [transcript], open: [] }
+    view: { groupBy: project, visibleColumns: [transcript], collapsed: [] }
     expectedError: onViewStateChange must be a function
 
   - name: a column picker toggles a column and reports the composed view
@@ -405,10 +405,10 @@ cases:
     continuedGroupKeys: null
     page: { index: 1, size: 25, total: 1 }
     expectedPage: page 1 of 1
-    view: { groupBy: project, visibleColumns: [transcript, turns], open: [project:alpha] }
+    view: { groupBy: project, visibleColumns: [transcript, turns], collapsed: [] }
     clickColumn: turns
     expectedViewChanges:
-      - { groupBy: project, visibleColumns: [transcript], open: [project:alpha] }
+      - { groupBy: project, visibleColumns: [transcript], collapsed: [] }
     expectedRows:
       - { kind: group, text: 'project:alpha' }
       - { kind: row, text: alpha one }
@@ -420,25 +420,25 @@ cases:
     continuedGroupKeys: null
     page: { index: 1, size: 25, total: 1 }
     expectedPage: page 1 of 1
-    view: { groupBy: project, visibleColumns: [transcript], open: [project:alpha] }
+    view: { groupBy: project, visibleColumns: [transcript], collapsed: [] }
     clickColumn: turns
     expectedViewChanges:
-      - { groupBy: project, visibleColumns: [transcript, turns], open: [project:alpha] }
+      - { groupBy: project, visibleColumns: [transcript, turns], collapsed: [] }
     expectedRows:
       - { kind: group, text: 'project:alpha' }
       - { kind: row, text: alpha one }
 
-  - name: a group-by picker change reports the new grouping and keeps the open list
+  - name: a group-by picker change reports the new grouping and keeps the collapsed list
     rows:
       - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
     nextGroupKeys: null
     continuedGroupKeys: null
     page: { index: 1, size: 25, total: 1 }
     expectedPage: page 1 of 1
-    view: { groupBy: project, visibleColumns: [transcript, turns], open: [project:alpha] }
+    view: { groupBy: project, visibleColumns: [transcript, turns], collapsed: [project:elsewhere] }
     clickGroupBy: nothing
     expectedViewChanges:
-      - { groupBy: none, visibleColumns: [transcript, turns], open: [project:alpha] }
+      - { groupBy: none, visibleColumns: [transcript, turns], collapsed: [project:elsewhere] }
     expectedRows:
       - { kind: group, text: 'project:alpha' }
       - { kind: row, text: alpha one }
@@ -450,13 +450,13 @@ cases:
     continuedGroupKeys: null
     page: { index: 1, size: 25, total: 1 }
     expectedPage: page 1 of 1
-    view: { groupBy: project, visibleColumns: [transcript, turns], open: [project:alpha] }
+    view: { groupBy: project, visibleColumns: [transcript, turns], collapsed: [] }
     expectedExpanded: [true]
     expectedRenderedRows: 1
     clickGroup: project:alpha
     expectedViewChanges:
-      - { groupBy: project, visibleColumns: [transcript, turns], open: [] }
-    rerenderView: { groupBy: project, visibleColumns: [transcript, turns], open: [] }
+      - { groupBy: project, visibleColumns: [transcript, turns], collapsed: [project:alpha] }
+    rerenderView: { groupBy: project, visibleColumns: [transcript, turns], collapsed: [project:alpha] }
     expectedExpandedAfter: [false]
     expectedRenderedRowsAfter: 0
     expectedRows:
@@ -471,12 +471,29 @@ cases:
     continuedGroupKeys: [alpha]
     page: { index: 2, size: 25, total: 120 }
     expectedPage: page 2 of 5
-    view: { groupBy: project, visibleColumns: [transcript, turns], open: [project:alpha] }
+    view: { groupBy: project, visibleColumns: [transcript, turns], collapsed: [] }
     expectedExpanded: [true]
     expectedRows:
       - { kind: continuation, text: 'project:alpha, continued' }
       - { kind: row, text: alpha one }
       - { kind: row, text: alpha two }
+
+  - name: a collapse on one page leaves another page's groups open
+    rows:
+      - { key: b1, title: beta one, turns: 1, projects: [beta] }
+      - { key: c1, title: gamma one, turns: 2, projects: [gamma] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 2, size: 25, total: 120 }
+    expectedPage: page 2 of 5
+    view: { groupBy: project, visibleColumns: [transcript, turns], collapsed: [project:alpha] }
+    expectColumns: [transcript, turns]
+    expectedExpanded: [true, true]
+    expectedRows:
+      - { kind: group, text: 'project:beta' }
+      - { kind: row, text: beta one }
+      - { kind: group, text: 'project:gamma' }
+      - { kind: row, text: gamma one }
 
   - name: the column picker and group-by picker are keyboard reachable
     rows:
@@ -485,7 +502,7 @@ cases:
     continuedGroupKeys: null
     page: { index: 1, size: 25, total: 1 }
     expectedPage: page 1 of 1
-    view: { groupBy: project, visibleColumns: [transcript, turns], open: [project:alpha] }
+    view: { groupBy: project, visibleColumns: [transcript, turns], collapsed: [] }
     keyboard: true
     expectedRows:
       - { kind: group, text: 'project:alpha' }
@@ -498,12 +515,12 @@ cases:
     continuedGroupKeys: null
     page: { index: 1, size: 25, total: 1 }
     expectedPage: page 1 of 1
-    view: { groupBy: project, visibleColumns: [transcript, turns], open: [project:alpha] }
+    view: { groupBy: project, visibleColumns: [transcript, turns], collapsed: [] }
     clickColumn: turns
     clickGroup: project:alpha
     expectedViewChanges:
-      - { groupBy: project, visibleColumns: [transcript], open: [project:alpha] }
-      - { groupBy: project, visibleColumns: [transcript, turns], open: [] }
+      - { groupBy: project, visibleColumns: [transcript], collapsed: [] }
+      - { groupBy: project, visibleColumns: [transcript, turns], collapsed: [project:alpha] }
     expectedRows:
       - { kind: group, text: 'project:alpha' }
       - { kind: row, text: alpha one }

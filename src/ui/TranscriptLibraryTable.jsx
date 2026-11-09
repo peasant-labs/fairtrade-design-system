@@ -34,24 +34,25 @@ export { groupPageRows, groupKeysFor } from './groupPageRows.js'
  */
 
 /**
- * One composed saved view: `groupBy` from the URL and `visibleColumns`/`open`
+ * One composed saved view: `groupBy` from the URL and `visibleColumns`/`collapsed`
  * from the device. The host composes it; the table receives it and reports
  * changes back, never reading a URL or storage itself.
  *
  * `visibleColumns` holds the known column members the table shows; the first
  * declared column is the row identity and always shows. An unknown member is
  * dropped when the view is reported back, so the host can rewrite its stored
- * value. `open` lists the expanded qualified group ids; leave it out to express
- * no preference, which renders every group open. An explicit empty list closes
- * every group. The host owns both, and the latest reported view is the one to
- * persist.
+ * value. `collapsed` lists the qualified group ids the reader closed; an empty
+ * list opens every group. The list is page-independent: a collapse recorded on
+ * one page is the same qualified id on every page, so it never closes an
+ * unrelated group. The host composes both fields from the device and clears
+ * `collapsed` when `groupBy` changes; the table reports it unchanged.
  *
  * @template {import('./closed-value.js').ClosedValue<string, string>} GroupBy
  * @template {import('./closed-value.js').ClosedValue<string, string>} ColumnId
  * @typedef {object} SavedView
  * @property {GroupBy} groupBy
  * @property {readonly ColumnId[]} visibleColumns
- * @property {readonly string[]} [open]
+ * @property {readonly string[]} collapsed
  */
 
 /**
@@ -82,7 +83,7 @@ export { groupPageRows, groupKeysFor } from './groupPageRows.js'
  * @property {readonly string[] | null} nextGroupKeys bare keys from `page.nextItems`, or null.
  * @property {readonly string[] | null} continuedGroupKeys bare keys from the previous page, or null.
  * @property {TranscriptLibraryPage | null} page
- * @property {SavedView<GroupBy, ColumnId> | null} [viewState] the host's composed grouping, columns, and open groups; a known saved view wins over the host default.
+ * @property {SavedView<GroupBy, ColumnId> | null} [viewState] the host's composed grouping, columns, and collapsed groups; a known saved view wins over the host default.
  * @property {(view: SavedView<GroupBy, ColumnId>) => void} [onViewStateChange]
  * @property {(index: number) => void} [onPageChange]
  * @property {(size: import('@peasant-labs/schema').PageSize) => void} [onPageSizeChange]
@@ -100,7 +101,7 @@ export { groupPageRows, groupKeysFor } from './groupPageRows.js'
  * @property {GroupBy} groupBy
  * @property {readonly GroupBy[]} groupByOptions
  * @property {readonly ColumnId[]} visibleColumns
- * @property {readonly string[] | null} open null means no preference: every group open.
+ * @property {readonly string[]} collapsed the qualified group ids the reader closed.
  */
 
 /**
@@ -112,7 +113,7 @@ export { groupPageRows, groupKeysFor } from './groupPageRows.js'
  * The table is controlled. It renders the rows, page, and view it is given and
  * reports changes; it holds no storage, reads no URL, and never resets a page.
  * A saved view (when given) supplies the grouping, the visible columns, and the
- * open groups; without one every column shows, every group is open, and the two
+ * collapsed groups; without one every column shows, every group is open, and the two
  * pickers are absent because they would have nothing to report to.
  *
  * @template Row
@@ -171,31 +172,29 @@ export function TranscriptLibraryTable({
     if (reportedFallback.current === key) return
     reportedFallback.current = key
     if (typeof onViewStateChange === 'function') {
-      onViewStateChange({ groupBy: view.groupBy, visibleColumns: view.visibleColumns, open: view.open })
+      onViewStateChange({ groupBy: view.groupBy, visibleColumns: view.visibleColumns, collapsed: view.collapsed })
     }
   }, [view, viewState, onViewStateChange])
 
   /**
    * Report one composed view. The host owns the reset: a `groupBy` change keeps
-   * the open list as given, and `readView` already drops the ids that belong to
-   * another grouping. `open: null` means no preference.
+   * `collapsed` as given, and the host clears it when it writes the new grouping.
    *
-   * @param {{ groupBy: GroupBy, visibleColumns: readonly ColumnId[], open: readonly string[] | null }} next
+   * @param {{ groupBy: GroupBy, visibleColumns: readonly ColumnId[], collapsed: readonly string[] }} next
    */
   const reportView = (next) => {
     if (typeof onViewStateChange === 'function') {
-      onViewStateChange({ groupBy: next.groupBy, visibleColumns: next.visibleColumns, open: next.open })
+      onViewStateChange({ groupBy: next.groupBy, visibleColumns: next.visibleColumns, collapsed: next.collapsed })
     }
   }
 
   /** @param {string} groupId */
   const toggleGroup = (groupId) => {
     if (!view) return
-    const open = view.open ?? groups.map((group) => group.id).filter((id) => id !== '')
-    const next = open.includes(groupId)
-      ? open.filter((id) => id !== groupId)
-      : [...open, groupId]
-    reportView({ groupBy: view.groupBy, visibleColumns: view.visibleColumns, open: next })
+    const collapsed = view.collapsed.includes(groupId)
+      ? view.collapsed.filter((id) => id !== groupId)
+      : [...view.collapsed, groupId]
+    reportView({ groupBy: view.groupBy, visibleColumns: view.visibleColumns, collapsed })
   }
 
   return (
@@ -205,7 +204,7 @@ export function TranscriptLibraryTable({
           <GroupByPicker
             options={view.groupByOptions}
             value={view.groupBy}
-            onChange={(next) => reportView({ groupBy: next, visibleColumns: view.visibleColumns, open: view.open })}
+            onChange={(next) => reportView({ groupBy: next, visibleColumns: view.visibleColumns, collapsed: view.collapsed })}
           />
           <ColumnPicker
             columns={columns}
@@ -215,7 +214,7 @@ export function TranscriptLibraryTable({
                 .filter((candidate) => (candidate.id.wire === column.id.wire ? !wasVisible : view.visibleColumns.some((id) => id.wire === candidate.id.wire)))
                 .map((candidate) => candidate.id)
               if (next.length === 0) return
-              reportView({ groupBy: view.groupBy, visibleColumns: next, open: view.open })
+              reportView({ groupBy: view.groupBy, visibleColumns: next, collapsed: view.collapsed })
             }}
           />
         </div>
@@ -242,7 +241,7 @@ export function TranscriptLibraryTable({
               </tr>
             ) : (
               groups.map((group) => {
-                const expanded = group.id === '' || view === null || view.open === null || view.open.includes(group.id)
+                const expanded = group.id === '' || view === null || !view.collapsed.includes(group.id)
                 const toggle = view === null ? null : toggleGroup
                 return (
                   <Fragment key={group.id || '__ungrouped'}>
@@ -542,16 +541,15 @@ function readView(viewState, defaultGroupBy, groupByOptions, columns) {
   const visibleColumns = knownColumns.length > 0
     ? [columns[0].id, ...knownColumns.filter((id) => id.wire !== columns[0].id.wire)]
     : defaultColumns
-  // `open` is optional on purpose: absent means the host has no preference, so
-  // every group renders open. An explicit list (including an empty one) is the
-  // host's choice, and ids from another grouping are dropped here.
-  const savedOpen = readField(viewState, 'open')
-  const open = savedOpen == null
-    ? null
-    : Array.isArray(savedOpen)
-      ? savedOpen.filter((id) => typeof id === 'string' && id.startsWith(`${groupBy.wire}:`))
-      : null
-  return { groupBy, groupByOptions: options, visibleColumns, open }
+  // `collapsed` is page-independent: the qualified id of a group the reader
+  // closed. An empty (or missing) list opens every group; an unknown id simply
+  // matches no rendered group, so a stale value is harmless until the host
+  // clears it on a grouping change.
+  const savedCollapsed = readField(viewState, 'collapsed')
+  const collapsed = Array.isArray(savedCollapsed)
+    ? savedCollapsed.filter((id) => typeof id === 'string' && id.length > 0)
+    : []
+  return { groupBy, groupByOptions: options, visibleColumns, collapsed }
 }
 
 /**
@@ -622,7 +620,7 @@ function readField(record, key) {
 function refuseView(reason) {
   return new TypeError(
     `TranscriptLibraryTable failed in src/ui/TranscriptLibraryTable.jsx: ${reason}. ` +
-      'The saved view is one composed value: groupBy from the URL and visibleColumns and open from the device. ' +
+      'The saved view is one composed value: groupBy from the URL and visibleColumns and collapsed from the device. ' +
       'Pass a resolved SavedView, or null to render every column and every group open with no pickers.',
   )
 }
@@ -632,7 +630,7 @@ function refuseViewCallback() {
   return new TypeError(
     'TranscriptLibraryTable failed in src/ui/TranscriptLibraryTable.jsx: onViewStateChange must be a function when viewState is not null. ' +
       'A saved view renders pickers and group toggles, and a control that cannot report a change is a dead control. ' +
-      'Pass onViewStateChange(view) that writes the URL grouping and the stored columns and open groups, or pass viewState={null}.',
+      'Pass onViewStateChange(view) that writes the URL grouping and the stored columns and collapsed groups, or pass viewState={null}.',
   )
 }
 

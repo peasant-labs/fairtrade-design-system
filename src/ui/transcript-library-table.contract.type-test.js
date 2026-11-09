@@ -5,7 +5,7 @@
 
      - a host GroupBy and ColumnId closed set type the table's props, so two hosts
        never share a member type by accident;
-     - the saved view is `groupBy` from the URL plus `visibleColumns` and `open`
+     - the saved view is `groupBy` from the URL plus `visibleColumns` and `collapsed`
        from the device, and `visibleColumns` holds closed-set members, never wires;
      - `page.size` is the schema `PageSize` set, not a bare number;
      - `groupPageRows` and `groupKeysFor` keep their generics.
@@ -49,7 +49,7 @@ const columns = [
 const viewState = {
   groupBy: GroupBy.Project,
   visibleColumns: [ColumnId.Transcript, ColumnId.Turns],
-  open: ['project:alpha'],
+  collapsed: [],
 }
 
 /** @type {import('./TranscriptLibraryTable.jsx').TranscriptLibraryTableProps<Row, HostGroupBy, HostColumnId>} */
@@ -99,7 +99,7 @@ void keys
 const wiresOnly = /** @type {import('./TranscriptLibraryTable.jsx').SavedView<HostGroupBy, HostColumnId>} */ ({
   groupBy: GroupBy.Project,
   visibleColumns: ['turns'],
-  open: [],
+  collapsed: [],
 })
 void wiresOnly
 
@@ -107,7 +107,7 @@ void wiresOnly
 const foreignGroupBy = /** @type {import('./TranscriptLibraryTable.jsx').SavedView<HostGroupBy, HostColumnId>} */ ({
   groupBy: OtherGroupBy.Agent,
   visibleColumns: [ColumnId.Turns],
-  open: [],
+  collapsed: [],
 })
 void foreignGroupBy
 

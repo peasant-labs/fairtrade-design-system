@@ -2,7 +2,7 @@
 /* Mounted-source gate for the canonical transcript library table core and its
    saved view (fairtrade#229 PR-2). It loads the REAL component through vite's
    ssrLoadModule, mounts it into jsdom, and asserts what a reader reaches: the
-   caption and table role, host columns, group headers and their toggles, the one
+   caption and scroll region, host columns, group headers and their toggles, the one
    compact continuation row, the end-of-page continues marker, multi-membership
    row rendering, the required row key, the numbered pager, the column and
    group-by pickers, their keyboard behaviour and announced state, and that the
@@ -274,10 +274,10 @@ function columnFor(def, closed, align) {
 
 /**
  * Compose the saved view a host would pass: the URL grouping and the device
- * columns and open groups. Unknown wires are kept as members so the table's own
- * fallback is what the case exercises.
+ * columns and collapsed groups. Unknown wires are kept as members so the table's
+ * own fallback is what the case exercises.
  *
- * @param {{ groupBy: string, visibleColumns?: string[], open?: string[] } | undefined} spec
+ * @param {{ groupBy: string, visibleColumns?: string[], collapsed?: string[] } | undefined} spec
  * @param {object} defaultGroupBy
  * @param {readonly object[]} options
  * @param {Map<string, object>} columnsById
@@ -288,7 +288,7 @@ function viewFor(spec, defaultGroupBy, options, columnsById, closed) {
   return {
     groupBy: options.find((option) => option.wire === spec.groupBy) ?? closed(spec.groupBy, spec.groupBy),
     visibleColumns: (spec.visibleColumns ?? []).map((wire) => columnsById.get(wire)?.id ?? closed(wire, wire)),
-    open: spec.open,
+    collapsed: spec.collapsed ?? [],
   }
 }
 
@@ -390,13 +390,13 @@ function expandedStates(container) {
 }
 
 /**
- * @param {{ groupBy: { wire: string }, visibleColumns: readonly { wire: string }[], open: readonly string[] }[]} views
- * @returns {{ groupBy: string, visibleColumns: string[], open: string[] }[]}
+ * @param {{ groupBy: { wire: string }, visibleColumns: readonly { wire: string }[], collapsed: readonly string[] }[]} views
+ * @returns {{ groupBy: string, visibleColumns: string[], collapsed: string[] }[]}
  */
 function viewWires(views) {
   return views.map((view) => ({
     groupBy: view.groupBy.wire,
     visibleColumns: view.visibleColumns.map((id) => id.wire),
-    open: view.open == null ? null : [...view.open],
+    collapsed: [...view.collapsed],
   }))
 }
