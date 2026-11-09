@@ -1,0 +1,228 @@
+# TranscriptLibraryTable core cases (fairtrade#229 PR-2).
+#
+# Every case mounts the REAL component (src/ui/TranscriptLibraryTable.jsx) through
+# the shared mounted-source harness and asserts the rows a reader reaches: group
+# headers, the one compact continuation row, the end-of-page continues marker, the
+# numbered pager, and the table's caption/role.
+#
+# The host sets mirror what Peasant and Village pass: bare group keys
+# (`projects: [alpha]`), a qualified label map keyed by `${groupBy.wire}:${key}`,
+# and a 1-based offset page. Sizes are schema `PageSize` members.
+#
+# Required names live in transcript-library-table.manifest.yaml; a deleted case
+# fails the gate.
+
+caption: your transcripts
+groupBy: { wire: project, label: project }
+
+columns:
+  - { id: transcript, label: transcript, align: start }
+  - { id: turns, label: turns, align: end, numeric: true }
+
+alignColumns:
+  - { id: start, label: start, align: start }
+  - { id: end, label: end, align: end }
+  - { id: center, label: center, align: center }
+  - { id: decimal, label: decimal, align: decimal }
+
+cases:
+  - name: a group id uses the form groupBy:key
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 1, size: 25, total: 1 }
+    expectedPage: page 1 of 1
+    expectedRows:
+      - { kind: group, text: 'project:alpha' }
+      - { kind: row, text: alpha one }
+    expectedLabels: ['project:alpha']
+
+  - name: a continuing group opens with one compact continuation row
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+      - { key: a2, title: alpha two, turns: 5, projects: [alpha] }
+    nextGroupKeys: null
+    continuedGroupKeys: [alpha]
+    page: { index: 2, size: 25, total: 120 }
+    expectedPage: page 2 of 5
+    expectedRows:
+      - { kind: continuation, text: 'project:alpha, continued' }
+      - { kind: row, text: alpha one }
+      - { kind: row, text: alpha two }
+
+  - name: a group that starts on the page keeps the full header
+    rows:
+      - { key: b1, title: beta one, turns: 1, projects: [beta] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 2, size: 25, total: 120 }
+    expectedPage: page 2 of 5
+    expectedRows:
+      - { kind: group, text: 'project:beta' }
+      - { kind: row, text: beta one }
+
+  - name: a group continuing on the next page is marked
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+    nextGroupKeys: [alpha]
+    continuedGroupKeys: null
+    page: { index: 2, size: 25, total: 120 }
+    expectedPage: page 2 of 5
+    expectedRows:
+      - { kind: group, text: 'project:alpha' }
+      - { kind: row, text: alpha one }
+      - { kind: continues, text: 'project:alpha continues on page 3' }
+
+  - name: a group ending exactly at the page boundary is not marked
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+      - { key: a2, title: alpha two, turns: 5, projects: [alpha] }
+    nextGroupKeys: [beta]
+    continuedGroupKeys: null
+    page: { index: 2, size: 25, total: 120 }
+    expectedPage: page 2 of 5
+    expectedRows:
+      - { kind: group, text: 'project:alpha' }
+      - { kind: row, text: alpha one }
+      - { kind: row, text: alpha two }
+
+  - name: two groups continuing across the boundary are both marked
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+      - { key: b1, title: beta one, turns: 1, projects: [beta] }
+    nextGroupKeys: [alpha, beta]
+    continuedGroupKeys: null
+    page: { index: 2, size: 25, total: 120 }
+    expectedPage: page 2 of 5
+    expectedRows:
+      - { kind: group, text: 'project:alpha' }
+      - { kind: row, text: alpha one }
+      - { kind: continues, text: 'project:alpha continues on page 3' }
+      - { kind: group, text: 'project:beta' }
+      - { kind: row, text: beta one }
+      - { kind: continues, text: 'project:beta continues on page 3' }
+
+  - name: a null continuedGroupKeys renders the full header for every group
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+      - { key: b1, title: beta one, turns: 1, projects: [beta] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 2, size: 25, total: 120 }
+    expectedPage: page 2 of 5
+    expectedRows:
+      - { kind: group, text: 'project:alpha' }
+      - { kind: row, text: alpha one }
+      - { kind: group, text: 'project:beta' }
+      - { kind: row, text: beta one }
+
+  - name: a row in two groups renders in both and the page counts transcripts
+    rows:
+      - { key: shared, title: shared session, turns: 8, projects: [alpha, beta] }
+      - { key: other, title: other session, turns: 2, projects: [alpha] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 2, size: 25, total: 120 }
+    expectedPage: page 2 of 5
+    expectedRows:
+      - { kind: group, text: 'project:alpha' }
+      - { kind: row, text: shared session }
+      - { kind: row, text: other session }
+      - { kind: group, text: 'project:beta' }
+      - { kind: row, text: shared session }
+    expectedRenderedRows: 3
+    expectedRowKeys: [shared, other, shared]
+
+  - name: a none grouping renders one group with no header
+    rows:
+      - { key: one, title: one session, turns: 4, projects: [] }
+      - { key: two, title: two session, turns: 6, projects: [] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 1, size: 25, total: 2 }
+    expectedPage: page 1 of 1
+    expectedRows:
+      - { kind: row, text: one session }
+      - { kind: row, text: two session }
+
+  - name: rowKey is required for every row
+    omitRowKey: true
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 1, size: 25, total: 1 }
+    expectedError: rowKey must be a function
+
+  - name: a null page hides the pager and renders every row
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+      - { key: b1, title: beta one, turns: 1, projects: [beta] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: null
+    expectNoPager: true
+    expectedRows:
+      - { kind: group, text: 'project:alpha' }
+      - { kind: row, text: alpha one }
+      - { kind: group, text: 'project:beta' }
+      - { kind: row, text: beta one }
+
+  - name: clicking a numbered page reports that page
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 2, size: 25, total: 120 }
+    expectedPage: page 2 of 5
+    expectedRows:
+      - { kind: group, text: 'project:alpha' }
+      - { kind: row, text: alpha one }
+    click: 'button[aria-label="page 3"]'
+    expectedPageChange: 3
+
+  - name: the table is a real table with its caption
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 1, size: 25, total: 1 }
+    expectedPage: page 1 of 1
+    expectedRows:
+      - { kind: group, text: 'project:alpha' }
+      - { kind: row, text: alpha one }
+
+  - name: a ColumnAlign member maps to the data-table alignment
+    columns: align
+    rows:
+      - { key: one, title: aligned row, turns: 7, projects: [alpha] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 1, size: 25, total: 1 }
+    expectedPage: page 1 of 1
+    expectedRows:
+      - { kind: group, text: 'project:alpha' }
+      - { kind: row, text: aligned row }
+    expectedAlignClasses:
+      - { header: 'tbl-th', cell: 'tbl-td' }
+      - { header: 'tbl-th tbl-right', cell: 'tbl-td tbl-right' }
+      - { header: 'tbl-th tbl-center', cell: 'tbl-td tbl-center' }
+      - { header: 'tbl-th tbl-right tbl-decimal', cell: 'tbl-td tbl-right tbl-decimal' }
+
+  - name: an empty page renders the empty state with a caption
+    rows: []
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 1, size: 25, total: 0 }
+    expectedPage: page 1 of 1
+    expectedRows:
+      - { kind: empty, text: no transcripts }
+
+helpers:
+  - name: groupKeysFor returns bare keys without duplicates in first-appearance order
+    rows:
+      - { projects: [alpha, beta] }
+      - { projects: [beta, gamma] }
+      - { projects: [] }
+    expected: [alpha, beta, gamma]

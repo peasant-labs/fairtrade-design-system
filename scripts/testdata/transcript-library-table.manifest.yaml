@@ -1,0 +1,57 @@
+# Required-NAME manifest for transcript-library-table.yaml — deletion protection.
+# The render gate asserts the case and helper names are EXACTLY these lists (as a
+# set), so a deleted or renamed case fails before any DOM assertion runs. The
+# mutation list is the production-mutation proof parts-mutations.mjs re-runs.
+
+requiredCaseNames:
+  - a continuing group opens with one compact continuation row
+  - a group that starts on the page keeps the full header
+  - a group continuing on the next page is marked
+  - a group ending exactly at the page boundary is not marked
+  - two groups continuing across the boundary are both marked
+  - a null continuedGroupKeys renders the full header for every group
+  - a row in two groups renders in both and the page counts transcripts
+  - a none grouping renders one group with no header
+  - a group id uses the form groupBy:key
+  - rowKey is required for every row
+  - a null page hides the pager and renders every row
+  - clicking a numbered page reports that page
+  - the table is a real table with its caption
+  - a ColumnAlign member maps to the data-table alignment
+  - an empty page renders the empty state with a caption
+
+requiredHelperNames:
+  - groupKeysFor returns bare keys without duplicates in first-appearance order
+
+requiredMutationNames:
+  - a continued group renders a full header
+  - a group ending at the page boundary is marked
+  - a group id is prefixed twice
+  - the numbered pager does not report a page
+  - rowKey is optional
+mutations:
+  - name: a continued group renders a full header
+    file: src/ui/TranscriptLibraryTable.jsx
+    find: "group.continued"
+    replace: "false"
+    expectedDiagnostic: "a continuing group opens with one compact continuation row"
+  - name: a group ending at the page boundary is marked
+    file: src/ui/groupPageRows.js
+    find: "next.has(group.id)"
+    replace: "next.size > 0"
+    expectedDiagnostic: "a group ending exactly at the page boundary is not marked"
+  - name: a group id is prefixed twice
+    file: src/ui/groupPageRows.js
+    find: "const id = `${wire}:${key}`"
+    replace: "const id = `${wire}:${wire}:${key}`"
+    expectedDiagnostic: "a group id uses the form groupBy:key"
+  - name: the numbered pager does not report a page
+    file: src/ui/TranscriptLibraryTable.jsx
+    find: "onChange={(next) => onPageChange(next)}"
+    replace: "onChange={() => {}}"
+    expectedDiagnostic: "clicking a numbered page reports that page"
+  - name: rowKey is optional
+    file: src/ui/TranscriptLibraryTable.jsx
+    find: "if (typeof rowKey === 'function') return"
+    replace: "return"
+    expectedDiagnostic: "rowKey is required for every row"
