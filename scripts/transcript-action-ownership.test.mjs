@@ -3,17 +3,72 @@ import { loadFixturePair, withMountedSource, click } from './mounted-parts.mjs'
 
 const { fixture } = loadFixturePair('scripts/testdata/transcript-action-ownership.yaml', 'scripts/testdata/transcript-action-ownership.manifest.yaml', {
   groups: 'requiredGroupNames', disclosures: 'requiredDisclosureNames', filters: 'requiredFilterNames', navigation: 'requiredNavigationNames', initial: 'requiredInitialNames', keyboard: 'requiredKeyboardNames',
+  leadingWordlessRuns: 'requiredLeadingWordlessNames', hiddenSourceProseRuns: 'requiredHiddenSourceProseNames', distributions: 'requiredDistributionNames',
 })
 const caps = { canEdit: false, canLabel: false, canContribute: false, canChangeVisibility: false, canExport: false }
 await withMountedSource(async ({ load, mount, window, React }) => {
   const { adaptTranscript } = await load('/src/ui/transcript/adapter.js')
+  const { actionGroups } = await load('/src/ui/transcript/action-groups.js')
+  const { projectTurn, DEFAULT_TRANSCRIPT_FILTERS } = await load('/src/ui/transcript/filters.js')
   const { default: Viewer } = await load('/src/ui/transcript/TranscriptViewer.jsx')
   const vm = adaptTranscript(fixture.payload)
   const render = extra => React.createElement(Viewer, { viewModel: vm, capabilities: caps, presentation: 'ledger', ...extra })
-  const panel = c => c.querySelector('#turn-1 .txn-modelactions')
+  const panel = c => c.querySelector('#turn-2 .txn-modelactions')
   const control = (c, label) => c.querySelector(`[role="switch"][aria-label="${label}"]`)
   const tool = (c, id) => [...c.querySelectorAll('.txn-toolcall')].find(el => el.querySelector('.path')?.textContent.includes(`${id}-command`))
   const press = async (m, el) => { assert.ok(el, 'production control must exist'); await m.act(() => click(window, el)); await m.settle() }
+  const visibleOf = (model, filters) => model.turns
+    .map(turn => projectTurn(turn, filters, { annotationsByTurn: model.filterIndex?.annotationsByTurn ?? {}, checkpointTurn: null }))
+    .filter(turn => turn != null)
+  const layoutOf = (payload, filters = DEFAULT_TRANSCRIPT_FILTERS) => {
+    const model = adaptTranscript(payload)
+    return actionGroups(model.turns, visibleOf(model, filters))
+  }
+  const runShape = layout => [...layout.groups.values()].map(turns => turns.flatMap(turn => turn.toolCalls ?? []).map(call => call.id))
+  const assertRuns = (layout, groups, label) => {
+    assert.deepEqual([...layout.groups.keys()], groups.map(group => group.owner), `${label}: exact run owners`)
+    assert.deepEqual(runShape(layout), groups.map(group => group.tools), `${label}: exact run membership`)
+  }
+  const responsesHidden = { ...DEFAULT_TRANSCRIPT_FILTERS, categories: { ...DEFAULT_TRANSCRIPT_FILTERS.categories, responses: false } }
+  const distributionPayload = row => {
+    const turns = []
+    let index = 0
+    for (const segment of row.segments) {
+      turns.push({ index, role: 'user', content: `request ${index}`, depth: 0 })
+      index += 1
+      for (const count of segment) {
+        const turnIndex = index
+        turns.push({
+          index: turnIndex,
+          role: 'assistant',
+          content: `prose ${turnIndex}`,
+          depth: 0,
+          toolCalls: Array.from({ length: count }, (_, callIndex) => ({
+            id: `dist-${turnIndex}-${callIndex}`,
+            name: 'Bash',
+            arguments: '{"command":"printf dist"}',
+            result: 'dist-output',
+            durationMs: 1000,
+          })),
+        })
+        index += 1
+      }
+    }
+    return { id: 'distribution', harness: 'claude-code', startTime: '2026-10-01T10:00:00Z', turns }
+  }
+  for (const row of fixture.leadingWordlessRuns) assertRuns(layoutOf(row.payload), row.groups, row.name)
+  for (const row of fixture.hiddenSourceProseRuns) {
+    assertRuns(layoutOf(row.payload), row.visibleGroups, `${row.name} (visible prose)`)
+    assertRuns(layoutOf(row.payload, responsesHidden), row.hiddenGroups, `${row.name} (hidden prose)`)
+  }
+  for (const row of fixture.distributions) {
+    const layout = layoutOf(distributionPayload(row))
+    const runs = runShape(layout)
+    assert.equal(runs.length, row.expectedCounts.length, `${row.name}: one run per prose turn`)
+    assert.deepEqual(runs.map(tools => tools.length), row.expectedCounts, `${row.name}: exact per-run action counts`)
+    assert.equal(runs.reduce((sum, tools) => sum + tools.length, 0), row.total, `${row.name}: the sum stays ${row.total}`)
+    for (const turns of layout.groups.values()) assert.ok(String(turns[0].content ?? '').trim() !== '', `${row.name}: a run anchors on a prose turn`)
+  }
   const membership = async (m, thinking = true) => {
     const c = m.container
     for (const group of fixture.groups) {
@@ -35,8 +90,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     const changes = []
     const m = await mount(render({ onOpenToolsChange: value => changes.push(value) }))
     const c = m.container
-    await press(m, tool(c, 'alpha')?.querySelector('button'))
     await press(m, tool(c, 'beta')?.querySelector('button'))
+    await press(m, tool(c, 'gamma')?.querySelector('button'))
     await press(m, panel(c).querySelector('.txn-thinking-toggle'))
     if (row.mode === 'expand-all') await press(m, control(c, 'expand all tool calls'))
     const before = changes.length
@@ -44,13 +99,13 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     assert.equal(panel(c).querySelector('.txn-modelactions-head').getAttribute('aria-expanded'), 'false', `${row.name}: explicit parent must close`)
     assert.equal(changes.length, before, `${row.name}: parent hiding must not write child choices`)
     await press(m, panel(c).querySelector('.txn-modelactions-head'))
-    assert.equal(tool(c, 'alpha').querySelector('button').getAttribute('aria-expanded'), 'true', `${row.name}: alpha retained`)
     assert.equal(tool(c, 'beta').querySelector('button').getAttribute('aria-expanded'), 'true', `${row.name}: beta retained`)
+    assert.equal(tool(c, 'gamma').querySelector('button').getAttribute('aria-expanded'), 'true', `${row.name}: gamma retained`)
     assert.equal(panel(c).querySelector('.txn-thinking-toggle').getAttribute('aria-expanded'), 'true', `${row.name}: Think retained`)
-    if (row.mode !== 'expand-all') assert.equal(tool(c, 'gamma').querySelector('.txn-tcbody'), null, `${row.name}: never-opened expensive output stays lazy`)
+    if (row.mode !== 'expand-all') assert.equal(tool(c, 'alpha').querySelector('.txn-tcbody'), null, `${row.name}: never-opened expensive output stays lazy`)
     if (row.mode === 'compact') {
       await press(m, control(c, 'compact mode'))
-      assert.equal(tool(c, 'alpha').querySelector('button').getAttribute('aria-expanded'), 'true', 'compact exit retains child choices')
+      assert.equal(tool(c, 'beta').querySelector('button').getAttribute('aria-expanded'), 'true', 'compact exit retains child choices')
     }
     await m.unmount()
   }

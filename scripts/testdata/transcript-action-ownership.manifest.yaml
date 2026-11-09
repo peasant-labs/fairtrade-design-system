@@ -1,5 +1,6 @@
 requiredGroupNames:
-  - first request owns prose and wordless work
+  - the first prose turn owns only its own work
+  - the second prose turn owns the wordless work that follows it
   - second request keeps its own distinct work
   - third request anchors its wordless work
 requiredDisclosureNames:
@@ -26,3 +27,9 @@ requiredKeyboardNames:
   - Think search steps backward through the first card and reverses
   - Think search steps forward to the next request
   - filtered prompts remain excluded from action search stepping
+requiredLeadingWordlessNames:
+  - a leading wordless run stays before the first prose turn
+requiredHiddenSourceProseNames:
+  - a hidden source-prose anchor hands its run to its first visible work turn
+requiredDistributionNames:
+  - the 91-tool session keeps ten runs
