@@ -1,7 +1,7 @@
 {
   "name": "@peasant-labs/fairtrade",
   "private": false,
-  "version": "0.0.60",
+  "version": "0.0.61",
   "description": "Fairtrade design-system library: canonical tokens, base styles, component CSS, and React UI exports.",
   "type": "module",
   "license": "Apache-2.0",
@@ -46,6 +46,12 @@
       "import": "./dist/lib/icons.js",
       "require": "./dist/lib/icons.js",
       "default": "./dist/lib/icons.js"
+    },
+    "./closed-value": {
+      "types": "./dist/lib/types/closed-value.d.ts",
+      "import": "./dist/lib/closed-value.js",
+      "require": "./dist/lib/closed-value.js",
+      "default": "./dist/lib/closed-value.js"
     },
     "./share": {
       "types": "./dist/lib/types/share/index.d.ts",

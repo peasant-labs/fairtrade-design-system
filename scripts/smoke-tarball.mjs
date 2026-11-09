@@ -72,11 +72,17 @@ try {
     [
       "import * as ui from '@peasant-labs/fairtrade/ui'",
       "import * as icons from '@peasant-labs/fairtrade/icons'",
+      "import { closed } from '@peasant-labs/fairtrade/closed-value'",
       "import { existsSync } from 'node:fs'",
       "import { fileURLToPath } from 'node:url'",
       'const failures = []',
       "if (Object.keys(ui).length === 0) failures.push('./ui imported but exported 0 symbols')",
       "if (Object.keys(icons).length === 0) failures.push('./icons imported but exported 0 symbols')",
+      "const probe = closed('probe', 'probe')",
+      "if (!Object.isFrozen(probe)) failures.push('./closed-value: closed() did not return a frozen member')",
+      "if (closed('probe', 'probe') !== probe) failures.push('./closed-value: closed() did not return the same singleton for the same pair')",
+      "if (probe.String() !== 'probe' || probe.toString() !== 'probe' || probe.toJSON() !== 'probe') failures.push('./closed-value: a member does not derive its text and JSON from its wire')",
+      "if (JSON.stringify(probe) !== '\"probe\"') failures.push('./closed-value: a member does not serialize with toJSON()')",
       `for (const sub of ${JSON.stringify(cssSubs)}) {`,
       '  const spec = "@peasant-labs/fairtrade/" + sub',
       '  try {',
@@ -85,7 +91,7 @@ try {
       '  } catch (e) { failures.push(sub + ": " + (e && e.message ? e.message.split("\\n")[0] : e)) }',
       '}',
       "if (failures.length) { console.error('CONSUMER_FAILURES:\\n' + failures.map(f => '  - ' + f).join('\\n')); process.exit(1) }",
-      `console.log('consumer OK: ./ui=' + Object.keys(ui).length + ' symbols, ./icons=' + Object.keys(icons).length + ' symbols, ${cssSubs.length} CSS/JSON subpaths resolved')`,
+      `console.log('consumer OK: ./ui=' + Object.keys(ui).length + ' symbols, ./icons=' + Object.keys(icons).length + ' symbols, ./closed-value=frozen singleton, ${cssSubs.length} CSS/JSON subpaths resolved')`,
     ].join('\n'),
   )
 
