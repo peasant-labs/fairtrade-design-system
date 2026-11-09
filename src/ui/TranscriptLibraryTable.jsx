@@ -353,11 +353,25 @@ function readRowKey(rowKey, row) {
 function readPage(page) {
   if (page == null) return null
   if (typeof page !== 'object') throw refusePage('page must be an object or null')
-  const { index, size, total } = /** @type {{ index?: unknown, size?: unknown, total?: unknown }} */ (page)
-  if (!Number.isInteger(index) || index < 1) throw refusePage('page.index must be the 1-based page the server returns')
+  const index = readField(page, 'index')
+  const size = readField(page, 'size')
+  const total = readField(page, 'total')
+  if (typeof index !== 'number' || !Number.isInteger(index) || index < 1) throw refusePage('page.index must be the 1-based page the server returns')
   if (!isPageSize(size)) throw refusePage('page.size must be a @peasant-labs/schema PageSize member (25, 50, or 100)')
-  if (!Number.isInteger(total) || total < 0) throw refusePage('page.total must be a non-negative integer transcript count')
+  if (typeof total !== 'number' || !Number.isInteger(total) || total < 0) throw refusePage('page.total must be a non-negative integer transcript count')
   return { index, size, total }
+}
+
+/**
+ * Read one property from the page record without asserting its type; every field
+ * is validated below the boundary.
+ *
+ * @param {object} record
+ * @param {string} key
+ * @returns {unknown}
+ */
+function readField(record, key) {
+  return Reflect.get(record, key)
 }
 
 /**
