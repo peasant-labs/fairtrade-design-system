@@ -26,7 +26,8 @@ const ColumnAlignValues = Object.freeze({
  * - `Start` is left-aligned in a left-to-right grid.
  * - `End` is right-aligned; counts and durations pair it with `numeric`.
  * - `Center` is centered.
- * - `Decimal` is right-aligned with tabular figures so decimal points line up.
+ * - `Decimal` right-aligns with tabular numbers; a host that needs decimal-point
+ *   alignment renders DataTable's `DecimalValue` inside the cell.
  */
 export const ColumnAlign = ColumnAlignValues
 

@@ -22,11 +22,19 @@ requiredCaseNames:
   - a ColumnAlign member maps to the data-table alignment
   - an empty page renders the empty state with a caption
   - a null viewState renders every column and every row
+  - an explicit empty open list collapses every group
+  - a saved view without open renders every group open
+  - a group toggle from no preference reports the open groups
+  - the first column always shows when the saved view omits it
+  - an unknown saved column falls back to every column
+  - an out-of-range page keeps the last page and drops the continues marker
+  - a narrow layout keeps a named focusable scroll region
   - a provided viewState hides an unchecked column
   - an unknown saved value falls back to the host default
   - a saved view without a change callback is refused
   - a column picker toggles a column and reports the composed view
-  - a group-by picker change reports the new grouping and clears open
+  - a column picker restores a hidden column
+  - a group-by picker change reports the new grouping and keeps the open list
   - a group toggle announces expanded and collapsed
   - a continuation row keeps the group toggle and aria-expanded
   - the column picker and group-by picker are keyboard reachable
@@ -35,6 +43,23 @@ requiredCaseNames:
 requiredHelperNames:
   - groupKeysFor returns bare keys without duplicates in first-appearance order
 
+requiredRefusalNames:
+  - parseColumnAlign refuses an unknown wire
+  - parseColumnAlign refuses an unknown member
+  - parseColumnAlign refuses a non-value
+  - groupPageRows refuses a non-array rows
+  - groupPageRows refuses a groupKeys that is not a function
+  - groupPageRows refuses a groupLabel that is not a function
+  - groupPageRows refuses a groupBy that is not a member
+  - groupPageRows refuses a key list that is not an array
+  - groupPageRows refuses an empty key
+  - groupPageRows reports the label value it received
+  - groupKeysFor refuses a non-array rows
+  - groupKeysFor refuses a groupKeys that is not a function
+  - groupKeysFor refuses a key list that is not an array
+  - groupKeysFor refuses an empty key
+  - groupKeysFor refuses a numeric key
+
 requiredMutationNames:
   - a continued group renders a full header
   - a group ending at the page boundary is marked
@@ -42,10 +67,11 @@ requiredMutationNames:
   - the numbered pager does not report a page
   - rowKey is optional
   - a page-size change is ignored
+  - perPage counts rendered rows
   - a collapsed group still renders its rows
   - a column tick is never reported
-  - a group-by change keeps the open groups
   - an unknown grouping member is kept
+  - a resolved grouping fallback is not reported
   - an unknown saved column hides every column
   - a group toggle writes the view to storage
 mutations:
@@ -79,21 +105,21 @@ mutations:
     find: "onPageSizeChange(next)"
     replace: "onPageSizeChange(safePage.size)"
     expectedDiagnostic: "a page-size change reports the new size and keeps the page"
+  - name: perPage counts rendered rows
+    file: src/ui/TranscriptLibraryTable.jsx
+    find: "const totalPages = safePage ? Math.max(1, Math.ceil(safePage.total / safePage.size)) : 1"
+    replace: "const totalPages = safePage ? Math.max(1, Math.ceil(rows.length / safePage.size)) : 1"
+    expectedDiagnostic: "a row in two groups renders in both and the page counts transcripts"
   - name: a collapsed group still renders its rows
     file: src/ui/TranscriptLibraryTable.jsx
-    find: "const expanded = group.id === '' || view === null || view.open.includes(group.id)"
+    find: "const expanded = group.id === '' || view === null || view.open === null || view.open.includes(group.id)"
     replace: "const expanded = true"
-    expectedDiagnostic: "an unknown saved value falls back to the host default"
+    expectedDiagnostic: "an explicit empty open list collapses every group"
   - name: a column tick is never reported
     file: src/ui/TranscriptLibraryTable.jsx
     find: "reportView({ groupBy: view.groupBy, visibleColumns: next, open: view.open })"
     replace: "reportView({ groupBy: view.groupBy, visibleColumns: view.visibleColumns, open: view.open })"
     expectedDiagnostic: "a column picker toggles a column and reports the composed view"
-  - name: a group-by change keeps the open groups
-    file: src/ui/TranscriptLibraryTable.jsx
-    find: "reportView({ groupBy: next, visibleColumns: view.visibleColumns, open: [] })"
-    replace: "reportView({ groupBy: next, visibleColumns: view.visibleColumns, open: view.open })"
-    expectedDiagnostic: "a group-by picker change reports the new grouping and clears open"
   - name: an unknown grouping member is kept
     file: src/ui/TranscriptLibraryTable.jsx
     find: "const fallback = options.find((option) => option.wire === defaultGroupBy.wire) ?? options[0]"
@@ -103,9 +129,14 @@ mutations:
     file: src/ui/TranscriptLibraryTable.jsx
     find: ": defaultColumns"
     replace: ": []"
+    expectedDiagnostic: "an unknown saved column falls back to every column"
+  - name: a resolved grouping fallback is not reported
+    file: src/ui/TranscriptLibraryTable.jsx
+    find: "if (given === view.groupBy.wire) return"
+    replace: "return"
     expectedDiagnostic: "an unknown saved value falls back to the host default"
   - name: a group toggle writes the view to storage
     file: src/ui/TranscriptLibraryTable.jsx
     find: "const toggleGroup = (groupId) => {"
     replace: "const toggleGroup = (groupId) => { try { window.localStorage.setItem('library-view', groupId) } catch {}"
-    expectedDiagnostic: "a group toggle announces expanded and collapsed"
+    expectedDiagnostic: "a group toggle from no preference reports the open groups"

@@ -1929,9 +1929,7 @@
       "title": "refactoring the ledger",
       "file": "src/ui/TranscriptLibraryTable.jsx",
       "exports": [
-        "TranscriptLibraryTable",
-        "groupPageRows",
-        "groupKeysFor"
+        "TranscriptLibraryTable"
       ],
       "doc": "TranscriptLibraryTable - the one shared transcript library table: a real table",
       "props": {

@@ -78,7 +78,7 @@ export function groupPageRows(rows, groupBy, groupKeys, groupLabel, nextGroupKey
       let group = groups.get(id)
       if (!group) {
         const label = groupLabel(id)
-        if (typeof label !== 'string') throw refuseLabel(id)
+        if (typeof label !== 'string') throw refuseLabel(id, label)
         group = { id, label, rows: [] }
         groups.set(id, group)
       }
@@ -211,11 +211,12 @@ function refuseKey(key) {
 
 /**
  * @param {string} id
+ * @param {unknown} value the value `groupLabel` returned.
  * @returns {TypeError}
  */
-function refuseLabel(id) {
+function refuseLabel(id, value) {
   return new TypeError(
-    `groupPageRows failed in src/ui/groupPageRows.js: groupLabel(${JSON.stringify(id)}) must return a string, received ${describe(id)}. ` +
+    `groupPageRows failed in src/ui/groupPageRows.js: groupLabel(${JSON.stringify(id)}) must return a string, received ${describe(value)}. ` +
       'The label is the only text the group header shows, so a missing label would render a blank header. ' +
       'Return the host label for the qualified id, or the id itself as a fallback.',
   )

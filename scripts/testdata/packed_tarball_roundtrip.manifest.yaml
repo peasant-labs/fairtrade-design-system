@@ -9,6 +9,10 @@ requiredImportables:
   - adaptTranscript
   - prefilterTurns
   - TranscriptViewer
+  - TranscriptLibraryTable
+  - groupPageRows
+  - groupKeysFor
+  - ColumnAlign
   - HelperGroup
   - HelperGroupListItem
   - HelperThreadRow

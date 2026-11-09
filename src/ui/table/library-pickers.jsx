@@ -60,7 +60,7 @@ function Disclosure({ triggerLabel, panelLabel, role, children }) {
         type="button"
         className="libt-pick-btn"
         aria-expanded={open}
-        aria-controls={panelId}
+        aria-controls={open ? panelId : undefined}
         onClick={() => setOpen((was) => !was)}
       >
         <span className="libt-pick-value">{triggerLabel}</span>

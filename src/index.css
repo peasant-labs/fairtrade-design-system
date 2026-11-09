@@ -1425,7 +1425,6 @@
   .libt-group-chev { width: var(--ic-sm); height: var(--ic-sm); flex: none; color: var(--ink-4); transform: rotate(-90deg); }
   .libt-group-toggle[aria-expanded="true"] .libt-group-chev { transform: none; }
   .libt-group-label { min-width: 0; overflow-wrap: anywhere; }
-  .libt-group-count { color: var(--ink-3); font-weight: 400; font-variant-numeric: tabular-nums; white-space: nowrap; }
   @media (prefers-reduced-motion: no-preference) {
     .libt-group-chev { transition: transform var(--dur-1) var(--ease-standard); }
   }
@@ -1517,22 +1516,18 @@
   }
   .libt-page-status { color: var(--ink-2); }
   .libt-page-size { display: inline-flex; align-items: center; gap: var(--sp-2); color: var(--ink-3); }
-  .libt-page-select {
+  /* the page-size control reuses the design system's .select; only its width and
+     compact height change so it fits the footer row beside the pager. */
+  .libt-page-size .select {
+    width: auto;
     height: var(--control-h-sm);
-    min-height: var(--target-min);
-    padding: 0 var(--sp-1);
+    padding-block: 0;
+    padding-left: var(--sp-2);
     font-family: var(--font-mono);
     font-size: var(--fs-label);
     font-variant-numeric: tabular-nums;
-    color: var(--ink-2);
-    background: var(--canvas);
-    border: var(--bd-strong);
-    border-radius: 0;
-    cursor: pointer;
   }
-  .libt-page-select:hover { color: var(--ink); border-color: var(--amber-dim); }
-  .libt-page-select:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
-  @media (pointer: coarse) { .libt-page-select { height: var(--target-comfortable); } }
+  @media (pointer: coarse) { .libt-page-size .select { height: var(--target-comfortable); } }
   .libt-footer .pgn { margin-inline-start: auto; }
 
   /* ---- pagination (pgn-*) ---- */

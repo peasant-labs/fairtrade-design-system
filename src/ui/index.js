@@ -23,8 +23,14 @@ export { Skeleton, Progress, Spinner, Toast, FeedbackPanel } from './Feedback.js
 export { default as DataTable } from './DataTable.jsx'
 export { DataTableToolbar, DataTablePaginationControls } from './DataTableControls.jsx'
 /* the shared transcript library table: the table, the two grouping helpers a host uses to
-   build a page's key unions, and the ColumnAlign closed set a host column declares. */
-export { TranscriptLibraryTable, groupPageRows, groupKeysFor } from './TranscriptLibraryTable.jsx'
+   build a page's key unions, the contract types a host annotates its composed view with,
+   and the ColumnAlign closed set a host column declares. the star export carries the
+   component, the helpers, and the prop/view/page typedefs in one place. */
+export * from './TranscriptLibraryTable.jsx'
+/**
+ * @template Row
+ * @typedef {import('./groupPageRows.js').TranscriptLibraryGroup<Row>} TranscriptLibraryGroup
+ */
 export { ColumnAlign, ALL_COLUMN_ALIGNS, parseColumnAlign } from './table/column-align.js'
 export { default as ChartBar } from './ChartBar.jsx'
 export { default as ChartLine } from './ChartLine.jsx'

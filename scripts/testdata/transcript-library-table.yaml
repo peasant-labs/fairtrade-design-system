@@ -41,6 +41,23 @@ cases:
       - { kind: row, text: alpha one }
     expectedLabels: ['project:alpha']
 
+  - name: a row in two groups renders in both and the page counts transcripts
+    rows:
+      - { key: shared, title: shared session, turns: 8, projects: [alpha, beta] }
+      - { key: other, title: other session, turns: 2, projects: [alpha] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 2, size: 25, total: 120 }
+    expectedPage: page 2 of 5
+    expectedRows:
+      - { kind: group, text: 'project:alpha' }
+      - { kind: row, text: shared session }
+      - { kind: row, text: other session }
+      - { kind: group, text: 'project:beta' }
+      - { kind: row, text: shared session }
+    expectedRenderedRows: 3
+    expectedRowKeys: [shared, other, shared]
+
   - name: a continuing group opens with one compact continuation row
     rows:
       - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
@@ -119,23 +136,6 @@ cases:
       - { kind: row, text: alpha one }
       - { kind: group, text: 'project:beta' }
       - { kind: row, text: beta one }
-
-  - name: a row in two groups renders in both and the page counts transcripts
-    rows:
-      - { key: shared, title: shared session, turns: 8, projects: [alpha, beta] }
-      - { key: other, title: other session, turns: 2, projects: [alpha] }
-    nextGroupKeys: null
-    continuedGroupKeys: null
-    page: { index: 2, size: 25, total: 120 }
-    expectedPage: page 2 of 5
-    expectedRows:
-      - { kind: group, text: 'project:alpha' }
-      - { kind: row, text: shared session }
-      - { kind: row, text: other session }
-      - { kind: group, text: 'project:beta' }
-      - { kind: row, text: shared session }
-    expectedRenderedRows: 3
-    expectedRowKeys: [shared, other, shared]
 
   - name: a none grouping renders one group with no header
     rows:
@@ -233,7 +233,7 @@ cases:
       - { header: 'tbl-th', cell: 'tbl-td' }
       - { header: 'tbl-th tbl-right', cell: 'tbl-td tbl-right' }
       - { header: 'tbl-th tbl-center', cell: 'tbl-td tbl-center' }
-      - { header: 'tbl-th tbl-right tbl-decimal', cell: 'tbl-td tbl-right tbl-decimal' }
+      - { header: 'tbl-th tbl-right', cell: 'tbl-td tbl-right' }
 
   - name: an empty page renders the empty state with a caption
     rows: []
@@ -258,6 +258,106 @@ cases:
       - { kind: group, text: 'project:alpha' }
       - { kind: row, text: alpha one }
 
+  - name: an explicit empty open list collapses every group
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+      - { key: b1, title: beta one, turns: 1, projects: [beta] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 1, size: 25, total: 2 }
+    expectedPage: page 1 of 1
+    view: { groupBy: project, visibleColumns: [transcript, turns], open: [] }
+    expectColumns: [transcript, turns]
+    expectedExpanded: [false, false]
+    expectedRenderedRows: 0
+    expectedRows:
+      - { kind: group, text: 'project:alpha' }
+      - { kind: group, text: 'project:beta' }
+
+  - name: a saved view without open renders every group open
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+      - { key: b1, title: beta one, turns: 1, projects: [beta] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 1, size: 25, total: 2 }
+    expectedPage: page 1 of 1
+    view: { groupBy: project, visibleColumns: [transcript, turns] }
+    expectColumns: [transcript, turns]
+    expectedExpanded: [true, true]
+    expectedRows:
+      - { kind: group, text: 'project:alpha' }
+      - { kind: row, text: alpha one }
+      - { kind: group, text: 'project:beta' }
+      - { kind: row, text: beta one }
+
+  - name: a group toggle from no preference reports the open groups
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+      - { key: b1, title: beta one, turns: 1, projects: [beta] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 1, size: 25, total: 2 }
+    expectedPage: page 1 of 1
+    view: { groupBy: project, visibleColumns: [transcript, turns] }
+    clickGroup: project:beta
+    expectedViewChanges:
+      - { groupBy: project, visibleColumns: [transcript, turns], open: [project:alpha] }
+    expectedRows:
+      - { kind: group, text: 'project:alpha' }
+      - { kind: row, text: alpha one }
+      - { kind: group, text: 'project:beta' }
+      - { kind: row, text: beta one }
+
+  - name: the first column always shows when the saved view omits it
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 1, size: 25, total: 1 }
+    expectedPage: page 1 of 1
+    view: { groupBy: project, visibleColumns: [turns], open: [project:alpha] }
+    expectColumns: [transcript, turns]
+    expectedRows:
+      - { kind: group, text: 'project:alpha' }
+      - { kind: row, text: alpha one }
+
+  - name: an unknown saved column falls back to every column
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 1, size: 25, total: 1 }
+    expectedPage: page 1 of 1
+    view: { groupBy: project, visibleColumns: [unknown], open: [project:alpha] }
+    expectColumns: [transcript, turns]
+    expectedRows:
+      - { kind: group, text: 'project:alpha' }
+      - { kind: row, text: alpha one }
+
+  - name: an out-of-range page keeps the last page and drops the continues marker
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+    nextGroupKeys: [alpha]
+    continuedGroupKeys: null
+    page: { index: 400, size: 25, total: 75 }
+    expectedPage: page 3 of 3
+    expectedRows:
+      - { kind: group, text: 'project:alpha' }
+      - { kind: row, text: alpha one }
+
+  - name: a narrow layout keeps a named focusable scroll region
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: null
+    expectNoPager: true
+    expectScrollRegion: true
+    expectedRows:
+      - { kind: group, text: 'project:alpha' }
+      - { kind: row, text: alpha one }
+
   - name: a provided viewState hides an unchecked column
     rows:
       - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
@@ -269,7 +369,7 @@ cases:
     expectColumns: [transcript]
     expectedExpanded: [true]
     expectedRows:
-      - { kind: group, text: 'project:alpha 1 transcript' }
+      - { kind: group, text: 'project:alpha' }
       - { kind: row, text: alpha one }
 
   - name: an unknown saved value falls back to the host default
@@ -283,8 +383,10 @@ cases:
     expectColumns: [transcript, turns]
     expectGroupByLabel: 'group by: project'
     expectedExpanded: [false]
+    expectedViewChanges:
+      - { groupBy: project, visibleColumns: [transcript, turns], open: [] }
     expectedRows:
-      - { kind: group, text: 'project:alpha 1 transcript' }
+      - { kind: group, text: 'project:alpha' }
 
   - name: a saved view without a change callback is refused
     omitViewCallback: true
@@ -308,10 +410,25 @@ cases:
     expectedViewChanges:
       - { groupBy: project, visibleColumns: [transcript], open: [project:alpha] }
     expectedRows:
-      - { kind: group, text: 'project:alpha 1 transcript' }
+      - { kind: group, text: 'project:alpha' }
       - { kind: row, text: alpha one }
 
-  - name: a group-by picker change reports the new grouping and clears open
+  - name: a column picker restores a hidden column
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 1, size: 25, total: 1 }
+    expectedPage: page 1 of 1
+    view: { groupBy: project, visibleColumns: [transcript], open: [project:alpha] }
+    clickColumn: turns
+    expectedViewChanges:
+      - { groupBy: project, visibleColumns: [transcript, turns], open: [project:alpha] }
+    expectedRows:
+      - { kind: group, text: 'project:alpha' }
+      - { kind: row, text: alpha one }
+
+  - name: a group-by picker change reports the new grouping and keeps the open list
     rows:
       - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
     nextGroupKeys: null
@@ -321,9 +438,9 @@ cases:
     view: { groupBy: project, visibleColumns: [transcript, turns], open: [project:alpha] }
     clickGroupBy: nothing
     expectedViewChanges:
-      - { groupBy: none, visibleColumns: [transcript, turns], open: [] }
+      - { groupBy: none, visibleColumns: [transcript, turns], open: [project:alpha] }
     expectedRows:
-      - { kind: group, text: 'project:alpha 1 transcript' }
+      - { kind: group, text: 'project:alpha' }
       - { kind: row, text: alpha one }
 
   - name: a group toggle announces expanded and collapsed
@@ -343,7 +460,7 @@ cases:
     expectedExpandedAfter: [false]
     expectedRenderedRowsAfter: 0
     expectedRows:
-      - { kind: group, text: 'project:alpha 1 transcript' }
+      - { kind: group, text: 'project:alpha' }
       - { kind: row, text: alpha one }
 
   - name: a continuation row keeps the group toggle and aria-expanded
@@ -357,7 +474,7 @@ cases:
     view: { groupBy: project, visibleColumns: [transcript, turns], open: [project:alpha] }
     expectedExpanded: [true]
     expectedRows:
-      - { kind: continuation, text: 'project:alpha, continued 2 transcripts' }
+      - { kind: continuation, text: 'project:alpha, continued' }
       - { kind: row, text: alpha one }
       - { kind: row, text: alpha two }
 
@@ -371,7 +488,7 @@ cases:
     view: { groupBy: project, visibleColumns: [transcript, turns], open: [project:alpha] }
     keyboard: true
     expectedRows:
-      - { kind: group, text: 'project:alpha 1 transcript' }
+      - { kind: group, text: 'project:alpha' }
       - { kind: row, text: alpha one }
 
   - name: the table does not write window.location or localStorage
@@ -388,7 +505,7 @@ cases:
       - { groupBy: project, visibleColumns: [transcript], open: [project:alpha] }
       - { groupBy: project, visibleColumns: [transcript, turns], open: [] }
     expectedRows:
-      - { kind: group, text: 'project:alpha 1 transcript' }
+      - { kind: group, text: 'project:alpha' }
       - { kind: row, text: alpha one }
 
 helpers:
@@ -398,3 +515,20 @@ helpers:
       - { projects: [beta, gamma] }
       - { projects: [] }
     expected: [alpha, beta, gamma]
+
+refusals:
+  - { name: parseColumnAlign refuses an unknown wire, kind: align-unknown-wire, expectedError: '"middle" is not a wire value' }
+  - { name: parseColumnAlign refuses an unknown member, kind: align-unknown-member, expectedError: '"middle" is not a member' }
+  - { name: parseColumnAlign refuses a non-value, kind: align-not-a-value, expectedError: 'received a number' }
+  - { name: groupPageRows refuses a non-array rows, kind: group-rows-not-array, expectedError: 'rows must be an array' }
+  - { name: groupPageRows refuses a groupKeys that is not a function, kind: group-keys-not-function, expectedError: 'groupKeys must be a function' }
+  - { name: groupPageRows refuses a groupLabel that is not a function, kind: group-label-not-function, expectedError: 'groupLabel must be a function' }
+  - { name: groupPageRows refuses a groupBy that is not a member, kind: group-by-not-member, expectedError: 'groupBy must be a closed-set member' }
+  - { name: groupPageRows refuses a key list that is not an array, kind: group-keys-not-array, expectedError: 'groupKeys(row) must return an array' }
+  - { name: groupPageRows refuses an empty key, kind: group-key-empty, expectedError: 'group key must be a non-empty string' }
+  - { name: groupPageRows reports the label value it received, kind: group-label-not-string, expectedError: 'received a number' }
+  - { name: groupKeysFor refuses a non-array rows, kind: keys-for-rows-not-array, expectedError: 'rows must be an array' }
+  - { name: groupKeysFor refuses a groupKeys that is not a function, kind: keys-for-not-function, expectedError: 'groupKeys must be a function' }
+  - { name: groupKeysFor refuses a key list that is not an array, kind: keys-for-keys-not-array, expectedError: 'groupKeys(row) must return an array' }
+  - { name: groupKeysFor refuses an empty key, kind: keys-for-key-empty, expectedError: 'group key must be a non-empty string' }
+  - { name: groupKeysFor refuses a numeric key, kind: keys-for-key-number, expectedError: 'group key must be a non-empty string' }

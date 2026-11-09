@@ -3,11 +3,12 @@
  * with a caption, host columns, group header rows, the compact continuation row
  * for a group that began earlier, and numbered pages.
  */
-import { Fragment } from 'react'
+import { Fragment, useEffect, useRef } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { AllPageSizes, isPageSize } from '@peasant-labs/schema'
 import { groupPageRows } from './groupPageRows.js'
 import { ALL_COLUMN_ALIGNS, ColumnAlign } from './table/column-align.js'
+import { alignClass } from './table/align-class.js'
 import { ColumnPicker, GroupByPicker } from './table/library-pickers.jsx'
 import Pagination from './Pagination.jsx'
 
@@ -37,12 +38,20 @@ export { groupPageRows, groupKeysFor } from './groupPageRows.js'
  * from the device. The host composes it; the table receives it and reports
  * changes back, never reading a URL or storage itself.
  *
+ * `visibleColumns` holds the known column members the table shows; the first
+ * declared column is the row identity and always shows. An unknown member is
+ * dropped when the view is reported back, so the host can rewrite its stored
+ * value. `open` lists the expanded qualified group ids; leave it out to express
+ * no preference, which renders every group open. An explicit empty list closes
+ * every group. The host owns both, and the latest reported view is the one to
+ * persist.
+ *
  * @template {import('./closed-value.js').ClosedValue<string, string>} GroupBy
  * @template {import('./closed-value.js').ClosedValue<string, string>} ColumnId
  * @typedef {object} SavedView
  * @property {GroupBy} groupBy
  * @property {readonly ColumnId[]} visibleColumns
- * @property {readonly string[]} open
+ * @property {readonly string[]} [open]
  */
 
 /**
@@ -91,7 +100,7 @@ export { groupPageRows, groupKeysFor } from './groupPageRows.js'
  * @property {GroupBy} groupBy
  * @property {readonly GroupBy[]} groupByOptions
  * @property {readonly ColumnId[]} visibleColumns
- * @property {readonly string[]} open
+ * @property {readonly string[] | null} open null means no preference: every group open.
  */
 
 /**
@@ -147,12 +156,31 @@ export function TranscriptLibraryTable({
   const columnCount = shownColumns.length
   const totalPages = safePage ? Math.max(1, Math.ceil(safePage.total / safePage.size)) : 1
   const currentPage = safePage ? Math.min(Math.max(1, safePage.index), totalPages) : 1
+  const continues = !safePage || currentPage < totalPages
+
+  // A stale URL grouping resolves to the host default for rendering. Report that
+  // resolution once so the host rewrites its own value instead of keeping an
+  // unknown member forever. The ref keeps an ignoring host from being told on
+  // every render.
+  const reportedFallback = useRef('')
+  useEffect(() => {
+    if (!view || viewState == null) return
+    const given = readMemberWire(readField(viewState, 'groupBy')) ?? ''
+    if (given === view.groupBy.wire) return
+    const key = `${given}\u0000${view.groupBy.wire}`
+    if (reportedFallback.current === key) return
+    reportedFallback.current = key
+    if (typeof onViewStateChange === 'function') {
+      onViewStateChange({ groupBy: view.groupBy, visibleColumns: view.visibleColumns, open: view.open })
+    }
+  }, [view, viewState, onViewStateChange])
 
   /**
-   * Report one composed view. The host owns the page reset: a `groupBy` change
-   * clears `open` here because every open id is qualified by the old grouping.
+   * Report one composed view. The host owns the reset: a `groupBy` change keeps
+   * the open list as given, and `readView` already drops the ids that belong to
+   * another grouping. `open: null` means no preference.
    *
-   * @param {{ groupBy: GroupBy, visibleColumns: readonly ColumnId[], open: readonly string[] }} next
+   * @param {{ groupBy: GroupBy, visibleColumns: readonly ColumnId[], open: readonly string[] | null }} next
    */
   const reportView = (next) => {
     if (typeof onViewStateChange === 'function') {
@@ -163,10 +191,11 @@ export function TranscriptLibraryTable({
   /** @param {string} groupId */
   const toggleGroup = (groupId) => {
     if (!view) return
-    const open = view.open.includes(groupId)
-      ? view.open.filter((id) => id !== groupId)
-      : [...view.open, groupId]
-    reportView({ groupBy: view.groupBy, visibleColumns: view.visibleColumns, open })
+    const open = view.open ?? groups.map((group) => group.id).filter((id) => id !== '')
+    const next = open.includes(groupId)
+      ? open.filter((id) => id !== groupId)
+      : [...open, groupId]
+    reportView({ groupBy: view.groupBy, visibleColumns: view.visibleColumns, open: next })
   }
 
   return (
@@ -176,7 +205,7 @@ export function TranscriptLibraryTable({
           <GroupByPicker
             options={view.groupByOptions}
             value={view.groupBy}
-            onChange={(next) => reportView({ groupBy: next, visibleColumns: view.visibleColumns, open: [] })}
+            onChange={(next) => reportView({ groupBy: next, visibleColumns: view.visibleColumns, open: view.open })}
           />
           <ColumnPicker
             columns={columns}
@@ -192,7 +221,7 @@ export function TranscriptLibraryTable({
         </div>
       )}
       <div className="tbl-scroll" tabIndex={0} role="region" aria-label={caption}>
-        <table className="tbl libt-table" role="table">
+        <table className="tbl libt-table">
           <caption className="tbl-caption">{caption}</caption>
           <thead>
             <tr>
@@ -213,7 +242,7 @@ export function TranscriptLibraryTable({
               </tr>
             ) : (
               groups.map((group) => {
-                const expanded = group.id === '' || view === null || view.open.includes(group.id)
+                const expanded = group.id === '' || view === null || view.open === null || view.open.includes(group.id)
                 const toggle = view === null ? null : toggleGroup
                 return (
                   <Fragment key={group.id || '__ungrouped'}>
@@ -238,7 +267,7 @@ export function TranscriptLibraryTable({
                         </tr>
                       )
                     })}
-                    {group.continues && continuesRow(group, columnCount, safePage, currentPage)}
+                    {group.continues && continues && continuesRow(group, columnCount, safePage, currentPage)}
                   </Fragment>
                 )
               })
@@ -251,20 +280,22 @@ export function TranscriptLibraryTable({
           <span className="libt-page-status tnum" role="status">{`page ${currentPage} of ${totalPages}`}</span>
           <label className="libt-page-size">
             <span>per page</span>
-            <select
-              className="libt-page-select tnum"
-              aria-label="page size"
-              value={safePage.size}
-              onChange={(event) => {
-                const next = Number(event.target.value)
-                if (!isPageSize(next)) throw refusePageSize(next)
-                onPageSizeChange(next)
-              }}
-            >
-              {AllPageSizes.map((size) => (
-                <option key={size} value={size}>{size}</option>
-              ))}
-            </select>
+            <span className="select-wrap">
+              <select
+                className="select"
+                aria-label="page size"
+                value={safePage.size}
+                onChange={(event) => {
+                  const next = Number(event.target.value)
+                  if (!isPageSize(next)) throw refusePageSize(next)
+                  onPageSizeChange(next)
+                }}
+              >
+                {AllPageSizes.map((size) => (
+                  <option key={size} value={size}>{size}</option>
+                ))}
+              </select>
+            </span>
           </label>
           <Pagination
             page={currentPage}
@@ -293,13 +324,7 @@ function headerRow(group, columnCount, expanded, onToggle) {
   return (
     <tr className="libt-group" data-row-kind="group">
       <th scope="rowgroup" colSpan={columnCount}>
-        <GroupToggle
-          groupId={group.id}
-          label={group.label}
-          count={group.rows.length}
-          expanded={expanded}
-          onToggle={onToggle}
-        />
+        <GroupToggle groupId={group.id} label={group.label} expanded={expanded} onToggle={onToggle} />
       </th>
     </tr>
   )
@@ -319,13 +344,7 @@ function continuationRow(group, columnCount, expanded, onToggle) {
   return (
     <tr className="libt-continuation" data-row-kind="continuation">
       <th scope="rowgroup" colSpan={columnCount}>
-        <GroupToggle
-          groupId={group.id}
-          label={`${group.label}, continued`}
-          count={group.rows.length}
-          expanded={expanded}
-          onToggle={onToggle}
-        />
+        <GroupToggle groupId={group.id} label={`${group.label}, continued`} expanded={expanded} onToggle={onToggle} />
       </th>
     </tr>
   )
@@ -333,17 +352,17 @@ function continuationRow(group, columnCount, expanded, onToggle) {
 
 /**
  * The group header content: a real toggle button that announces expanded and
- * collapsed, beside the group label and the rows this group holds on the page.
- * It falls back to plain text when the table has no saved view to report to.
+ * collapsed beside the group label. It falls back to plain text when the table
+ * has no saved view to report to. The label is the only text, so the same group
+ * never reads two ways depending on whether a saved view is attached.
  *
  * @param {object} props
  * @param {string} props.groupId
  * @param {string} props.label
- * @param {number} props.count the rows this group holds on the page.
  * @param {boolean} props.expanded
  * @param {((groupId: string) => void) | null} props.onToggle
  */
-function GroupToggle({ groupId, label, count, expanded, onToggle }) {
+function GroupToggle({ groupId, label, expanded, onToggle }) {
   if (onToggle === null) return label
   return (
     <button
@@ -353,20 +372,9 @@ function GroupToggle({ groupId, label, count, expanded, onToggle }) {
       onClick={() => onToggle(groupId)}
     >
       <ChevronDown className="libt-group-chev" aria-hidden="true" />
-      <span className="libt-group-label">{label}</span>{' '}
-      <span className="libt-group-count">{plural(count, 'transcript', 'transcripts')}</span>
+      <span className="libt-group-label">{label}</span>
     </button>
   )
-}
-
-/**
- * @param {number} count
- * @param {string} one
- * @param {string} many
- * @returns {string}
- */
-function plural(count, one, many) {
-  return `${count} ${count === 1 ? one : many}`
 }
 
 /**
@@ -405,18 +413,6 @@ function dataTableAlign(column) {
       'Alignment is a closed set, so the table refuses to render an unaligned cell. ' +
       'Pass ColumnAlign.Start, ColumnAlign.End, ColumnAlign.Center, or ColumnAlign.Decimal.',
   )
-}
-
-/**
- * @param {string} base
- * @param {'left' | 'right' | 'center' | 'decimal'} align
- * @returns {string}
- */
-function alignClass(base, align) {
-  if (align === 'right') return `${base} tbl-right`
-  if (align === 'center') return `${base} tbl-center`
-  if (align === 'decimal') return `${base} tbl-right tbl-decimal`
-  return base
 }
 
 /**
@@ -546,10 +542,15 @@ function readView(viewState, defaultGroupBy, groupByOptions, columns) {
   const visibleColumns = knownColumns.length > 0
     ? [columns[0].id, ...knownColumns.filter((id) => id.wire !== columns[0].id.wire)]
     : defaultColumns
+  // `open` is optional on purpose: absent means the host has no preference, so
+  // every group renders open. An explicit list (including an empty one) is the
+  // host's choice, and ids from another grouping are dropped here.
   const savedOpen = readField(viewState, 'open')
-  const open = Array.isArray(savedOpen)
-    ? savedOpen.filter((id) => typeof id === 'string' && id.startsWith(`${groupBy.wire}:`))
-    : []
+  const open = savedOpen == null
+    ? null
+    : Array.isArray(savedOpen)
+      ? savedOpen.filter((id) => typeof id === 'string' && id.startsWith(`${groupBy.wire}:`))
+      : null
   return { groupBy, groupByOptions: options, visibleColumns, open }
 }
 
