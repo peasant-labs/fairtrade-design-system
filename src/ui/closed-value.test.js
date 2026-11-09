@@ -85,6 +85,7 @@ describe('closed-value wire distinctness', () => {
     assert.notEqual(numeric.wire, text.wire, '25 and "25" must not alias')
     assert.equal(JSON.stringify(numeric), '25')
     assert.equal(JSON.stringify(text), '"25"')
+    assert.notEqual(closed(25, '25'), closed(25, '25'), 'closed() must return a fresh frozen object, never a cached singleton')
   })
 })
 

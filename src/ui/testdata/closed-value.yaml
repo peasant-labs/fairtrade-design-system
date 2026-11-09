@@ -1,8 +1,8 @@
 # Named members and refusals for the shared closed-set factory
 # (src/ui/closed-value.js). The test harness asserts every member here is a
-# frozen singleton whose three conversion hooks derive from the wire, and that
-# every refusal throws an actionable TypeError. Membership is closed against
-# closed-value.manifest.yaml, so a deleted case fails the suite.
+# frozen member (hosts compare `.wire`) whose three conversion hooks derive from
+# the wire, and that every refusal throws an actionable TypeError. Membership is
+# closed against closed-value.manifest.yaml, so a deleted case fails the suite.
 
 members:
   - name: string-wire
