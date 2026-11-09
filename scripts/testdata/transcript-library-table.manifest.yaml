@@ -16,9 +16,21 @@ requiredCaseNames:
   - rowKey is required for every row
   - a null page hides the pager and renders every row
   - clicking a numbered page reports that page
+  - a page-size change reports the new size and keeps the page
+  - a paged table without a page-size callback is refused
   - the table is a real table with its caption
   - a ColumnAlign member maps to the data-table alignment
   - an empty page renders the empty state with a caption
+  - a null viewState renders every column and every row
+  - a provided viewState hides an unchecked column
+  - an unknown saved value falls back to the host default
+  - a saved view without a change callback is refused
+  - a column picker toggles a column and reports the composed view
+  - a group-by picker change reports the new grouping and clears open
+  - a group toggle announces expanded and collapsed
+  - a continuation row keeps the group toggle and aria-expanded
+  - the column picker and group-by picker are keyboard reachable
+  - the table does not write window.location or localStorage
 
 requiredHelperNames:
   - groupKeysFor returns bare keys without duplicates in first-appearance order
@@ -29,6 +41,13 @@ requiredMutationNames:
   - a group id is prefixed twice
   - the numbered pager does not report a page
   - rowKey is optional
+  - a page-size change is ignored
+  - a collapsed group still renders its rows
+  - a column tick is never reported
+  - a group-by change keeps the open groups
+  - an unknown grouping member is kept
+  - an unknown saved column hides every column
+  - a group toggle writes the view to storage
 mutations:
   - name: a continued group renders a full header
     file: src/ui/TranscriptLibraryTable.jsx
@@ -55,3 +74,38 @@ mutations:
     find: "if (typeof rowKey === 'function') return"
     replace: "return"
     expectedDiagnostic: "rowKey is required for every row"
+  - name: a page-size change is ignored
+    file: src/ui/TranscriptLibraryTable.jsx
+    find: "onPageSizeChange(next)"
+    replace: "onPageSizeChange(safePage.size)"
+    expectedDiagnostic: "a page-size change reports the new size and keeps the page"
+  - name: a collapsed group still renders its rows
+    file: src/ui/TranscriptLibraryTable.jsx
+    find: "const expanded = group.id === '' || view === null || view.open.includes(group.id)"
+    replace: "const expanded = true"
+    expectedDiagnostic: "an unknown saved value falls back to the host default"
+  - name: a column tick is never reported
+    file: src/ui/TranscriptLibraryTable.jsx
+    find: "reportView({ groupBy: view.groupBy, visibleColumns: next, open: view.open })"
+    replace: "reportView({ groupBy: view.groupBy, visibleColumns: view.visibleColumns, open: view.open })"
+    expectedDiagnostic: "a column picker toggles a column and reports the composed view"
+  - name: a group-by change keeps the open groups
+    file: src/ui/TranscriptLibraryTable.jsx
+    find: "reportView({ groupBy: next, visibleColumns: view.visibleColumns, open: [] })"
+    replace: "reportView({ groupBy: next, visibleColumns: view.visibleColumns, open: view.open })"
+    expectedDiagnostic: "a group-by picker change reports the new grouping and clears open"
+  - name: an unknown grouping member is kept
+    file: src/ui/TranscriptLibraryTable.jsx
+    find: "const fallback = options.find((option) => option.wire === defaultGroupBy.wire) ?? options[0]"
+    replace: "const fallback = options[0]"
+    expectedDiagnostic: "an unknown saved value falls back to the host default"
+  - name: an unknown saved column hides every column
+    file: src/ui/TranscriptLibraryTable.jsx
+    find: ": defaultColumns"
+    replace: ": []"
+    expectedDiagnostic: "an unknown saved value falls back to the host default"
+  - name: a group toggle writes the view to storage
+    file: src/ui/TranscriptLibraryTable.jsx
+    find: "const toggleGroup = (groupId) => {"
+    replace: "const toggleGroup = (groupId) => { try { window.localStorage.setItem('library-view', groupId) } catch {}"
+    expectedDiagnostic: "a group toggle announces expanded and collapsed"

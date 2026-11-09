@@ -1398,6 +1398,106 @@
     color: var(--ink-3);
     font-weight: 400;
   }
+  /* the group header toggle: a real button that fills the header cell and
+     announces expanded/collapsed. the chevron points right when collapsed and
+     down when open; the count names how many rows the group holds on the page. */
+  .libt-group-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    box-sizing: border-box;
+    width: 100%;
+    min-height: var(--target-min);
+    margin: 0;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+  }
+  .libt-group-toggle:hover { color: var(--ink); }
+  .libt-group-toggle:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
+  .libt-continuation .libt-group-toggle { color: var(--ink-3); }
+  .libt-continuation .libt-group-toggle:hover { color: var(--ink-2); }
+  @media (pointer: coarse) { .libt-group-toggle { min-height: var(--target-comfortable); } }
+  .libt-group-chev { width: var(--ic-sm); height: var(--ic-sm); flex: none; color: var(--ink-4); transform: rotate(-90deg); }
+  .libt-group-toggle[aria-expanded="true"] .libt-group-chev { transform: none; }
+  .libt-group-label { min-width: 0; overflow-wrap: anywhere; }
+  .libt-group-count { color: var(--ink-3); font-weight: 400; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  @media (prefers-reduced-motion: no-preference) {
+    .libt-group-chev { transition: transform var(--dur-1) var(--ease-standard); }
+  }
+
+  /* the saved-view toolbar: two disclosures above the table. each trigger is a
+     real button that reports aria-expanded; each choice is a native checkbox or
+     radio, so its state is announced and Tab reaches it in order. */
+  .libt-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-2);
+    margin-bottom: var(--sp-2);
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+  }
+  .libt-pick { position: relative; display: inline-flex; min-width: 0; }
+  .libt-pick-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    box-sizing: border-box;
+    min-height: var(--control-h);
+    margin: 0;
+    padding: 0 var(--sp-3);
+    font: inherit;
+    text-transform: lowercase;
+    color: var(--ink-2);
+    background: var(--canvas);
+    border: var(--bd-strong);
+    cursor: pointer;
+  }
+  .libt-pick-btn:hover { color: var(--ink); border-color: var(--amber-dim); }
+  .libt-pick-btn:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
+  .libt-pick-btn[aria-expanded="true"] { color: var(--ink); border-color: var(--amber-dim); }
+  .libt-pick-value { min-width: 0; overflow-wrap: anywhere; }
+  .libt-pick-chev { width: var(--ic-sm); height: var(--ic-sm); flex: none; color: var(--ink-3); }
+  .libt-pick-btn[aria-expanded="true"] .libt-pick-chev { transform: rotate(180deg); }
+  @media (prefers-reduced-motion: no-preference) {
+    .libt-pick-chev { transition: transform var(--dur-1) var(--ease-standard); }
+  }
+  @media (pointer: coarse) { .libt-pick-btn { min-height: var(--target-comfortable); } }
+  .libt-pick-panel {
+    position: absolute;
+    top: calc(100% + var(--sp-1));
+    left: 0;
+    z-index: var(--z-dropdown);
+    display: flex;
+    flex-direction: column;
+    min-width: var(--menu-min-w);
+    padding: var(--sp-1) 0;
+    background: var(--surface-elev);
+    border: var(--bd-strong);
+    box-shadow: var(--overlay-shadow);
+  }
+  .libt-pick-row {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    box-sizing: border-box;
+    min-height: var(--target-comfortable);
+    padding: var(--sp-1) var(--sp-3);
+    color: var(--ink-2);
+    text-transform: lowercase;
+    cursor: pointer;
+  }
+  .libt-pick-row:hover { background: var(--surface-hover); color: var(--ink); }
+  .libt-pick-box { width: var(--ic-md); height: var(--ic-md); flex: none; accent-color: var(--amber); margin: 0; }
+  .libt-pick-box:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
+  .libt-pick-box:disabled { cursor: default; }
+  .libt-pick-label { min-width: 0; overflow-wrap: anywhere; }
+  .libt-pick-note { margin-inline-start: auto; color: var(--ink-3); font-size: var(--fs-label); }
   .libt-continues > td {
     padding: var(--sp-1) var(--sp-3);
     border-bottom: var(--bd);
@@ -1416,6 +1516,23 @@
     font-size: var(--fs-label);
   }
   .libt-page-status { color: var(--ink-2); }
+  .libt-page-size { display: inline-flex; align-items: center; gap: var(--sp-2); color: var(--ink-3); }
+  .libt-page-select {
+    height: var(--control-h-sm);
+    min-height: var(--target-min);
+    padding: 0 var(--sp-1);
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+    background: var(--canvas);
+    border: var(--bd-strong);
+    border-radius: 0;
+    cursor: pointer;
+  }
+  .libt-page-select:hover { color: var(--ink); border-color: var(--amber-dim); }
+  .libt-page-select:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
+  @media (pointer: coarse) { .libt-page-select { height: var(--target-comfortable); } }
   .libt-footer .pgn { margin-inline-start: auto; }
 
   /* ---- pagination (pgn-*) ---- */

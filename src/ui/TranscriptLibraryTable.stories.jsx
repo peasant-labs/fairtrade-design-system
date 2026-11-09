@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { PageSize } from '@peasant-labs/schema'
 import { closed } from './closed-value.js'
 import { ColumnAlign } from './table/column-align.js'
@@ -9,7 +10,11 @@ import { TranscriptLibraryTable } from './TranscriptLibraryTable.jsx'
    projects, so a group header reads as the project name and a session title keeps
    its own case. */
 
-const GroupBy = Object.freeze({ Project: closed('project', 'project') })
+const GroupBy = Object.freeze({
+  Project: closed('project', 'project'),
+  None: closed('none', 'nothing'),
+})
+const GROUP_BY_OPTIONS = [GroupBy.Project, GroupBy.None]
 const ColumnId = Object.freeze({
   Transcript: closed('transcript', 'transcript'),
   Provider: closed('provider', 'provider'),
@@ -42,6 +47,7 @@ const baseArgs = {
   rowKey: (row) => row.id,
   columns: COLUMNS,
   groupBy: GroupBy.Project,
+  groupByOptions: GROUP_BY_OPTIONS,
   groupKeys: (row) => row.projects,
   groupLabel: (id) => LABELS.get(id) ?? id,
   nextGroupKeys: null,
@@ -51,6 +57,27 @@ const baseArgs = {
   onViewStateChange: () => {},
   onPageChange: () => {},
   onPageSizeChange: () => {},
+}
+
+/* The controlled saved view a host composes: `groupBy` from the URL and
+   `visibleColumns` and `open` from the device. The story plays the host and keeps
+   the three parts in local state, so the pickers and group toggles report their
+   changes back the way a real page would. */
+function SavedViewExample({ initialOpen = ['project:peasant-labs'], ...args }) {
+  const [view, setView] = useState({
+    groupBy: GroupBy.Project,
+    visibleColumns: [ColumnId.Transcript, ColumnId.Provider, ColumnId.Turns],
+    open: initialOpen,
+  })
+  return (
+    <TranscriptLibraryTable
+      {...args}
+      groupBy={view.groupBy}
+      groupKeys={(row) => (view.groupBy.wire === GroupBy.None.wire ? [] : row.projects)}
+      viewState={view}
+      onViewStateChange={setView}
+    />
+  )
 }
 
 const meta = {
@@ -96,6 +123,18 @@ export const FirstPage = {
 /** a complete list passes page={null}: every row renders and the pager is absent. */
 export const CompleteList = {
   args: { page: null },
+}
+
+/** the controlled saved view: the group-by and column pickers, the open group, and a collapsed group. */
+export const SavedView = {
+  render: (args) => <SavedViewExample {...args} />,
+  args: { page: { ...PAGE, index: 1 }, continuedGroupKeys: null },
+}
+
+/** a saved view holding no open group renders every group collapsed, with its toggle announcing collapsed. */
+export const SavedViewCollapsed = {
+  render: (args) => <SavedViewExample {...args} />,
+  args: { page: { ...PAGE, index: 1 }, continuedGroupKeys: null, initialOpen: [] },
 }
 
 /** an empty page keeps the caption and the table semantics. */

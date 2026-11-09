@@ -89,6 +89,21 @@ if (missing.length) {
   )
 }
 
+// The shared transcript library table is the one export Peasant and Village adopt from ./ui.
+// It rides the existing barrel entry, so a dropped re-export would leave every file present while
+// every consumer's import fails. Assert the emitted bundle carries the table and both helpers.
+const uiEntry = readFileSync(join(OUT, 'ui.js'), 'utf8')
+const uiExports = ['TranscriptLibraryTable', 'groupPageRows', 'groupKeysFor']
+const absentExports = uiExports.filter((name) => !uiEntry.includes(name))
+if (absentExports.length) {
+  throw new Error(
+    `fairtrade lib build failed in scripts/finalize-lib-build.mjs: dist/lib/ui.js does not carry ${absentExports.join(', ')}. ` +
+      'What went wrong: src/ui/index.js no longer re-exports the shared transcript library table, so the /ui entry builds without it. ' +
+      'Why it matters: Peasant and Village import the table from ./ui; a missing export fails at their build, not here. ' +
+      'How to fix: restore the TranscriptLibraryTable, groupPageRows, and groupKeysFor re-export in src/ui/index.js and rebuild.',
+  )
+}
+
 // Content assertions on the shipped CSS. existsSync alone cannot catch a CSS
 // MISBUILD (an empty/stub components.css from a vite.lib-css regression) — that
 // would still pass existsSync + the JS-only smoke (renderToStaticMarkup ignores

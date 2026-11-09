@@ -22,6 +22,10 @@ export { default as EmptyState } from './EmptyState.jsx'
 export { Skeleton, Progress, Spinner, Toast, FeedbackPanel } from './Feedback.jsx'
 export { default as DataTable } from './DataTable.jsx'
 export { DataTableToolbar, DataTablePaginationControls } from './DataTableControls.jsx'
+/* the shared transcript library table: the table, the two grouping helpers a host uses to
+   build a page's key unions, and the ColumnAlign closed set a host column declares. */
+export { TranscriptLibraryTable, groupPageRows, groupKeysFor } from './TranscriptLibraryTable.jsx'
+export { ColumnAlign, ALL_COLUMN_ALIGNS, parseColumnAlign } from './table/column-align.js'
 export { default as ChartBar } from './ChartBar.jsx'
 export { default as ChartLine } from './ChartLine.jsx'
 export { default as Sparkline } from './Sparkline.jsx'

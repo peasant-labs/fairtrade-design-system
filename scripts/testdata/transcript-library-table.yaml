@@ -14,6 +14,9 @@
 
 caption: your transcripts
 groupBy: { wire: project, label: project }
+groupByOptions:
+  - { wire: none, label: nothing }
+  - { wire: project, label: project }
 
 columns:
   - { id: transcript, label: transcript, align: start }
@@ -182,6 +185,28 @@ cases:
     click: 'button[aria-label="page 3"]'
     expectedPageChange: 3
 
+  - name: a page-size change reports the new size and keeps the page
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 2, size: 25, total: 120 }
+    expectedPage: page 2 of 5
+    changePageSize: 50
+    expectedPageSizeChanges: [50]
+    expectedRows:
+      - { kind: group, text: 'project:alpha' }
+      - { kind: row, text: alpha one }
+
+  - name: a paged table without a page-size callback is refused
+    omitPageSizeCallback: true
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 1, size: 25, total: 1 }
+    expectedError: onPageSizeChange must be a function
+
   - name: the table is a real table with its caption
     rows:
       - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
@@ -218,6 +243,153 @@ cases:
     expectedPage: page 1 of 1
     expectedRows:
       - { kind: empty, text: no transcripts }
+
+  - name: a null viewState renders every column and every row
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: null
+    expectNoPager: true
+    expectPickers: false
+    expectColumns: [transcript, turns]
+    expectedExpanded: []
+    expectedRows:
+      - { kind: group, text: 'project:alpha' }
+      - { kind: row, text: alpha one }
+
+  - name: a provided viewState hides an unchecked column
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 1, size: 25, total: 1 }
+    expectedPage: page 1 of 1
+    view: { groupBy: project, visibleColumns: [transcript], open: [project:alpha] }
+    expectColumns: [transcript]
+    expectedExpanded: [true]
+    expectedRows:
+      - { kind: group, text: 'project:alpha 1 transcript' }
+      - { kind: row, text: alpha one }
+
+  - name: an unknown saved value falls back to the host default
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 1, size: 25, total: 1 }
+    expectedPage: page 1 of 1
+    view: { groupBy: batch, visibleColumns: [unknown], open: [] }
+    expectColumns: [transcript, turns]
+    expectGroupByLabel: 'group by: project'
+    expectedExpanded: [false]
+    expectedRows:
+      - { kind: group, text: 'project:alpha 1 transcript' }
+
+  - name: a saved view without a change callback is refused
+    omitViewCallback: true
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 1, size: 25, total: 1 }
+    view: { groupBy: project, visibleColumns: [transcript], open: [] }
+    expectedError: onViewStateChange must be a function
+
+  - name: a column picker toggles a column and reports the composed view
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 1, size: 25, total: 1 }
+    expectedPage: page 1 of 1
+    view: { groupBy: project, visibleColumns: [transcript, turns], open: [project:alpha] }
+    clickColumn: turns
+    expectedViewChanges:
+      - { groupBy: project, visibleColumns: [transcript], open: [project:alpha] }
+    expectedRows:
+      - { kind: group, text: 'project:alpha 1 transcript' }
+      - { kind: row, text: alpha one }
+
+  - name: a group-by picker change reports the new grouping and clears open
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 1, size: 25, total: 1 }
+    expectedPage: page 1 of 1
+    view: { groupBy: project, visibleColumns: [transcript, turns], open: [project:alpha] }
+    clickGroupBy: nothing
+    expectedViewChanges:
+      - { groupBy: none, visibleColumns: [transcript, turns], open: [] }
+    expectedRows:
+      - { kind: group, text: 'project:alpha 1 transcript' }
+      - { kind: row, text: alpha one }
+
+  - name: a group toggle announces expanded and collapsed
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 1, size: 25, total: 1 }
+    expectedPage: page 1 of 1
+    view: { groupBy: project, visibleColumns: [transcript, turns], open: [project:alpha] }
+    expectedExpanded: [true]
+    expectedRenderedRows: 1
+    clickGroup: project:alpha
+    expectedViewChanges:
+      - { groupBy: project, visibleColumns: [transcript, turns], open: [] }
+    rerenderView: { groupBy: project, visibleColumns: [transcript, turns], open: [] }
+    expectedExpandedAfter: [false]
+    expectedRenderedRowsAfter: 0
+    expectedRows:
+      - { kind: group, text: 'project:alpha 1 transcript' }
+      - { kind: row, text: alpha one }
+
+  - name: a continuation row keeps the group toggle and aria-expanded
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+      - { key: a2, title: alpha two, turns: 5, projects: [alpha] }
+    nextGroupKeys: null
+    continuedGroupKeys: [alpha]
+    page: { index: 2, size: 25, total: 120 }
+    expectedPage: page 2 of 5
+    view: { groupBy: project, visibleColumns: [transcript, turns], open: [project:alpha] }
+    expectedExpanded: [true]
+    expectedRows:
+      - { kind: continuation, text: 'project:alpha, continued 2 transcripts' }
+      - { kind: row, text: alpha one }
+      - { kind: row, text: alpha two }
+
+  - name: the column picker and group-by picker are keyboard reachable
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 1, size: 25, total: 1 }
+    expectedPage: page 1 of 1
+    view: { groupBy: project, visibleColumns: [transcript, turns], open: [project:alpha] }
+    keyboard: true
+    expectedRows:
+      - { kind: group, text: 'project:alpha 1 transcript' }
+      - { kind: row, text: alpha one }
+
+  - name: the table does not write window.location or localStorage
+    rows:
+      - { key: a1, title: alpha one, turns: 3, projects: [alpha] }
+    nextGroupKeys: null
+    continuedGroupKeys: null
+    page: { index: 1, size: 25, total: 1 }
+    expectedPage: page 1 of 1
+    view: { groupBy: project, visibleColumns: [transcript, turns], open: [project:alpha] }
+    clickColumn: turns
+    clickGroup: project:alpha
+    expectedViewChanges:
+      - { groupBy: project, visibleColumns: [transcript], open: [project:alpha] }
+      - { groupBy: project, visibleColumns: [transcript, turns], open: [] }
+    expectedRows:
+      - { kind: group, text: 'project:alpha 1 transcript' }
+      - { kind: row, text: alpha one }
 
 helpers:
   - name: groupKeysFor returns bare keys without duplicates in first-appearance order
