@@ -511,7 +511,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(container.querySelectorAll('.txn-work').length === 0, `${row.name}: no ledger turn keeps a work row of its own beside the block`)
       for (const group of ownership.groups) {
         const block = container.querySelector(`#turn-${group.owner} .txn-modelactions`)
-        report.check(!!block, `${row.name}: a user turn starts a new block; the user turn's block must sit after its first prose turn`)
+        report.check(!!block, `${row.name}: each prose turn starts its own run; the block must sit on that run's prose turn`)
         const commands = [...(block?.querySelectorAll('.txn-toolcall .path') ?? [])].map(el => text(el))
         report.check(same(commands, group.tools.map(id => `printf ${id}-command`)), `${row.name}: exact distinct action membership`)
       }

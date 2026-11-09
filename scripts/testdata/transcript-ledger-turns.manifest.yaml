@@ -94,6 +94,7 @@ requiredMutationNames:
   - a wordless turn gets a card again
   - a folded turn keeps its own work beside the block
   - a user turn does not start a new block
+  - a system turn splits a run
   - the block does not restart at each prose turn
   - a hidden prose anchor keeps its block on the hidden turn
   - a leading wordless run moves into the first prose turn
@@ -184,7 +185,12 @@ mutations:
     file: src/ui/transcript/action-groups.js
     find: "if (source.role === 'user') { flush(); continue }"
     replace: "if (source.role === 'user') continue"
-    expectedDiagnostic: "a user turn starts a new block"
+    expectedDiagnostic: "each prose turn starts its own run"
+  - name: a system turn splits a run
+    file: src/ui/transcript/action-groups.js
+    find: "    if (source.role === 'system') continue"
+    replace: "    if (source.role === 'system') { flush(); continue }"
+    expectedDiagnostic: "exact run owners"
   - name: the block does not restart at each prose turn
     file: src/ui/transcript/action-groups.js
     find: "    if (prose(source)) flush()"

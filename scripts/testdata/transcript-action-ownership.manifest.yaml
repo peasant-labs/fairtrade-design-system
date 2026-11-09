@@ -31,5 +31,7 @@ requiredLeadingWordlessNames:
   - a leading wordless run stays before the first prose turn
 requiredHiddenSourceProseNames:
   - a hidden source-prose anchor hands its run to its first visible work turn
+requiredSystemRunNames:
+  - a content-bearing system turn neither joins nor splits a run
 requiredDistributionNames:
   - the 91-tool session keeps ten runs

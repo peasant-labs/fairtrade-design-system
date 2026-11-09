@@ -161,14 +161,54 @@ hiddenSourceProseRuns:
       - {name: a hidden prose anchor hands its run to the first visible work turn, owner: 2, tools: [h-one], thinking: []}
       - {name: the later prose turn keeps its own work after a hidden anchor, owner: 3, tools: [h-two], thinking: []}
 
+# A content-bearing system turn between wordless work turns: the system turn is harness
+# bookkeeping, so it neither joins the run nor splits it. The prose turn after it starts a new
+# run, which proves the split comes from prose rather than from the system entry.
+systemBetweenRuns:
+  - name: a content-bearing system turn neither joins nor splits a run
+    payload:
+      id: system-between-work
+      harness: claude-code
+      startTime: '2026-10-01T10:00:00Z'
+      turns:
+        - {index: 0, role: user, content: Opening request, depth: 0}
+        - index: 1
+          role: assistant
+          content: ''
+          depth: 0
+          toolCalls:
+            - {id: s-one, name: Bash, arguments: '{"command":"printf s-one-command"}', result: 's-one-output', durationMs: 1000}
+        - {index: 2, role: system, content: 'session resumed between work turns', depth: 0}
+        - index: 3
+          role: assistant
+          content: ''
+          depth: 0
+          toolCalls:
+            - {id: s-two, name: Bash, arguments: '{"command":"printf s-two-command"}', result: 's-two-output', durationMs: 1000}
+        - index: 4
+          role: assistant
+          content: Prose after the system turn
+          depth: 0
+          toolCalls:
+            - {id: s-three, name: Bash, arguments: '{"command":"printf s-three-command"}', result: 's-three-output', durationMs: 1000}
+        - index: 5
+          role: assistant
+          content: ''
+          depth: 0
+          toolCalls:
+            - {id: s-four, name: Bash, arguments: '{"command":"printf s-four-command"}', result: 's-four-output', durationMs: 1000}
+    groups:
+      - {name: wordless work around a system turn stays in one run, owner: 1, tools: [s-one, s-two], thinking: []}
+      - {name: the prose after the system turn starts a new run, owner: 4, tools: [s-three, s-four], thinking: []}
+
 # The reported 55-turn session with 91 tool calls: three user segments that split into ten prose
 # runs. The old rule drew three blocks (26, 26, 39); the new rule draws 1+25, 7+19, then
-# 5+12+12+1+6+3, and the sum stays 91.
+# 5+12+12+1+6+3, and the sum stays 91. `runs` is the literal expected group size list.
 distributions:
   - name: the 91-tool session keeps ten runs
     segments:
       - [1, 25]
       - [7, 19]
       - [5, 12, 12, 1, 6, 3]
-    expectedCounts: [1, 25, 7, 19, 5, 12, 12, 1, 6, 3]
+    runs: [1, 25, 7, 19, 5, 12, 12, 1, 6, 3]
     total: 91

@@ -3,7 +3,7 @@ import { loadFixturePair, withMountedSource, click } from './mounted-parts.mjs'
 
 const { fixture } = loadFixturePair('scripts/testdata/transcript-action-ownership.yaml', 'scripts/testdata/transcript-action-ownership.manifest.yaml', {
   groups: 'requiredGroupNames', disclosures: 'requiredDisclosureNames', filters: 'requiredFilterNames', navigation: 'requiredNavigationNames', initial: 'requiredInitialNames', keyboard: 'requiredKeyboardNames',
-  leadingWordlessRuns: 'requiredLeadingWordlessNames', hiddenSourceProseRuns: 'requiredHiddenSourceProseNames', distributions: 'requiredDistributionNames',
+  leadingWordlessRuns: 'requiredLeadingWordlessNames', hiddenSourceProseRuns: 'requiredHiddenSourceProseNames', systemBetweenRuns: 'requiredSystemRunNames', distributions: 'requiredDistributionNames',
 })
 const caps = { canEdit: false, canLabel: false, canContribute: false, canChangeVisibility: false, canExport: false }
 await withMountedSource(async ({ load, mount, window, React }) => {
@@ -57,6 +57,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     return { id: 'distribution', harness: 'claude-code', startTime: '2026-10-01T10:00:00Z', turns }
   }
   for (const row of fixture.leadingWordlessRuns) assertRuns(layoutOf(row.payload), row.groups, row.name)
+  for (const row of fixture.systemBetweenRuns) assertRuns(layoutOf(row.payload), row.groups, row.name)
   for (const row of fixture.hiddenSourceProseRuns) {
     assertRuns(layoutOf(row.payload), row.visibleGroups, `${row.name} (visible prose)`)
     assertRuns(layoutOf(row.payload, responsesHidden), row.hiddenGroups, `${row.name} (hidden prose)`)
@@ -64,9 +65,9 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   for (const row of fixture.distributions) {
     const layout = layoutOf(distributionPayload(row))
     const runs = runShape(layout)
-    assert.equal(runs.length, row.expectedCounts.length, `${row.name}: one run per prose turn`)
-    assert.deepEqual(runs.map(tools => tools.length), row.expectedCounts, `${row.name}: exact per-run action counts`)
-    assert.equal(runs.reduce((sum, tools) => sum + tools.length, 0), row.total, `${row.name}: the sum stays ${row.total}`)
+    assert.equal(runs.length, row.runs.length, `${row.name}: one run per prose turn`)
+    assert.deepEqual(runs.map(tools => tools.length), row.runs, `${row.name}: exact literal per-run action counts`)
+    assert.equal(row.runs.reduce((sum, count) => sum + count, 0), row.total, `${row.name}: the literal run sizes sum to ${row.total}`)
     for (const turns of layout.groups.values()) assert.ok(String(turns[0].content ?? '').trim() !== '', `${row.name}: a run anchors on a prose turn`)
   }
   const membership = async (m, thinking = true) => {
