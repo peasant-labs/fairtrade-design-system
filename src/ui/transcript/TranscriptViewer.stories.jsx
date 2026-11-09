@@ -276,11 +276,15 @@ export const Ledger = {
     // the classic per-task identity chip would repeat the rail card and the turn head.
     expect(canvasElement.querySelector('.txn-taskboundary')).toBeNull()
     // the pinned header appears once the trace scrolls, with the title and one position slider.
-    // each user turn's actions share one block after its first prose turn; no turn keeps its own.
-    await expect(canvasElement.querySelectorAll('.txn-modelactions')).toHaveLength(2)
+    // each prose turn starts its own run; a wordless turn folds into the run it follows.
+    await expect(canvasElement.querySelectorAll('.txn-modelactions')).toHaveLength(4)
     expect(canvasElement.querySelector('.txn-work')).toBeNull()
-    await expect(canvas.getByText('4 actions: 1 command, 1 file, 1 edit, 4.1s')).toBeVisible()
-    await expect(canvas.getByText('1 action: 1 file')).toBeVisible()
+    expect([...canvasElement.querySelectorAll('.txn-modelactions-summary')].map((el) => el.textContent.trim())).toEqual([
+      '1 action: 1 file',
+      '1 action: 1 command, 4.1s',
+      '2 actions: 1 file, 1 edit',
+      '1 action: 1 file',
+    ])
     // a system turn is a compact row, and its recorded text opens on request.
     const systemHead = canvasElement.querySelector('.txn-systemrow-head')
     await expect(systemHead).toHaveAttribute('aria-expanded', 'false')

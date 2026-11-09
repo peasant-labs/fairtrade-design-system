@@ -43,11 +43,11 @@ requiredCaseNames:
   - a search hit opens the system row
   - the system row preview reads plain text
   - ledger keeps a turn's thinking disclosure
-  - a turn without tools has no work group
+  - a run with no work draws no block
   - the ledger head carries only the role line and its controls
   - host turn actions survive on every role
   - a role change draws one rule and the first turn draws none
-  - a user turn's actions share one block after its first prose turn
+  - each prose turn owns the actions that follow it
   - a turn with no words is inline detail, not a card
   - the system turn's heading follows the page level
 requiredCaseKinds:
@@ -63,11 +63,11 @@ requiredCaseKinds:
   a search hit opens the system row: system-reveal
   the system row preview reads plain text: system-preview
   ledger keeps a turn's thinking disclosure: thinking
-  a turn without tools has no work group: no-tools
+  a run with no work draws no block: no-tools
   the ledger head carries only the role line and its controls: ledger-head
   host turn actions survive on every role: host-actions
   a role change draws one rule and the first turn draws none: turn-rules
-  a user turn's actions share one block after its first prose turn: model-actions
+  each prose turn owns the actions that follow it: model-actions
   a turn with no words is inline detail, not a card: detail-turns
   the system turn's heading follows the page level: heading-level
 
@@ -94,7 +94,10 @@ requiredMutationNames:
   - a wordless turn gets a card again
   - a folded turn keeps its own work beside the block
   - a user turn does not start a new block
-  - the block sits on the group's last turn
+  - a system turn splits a run
+  - the block does not restart at each prose turn
+  - a hidden prose anchor keeps its block on the hidden turn
+  - a leading wordless run moves into the first prose turn
   - the block header counts calls
   - one command is replaced by an equal-kind equal-duration command
   - hidden source boundaries are lost before grouping
@@ -117,7 +120,7 @@ mutations:
     file: src/ui/transcript/action-groups.js
     find: "for (const source of turns)"
     replace: "for (const source of visibleTurns)"
-    expectedDiagnostic: "exact distinct action membership"
+    expectedDiagnostic: "exact run owners"
   - name: stale open children override explicit parent collapse
     file: src/ui/transcript/WorkGroup.jsx
     find: "  const tools = turns.flatMap((turn) => turn.toolCalls ?? [])\n  const shown = open\n"
@@ -182,12 +185,27 @@ mutations:
     file: src/ui/transcript/action-groups.js
     find: "if (source.role === 'user') { flush(); continue }"
     replace: "if (source.role === 'user') continue"
-    expectedDiagnostic: "a user turn starts a new block"
-  - name: the block sits on the group's last turn
+    expectedDiagnostic: "each prose turn starts its own run"
+  - name: a system turn splits a run
     file: src/ui/transcript/action-groups.js
-    find: "const owner = anchor ?? work[0]"
-    replace: "const owner = work[work.length - 1]"
-    expectedDiagnostic: "the user turn's block must sit after its first prose turn"
+    find: "    if (source.role === 'system') continue"
+    replace: "    if (source.role === 'system') { flush(); continue }"
+    expectedDiagnostic: "exact run owners"
+  - name: the block does not restart at each prose turn
+    file: src/ui/transcript/action-groups.js
+    find: "    if (prose(source)) flush()"
+    replace: "    if (false) flush()"
+    expectedDiagnostic: "exact distinct action membership"
+  - name: a hidden prose anchor keeps its block on the hidden turn
+    file: src/ui/transcript/action-groups.js
+    find: "    const rendered = anchor ? visible.get(anchor.index) : undefined"
+    replace: "    const rendered = anchor"
+    expectedDiagnostic: "exact run owners"
+  - name: a leading wordless run moves into the first prose turn
+    file: src/ui/transcript/action-groups.js
+    find: "    if (prose(source)) flush()"
+    replace: "    if (prose(source) && run.some(prose)) flush()"
+    expectedDiagnostic: "the wordless run anchors its work on its own first work turn"
   - name: one command is replaced by an equal-kind equal-duration command
     file: src/ui/transcript/WorkGroup.jsx
     find: "                  tool={tool}"
