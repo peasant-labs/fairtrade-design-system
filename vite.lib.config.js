@@ -14,6 +14,9 @@ export default defineConfig({
         // ./icons passthrough — re-exports lucide-react (kept external below),
         // so consumers tree-shake named icons from the shared fairtrade copy.
         icons: 'src/icons.js',
+        // ./closed-value: the shared closed-set factory every surface set (and a
+        // host's own set) is built from. Dependency-free, so it stays a tiny entry.
+        'closed-value': 'src/ui/closed-value.js',
         // Per-surface entry points (HYBRID boundary): each app imports only its
         // own surface bundle, so a peasant app importing ./graph never pulls in
         // the village ./commons surfaces (intra-package bundle isolation). As

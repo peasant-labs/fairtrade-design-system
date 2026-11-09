@@ -1,0 +1,49 @@
+# Named members and refusals for the shared closed-set factory
+# (src/ui/closed-value.js). The test harness asserts every member here is a
+# frozen member (hosts compare `.wire`) whose three conversion hooks derive from
+# the wire, and that every refusal throws an actionable TypeError. Membership is
+# closed against closed-value.manifest.yaml, so a deleted case fails the suite.
+
+members:
+  - name: string-wire
+    wire: grouped
+    label: helper threads
+  - name: project-member
+    wire: project
+    label: project
+  - name: numeric-page-size
+    wire: 25
+    label: '25'
+  - name: numeric-string-wire
+    wire: '25'
+    label: '25'
+  - name: numeric-zero
+    wire: 0
+    label: not offered
+
+refusals:
+  - name: empty-string-wire
+    wire: ''
+    label: blank
+    expectedError: wire must be a non-empty string or a finite number
+  - name: non-finite-number-wire
+    wire: .inf
+    label: infinite
+    expectedError: wire must be a non-empty string or a finite number
+  - name: nan-wire
+    wire: .nan
+    label: not a number
+    expectedError: wire must be a non-empty string or a finite number
+  - name: object-wire
+    wire:
+      frame: 1
+    label: object
+    expectedError: wire must be a non-empty string or a finite number
+  - name: numeric-label
+    wire: 25
+    label: 25
+    expectedError: label must be a non-empty string
+  - name: empty-label
+    wire: empty
+    label: ''
+    expectedError: label must be a non-empty string

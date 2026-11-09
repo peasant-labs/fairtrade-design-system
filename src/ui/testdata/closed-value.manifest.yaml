@@ -1,0 +1,16 @@
+# Required-NAME manifest for src/ui/testdata/closed-value.yaml — deletion
+# protection. The harness asserts each family's names are EXACTLY this list (as
+# a set): no silent member or refusal deletion, no drift, no bare count.
+requiredMemberNames:
+  - string-wire
+  - project-member
+  - numeric-page-size
+  - numeric-string-wire
+  - numeric-zero
+requiredRefusalNames:
+  - empty-string-wire
+  - non-finite-number-wire
+  - nan-wire
+  - object-wire
+  - numeric-label
+  - empty-label

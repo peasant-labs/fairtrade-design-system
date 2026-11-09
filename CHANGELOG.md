@@ -4,6 +4,10 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.61
+
+- Add `@peasant-labs/fairtrade/closed-value`, the shared closed-set factory. `closed(wire, label)` returns a frozen member that carries its `wire`, its `label`, `String()`, `toString()`, and `toJSON()`; a host compares `.wire` and never a raw literal. The numeric member `25` and the string member `'25'` never alias, and an invalid wire or label is refused with an actionable error.
+
 ## 0.0.60
 
 - Hide system entries by default. A reader reveals them from the system filter. Consecutive visible system entries fold into one group headed "system entries", with the first entry in place and the rest behind a disclosure.
