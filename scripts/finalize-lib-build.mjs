@@ -61,6 +61,8 @@ writeFileSync(join(TYPES, 'icons.d.ts'), "export * from 'lucide-react'\n")
 const required = [
   'ui.js',
   'icons.js',
+  // ./closed-value: the shared closed-set factory, a dependency-free entry.
+  'closed-value.js',
   // per-surface JS entries (HYBRID boundary)
   'graph.js',
   'commons.js',
