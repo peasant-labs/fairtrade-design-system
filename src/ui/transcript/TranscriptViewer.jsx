@@ -1756,11 +1756,13 @@ export default function TranscriptViewer({
                       </div>
                     )}
                     {(() => {
-                      /* In the ledger every action the model takes for one user turn shares one
-                         block. A user turn closes the group; system rows stay where they are and
-                         do not split it. The block sits after the group's first prose turn, or on
-                         its first turn with work when the group has no prose, and every other
-                         turn in the group draws no work of its own, so no action renders twice. */
+                      /* In the ledger each prose turn starts its own run of actions. A wordless
+                         turn appends to the current run; a user turn closes it; a system row
+                         stays where it is and does not split it. A run with no prose of its own
+                         anchors at its first work turn, and a run whose source prose anchor is
+                         hidden anchors at its first visible work turn, so work never moves
+                         forward across a prose boundary. Every other turn in the run draws no
+                         work of its own, so no action renders twice. */
                       const groups = ledger ? actionLayout.groups : new Map()
                       const foldedWork = ledger ? actionLayout.folded : new Set()
                       const renderTurn = (t) => (

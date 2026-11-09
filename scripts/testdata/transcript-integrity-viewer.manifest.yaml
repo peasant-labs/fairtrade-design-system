@@ -57,7 +57,6 @@ requiredInteractionKinds:
   an unflagged thinking-only group keeps its plain structure: plain-thinking
   integrity present at mount fills its status after mount: status-after-mount
   condensing the header closes an open panel: fold-closes
-requiredFoldedProseCaseName: a flagged prose turn whose work folds into an earlier group draws one outline
 requiredThinkingCaseName: a flagged turn in a thinking-only group is marked
 
 requiredMutationNames:
@@ -71,7 +70,7 @@ requiredMutationNames:
   - the status is static text at mount
   - the thinking-only group loses its mark
   - every thinking block gains a row
-  - a folded prose turn is outlined twice
+  - a flagged prose turn is outlined twice
 mutations:
   - name: the badge ignores the hash
     file: src/ui/transcript/TranscriptViewer.jsx
@@ -123,8 +122,8 @@ mutations:
     find: "return isFlagged(turn) ? <div"
     replace: "return true ? <div"
     expectedDiagnostic: "an unflagged thinking-only group keeps its plain structure"
-  - name: a folded prose turn is outlined twice
+  - name: a flagged prose turn is outlined twice
     file: src/ui/transcript/WorkGroup.jsx
-    find: " || turnHasProse(turn)"
+    find: " && !isCard(turn)"
     replace: ""
-    expectedDiagnostic: "a flagged prose turn whose work folds into an earlier group draws one outline"
+    expectedDiagnostic: "a flagged prose turn with work draws one outline"

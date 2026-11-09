@@ -50,7 +50,8 @@ payload:
       toolCalls:
         - {id: eta, name: Bash, arguments: '{"command":"printf eta-command"}', result: 'eta-output', durationMs: 1000, isError: true}
 groups:
-  - {name: first request owns prose and wordless work, owner: 1, tools: [alpha, beta, gamma], thinking: [Distinct amber thinking evidence]}
+  - {name: the first prose turn owns only its own work, owner: 1, tools: [alpha], thinking: []}
+  - {name: the second prose turn owns the wordless work that follows it, owner: 2, tools: [beta, gamma], thinking: [Distinct amber thinking evidence]}
   - {name: second request keeps its own distinct work, owner: 6, tools: [delta, epsilon], thinking: []}
   - {name: third request anchors its wordless work, owner: 9, tools: [zeta, eta], thinking: []}
 disclosures:
@@ -96,3 +97,118 @@ keyboard:
     source: 7
     hidePrompts: true
     steps: [{key: ArrowUp, expected: 6}, {key: ArrowUp, expected: 2}, {key: ArrowDown, expected: 6}, {key: ArrowDown, expected: 6}]
+
+# A leading wordless run has no prose of its own in the segment, so it anchors at its own first
+# work turn and never moves forward into the prose turn that follows it.
+leadingWordlessRuns:
+  - name: a leading wordless run stays before the first prose turn
+    payload:
+      id: leading-wordless
+      harness: claude-code
+      startTime: '2026-10-01T10:00:00Z'
+      turns:
+        - {index: 0, role: user, content: Opening request, depth: 0}
+        - index: 1
+          role: assistant
+          content: ''
+          depth: 0
+          toolCalls:
+            - {id: w-one, name: Bash, arguments: '{"command":"printf w-one-command"}', result: 'w-one-output', durationMs: 1000}
+        - index: 2
+          role: assistant
+          content: Prose after the leading work
+          depth: 0
+          toolCalls:
+            - {id: w-two, name: Bash, arguments: '{"command":"printf w-two-command"}', result: 'w-two-output', durationMs: 1000}
+        - index: 3
+          role: assistant
+          content: ''
+          depth: 0
+          toolCalls:
+            - {id: w-three, name: Bash, arguments: '{"command":"printf w-three-command"}', result: 'w-three-output', durationMs: 1000}
+    groups:
+      - {name: the leading wordless run anchors at its own first work turn, owner: 1, tools: [w-one], thinking: []}
+      - {name: the first prose turn owns only the work that follows it, owner: 2, tools: [w-two, w-three], thinking: []}
+
+# The run boundary comes from the source prose, so hiding the responses leaves the hidden prose
+# turn as the anchor of its own run. Its work must stay at the run's first visible work turn
+# instead of moving forward into the later prose turn's run.
+hiddenSourceProseRuns:
+  - name: a hidden source-prose anchor hands its run to its first visible work turn
+    payload:
+      id: hidden-source-prose
+      harness: claude-code
+      startTime: '2026-10-01T10:00:00Z'
+      turns:
+        - {index: 0, role: user, content: Opening request, depth: 0}
+        - {index: 1, role: assistant, content: Hidden anchor prose, depth: 0}
+        - index: 2
+          role: assistant
+          content: ''
+          depth: 0
+          toolCalls:
+            - {id: h-one, name: Bash, arguments: '{"command":"printf h-one-command"}', result: 'h-one-output', durationMs: 1000}
+        - index: 3
+          role: assistant
+          content: Visible later prose
+          depth: 0
+          toolCalls:
+            - {id: h-two, name: Bash, arguments: '{"command":"printf h-two-command"}', result: 'h-two-output', durationMs: 1000}
+    visibleGroups:
+      - {name: a renderable prose anchor owns its run, owner: 1, tools: [h-one], thinking: []}
+      - {name: the later prose turn owns its own run, owner: 3, tools: [h-two], thinking: []}
+    hiddenGroups:
+      - {name: a hidden prose anchor hands its run to the first visible work turn, owner: 2, tools: [h-one], thinking: []}
+      - {name: the later prose turn keeps its own work after a hidden anchor, owner: 3, tools: [h-two], thinking: []}
+
+# A content-bearing system turn between wordless work turns: the system turn is harness
+# bookkeeping, so it neither joins the run nor splits it. The prose turn after it starts a new
+# run, which proves the split comes from prose rather than from the system entry.
+systemBetweenRuns:
+  - name: a content-bearing system turn neither joins nor splits a run
+    payload:
+      id: system-between-work
+      harness: claude-code
+      startTime: '2026-10-01T10:00:00Z'
+      turns:
+        - {index: 0, role: user, content: Opening request, depth: 0}
+        - index: 1
+          role: assistant
+          content: ''
+          depth: 0
+          toolCalls:
+            - {id: s-one, name: Bash, arguments: '{"command":"printf s-one-command"}', result: 's-one-output', durationMs: 1000}
+        - {index: 2, role: system, content: 'session resumed between work turns', depth: 0}
+        - index: 3
+          role: assistant
+          content: ''
+          depth: 0
+          toolCalls:
+            - {id: s-two, name: Bash, arguments: '{"command":"printf s-two-command"}', result: 's-two-output', durationMs: 1000}
+        - index: 4
+          role: assistant
+          content: Prose after the system turn
+          depth: 0
+          toolCalls:
+            - {id: s-three, name: Bash, arguments: '{"command":"printf s-three-command"}', result: 's-three-output', durationMs: 1000}
+        - index: 5
+          role: assistant
+          content: ''
+          depth: 0
+          toolCalls:
+            - {id: s-four, name: Bash, arguments: '{"command":"printf s-four-command"}', result: 's-four-output', durationMs: 1000}
+    groups:
+      - {name: wordless work around a system turn stays in one run, owner: 1, tools: [s-one, s-two], thinking: []}
+      - {name: the prose after the system turn starts a new run, owner: 4, tools: [s-three, s-four], thinking: []}
+
+# The reported 55-turn session with 91 tool calls: three user segments that split into ten prose
+# runs. The old rule drew three blocks (26, 26, 39); the new rule draws 1+25, 7+19, then
+# 5+12+12+1+6+3, and the sum stays 91. `runs` is the literal expected group size list.
+distributions:
+  - name: the 91-tool session keeps ten runs
+    segments:
+      - [1, 25]
+      - [7, 19]
+      - [5, 12, 12, 1, 6, 3]
+    runs: [1, 25, 7, 19, 5, 12, 12, 1, 6, 3]
+    total: 91

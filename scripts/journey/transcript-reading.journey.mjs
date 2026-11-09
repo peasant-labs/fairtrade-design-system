@@ -435,10 +435,15 @@ for (const row of fixture.widthAction) test(`transcript reading width ${row.name
 for (const row of fixture.navigation) test(`transcript rendered navigation ${row.name}`, async ({ page }, info) => {
   await open(page, info.project.name)
   if (row.compact) await page.getByRole('switch', { name: 'compact mode', exact: true }).click()
+  const target = action(page, row)
+  // The destination must start outside the reading viewport (or behind a collapsed
+  // disclosure); the reveal below is what brings it into view. A run now owns its own
+  // action block, so distance from the hosting article's top is no longer the measure.
+  const startsOutside = async () => { const m = await inside(target); return !m.shown || m.top < m.viewTop || m.top >= m.viewBottom }
+  expect(await startsOutside()).toBe(true)
   await page.locator('.txn-stream').focus()
   await page.keyboard.press('Control+f')
   await page.getByRole('textbox', { name: 'search transcript', exact: true }).fill(row.query)
-  const target = action(page, row)
   if (row.kind !== 'body') await expect(target.locator('button').first()).toHaveAttribute('aria-expanded', 'true')
   // Inspect the real range, not the containing card: a long card can be on screen while its hit is not.
   await expect.poll(() => page.locator('.txn-search-highlight').count()).toBeGreaterThan(0)
@@ -456,10 +461,8 @@ for (const row of fixture.navigation) test(`transcript rendered navigation ${row
   }, row.query)).toBe(true)
   await expect.poll(async () => { const m = await inside(target); return m.shown && m.top >= m.viewTop - 1 && m.top < m.viewBottom }).toBe(true)
   if (row.kind !== 'body') {
-    const separation = await target.evaluate(el => el.getBoundingClientRect().top - el.closest('article').getBoundingClientRect().top)
-    expect(separation).toBeGreaterThan(await page.locator('.txn-stream').evaluate(el => el.clientHeight))
     // A fresh reveal reopens an explicitly collapsed ancestor even if its child was already open.
-    const head = page.locator('#turn-1 .txn-modelactions-head')
+    const head = page.locator('.txn-modelactions').filter({ has: target }).locator('.txn-modelactions-head')
     await head.click()
     await expect(head).toHaveAttribute('aria-expanded', 'false')
     await page.getByRole('button', { name: 'next match', exact: true }).click()
