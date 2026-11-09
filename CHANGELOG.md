@@ -6,7 +6,7 @@ package is pre-1.0, so minor/patch semantics are best-effort.
 
 ## 0.0.61
 
-- Add `@peasant-labs/fairtrade/closed-value`, the shared closed-set factory. `closed(wire, label)` returns a frozen singleton member that carries its `wire`, its `label`, `String()`, `toString()`, and `toJSON()`; a host compares members by identity and never a raw literal. The numeric member `25` and the string member `'25'` never alias, and an invalid wire or label is refused with an actionable error.
+- Add `@peasant-labs/fairtrade/closed-value`, the shared closed-set factory. `closed(wire, label)` returns a frozen member that carries its `wire`, its `label`, `String()`, `toString()`, and `toJSON()`; a host compares `.wire` and never a raw literal. The numeric member `25` and the string member `'25'` never alias, and an invalid wire or label is refused with an actionable error.
 
 ## 0.0.60
 

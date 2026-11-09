@@ -289,20 +289,18 @@ if (iconCount < 100) {
 }
 
 // ./closed-value: the shared closed-set factory resolves from the built entry and
-// returns a frozen singleton whose hooks derive from the wire. This is the one
+// returns a frozen member whose hooks derive from the wire. This is the one
 // definition site every surface set (and a host's own set) is built from.
 if (typeof closedValue.closed !== 'function') {
   failures.push('closed: missing from dist/lib/closed-value.js (shared closed-set factory export)')
 } else {
-  const probe = closedValue.closed('probe', 'probe')
+  const probe = closedValue.closed('probe-wire', 'probe-label')
   if (!Object.isFrozen(probe)) failures.push('closed: dist/lib/closed-value.js did not return a frozen member')
-  if (closedValue.closed('probe', 'probe') !== probe) {
-    failures.push('closed: dist/lib/closed-value.js did not return the same singleton for the same pair')
+  if (probe.wire !== 'probe-wire') failures.push('closed: a built member does not preserve its wire')
+  if (probe.String() !== 'probe-wire' || probe.toString() !== 'probe-wire' || probe.toJSON() !== 'probe-wire') {
+    failures.push('closed: a built member derives its text and JSON from the label, not the wire')
   }
-  if (probe.String() !== 'probe' || probe.toString() !== 'probe' || probe.toJSON() !== 'probe') {
-    failures.push('closed: a built member does not derive its text and JSON from its wire')
-  }
-  if (JSON.stringify(probe) !== '"probe"') failures.push('closed: a built member does not serialize with toJSON()')
+  if (JSON.stringify(probe) !== '"probe-wire"') failures.push('closed: a built member does not serialize with toJSON()')
 }
 
 // Per-surface entries (./graph, ./commons): confirm each surface bundle resolves

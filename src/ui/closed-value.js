@@ -4,26 +4,21 @@
    A closed set is a small, known collection of values: a status, a mode, a page
    size, a grouping. JavaScript has no enum that a JS/JSX package can ship, and a
    bare string union is compile-time only, so every consumer ends up writing a raw
-   literal. `closed(wire, label)` makes each member a frozen singleton object that
-   carries its wire value and its label, and converts with the Go-style hooks:
-   `String()` / `toString()` for display and template literals, `toJSON()` for
-   persistence and URL state.
+   literal. `closed(wire, label)` makes each member a frozen object that carries
+   its wire value and its label, and converts with the Go-style hooks: `String()`
+   / `toString()` for display and template literals, `toJSON()` for persistence
+   and URL state.
 
    One definition site. A member's wire value is written once, in the object that
-   creates it; every consumer uses the member (its `wire`, its `label`, its
-   `String()`, or its identity) and never the literal.
-
-   The singleton is intentional: `closed('project', 'project')` returns the same
-   frozen object on every call, so identity comparison works even when two modules
-   name the same member. The cache key includes the wire's primitive type, so the
-   numeric member `25` and the string member `'25'` never alias.
+   creates it; every consumer uses the member (its `wire`, its `label`, or its
+   `String()`) and never the literal. Hosts compare `.wire`, never identity.
 
    Fairtrade is JS/JSX. `ClosedValue` is a JSDoc type and the generated
    `dist/lib/types/closed-value.d.ts` is the compile-time check; the runtime guard
    in `closed()` is the boundary check for a non-TypeScript host. */
 
 /**
- * A closed value: a frozen singleton that carries its wire value, the label a
+ * A closed value: a frozen object that carries its wire value, the label a
  * surface shows for it, and the conversion hooks.
  *
  * - `wire` is the exact value persisted, compared, and sent on the wire.
@@ -44,29 +39,17 @@
  */
 
 /**
- * Every member created so far, keyed by primitive type, wire, and label. `unknown`
- * keeps the heterogeneous singleton set honest without an `any`.
- *
- * @type {Map<string, unknown>}
- */
-const SINGLETONS = new Map()
-
-/**
- * Create — or return the existing — frozen singleton for one closed-set member.
+ * Create one frozen closed-set member.
  *
  * @template {string | number} W
  * @template {string} L
  * @param {W} wire - the exact value persisted, compared, and sent on the wire.
  * @param {L} label - the human-readable text shown for the member.
- * @returns {ClosedValue<W, L>} the frozen singleton for this `(wire, label)` pair.
+ * @returns {ClosedValue<W, L>} a new frozen member for this `(wire, label)` pair.
  */
 export function closed(wire, label) {
   assertWire(wire)
   assertLabel(label)
-
-  const key = JSON.stringify([typeof wire, wire, label])
-  const existing = SINGLETONS.get(key)
-  if (existing !== undefined) return /** @type {ClosedValue<W, L>} */ (existing)
 
   const text = String(wire)
   /** @type {ClosedValue<W, L>} */
@@ -77,7 +60,6 @@ export function closed(wire, label) {
     toString: () => text,
     toJSON: () => wire,
   })
-  SINGLETONS.set(key, value)
   return value
 }
 
@@ -92,7 +74,7 @@ function assertWire(wire) {
   if (typeof wire === 'number' && Number.isFinite(wire)) return
   throw new TypeError(
     `closed(wire, label) failed in src/ui/closed-value.js: wire must be a non-empty string or a finite number, received ${describe(wire)}. ` +
-      "A closed value's wire is the exact value persisted and compared, so it must be a primitive with a stable identity (for example 'project' or 25). " +
+      "A closed value's wire is the exact value persisted and compared, so it must be a primitive with a stable value (for example 'project' or 25). " +
       'Pass the primitive at the member definition.',
   )
 }

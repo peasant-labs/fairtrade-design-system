@@ -3,15 +3,14 @@
    (src/ui/closed-value.js). Every other closed set in the package is built with
    `closed()`, so the guarantees it makes are load-bearing:
 
-     • a member is a frozen singleton — `closed(wire, label)` returns the same
-       object on every call, and a host may compare members by identity;
-     • the only keys are `wire`, `label`, `String`, `toString`, and `toJSON`;
+     • a member is a frozen value whose only keys are `wire`, `label`, `String`,
+       `toString`, and `toJSON`;
      • `String()` / `toString()` derive their text from the wire, so template
        literals and `String(value)` agree with `wire`, and `toJSON()` makes
        `JSON.stringify(value)` serialize the wire itself;
-     • a numeric wire and the string that spells it never alias (`25` !== `'25'`);
-     • an invalid wire or label is refused with an actionable TypeError rather
-       than creating a member with an unpredictable identity.
+     • a numeric wire and the string that spells it keep distinct wire values
+       (`25` !== `'25'`), tested with one shared label so the wire axis is isolated;
+     • an invalid wire or label is refused with an actionable TypeError.
 
    The member and refusal cases are named data in testdata/closed-value.yaml;
    the required-name manifest makes a deletion fail the suite. Run:
@@ -44,7 +43,7 @@ assertExactNames(fixture.refusals.map((refusal) => refusal.name), manifest.requi
 
 describe('closed-value members', () => {
   for (const member of fixture.members) {
-    it(`${member.name}: frozen singleton with the Go-style conversion hooks`, () => {
+    it(`${member.name}: frozen member with the Go-style conversion hooks`, () => {
       const value = closed(member.wire, member.label)
 
       assert.ok(Object.isFrozen(value), 'a closed member must be frozen')
@@ -64,8 +63,6 @@ describe('closed-value members', () => {
       assert.equal(value.toJSON(), member.wire, 'toJSON() must return the wire')
       assert.equal(JSON.stringify(value), JSON.stringify(member.wire), 'JSON.stringify must serialize the wire')
 
-      assert.equal(closed(member.wire, member.label), value, 'closed() must return the same singleton for the same pair')
-
       assert.throws(
         () => {
           // @ts-expect-error — the frozen member refuses assignment at runtime too
@@ -78,24 +75,16 @@ describe('closed-value members', () => {
   }
 })
 
-describe('closed-value identity', () => {
-  it('a numeric wire and the string that spells it are distinct members', () => {
+describe('closed-value wire distinctness', () => {
+  it('a numeric wire and the string that spells it keep distinct wire values', () => {
     const numeric = closed(25, '25')
-    const text = closed('25', 'twenty-five')
+    const text = closed('25', '25')
 
-    assert.notEqual(numeric, text, '25 and "25" must not alias')
+    assert.equal(typeof numeric.wire, 'number')
+    assert.equal(typeof text.wire, 'string')
+    assert.notEqual(numeric.wire, text.wire, '25 and "25" must not alias')
     assert.equal(JSON.stringify(numeric), '25')
     assert.equal(JSON.stringify(text), '"25"')
-  })
-
-  it('a different label for the same wire is a different member', () => {
-    assert.notEqual(closed('same-wire', 'one'), closed('same-wire', 'two'))
-  })
-
-  it('separator characters in a wire or label do not alias two members', () => {
-    const colonInWire = closed('a:b', 'c')
-    const colonInLabel = closed('a', 'b:c')
-    assert.notEqual(colonInWire, colonInLabel, 'a cached key must delimit wire and label without ambiguity')
   })
 })
 

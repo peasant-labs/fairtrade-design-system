@@ -16,7 +16,7 @@ members:
     label: '25'
   - name: numeric-string-wire
     wire: '25'
-    label: twenty-five
+    label: '25'
   - name: numeric-zero
     wire: 0
     label: not offered
@@ -29,6 +29,10 @@ refusals:
   - name: non-finite-number-wire
     wire: .inf
     label: infinite
+    expectedError: wire must be a non-empty string or a finite number
+  - name: nan-wire
+    wire: .nan
+    label: not a number
     expectedError: wire must be a non-empty string or a finite number
   - name: object-wire
     wire:

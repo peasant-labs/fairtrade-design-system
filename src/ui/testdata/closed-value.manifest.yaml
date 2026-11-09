@@ -10,6 +10,7 @@ requiredMemberNames:
 requiredRefusalNames:
   - empty-string-wire
   - non-finite-number-wire
+  - nan-wire
   - object-wire
   - numeric-label
   - empty-label
