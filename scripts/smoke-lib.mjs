@@ -113,8 +113,24 @@ const promptDigest = {
   ],
 }
 
+const libraryGroupBy = closedValue.closed('project', 'project')
+const libraryColumnId = closedValue.closed('transcript', 'transcript')
+const libraryColumns = [{ id: libraryColumnId, label: 'transcript', align: ui.ColumnAlign.Start, render: (row) => row.title }]
+
 const sampleProps = {
   UnverifiedPullRequests: { pullRequests: [], onSourceSelect: () => {} },
+  TranscriptLibraryTable: {
+    caption: 'sample transcripts',
+    rows: [{ id: 'a', title: 'sample session', project: 'acme' }],
+    rowKey: (row) => row.id,
+    columns: libraryColumns,
+    groupBy: libraryGroupBy,
+    groupKeys: (row) => [row.project],
+    groupLabel: (id) => id,
+    nextGroupKeys: null,
+    continuedGroupKeys: null,
+    page: null,
+  },
   VillageObservations: observationFixtures.base,
   HelperGroup: { ...helperFixtures.smoke.group, getMemberKey: (id) => id,
     renderMember: (id) => React.createElement(ui.HelperThreadRow, helperFixtures.rows[id]),
@@ -205,6 +221,10 @@ const expectedExports = [
   'ChartBar',
   'ChartLine',
   'DataTable',
+  'TranscriptLibraryTable',
+  'groupPageRows',
+  'groupKeysFor',
+  'ColumnAlign',
   'Timeline',
   'ToolCallRenderer',
   // transcript rendering primitives + composite (barrel presence; Transcript* convention)

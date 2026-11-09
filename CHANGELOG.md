@@ -4,6 +4,11 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.62
+
+- Add `TranscriptLibraryTable`, the shared library table: numbered pages of transcripts, host grouping with a compact continuation row, multi-membership, the `ColumnAlign` closed set, and a controlled saved view where `groupBy` is URL-owned and `visibleColumns`/`collapsed` are device-owned. Exports `groupPageRows`, `groupKeysFor`, and the table's contract types from `/ui`.
+- Start each transcript action run at its own prose turn, so a run no longer spans later prose turns.
+
 ## 0.0.61
 
 - Add `@peasant-labs/fairtrade/closed-value`, the shared closed-set factory. `closed(wire, label)` returns a frozen member that carries its `wire`, its `label`, `String()`, `toString()`, and `toJSON()`; a host compares `.wire` and never a raw literal. The numeric member `25` and the string member `'25'` never alias, and an invalid wire or label is refused with an actionable error.

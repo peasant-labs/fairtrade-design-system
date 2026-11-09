@@ -1,0 +1,143 @@
+# Required-NAME manifest for transcript-library-table.yaml — deletion protection.
+# The render gate asserts the case and helper names are EXACTLY these lists (as a
+# set), so a deleted or renamed case fails before any DOM assertion runs. The
+# mutation list is the production-mutation proof parts-mutations.mjs re-runs.
+
+requiredCaseNames:
+  - a continuing group opens with one compact continuation row
+  - a group that starts on the page keeps the full header
+  - a group continuing on the next page is marked
+  - a group ending exactly at the page boundary is not marked
+  - two groups continuing across the boundary are both marked
+  - a null continuedGroupKeys renders the full header for every group
+  - a row in two groups renders in both and the page counts transcripts
+  - a none grouping renders one group with no header
+  - a group id uses the form groupBy:key
+  - rowKey is required for every row
+  - a null page hides the pager and renders every row
+  - clicking a numbered page reports that page
+  - a page-size change reports the new size and keeps the page
+  - a paged table without a page-size callback is refused
+  - the table is a real table with its caption
+  - a ColumnAlign member maps to the data-table alignment
+  - an empty page renders the empty state with a caption
+  - a null viewState renders every column and every row
+  - an explicit collapsed list closes the named groups
+  - an empty collapsed list renders every group open
+  - a group toggle reports the collapsed group
+  - the first column always shows when the saved view omits it
+  - an unknown saved column falls back to every column
+  - an out-of-range page keeps the last page and drops the continues marker
+  - a narrow layout keeps a named focusable scroll region
+  - a provided viewState hides an unchecked column
+  - an unknown saved value falls back to the host default
+  - a saved view without a change callback is refused
+  - a column picker toggles a column and reports the composed view
+  - a column picker restores a hidden column
+  - a group-by picker change reports the new grouping and keeps the collapsed list
+  - a group toggle announces expanded and collapsed
+  - a continuation row keeps the group toggle and aria-expanded
+  - a collapse on one page leaves another page's groups open
+  - the column picker and group-by picker are keyboard reachable
+  - the table does not write window.location or localStorage
+
+requiredHelperNames:
+  - groupKeysFor returns bare keys without duplicates in first-appearance order
+
+requiredRefusalNames:
+  - parseColumnAlign refuses an unknown wire
+  - parseColumnAlign refuses an unknown member
+  - parseColumnAlign refuses a non-value
+  - groupPageRows refuses a non-array rows
+  - groupPageRows refuses a groupKeys that is not a function
+  - groupPageRows refuses a groupLabel that is not a function
+  - groupPageRows refuses a groupBy that is not a member
+  - groupPageRows refuses a key list that is not an array
+  - groupPageRows refuses an empty key
+  - groupPageRows reports the label value it received
+  - groupKeysFor refuses a non-array rows
+  - groupKeysFor refuses a groupKeys that is not a function
+  - groupKeysFor refuses a key list that is not an array
+  - groupKeysFor refuses an empty key
+  - groupKeysFor refuses a numeric key
+
+requiredMutationNames:
+  - a continued group renders a full header
+  - a group ending at the page boundary is marked
+  - a group id is prefixed twice
+  - the numbered pager does not report a page
+  - rowKey is optional
+  - a page-size change is ignored
+  - perPage counts rendered rows
+  - a collapsed group still renders its rows
+  - a column tick is never reported
+  - an unknown grouping member is kept
+  - a resolved grouping fallback is not reported
+  - an unknown saved column hides every column
+  - a group toggle writes the view to storage
+mutations:
+  - name: a continued group renders a full header
+    file: src/ui/TranscriptLibraryTable.jsx
+    find: "group.continued"
+    replace: "false"
+    expectedDiagnostic: "a continuing group opens with one compact continuation row"
+  - name: a group ending at the page boundary is marked
+    file: src/ui/groupPageRows.js
+    find: "next.has(group.id)"
+    replace: "next.size > 0"
+    expectedDiagnostic: "a group ending exactly at the page boundary is not marked"
+  - name: a group id is prefixed twice
+    file: src/ui/groupPageRows.js
+    find: "const id = `${wire}:${key}`"
+    replace: "const id = `${wire}:${wire}:${key}`"
+    expectedDiagnostic: "a group id uses the form groupBy:key"
+  - name: the numbered pager does not report a page
+    file: src/ui/TranscriptLibraryTable.jsx
+    find: "onChange={(next) => onPageChange(next)}"
+    replace: "onChange={() => {}}"
+    expectedDiagnostic: "clicking a numbered page reports that page"
+  - name: rowKey is optional
+    file: src/ui/TranscriptLibraryTable.jsx
+    find: "if (typeof rowKey === 'function') return"
+    replace: "return"
+    expectedDiagnostic: "rowKey is required for every row"
+  - name: a page-size change is ignored
+    file: src/ui/TranscriptLibraryTable.jsx
+    find: "onPageSizeChange(next)"
+    replace: "onPageSizeChange(safePage.size)"
+    expectedDiagnostic: "a page-size change reports the new size and keeps the page"
+  - name: perPage counts rendered rows
+    file: src/ui/TranscriptLibraryTable.jsx
+    find: "const totalPages = safePage ? Math.max(1, Math.ceil(safePage.total / safePage.size)) : 1"
+    replace: "const totalPages = safePage ? Math.max(1, Math.ceil(rows.length / safePage.size)) : 1"
+    expectedDiagnostic: "a row in two groups renders in both and the page counts transcripts"
+  - name: a collapsed group still renders its rows
+    file: src/ui/TranscriptLibraryTable.jsx
+    find: "const expanded = group.id === '' || view === null || !view.collapsed.includes(group.id)"
+    replace: "const expanded = true"
+    expectedDiagnostic: "an explicit collapsed list closes the named groups"
+  - name: a column tick is never reported
+    file: src/ui/TranscriptLibraryTable.jsx
+    find: "reportView({ groupBy: view.groupBy, visibleColumns: next, collapsed: view.collapsed })"
+    replace: "reportView({ groupBy: view.groupBy, visibleColumns: view.visibleColumns, collapsed: view.collapsed })"
+    expectedDiagnostic: "a column picker toggles a column and reports the composed view"
+  - name: an unknown grouping member is kept
+    file: src/ui/TranscriptLibraryTable.jsx
+    find: "const fallback = options.find((option) => option.wire === defaultGroupBy.wire) ?? options[0]"
+    replace: "const fallback = options[0]"
+    expectedDiagnostic: "an unknown saved value falls back to the host default"
+  - name: an unknown saved column hides every column
+    file: src/ui/TranscriptLibraryTable.jsx
+    find: ": defaultColumns"
+    replace: ": []"
+    expectedDiagnostic: "an unknown saved column falls back to every column"
+  - name: a resolved grouping fallback is not reported
+    file: src/ui/TranscriptLibraryTable.jsx
+    find: "if (given === view.groupBy.wire) return"
+    replace: "return"
+    expectedDiagnostic: "an unknown saved value falls back to the host default"
+  - name: a group toggle writes the view to storage
+    file: src/ui/TranscriptLibraryTable.jsx
+    find: "const toggleGroup = (groupId) => {"
+    replace: "const toggleGroup = (groupId) => { try { window.localStorage.setItem('library-view', groupId) } catch {}"
+    expectedDiagnostic: "a group toggle reports the collapsed group"

@@ -1,7 +1,7 @@
 {
   "name": "@peasant-labs/fairtrade",
   "private": false,
-  "version": "0.0.61",
+  "version": "0.0.62",
   "description": "Fairtrade design-system library: canonical tokens, base styles, component CSS, and React UI exports.",
   "type": "module",
   "license": "Apache-2.0",
@@ -87,7 +87,7 @@
     "test:release-guard": "node --test scripts/release-guard.test.mjs",
     "test:release-notes": "node scripts/release-notes.test.mjs",
     "test:release-notes:mutations": "node scripts/release-notes.mutations.mjs",
-    "test:datatable": "node scripts/datatable-host-boundary.test.mjs && node scripts/datatable.render.test.mjs",
+    "test:datatable": "node scripts/datatable-host-boundary.test.mjs && node scripts/datatable.render.test.mjs && node scripts/transcript-library-table.render.test.mjs && node scripts/parts-mutations.mjs scripts/transcript-library-table.render.test.mjs scripts/testdata/transcript-library-table.manifest.yaml",
     "test:design-decisions": "node scripts/design-decisions.test.mjs",
     "audit:design-decisions": "node scripts/design-decisions.mjs",
     "test:port-record": "node scripts/port-record.test.mjs",
@@ -256,7 +256,7 @@
     "test:transcript-system-groups:mutations": "node scripts/parts-mutations.mjs scripts/transcript-system-groups.test.mjs scripts/testdata/transcript-system-groups.manifest.yaml"
   },
   "dependencies": {
-    "@peasant-labs/schema": "0.41.0",
+    "@peasant-labs/schema": "0.42.0",
     "@tanstack/react-table": "^8.21.3",
     "lucide-react": "^1.18.0",
     "mermaid": "12.2.0",

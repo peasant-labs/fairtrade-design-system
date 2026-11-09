@@ -1371,6 +1371,165 @@
     }
   }
 
+  /* ---- transcript library table (libt-*) ---- */
+  /* the shared library table composes .tbl for table semantics and adds only the
+     grouping chrome: full group headers, the compact continuation row a group opens
+     with when it began on an earlier page, the end-of-page continues marker, and the
+     numbered-pager footer. token-driven, square, both themes free. */
+  .libt { min-width: 0; }
+  .libt-group > th,
+  .libt-continuation > th {
+    padding: var(--sp-2) var(--sp-3);
+    background: var(--surface-2);
+    border-top: var(--bd-strong);
+    border-bottom: var(--bd-strong);
+    color: var(--ink-2);
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    font-weight: 600;
+    text-align: left;
+    vertical-align: middle;
+  }
+  /* a continuing group opens with one compact row, not a full header */
+  .libt-continuation > th {
+    padding-block: var(--sp-1);
+    background: var(--surface);
+    border-top: 0;
+    color: var(--ink-3);
+    font-weight: 400;
+  }
+  /* the group header toggle: a real button that fills the header cell and
+     announces expanded/collapsed. the chevron points right when collapsed and
+     down when open; the count names how many rows the group holds on the page. */
+  .libt-group-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    box-sizing: border-box;
+    width: 100%;
+    min-height: var(--target-min);
+    margin: 0;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+  }
+  .libt-group-toggle:hover { color: var(--ink); }
+  .libt-group-toggle:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
+  .libt-continuation .libt-group-toggle { color: var(--ink-3); }
+  .libt-continuation .libt-group-toggle:hover { color: var(--ink-2); }
+  @media (pointer: coarse) { .libt-group-toggle { min-height: var(--target-comfortable); } }
+  .libt-group-chev { width: var(--ic-sm); height: var(--ic-sm); flex: none; color: var(--ink-4); transform: rotate(-90deg); }
+  .libt-group-toggle[aria-expanded="true"] .libt-group-chev { transform: none; }
+  .libt-group-label { min-width: 0; overflow-wrap: anywhere; }
+  @media (prefers-reduced-motion: no-preference) {
+    .libt-group-chev { transition: transform var(--dur-1) var(--ease-standard); }
+  }
+
+  /* the saved-view toolbar: two disclosures above the table. each trigger is a
+     real button that reports aria-expanded; each choice is a native checkbox or
+     radio, so its state is announced and Tab reaches it in order. */
+  .libt-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-2);
+    margin-bottom: var(--sp-2);
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+  }
+  .libt-pick { position: relative; display: inline-flex; min-width: 0; }
+  .libt-pick-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    box-sizing: border-box;
+    min-height: var(--control-h);
+    margin: 0;
+    padding: 0 var(--sp-3);
+    font: inherit;
+    text-transform: lowercase;
+    color: var(--ink-2);
+    background: var(--canvas);
+    border: var(--bd-strong);
+    cursor: pointer;
+  }
+  .libt-pick-btn:hover { color: var(--ink); border-color: var(--amber-dim); }
+  .libt-pick-btn:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
+  .libt-pick-btn[aria-expanded="true"] { color: var(--ink); border-color: var(--amber-dim); }
+  .libt-pick-value { min-width: 0; overflow-wrap: anywhere; }
+  .libt-pick-chev { width: var(--ic-sm); height: var(--ic-sm); flex: none; color: var(--ink-3); }
+  .libt-pick-btn[aria-expanded="true"] .libt-pick-chev { transform: rotate(180deg); }
+  @media (prefers-reduced-motion: no-preference) {
+    .libt-pick-chev { transition: transform var(--dur-1) var(--ease-standard); }
+  }
+  @media (pointer: coarse) { .libt-pick-btn { min-height: var(--target-comfortable); } }
+  .libt-pick-panel {
+    position: absolute;
+    top: calc(100% + var(--sp-1));
+    left: 0;
+    z-index: var(--z-dropdown);
+    display: flex;
+    flex-direction: column;
+    min-width: var(--menu-min-w);
+    padding: var(--sp-1) 0;
+    background: var(--surface-elev);
+    border: var(--bd-strong);
+    box-shadow: var(--overlay-shadow);
+  }
+  .libt-pick-row {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    box-sizing: border-box;
+    min-height: var(--target-comfortable);
+    padding: var(--sp-1) var(--sp-3);
+    color: var(--ink-2);
+    text-transform: lowercase;
+    cursor: pointer;
+  }
+  .libt-pick-row:hover { background: var(--surface-hover); color: var(--ink); }
+  .libt-pick-box { width: var(--ic-md); height: var(--ic-md); flex: none; accent-color: var(--amber); margin: 0; }
+  .libt-pick-box:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
+  .libt-pick-box:disabled { cursor: default; }
+  .libt-pick-label { min-width: 0; overflow-wrap: anywhere; }
+  .libt-pick-note { margin-inline-start: auto; color: var(--ink-3); font-size: var(--fs-label); }
+  .libt-continues > td {
+    padding: var(--sp-1) var(--sp-3);
+    border-bottom: var(--bd);
+    color: var(--ink-3);
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+  }
+  .libt-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-3);
+    padding-block: var(--sp-3);
+    color: var(--ink-3);
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+  }
+  .libt-page-status { color: var(--ink-2); }
+  .libt-page-size { display: inline-flex; align-items: center; gap: var(--sp-2); color: var(--ink-3); }
+  /* the page-size control reuses the design system's .select; only its width and
+     compact height change so it fits the footer row beside the pager. */
+  .libt-page-size .select {
+    width: auto;
+    height: var(--control-h-sm);
+    padding-block: 0;
+    padding-left: var(--sp-2);
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    font-variant-numeric: tabular-nums;
+  }
+  @media (pointer: coarse) { .libt-page-size .select { height: var(--target-comfortable); } }
+  .libt-footer .pgn { margin-inline-start: auto; }
+
   /* ---- pagination (pgn-*) ---- */
   /* numbered pagination (the richer sibling of the simple .pager). additive, namespaced,
      token-driven, square, hairline, both-theme-free. real <button> page targets (>=24px),
