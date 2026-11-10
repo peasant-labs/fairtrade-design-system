@@ -1,0 +1,75 @@
+{
+  "head": "68baa050f3f4d97ca490c5864f5c3fb68de064ec",
+  "build": "pnpm build",
+  "servedChunk": "http://127.0.0.1:5189/assets/index--wkgF204.js",
+  "servedChunkSha256": "9acc7a6b2a34918d3359d430bed231882e474598047b88716517301699a574e8",
+  "markers": [
+    "txn-held-window tnum",
+    "loading window",
+    "from the unloaded turns between"
+  ],
+  "records": [
+    {
+      "filename": "phase-dark.png",
+      "url": "http://127.0.0.1:5189/?app=transcript&transcript=segments&fb=off&theme=dark#inuse",
+      "theme": "dark",
+      "phase": [
+        "planning\nturns 0–122"
+      ],
+      "boundaries": [
+        "turns 10–122, 12 segments, 21 KiB\nload more"
+      ],
+      "held": [],
+      "continuations": []
+    },
+    {
+      "filename": "held-dark.png",
+      "url": "http://127.0.0.1:5189/?app=transcript&transcript=segments&large=1&turn=16&held=1&fb=off&theme=dark#inuse",
+      "theme": "dark",
+      "phase": [
+        "planning\nturns 0–33"
+      ],
+      "boundaries": [
+        "turns 0–4, 2 segments, 252 KiB\nload more",
+        "turns 8–28, 7 segments, 1.2 MiB\nload more"
+      ],
+      "held": [
+        "turns 5–7, loading window"
+      ],
+      "continuations": [
+        "actions continue from the unloaded turns between"
+      ]
+    },
+    {
+      "filename": "phase-light.png",
+      "url": "http://127.0.0.1:5189/?app=transcript&transcript=segments&fb=off&theme=light#inuse",
+      "theme": "light",
+      "phase": [
+        "planning\nturns 0–122"
+      ],
+      "boundaries": [
+        "turns 10–122, 12 segments, 21 KiB\nload more"
+      ],
+      "held": [],
+      "continuations": []
+    },
+    {
+      "filename": "held-light.png",
+      "url": "http://127.0.0.1:5189/?app=transcript&transcript=segments&large=1&turn=16&held=1&fb=off&theme=light#inuse",
+      "theme": "light",
+      "phase": [
+        "planning\nturns 0–33"
+      ],
+      "boundaries": [
+        "turns 0–4, 2 segments, 252 KiB\nload more",
+        "turns 8–28, 7 segments, 1.2 MiB\nload more"
+      ],
+      "held": [
+        "turns 5–7, loading window"
+      ],
+      "continuations": [
+        "actions continue from the unloaded turns between"
+      ]
+    }
+  ]
+}
