@@ -9,3 +9,4 @@ cases:
   - {name: access-list, rowPrefix: component-access-list, storyId: in-use-publish--access, layout: centered, action: null, tie: namedRemove}
   - {name: setting-groups, rowPrefix: component-setting-groups, storyId: in-use-settings--groups, layout: centered, action: open-collapsed-group, tie: bothGroupsOpen}
   - {name: publish-dialog, rowPrefix: component-publish-dialog, storyId: in-use-publish--popup-scan-failed, layout: fullscreen, action: null, tie: publishOff}
+  - {name: selection-tree, rowPrefix: component-selection-tree, storyId: in-use-selectiontree--keyboard-toggle, layout: centered, action: toggle-session, tie: sessionSelected}

@@ -9,3 +9,4 @@ requiredCaseNames:
   - access-list
   - setting-groups
   - publish-dialog
+  - selection-tree

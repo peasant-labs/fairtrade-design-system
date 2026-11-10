@@ -52,6 +52,8 @@ run:
     - {key: component-setting-groups-light, kind: component, theme: light}
     - {key: component-publish-dialog-dark, kind: component, theme: dark}
     - {key: component-publish-dialog-light, kind: component, theme: light}
+    - {key: component-selection-tree-dark, kind: component, theme: dark}
+    - {key: component-selection-tree-light, kind: component, theme: light}
 artifactTemplates:
   aria.json: '{"row":"{row}","artifact":"aria"}'
   axe.json: '{"row":"{row}","artifact":"axe"}'

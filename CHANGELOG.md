@@ -4,6 +4,10 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## Unreleased
+
+- Add `SelectionTree`, a server-grouped selection forest. The host supplies each node's kind, tri-state, and lock; the tree reports selected session ids and does not roll state up or regroup. Kinds and states are a frozen projection (`wire` and `label`) with boundary parsers. Unknown values are dropped and counted.
+
 ## 0.0.63
 
 - Render very large transcripts in 1 MiB segments cut on complete entries, with a faded dotted boundary and one `load more` per unloaded extent. A window jump renders up to 10 assistant turns on each side of a user turn even when the surrounding segments are unloaded.

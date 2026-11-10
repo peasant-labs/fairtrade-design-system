@@ -1,0 +1,138 @@
+# SelectionTree cases. The forest is pre-grouped. State is host-supplied.
+# required names live in selection-tree.manifest.yaml.
+cases:
+  - name: renders-project-group-branch-session
+    nodes:
+      - {id: project-a, parentId: "", kind: project, state: none, label: IngestPipeline, childCount: 1}
+      - {id: group-a, parentId: project-a, kind: group, state: none, label: local clone, childCount: 1}
+      - {id: branch-a, parentId: group-a, kind: branch, state: none, label: main, childCount: 1}
+      - {id: session-a, parentId: branch-a, kind: session, state: none, label: Parse raw events}
+    expect:
+      kinds: [project, group, branch, session]
+      labels: [IngestPipeline, local clone, main, Parse raw events]
+
+  - name: state-all-some-none
+    nodes:
+      - {id: session-all, kind: session, state: all, label: All selected}
+      - {id: session-some, kind: session, state: some, label: Some selected}
+      - {id: session-none, kind: session, state: none, label: None selected}
+    expect:
+      states:
+        session-all: {state: all, checked: true, mixed: false}
+        session-some: {state: some, checked: false, mixed: true}
+        session-none: {state: none, checked: false, mixed: false}
+
+  - name: state-comes-from-host
+    nodes:
+      - {id: project-a, kind: project, state: none, label: IngestPipeline, childCount: 2}
+      - {id: session-a, parentId: project-a, kind: session, state: all, label: Parse raw events}
+      - {id: session-b, parentId: project-a, kind: session, state: all, label: Backfill partitions}
+    value: [session-a, session-b]
+    expect:
+      states:
+        project-a: {state: none, checked: false, mixed: false}
+        session-a: {state: all, checked: true, mixed: false}
+        session-b: {state: all, checked: true, mixed: false}
+      note: a rollup would draw the project as all
+
+  - name: locked-row-disabled-and-announced
+    nodes:
+      - {id: session-locked, kind: session, state: none, label: Ambiguous branch, locked: true}
+    toggle: session-locked
+    expect:
+      locked: [session-locked]
+      announced: locked
+      emitted: []
+
+  - name: child-counts
+    nodes:
+      - {id: project-a, kind: project, state: none, label: IngestPipeline, childCount: 1284}
+      - {id: session-a, parentId: project-a, kind: session, state: none, label: Parse raw events, childCount: 0}
+    expect:
+      counts:
+        project-a: "1,284"
+        session-a: "0"
+
+  - name: selection-emits-ids
+    nodes:
+      - {id: session-kept, kind: session, state: all, label: Kept session}
+      - {id: session-new, kind: session, state: none, label: New session}
+    value: [session-kept]
+    toggle: session-new
+    expect:
+      emittedIds: [session-kept, session-new]
+
+  - name: project-toggle-selects-descendants
+    steps:
+      - nodes:
+          - {id: project-a, kind: project, state: none, label: IngestPipeline, childCount: 3}
+          - {id: group-a, parentId: project-a, kind: group, state: none, label: local clone}
+          - {id: branch-a, parentId: group-a, kind: branch, state: none, label: main}
+          - {id: session-a, parentId: branch-a, kind: session, state: none, label: Parse raw events}
+          - {id: session-b, parentId: branch-a, kind: session, state: none, label: Backfill partitions}
+          - {id: session-locked, parentId: branch-a, kind: session, state: none, label: Ambiguous branch, locked: true}
+          - {id: project-b, kind: project, state: all, label: Other project}
+          - {id: session-other, parentId: project-b, kind: session, state: all, label: Other session}
+        value: [session-other, vanished-id]
+        toggle: project-a
+        expectIds: [session-a, session-b, session-other, vanished-id]
+      - nodes:
+          - {id: project-a, kind: project, state: all, label: IngestPipeline, childCount: 3}
+          - {id: group-a, parentId: project-a, kind: group, state: all, label: local clone}
+          - {id: branch-a, parentId: group-a, kind: branch, state: all, label: main}
+          - {id: session-a, parentId: branch-a, kind: session, state: all, label: Parse raw events}
+          - {id: session-b, parentId: branch-a, kind: session, state: all, label: Backfill partitions}
+          - {id: session-locked, parentId: branch-a, kind: session, state: none, label: Ambiguous branch, locked: true}
+          - {id: project-b, kind: project, state: all, label: Other project}
+          - {id: session-other, parentId: project-b, kind: session, state: all, label: Other session}
+        value: [session-a, session-b, session-other, vanished-id]
+        toggle: project-a
+        expectIds: [session-other, vanished-id]
+
+  - name: unknown-kind-fails-closed-counted
+    nodes:
+      - {id: project-a, kind: project, state: none, label: IngestPipeline}
+      - {id: bad-kind, parentId: project-a, kind: widget, state: none, label: Not a kind}
+      - {id: orphan-child, parentId: bad-kind, kind: session, state: none, label: Hidden child}
+      - {id: session-a, parentId: project-a, kind: session, state: none, label: Parse raw events}
+    expect:
+      labels: [IngestPipeline, Parse raw events]
+      absent: [Not a kind, Hidden child]
+      unknownKind: 1
+      unknownState: 0
+      diagnostic: "1 row hidden: unknown kind"
+
+  - name: unknown-state-fails-closed-counted
+    nodes:
+      - {id: session-a, kind: session, state: none, label: Parse raw events}
+      - {id: bad-state, kind: session, state: maybe, label: Not a state}
+    expect:
+      labels: [Parse raw events]
+      absent: [Not a state]
+      unknownKind: 0
+      unknownState: 1
+      diagnostic: "1 row hidden: unknown state"
+
+  - name: label-keeps-case
+    nodes:
+      - {id: project-a, kind: project, state: none, label: IngestPipeline}
+    expect:
+      labels: [IngestPipeline]
+      labelCase: none
+
+  - name: no-paging-props
+    nodes:
+      - {id: session-a, kind: session, state: none, label: Parse raw events}
+      - {id: session-b, kind: session, state: none, label: Backfill partitions}
+    paging:
+      page: 1
+      pageSize: 1
+      pageIndex: 0
+      cursor: next
+      nextCursor: later
+      limit: 1
+      offset: 1
+    expect:
+      labels: [Parse raw events, Backfill partitions]
+      forbiddenProps: [page, pageSize, pageIndex, cursor, nextCursor, limit, offset, paging]
+      noStorage: true

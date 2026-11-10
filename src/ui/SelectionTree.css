@@ -1,0 +1,158 @@
+/* SelectionTree. A server-grouped forest. Every dimension and colour is a token.
+   Namespace st-. Radius 0. The checkbox glyph carries none / some / all; locked
+   is a word plus a disabled checkbox, not a colour. Chrome is lowercase. User
+   labels are not transformed. */
+
+.st {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: var(--bd);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-mono);
+}
+
+.st-nodes,
+.st-children {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.st-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--control-h);
+  padding-block: var(--sp-1);
+  padding-inline-end: var(--sp-3);
+}
+
+.st-disclosure {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--target-min);
+  min-height: var(--target-min);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.st-disclosure-spacer {
+  cursor: default;
+}
+
+.st-caret {
+  width: var(--ic-sm);
+  height: var(--ic-sm);
+}
+
+.st-caret[data-open] {
+  transform: rotate(90deg);
+}
+
+.st-hit {
+  display: inline-flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: var(--target-min);
+  min-height: var(--target-min);
+  cursor: pointer;
+}
+
+.st-hit:has(.check-box:disabled) {
+  cursor: not-allowed;
+}
+
+.st-label {
+  min-width: 0;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  text-align: start;
+  text-transform: none;
+  overflow-wrap: anywhere;
+}
+
+.st-kind,
+.st-count,
+.st-locked,
+.st-harness {
+  flex: none;
+  color: var(--ink-3);
+  font-size: var(--fs-label);
+  line-height: var(--lh-body);
+  text-transform: none;
+}
+
+.st-num {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.st-locked {
+  color: var(--ink-2);
+}
+
+.st-harness {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.st-harness-name {
+  text-transform: none;
+}
+
+.st-diagnostic {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-3);
+  border-top: var(--bd);
+  color: var(--ink);
+  font-size: var(--fs-label);
+  line-height: var(--lh-body);
+}
+
+.st-hit .check-box {
+  outline-offset: var(--focus-ring-offset);
+}
+
+@media (pointer: coarse) {
+  .st-disclosure,
+  .st-hit {
+    min-width: var(--target-comfortable);
+    min-height: var(--target-comfortable);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .st-row:hover {
+    background: var(--surface-hover);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .st-caret {
+    transition: transform var(--dur-2) var(--ease-out);
+  }
+
+  .st-disclosure:active {
+    transform: scale(0.97);
+  }
+}
+
+.st-disclosure:focus-visible,
+.st-hit .check-box:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}

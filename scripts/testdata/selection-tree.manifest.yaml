@@ -1,0 +1,12 @@
+requiredCaseNames:
+  - renders-project-group-branch-session
+  - state-all-some-none
+  - state-comes-from-host
+  - locked-row-disabled-and-announced
+  - child-counts
+  - selection-emits-ids
+  - project-toggle-selects-descendants
+  - unknown-kind-fails-closed-counted
+  - unknown-state-fails-closed-counted
+  - label-keeps-case
+  - no-paging-props

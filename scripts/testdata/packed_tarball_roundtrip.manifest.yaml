@@ -33,6 +33,11 @@ requiredImportables:
   - SETTING_ROW_STATES
   - RepoPicker
   - GroupedMultiSelect
+  - SelectionTree
+  - SelectionNodeKind
+  - SelectionNodeState
+  - parseNodeKind
+  - parseNodeState
   - RedactionReview
   - SignInProviders
   - LOCAL_APP_SECTIONS

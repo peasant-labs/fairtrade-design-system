@@ -92,6 +92,17 @@ export { default as AppSidebar, AppSidebarLayout, AppPage, APP_SIDEBAR_APPS } fr
 export { default as ProviderIcon, ProviderTag, ProviderName, AccentLegend, PROVIDER_ACCENT } from './ProviderIcon.jsx'
 export { default as StepsWaterfall } from './StepsWaterfall.jsx'
 export { default as GroupedMultiSelect } from './GroupedMultiSelect.jsx'
+export { default as SelectionTree } from './SelectionTree.jsx'
+export {
+  SelectionNodeKind,
+  SelectionNodeState,
+  ALL_SELECTION_NODE_KINDS,
+  ALL_SELECTION_NODE_STATES,
+  parseNodeKind,
+  parseNodeState,
+  SelectionNodeParseError,
+  SELECTION_TREE_PROPS,
+} from './selection-tree-values.js'
 export { default as EvidenceCaption, EvidenceTarget } from './EvidenceCaption.jsx'
 export { default as PromptDigest } from './PromptDigest.jsx'
 export { PhaseDivider, Phase, TaskBoundary, CheckpointMarker, TurnContextBar } from './TranscriptMarkers.jsx'

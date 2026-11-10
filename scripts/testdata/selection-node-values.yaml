@@ -1,0 +1,38 @@
+# Closed kind and state projection. Membership is the schema set.
+# The runtime drift check compares both ways when the schema package exports
+# the All* arrays named here. Until that pin exists, a declared kickstart node
+# set under any other export name fails the check.
+schema:
+  kindExport: AllLocalKickstartNodeKinds
+  stateExport: AllLocalKickstartNodeStates
+  kindType: LocalKickstartNodeKind
+  stateType: LocalKickstartNodeState
+kinds:
+  - {name: Project, wire: project, label: project}
+  - {name: Group, wire: group, label: group}
+  - {name: Branch, wire: branch, label: branch}
+  - {name: Session, wire: session, label: session}
+states:
+  - {name: None, wire: none, label: none}
+  - {name: Some, wire: some, label: some}
+  - {name: All, wire: all, label: all}
+unknown:
+  - {name: unknown-kind, set: kind, raw: widget}
+  - {name: unknown-state, set: state, raw: maybe}
+  - {name: unknown-kind-object, set: kind, raw: {wire: folder}}
+  - {name: unknown-state-label, set: state, raw: mixed}
+forbiddenComparisons:
+  - "=== 'project'"
+  - "=== 'group'"
+  - "=== 'branch'"
+  - "=== 'session'"
+  - "=== 'none'"
+  - "=== 'some'"
+  - "=== 'all'"
+  - '=== "project"'
+  - '=== "group"'
+  - '=== "branch"'
+  - '=== "session"'
+  - '=== "none"'
+  - '=== "some"'
+  - '=== "all"'

@@ -1,7 +1,7 @@
 {
   "$description": "fairtrade component manifest, generated from src/ui. import from the barrel: import { Button } from \"src/ui\". every component is token-styled (classes in src/index.css) and works in both themes. props shows the Storybook-controllable props; full prop docs are the JSDoc in each file.",
   "import": "src/ui (barrel: src/ui/index.js)",
-  "count": 64,
+  "count": 65,
   "components": [
     {
       "name": "Accordion",
@@ -1490,6 +1490,21 @@
         "Roster",
         "ConfirmRemove",
         "Danger"
+      ]
+    },
+    {
+      "name": "SelectionTree",
+      "category": "in use",
+      "title": "in use/SelectionTree",
+      "file": "src/ui/SelectionTree.jsx",
+      "exports": [
+        "SelectionTree"
+      ],
+      "doc": "One server-grouped node. Grouping has already happened. This component does",
+      "props": {},
+      "stories": [
+        "Forest",
+        "KeyboardToggle"
       ]
     },
     {
