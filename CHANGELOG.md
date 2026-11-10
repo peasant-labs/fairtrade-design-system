@@ -4,9 +4,9 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
-## Unreleased
+## 0.0.64
 
-- Add `SelectionTree`, a server-grouped selection forest. The host supplies each node's kind, tri-state, and lock; the tree reports selected session ids and does not roll state up or regroup. Kinds and states are a frozen projection (`wire` and `label`) with boundary parsers. Unknown values are dropped and counted.
+- Add `SelectionTree`, a server-grouped selection forest. The host supplies each node's kind, tri-state, and lock; the tree reports selected session ids and does not roll state up or regroup. Kinds and states are a frozen projection (`wire` and `label`) with boundary parsers. Unknown values are dropped and counted. Peasant /kickstart and /selection consume it after release; Village is not a consumer.
 
 ## 0.0.63
 
