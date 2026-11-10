@@ -192,7 +192,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   const viewer = (props, extra) => React.createElement(TranscriptViewer, {
     viewModel: viewModel(props.segments ?? [], extra),
     capabilities: CAPABILITIES,
-    presentation: 'classic',
+    presentation: 'ledger',
     callbacks: { onLoadFullTurn: () => {} },
     ...props,
   })

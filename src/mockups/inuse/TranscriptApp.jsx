@@ -785,7 +785,6 @@ function SegmentsTranscriptDemo({ theme }) {
       viewModel={model.vm}
       theme={theme}
       capabilities={CAPABILITIES}
-      presentation="classic"
       directory={model.directory}
       segments={loaded}
       window={windowDescriptor}

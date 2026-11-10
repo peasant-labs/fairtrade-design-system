@@ -392,6 +392,10 @@ export default function TranscriptViewer({
   const [openTools, setOpenTools] = useControllable(openToolsProp, onOpenToolsChange, {})
   const [earlierHistoryOpen, setEarlierHistoryOpen] = useControllable(earlierHistoryOpenProp, onEarlierHistoryOpenChange, {})
   const [activeTurn, setActiveTurn] = useControllable(activeTurnProp, onActiveTurnChange, vm?.turns?.[0]?.index ?? 0)
+  const activeSegmentTick = useMemo(
+    () => (segmentMode ? (regions.find((region) => region.turns.some((turn) => turn.index === activeTurn))?.firstSegment ?? 0) : 0),
+    [segmentMode, regions, activeTurn],
+  )
   const [query, setQuery] = useControllable(searchProp, onSearchChange, '')
   const [filters, setFilters] = useControllable(filtersProp, onFiltersChange, DEFAULT_FILTERS)
   const [savedLabels, setSavedLabels] = useControllable(savedLabelsProp, onSavedLabelsChange, {})
@@ -1897,13 +1901,24 @@ export default function TranscriptViewer({
               <Collapsible open={sticky && viewMode === 'list'} className="txn-sticky-disclosure">
                 <div className="txn-sticky">
                   {ledger ? (
-                    /* the pinned bar is the timeline alone: the title already sits in the
-                       breadcrumb and the page header above the trace. */
-                    <TranscriptMinimap
-                      turns={navigableTurns}
-                      activeTurn={activeTurn}
-                      onJump={(idx) => jumpTo(idx, { switchTab: false })}
-                    />
+                    segmentMode ? (
+                      /* the ledger timeline is the same bounded segment sample: the
+                         transcript never mounts one tick per turn in either presentation */
+                      <Scrubber
+                        ticks={scrubTicks}
+                        activeTick={activeSegmentTick}
+                        onSeekTick={seekScrubTick}
+                        draggingRef={draggingRef}
+                      />
+                    ) : (
+                      /* the pinned bar is the timeline alone: the title already sits in the
+                         breadcrumb and the page header above the trace. */
+                      <TranscriptMinimap
+                        turns={navigableTurns}
+                        activeTurn={activeTurn}
+                        onJump={(idx) => jumpTo(idx, { switchTab: false })}
+                      />
+                    )
                   ) : (
                     <>
                       {session.harness && <ProviderIcon harness={session.harness} accent />}
@@ -1912,7 +1927,7 @@ export default function TranscriptViewer({
                         turns={turns}
                         ticks={segmentMode ? scrubTicks : undefined}
                         active={activeTurn}
-                        activeTick={segmentMode ? (regions.find((region) => region.turns.some((turn) => turn.index === activeTurn))?.firstSegment ?? 0) : 0}
+                        activeTick={segmentMode ? activeSegmentTick : 0}
                         onSeek={seekScrub}
                         onSeekTick={seekScrubTick}
                         draggingRef={draggingRef}
