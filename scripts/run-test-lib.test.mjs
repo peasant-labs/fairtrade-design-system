@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFileSync, readdirSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
@@ -14,6 +14,7 @@ import {
   expandScript,
   splitCommands,
 } from './run-test-lib.mjs'
+import { scanSource, scanTestFiles } from './test-lib-source-scan.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..')
@@ -54,23 +55,27 @@ test('the runner covers the required gates in the required lanes', () => {
 })
 
 test('every tracked-source writer is in the exclusive source-mutation lane', () => {
+  const manifest = YAML.parse(readFileSync(join(HERE, 'testdata', 'test-lib-source-mutations.manifest.yaml'), 'utf8'))
+  const scanned = scanTestFiles(ROOT)
+  const files = scanned.map((entry) => entry.file).sort()
+  assert.equal(files.length, manifest.expectedSourceMutationFileCount, `the scanner found ${files.length} tracked-source writers; the manifest records ${manifest.expectedSourceMutationFileCount}`)
+  assert.deepEqual(files, [...manifest.requiredSourceMutationFiles].sort(), `the source-writing test inventory changed; update ${join('scripts', 'testdata', 'test-lib-source-mutations.manifest.yaml')}`)
+  for (const entry of scanned) {
+    assert.ok(entry.sites.length > 0, `${entry.file} must report at least one write site`)
+    for (const site of entry.sites) assert.ok(site.line > 0 && site.callee.length > 0, `${entry.file} must report a callee and line for every site`)
+    assert.equal(classify(`node ${entry.file}`), 'source-mutation', `${entry.file} must hold the whole global budget while it rewrites tracked source`)
+    assert.ok(SOURCE_MUTATION_RE.test(`node ${entry.file}`), `${entry.file} must match SOURCE_MUTATION_RE`)
+  }
+})
+
+test('the tracked-source scanner reads every supported write form', () => {
   const fixture = YAML.parse(readFileSync(join(HERE, 'testdata', 'test-lib-source-mutations.yaml'), 'utf8'))
-  const required = [...fixture.sourceMutationGates].sort()
-  const scanned = readdirSync(HERE)
-    .filter((name) => name.endsWith('.test.mjs'))
-    .filter((name) => {
-      const source = readFileSync(join(HERE, name), 'utf8')
-      // Only the in-place writers use these exact first arguments. A scratch
-      // copy (datatable-host-boundary) and this scanner itself must not join
-      // the exclusive lane. A new in-place writer with a new constant updates
-      // the required-name fixture and this pattern in the same change.
-      return /writeFileSync\((?:realPath|CODE_MAP_STATE_PATH)\b/.test(source)
-    })
-    .sort()
-  assert.deepEqual(scanned, required, `the source-writing test inventory changed; update ${join('scripts', 'testdata', 'test-lib-source-mutations.yaml')}`)
-  for (const name of required) {
-    assert.equal(classify(`node scripts/${name}`), 'source-mutation', `${name} must hold the whole global budget while it rewrites tracked source`)
-    assert.ok(SOURCE_MUTATION_RE.test(`node scripts/${name}`), `${name} must match SOURCE_MUTATION_RE`)
+  const manifest = YAML.parse(readFileSync(join(HERE, 'testdata', 'test-lib-source-mutations.manifest.yaml'), 'utf8'))
+  assert.equal(fixture.scannerCases.length, manifest.expectedScannerCaseCount)
+  assert.deepEqual(fixture.scannerCases.map((entry) => entry.name).sort(), [...manifest.requiredScannerCaseNames].sort())
+  for (const testCase of fixture.scannerCases) {
+    const sites = scanSource(testCase.source)
+    assert.equal(sites.length > 0, testCase.expected, `${testCase.name}: expected ${testCase.expected ? 'a tracked write' : 'no tracked write'}, saw ${JSON.stringify(sites)}`)
   }
 })
 
