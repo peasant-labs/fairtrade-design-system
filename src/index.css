@@ -2279,7 +2279,7 @@
   .txn-segboundary-load:hover:not(:disabled), .txn-empty-load:hover:not(:disabled) { background: var(--surface-hover); color: var(--ink); }
   .txn-segboundary-load:disabled, .txn-empty-load:disabled { color: var(--ink-4); cursor: default; }
   .txn-segboundary-load:focus-visible, .txn-empty-load:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
-  .txn-action-continuation { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-1) var(--sp-2); color: var(--ink-4); font-family: var(--font-mono); font-size: var(--fs-label); line-height: 1.5; }
+  .txn-action-continuation, .txn-held-window { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-1) var(--sp-2); color: var(--ink-4); font-family: var(--font-mono); font-size: var(--fs-label); line-height: 1.5; }
   .txn-action-continuation-rule { flex: 1; border-top: 1px dotted color-mix(in srgb, var(--ink-5) 60%, transparent); }
   .txn-scope { margin: 0 0 var(--sp-2); color: var(--ink-3); font-family: var(--font-mono); font-size: var(--fs-label); line-height: 1.5; }
   .txn-truncation { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); margin: var(--sp-1) 0 var(--sp-2); padding: var(--sp-1) var(--sp-3); border-left: 1px dotted color-mix(in srgb, var(--ink-4) 55%, transparent); color: var(--ink-3); font-family: var(--font-mono); font-size: var(--fs-label); line-height: 1.5; }

@@ -58,12 +58,14 @@ const { fixture, manifest } = loadFixturePair(FIXTURE, MANIFEST, {
   loadCases: 'requiredLoadCaseNames',
   windowCases: 'requiredWindowCaseNames',
   mountCases: 'requiredMountCaseNames',
+  recoveryCases: 'requiredRecoveryCaseNames',
 })
 
 for (const row of fixture.directories) assertFields(row, ['name', 'totalTurns', 'totalSegments', 'firstTurn', 'segmentTurns', 'segmentBytes'], `${FIXTURE} ${row.name}`)
 for (const row of fixture.loadCases) assertFields(row, ['name', 'directory', 'loaded', 'expect'], `${FIXTURE} ${row.name}`)
 for (const row of fixture.windowCases) assertFields(row, ['name', 'directory', 'loaded', 'window', 'expect'], `${FIXTURE} ${row.name}`)
 for (const row of fixture.mountCases) assertFields(row, ['name', 'directory', 'loaded', 'expect'], `${FIXTURE} ${row.name}`, ['window', 'oversizedTurn'])
+for (const row of fixture.recoveryCases) assertFields(row, ['name', 'mode', 'directory', 'loaded', 'requests'], `${FIXTURE} ${row.name}`, ['window', 'restoredTurn'])
 
 const DIRECTORY = new Map(fixture.directories.map((row) => [row.name, row]))
 
@@ -295,6 +297,12 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     }
     const continuationCount = mounted.container.querySelectorAll('.txn-action-continuation').length
     report.check(continuationCount === row.expect.continuationCount, `${row.name}: the continuation count must equal ${row.expect.continuationCount}`)
+    if (row.expect.heldCaptions) {
+      const held = [...mounted.container.querySelectorAll('.txn-held-window')].map(text)
+      report.check(JSON.stringify(held) === JSON.stringify(row.expect.heldCaptions), `${row.name}: the held range must be named`)
+      const order = [...mounted.container.querySelectorAll('[data-segment-boundary], .txn-held-window')].map((node) => node.hasAttribute('data-segment-boundary') ? 'boundary' : 'held')
+      report.check(JSON.stringify(order) === JSON.stringify(row.expect.heldOrder), `${row.name}: held ranges and boundaries follow document order`)
+    }
     const notIndexed = mounted.container.querySelector('[data-not-indexed]')
     report.check(!!notIndexed === row.expect.notIndexed, `${row.name}: the not-indexed state must be ${row.expect.notIndexed ? 'shown' : 'absent'}`)
     if (row.expect.notIndexed) {
@@ -331,6 +339,45 @@ await withMountedSource(async ({ load, mount, window, React }) => {
         report.check(!listed.includes('unloaded.js'), `${row.name}: a file only in an unloaded turn is not listed`)
       }
     }
+    await mounted.unmount()
+  }
+
+  for (const row of fixture.recoveryCases) {
+    const def = DIRECTORY.get(row.directory)
+    const directory = buildDirectory(def)
+    const requests = []
+    if (row.mode === 'clear-window') {
+      const segments = makeSegments(def, row.loaded)
+      const descriptor = { sessionId: dirSession(), revision: '7', ...row.window }
+      const onLoadSegment = (index) => { requests.push(index) }
+      const props = { directory, segments, onLoadSegment }
+      const mounted = await mount(viewer({ ...props, window: descriptor }))
+      await mounted.settle()
+      await mounted.rerender(viewer({ ...props, window: null }))
+      await mounted.settle()
+      report.check(!!mounted.container.querySelector(`#turn-${row.restoredTurn}`), `${row.name}: clearing the window restores held turns`)
+      await mounted.rerender(viewer({ ...props, window: descriptor }))
+      await mounted.settle()
+      report.check(JSON.stringify(requests) === JSON.stringify(row.requests), `${row.name}: the same missing segment is requested again`)
+      await mounted.unmount()
+      continue
+    }
+    let rejectLoad
+    const onLoadSegment = (index) => {
+      requests.push(index)
+      if (row.mode === 'rejected') return new Promise((resolve, reject) => { rejectLoad = reject })
+    }
+    const mounted = await mount(viewer({ directory, segments: makeSegments(def, row.loaded), onLoadSegment }))
+    const button = mounted.container.querySelector('.txn-segboundary-load')
+    await mounted.act(() => click(window, button))
+    if (row.mode === 'rejected') {
+      report.check(button.disabled, `${row.name}: pending load disables the control`)
+      if (rejectLoad) await mounted.act(() => rejectLoad(new Error('failed fetch')))
+      await mounted.settle()
+    }
+    report.check(!button.disabled, `${row.name}: failed or untracked load permits retry`)
+    await mounted.act(() => click(window, button))
+    report.check(JSON.stringify(requests) === JSON.stringify(row.requests), `${row.name}: retry invokes the host again`)
     await mounted.unmount()
   }
 
