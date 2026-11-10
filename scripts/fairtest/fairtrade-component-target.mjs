@@ -536,7 +536,10 @@ export const COMPONENT_STORIES = Object.freeze([
       Object.freeze({ name: 'openerBorderRadius', selector: '#turn-0 .txn-image-open', property: 'borderRadius', equals: '0px' }),
       Object.freeze({ name: 'captionFontFamily', selector: '#turn-0 .txn-image-caption', property: 'fontFamily', token: '--font-mono' }),
     ]),
-    floors: Object.freeze({ descendants: 80, textLength: 120, ariaChars: 200, screenshotBytes: 4000 }),
+    // After expansion the active root is the portaled image dialog, not the
+    // transcript behind it. Its image, title and close control are compact;
+    // the before-facts above independently prove the mounted transcript turn.
+    floors: Object.freeze({ descendants: 10, textLength: 12, ariaChars: 80, screenshotBytes: 4000 }),
   }),
   Object.freeze({
     key: 'images-omitted',
