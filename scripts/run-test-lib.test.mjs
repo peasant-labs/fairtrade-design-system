@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { spawn } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import test from 'node:test'
@@ -11,6 +12,7 @@ import {
   WeightedSemaphore,
   buildGates,
   classify,
+  countExecuted,
   expandScript,
   splitCommands,
 } from './run-test-lib.mjs'
@@ -77,6 +79,50 @@ test('the tracked-source scanner reads every supported write form', () => {
     const sites = scanSource(testCase.source)
     assert.equal(sites.length > 0, testCase.expected, `${testCase.name}: expected ${testCase.expected ? 'a tracked write' : 'no tracked write'}, saw ${JSON.stringify(sites)}`)
   }
+})
+
+test('the summary counts gates, not the synthetic source guard', () => {
+  assert.deepEqual(countExecuted([{ ok: true }, { ok: false }, { ok: false, synthetic: true }], 2), { executed: 2, skipped: 0 })
+  assert.deepEqual(countExecuted([{ ok: true }, { ok: false, synthetic: true }], 2), { executed: 1, skipped: 1 })
+  assert.deepEqual(countExecuted([], 147), { executed: 0, skipped: 147 })
+})
+
+test('SIGINT stops scheduling, reports the interruption, and exits 130', async () => {
+  const child = spawn(process.execPath, ['scripts/run-test-lib.mjs', '--lane', 'contract'], {
+    cwd: ROOT,
+    env: { ...process.env, CI: '' },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  })
+  /** @type {string} */
+  let output = ''
+  child.stdout.on('data', (chunk) => { output += String(chunk) })
+  child.stderr.on('data', (chunk) => { output += String(chunk) })
+  await new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`the runner never started a gate:\n${output}`)), 15_000)
+    child.stdout.on('data', () => {
+      if (!output.includes('▶ ')) return
+      clearTimeout(timer)
+      resolve(undefined)
+    })
+    child.once('exit', () => {
+      clearTimeout(timer)
+      reject(new Error(`the runner exited before a gate started:\n${output}`))
+    })
+  })
+  child.kill('SIGINT')
+  const code = await new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      child.kill('SIGKILL')
+      reject(new Error(`the runner did not exit after SIGINT:\n${output}`))
+    }, 20_000)
+    child.once('close', (status) => {
+      clearTimeout(timer)
+      resolve(status)
+    })
+  })
+  assert.equal(code, 130, `the interrupted run must exit 130; output:\n${output}`)
+  assert.match(output, /INT|interrupted/, `the summary must name the interruption; output:\n${output}`)
+  assert.doesNotMatch(output, /tracked source changed/, `the interrupted run must leave src/ clean; output:\n${output}`)
 })
 
 test('lane weights stay inside the global budget', () => {

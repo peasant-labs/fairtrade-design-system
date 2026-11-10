@@ -90,7 +90,7 @@ export function splitCommands(text) {
  * recognizes.
  * @param {string} name script name
  * @param {string[]} stack recursion guard
- * @returns {{ command: string, script: string | null, via: string[] }[]} leaves
+ * @returns {{ command: string, script: string | null }[]} leaves
  */
 export function expandScript(name, stack = []) {
   if (stack.includes(name)) {
@@ -107,7 +107,7 @@ export function expandScript(name, stack = []) {
       leaves.push(...expandScript(match[1], [...stack, name]))
       continue
     }
-    leaves.push({ command: part, script: name === SOURCE_SCRIPT ? null : name, via: [...stack, name] })
+    leaves.push({ command: part, script: name === SOURCE_SCRIPT ? null : name })
   }
   return leaves
 }
@@ -275,7 +275,9 @@ function execute(gate, lane, state) {
       stderr.push(error instanceof Error ? error.message : String(error))
       finish(1, null)
     })
-    child.once('exit', (status, signal) => finish(status, signal))
+    // Resolve on close, not exit: close waits for the stdio streams to drain,
+    // so the final stderr lines are in the captured diagnostics.
+    child.once('close', (status, signal) => finish(status, signal))
   })
 }
 
@@ -283,7 +285,7 @@ function execute(gate, lane, state) {
  * Run one lane's gates with its own concurrency budget.
  * @param {string} laneName lane name
  * @param {{ command: string, label: string, lane: string }[]} gates lane gates
- * @param {{ semaphore: WeightedSemaphore, failFast: boolean, aborted: boolean, results: any[], children: Set<import('node:child_process').ChildProcess> }} state run state
+ * @param {{ semaphore: WeightedSemaphore, failFast: boolean, aborted: boolean, signalled: NodeJS.Signals | null, failed: boolean, results: any[], children: Set<import('node:child_process').ChildProcess> }} state run state
  * @returns {Promise<void>}
  */
 async function runLane(laneName, gates, state) {
@@ -291,21 +293,22 @@ async function runLane(laneName, gates, state) {
   let index = 0
   const worker = async () => {
     while (true) {
-      if (state.aborted && state.failFast) return
+      if (state.aborted) return
       const gate = gates[index]
       index += 1
       if (!gate) return
       await state.semaphore.acquire(lane.weight)
       const started = performance.now()
       try {
-        if (state.aborted && state.failFast) return
+        if (state.aborted) return
         process.stdout.write(`\n▶ ${gate.label} [${laneName}] ${gate.command}\n`)
         const result = await execute(gate, lane, state)
         const durationMs = Math.round(performance.now() - started)
-        const ok = result.status === 0 && !result.timedOut
-        state.results.push({ ...gate, ...result, durationMs, ok })
+        const interrupted = Boolean(state.signalled) && !result.timedOut && result.status === null && result.signal !== null
+        const ok = result.status === 0 && !result.timedOut && !interrupted
+        state.results.push({ ...gate, ...result, durationMs, ok, interrupted })
         const elapsed = `${(durationMs / 1000).toFixed(1)}s`
-        process.stdout.write(`${ok ? '✔' : '✖'} ${gate.label} [${laneName}] ${elapsed}\n`)
+        process.stdout.write(`${ok ? '✔' : interrupted ? '■' : '✖'} ${gate.label} [${laneName}] ${elapsed}\n`)
         if (!ok) {
           state.failed = true
           if (state.failFast) state.aborted = true
@@ -384,6 +387,19 @@ function sourceDifferences(before, after) {
 }
 
 /**
+ * Count the gates that ran, excluding synthetic report rows such as the
+ * post-run source-tree guard. The guard must not inflate "of N gates" when it
+ * fires, and it must not make the keep-going "not scheduled" count too small.
+ * @param {{ synthetic?: boolean }[]} results recorded results
+ * @param {number} gateCount declared gate count
+ * @returns {{ executed: number, skipped: number }} executed and unscheduled counts
+ */
+export function countExecuted(results, gateCount) {
+  const executed = results.filter((result) => !result.synthetic).length
+  return { executed, skipped: gateCount - executed }
+}
+
+/**
  * Run the gate.
  * @returns {Promise<number>} process exit code
  */
@@ -410,19 +426,32 @@ async function main() {
     semaphore: new WeightedSemaphore(GLOBAL_WEIGHT),
     failFast: options.failFast,
     aborted: false,
+    signalled: /** @type {NodeJS.Signals | null} */ (null),
     failed: false,
+    sourceChanges: /** @type {string[]} */ ([]),
     results: /** @type {any[]} */ ([]),
     children: /** @type {Set<import('node:child_process').ChildProcess>} */ (new Set()),
   }
-  const shutdown = () => {
+  const sourceBefore = collectSourceSnapshot(join(ROOT, 'src'), new Map())
+  const shutdown = (signal) => {
+    state.aborted = true
+    state.signalled = signal
     for (const child of state.children) killTree(child)
+    // A child killed before its finally-restore can leave a tracked mutation
+    // behind. Report it before the force-exit, not after the process is gone.
+    const changes = sourceDifferences(sourceBefore, collectSourceSnapshot(join(ROOT, 'src'), new Map()))
+    if (changes.length > 0) {
+      state.failed = true
+      state.sourceChanges = changes
+      process.stderr.write(`\ntest:lib interrupted by ${signal}; tracked source changed before the run stopped:\n`)
+      for (const change of changes) process.stderr.write(`  ${change}\n`)
+    }
     process.exitCode = 130
-    const timer = setTimeout(() => process.exit(130), 2000)
+    const timer = setTimeout(() => process.exit(130), 5000)
     timer.unref()
   }
   process.once('SIGINT', shutdown)
   process.once('SIGTERM', shutdown)
-  const sourceBefore = collectSourceSnapshot(join(ROOT, 'src'), new Map())
   const started = performance.now()
   console.log(`test:lib: ${gates.length} unique gates, ${lanes.length} lanes, ${options.failFast ? 'fail-fast' : 'keep-going'}`)
   await Promise.all(lanes.map((lane) => runLane(lane, gates.filter((gate) => gate.lane === lane), state)))
@@ -431,6 +460,7 @@ async function main() {
   const sourceChanges = sourceDifferences(sourceBefore, sourceAfter)
   if (sourceChanges.length > 0) {
     state.failed = true
+    if (state.sourceChanges.length === 0) state.sourceChanges = sourceChanges
     state.results.push({
       label: 'source-tree-guard',
       lane: 'source-mutation',
@@ -440,29 +470,32 @@ async function main() {
       timedOut: false,
       durationMs: 0,
       stderr: sourceChanges,
+      synthetic: true,
     })
   }
   const failed = state.results.filter((result) => !result.ok)
-  const skipped = gates.length - state.results.length
-  console.log(`\ntest:lib: ${state.results.length} of ${gates.length} gates in ${(durationMs / 1000).toFixed(1)}s, ${failed.length} failed${skipped > 0 ? `, ${skipped} not scheduled` : ''}`)
+  const { executed, skipped } = countExecuted(state.results, gates.length)
+  console.log(`\ntest:lib: ${executed} of ${gates.length} gates in ${(durationMs / 1000).toFixed(1)}s, ${failed.length} failed${skipped > 0 ? `, ${skipped} not scheduled` : ''}`)
   for (const result of state.results) {
-    console.log(`  ${result.ok ? 'PASS' : 'FAIL'} ${result.label} [${result.lane}] ${(result.durationMs / 1000).toFixed(1)}s :: ${result.command}`)
+    const mark = result.ok ? 'PASS' : result.interrupted ? 'INT' : 'FAIL'
+    console.log(`  ${mark} ${result.label} [${result.lane}] ${(result.durationMs / 1000).toFixed(1)}s :: ${result.command}`)
   }
-  if (!state.failFast && skipped > 0) {
+  if (!state.failFast && skipped > 0 && !state.signalled) {
     state.failed = true
     console.error(`\ntest:lib: ${skipped} gates were not scheduled in keep-going mode; the runner must execute every gate when fail-fast is off.`)
   }
   if (failed.length > 0) {
     console.error('\ntest:lib failed gates:')
     for (const result of failed) {
-      console.error(`  ${result.label} [${result.lane}] status ${String(result.status)}${result.timedOut ? ' (timed out)' : ''}: ${result.command}`)
+      const outcome = result.interrupted ? `interrupted (${String(result.signal)})` : result.signal ? `signal ${result.signal}` : `status ${String(result.status)}`
+      console.error(`  ${result.label} [${result.lane}] ${outcome}${result.timedOut ? ' (timed out)' : ''}: ${result.command}`)
       for (const line of result.stderr.slice(0, 12)) console.error(`    ${line}`)
     }
   }
   if (options.json) {
     writeFileSync(resolve(options.json), `${JSON.stringify({ durationMs, gates: state.results }, null, 2)}\n`)
   }
-  return state.failed ? 1 : 0
+  return state.signalled ? 130 : state.failed ? 1 : 0
 }
 
 const isEntryPoint = process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href
