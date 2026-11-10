@@ -98,6 +98,10 @@ The product rows are the long pole at roughly 25-32 seconds each; four workers
 let all four product routes overlap, while the twenty component rows fill the
 remaining capacity.
 
+The current serial chain expands to 147 unique gates: the 146-gate row records
+the measurement taken when the lane runner landed, and the generated-artifact
+freshness test adds one more gate without changing the lane budget.
+
 ## Known limitation
 
 `scripts/journey/lib/journey-compat.test.mjs` asserts the literal
