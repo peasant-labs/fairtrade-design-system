@@ -87,11 +87,21 @@ test('touch targets mutations', async ({ browser }, info) => {
     try {
       await page.addStyleTag({ content: mutation.css })
       await page.evaluate(settle)
-      const failures = []
-      for (const target of spec.targets.filter((row) => row.story === mutation.story && row.pointer !== 'fine')) {
-        failures.push(...failuresFor(target, await page.evaluate(measure, { name: target.name, selector: target.selector })))
+      // The injected style is permanent, but under worker contention the next
+      // measurement can land before the mutation is reflected. Wait for it
+      // instead of sampling once; the final assertion keeps the diagnostic.
+      let failures = []
+      try {
+        await expect.poll(async () => {
+          failures = []
+          for (const target of spec.targets.filter((row) => row.story === mutation.story && row.pointer !== 'fine')) {
+            failures.push(...failuresFor(target, await page.evaluate(measure, { name: target.name, selector: target.selector })))
+          }
+          return failures.some((line) => line.includes(mutation.expect))
+        }, { timeout: 10_000 }).toBe(true)
+      } catch {
+        expect(failures.some((line) => line.includes(mutation.expect)), `${mutation.name}: the gate must report "${mutation.expect}", received:\n${failures.join('\n')}`).toBe(true)
       }
-      expect(failures.some((line) => line.includes(mutation.expect)), `${mutation.name}: the gate must report "${mutation.expect}", received:\n${failures.join('\n')}`).toBe(true)
     } finally {
       await context.close()
     }
