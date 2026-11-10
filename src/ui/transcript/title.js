@@ -26,6 +26,22 @@ const USER_QUERY_OPEN = '<user_query>'
 const USER_QUERY_CLOSE = '</user_query>'
 const USER_QUERY_LEAD = /^\s*(?:<([a-z][a-z0-9_-]*)>[\s\S]*?<\/\1>\s*)*<user_query>/
 
+/** The wrapper's tags, for a part-aware caller that removes the wrapper from ordered blocks. */
+export const USER_QUERY_OPEN_TAG = USER_QUERY_OPEN
+export const USER_QUERY_CLOSE_TAG = USER_QUERY_CLOSE
+
+/**
+ * The length of a leading `<user_query>` prefix in one text block, or 0 when the block does not
+ * start with the wrapper. `unwrapUserQuery` applies the same rule to a whole prompt; a turn whose
+ * blocks are kept in order strips the wrapper per block so the text around an image does not move.
+ * @param {string | undefined} text
+ * @returns {number}
+ */
+export function userQueryLeadLength(text) {
+  const lead = USER_QUERY_LEAD.exec(text ?? '')
+  return lead ? lead[0].length : 0
+}
+
 /**
  * The prompt without a harness's <user_query> wrapper: the user's own text, untouched otherwise.
  * @param {string | undefined} text

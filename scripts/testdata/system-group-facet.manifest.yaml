@@ -16,3 +16,11 @@ requiredMountedCaseNames:
   - a new session starts unfiltered
   - a single-kind group offers no facet
   - every chip is a keyboard-reachable toggle
+requiredMutationNames:
+  - the facet shows every member regardless of selection
+mutations:
+  - name: the facet shows every member regardless of selection
+    file: src/ui/transcript/system-group-facet.js
+    find: "  return members.filter((member) => systemGroupFacetSelected(selection, systemGroupFacetKey(member)))"
+    replace: "  return members"
+    expectedDiagnostic: "a narrowed selection keeps only its kind"

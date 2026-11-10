@@ -53,6 +53,40 @@ cases:
     expected:
       - {type: image, image: {omittedReason: not_published}}
     retained: true
+  - name: a cursor image prompt loses its user_query wrapper
+    kind: decode
+    harness: cursor
+    content: "<user_query>check this screenshot</user_query>"
+    displayContent: "check this screenshot"
+    contentParts:
+      - {type: text, text: "<user_query>check this screenshot</user_query>"}
+      - {type: image, image: {ref: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', mediaType: 'image/png', byteSize: 4096, width: 640, height: 400}}
+    expected:
+      - {type: text, text: "check this screenshot"}
+      - {type: image, image: {ref: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', mediaType: 'image/png', byteSize: 4096, width: 640, height: 400}}
+    retained: true
+  - name: a cursor wrapper spanning an image keeps both text blocks
+    kind: decode
+    harness: cursor
+    content: "<user_query>before the shot\n\nafter the shot</user_query>"
+    displayContent: "before the shot\n\nafter the shot"
+    contentParts:
+      - {type: text, text: "<user_query>before the shot\n\n"}
+      - {type: image, image: {ref: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', mediaType: 'image/jpeg', byteSize: 2048, width: 320, height: 200}}
+      - {type: text, text: "after the shot</user_query>"}
+    expected:
+      - {type: text, text: "before the shot\n\n"}
+      - {type: image, image: {ref: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', mediaType: 'image/jpeg', byteSize: 2048, width: 320, height: 200}}
+      - {type: text, text: "after the shot"}
+  - name: a cursor wrapper keeps the follow-up after its close
+    kind: decode
+    harness: cursor
+    content: "<user_query>look</user_query>\n\nand then run it"
+    displayContent: "look\n\nand then run it"
+    contentParts:
+      - {type: text, text: "<user_query>look</user_query>\n\nand then run it"}
+    expected:
+      - {type: text, text: "look\n\nand then run it"}
   - name: a turn without parts has no cooked parts
     kind: fallback
     content: 'the recorded text'

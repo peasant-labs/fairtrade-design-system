@@ -21,7 +21,7 @@ const ATTACHMENT_URL = 'data:image/png;base64,iVBORw0KGgo='
 
 const payloadOf = (row) => ({
   id: 'content-parts',
-  harness: 'claude-code',
+  harness: row.harness ?? 'claude-code',
   turns: [{
     index: 0,
     role: 'user',
@@ -40,6 +40,7 @@ await withMountedSource(async ({ load, mount, React }) => {
     if (row.kind === 'decode') {
       const cooked = adaptTranscript(payloadOf(row)).turns[0]
       report.check(same(cooked.contentParts ?? [], row.expected), `${row.name}: expected ${JSON.stringify(row.expected)}, received ${JSON.stringify(cooked.contentParts ?? [])}`)
+      report.check(cooked.displayContent === row.displayContent, `${row.name}: the shown text must be ${JSON.stringify(row.displayContent)}, received ${JSON.stringify(cooked.displayContent)}`)
       if (row.retained) {
         const kept = prefilterTurns(payloadOf(row).turns)
         report.check(kept.length === 1, `${row.name}: the prefilter must keep an image-bearing turn even with no text`)

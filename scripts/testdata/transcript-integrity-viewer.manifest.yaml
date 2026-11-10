@@ -128,3 +128,4 @@ mutations:
     find: " || turnHasProse(turn)"
     replace: ""
     expectedDiagnostic: "a flagged prose turn whose work folds into an earlier group draws one outline"
+requiredRetainedImageCaseName: retained history resolves its image through the host

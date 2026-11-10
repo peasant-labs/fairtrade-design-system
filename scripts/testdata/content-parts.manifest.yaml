@@ -4,6 +4,9 @@ requiredCaseNames:
   - an unknown part kind is dropped without inventing evidence
   - a missing image object is dropped
   - an omitted image keeps its reason
+  - a cursor image prompt loses its user_query wrapper
+  - a cursor wrapper spanning an image keeps both text blocks
+  - a cursor wrapper keeps the follow-up after its close
   - a turn without parts has no cooked parts
   - an empty parts list falls back to the text
   - rendered order follows the recorded order
@@ -11,3 +14,17 @@ requiredCaseNames:
   - alt text names one image's recorded facts
   - alt text places an image among its siblings
   - alt text never comes back empty for a bare part
+requiredMutationNames:
+  - the alt text drops its recorded facts
+  - the cursor wrapper survives on image-bearing parts
+mutations:
+  - name: the alt text drops its recorded facts
+    file: src/ui/transcript/image-parts.js
+    find: "  return metadata === '' ? where : `${where}, ${metadata}`"
+    replace: "  return where"
+    expectedDiagnostic: "alt text names one image's recorded facts"
+  - name: the cursor wrapper survives on image-bearing parts
+    file: src/ui/transcript/adapter.js
+    find: "    const contentParts = shown !== undefined ? stripUserQueryParts(parts) : parts"
+    replace: "    const contentParts = parts"
+    expectedDiagnostic: "a cursor image prompt loses its user_query wrapper"
