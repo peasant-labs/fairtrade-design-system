@@ -149,16 +149,16 @@ workflowMutations:
     replace: ''
     expectedField: Fairtest evidence verification
   - name: workflow-drops-the-journey-gates
-    find: "      - name: Journey gates\n        run: pnpm journey:ci --workers=3\n"
+    find: "      - name: Journey gates\n        run: pnpm journey:ci --workers=4\n"
     replace: ''
     expectedField: pnpm journey:ci
   - name: workflow-journey-unbounded-workers
-    find: "        run: pnpm journey:ci --workers=3\n"
+    find: "        run: pnpm journey:ci --workers=4\n"
     replace: "        run: pnpm journey:ci --workers=100%\n"
     expectedField: pnpm journey:ci
   - name: workflow-journey-adds-filter
-    find: "        run: pnpm journey:ci --workers=3\n"
-    replace: "        run: pnpm journey:ci --workers=3 --grep=token\n"
+    find: "        run: pnpm journey:ci --workers=4\n"
+    replace: "        run: pnpm journey:ci --workers=4 --grep=token\n"
     expectedField: pnpm journey:ci
   - name: workflow-drops-the-envelope-guard
     find: "          pnpm test:fairtest:envelope\n"

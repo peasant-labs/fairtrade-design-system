@@ -236,7 +236,7 @@ jobs:
       # puppeteer story smoke and map gate are retired from CI (the scripts
       # stay for local use).
       - name: Journey gates
-        run: pnpm journey:ci --workers=3
+        run: pnpm journey:ci --workers=4
 
       - name: Timeline route gate (production build + source mutation)
         run: pnpm test:timeline-rendered && pnpm test:timeline-session-route:mutations
