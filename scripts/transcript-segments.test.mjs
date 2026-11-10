@@ -58,6 +58,7 @@ const { fixture, manifest } = loadFixturePair(FIXTURE, MANIFEST, {
   loadCases: 'requiredLoadCaseNames',
   windowCases: 'requiredWindowCaseNames',
   mountCases: 'requiredMountCaseNames',
+  phaseCases: 'requiredPhaseCaseNames',
   recoveryCases: 'requiredRecoveryCaseNames',
 })
 
@@ -65,6 +66,7 @@ for (const row of fixture.directories) assertFields(row, ['name', 'totalTurns', 
 for (const row of fixture.loadCases) assertFields(row, ['name', 'directory', 'loaded', 'expect'], `${FIXTURE} ${row.name}`)
 for (const row of fixture.windowCases) assertFields(row, ['name', 'directory', 'loaded', 'window', 'expect'], `${FIXTURE} ${row.name}`)
 for (const row of fixture.mountCases) assertFields(row, ['name', 'directory', 'loaded', 'expect'], `${FIXTURE} ${row.name}`, ['window', 'oversizedTurn'])
+for (const row of fixture.phaseCases) assertFields(row, ['name', 'directory', 'loaded', 'phase', 'caption'], `${FIXTURE} ${row.name}`)
 for (const row of fixture.recoveryCases) assertFields(row, ['name', 'mode', 'directory', 'loaded', 'requests'], `${FIXTURE} ${row.name}`, ['window', 'restoredTurn'])
 
 const DIRECTORY = new Map(fixture.directories.map((row) => [row.name, row]))
@@ -221,6 +223,15 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     callbacks: { onLoadFullTurn: () => {} },
     ...props,
   })
+
+  for (const row of fixture.phaseCases) {
+    const def = DIRECTORY.get(row.directory)
+    const mounted = await mount(viewer({ directory: buildDirectory(def), segments: makeSegments(def, row.loaded) }, { analytics: { phases: [row.phase] } }))
+    await mounted.settle()
+    const caption = text(mounted.container.querySelector('.txn-phase .rng'))
+    report.check(caption === row.caption, `${row.name}: phase caption ${JSON.stringify(caption)} must equal ${JSON.stringify(row.caption)}`)
+    await mounted.unmount()
+  }
 
   /* window requests and the no-partial rule */
   for (const row of fixture.windowCases) {

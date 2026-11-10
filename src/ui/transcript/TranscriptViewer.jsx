@@ -222,7 +222,7 @@ function PhaseDivider({ phase, heading: Heading = 'h3' }) {
   return (
     <div className="phase txn-phase">
       <Heading className="lbl"><Icon size={14} aria-hidden="true" /> {phase.label}</Heading>
-      <span className="rng tnum">turns {phase.from + 1}–{phase.to + 1}{phase.errors ? `, ${phase.errors} error` : ''}</span>
+      <span className="rng tnum">turns {formatInteger(phase.from)}–{formatInteger(phase.to)}{phase.errors ? `, ${phase.errors} error` : ''}</span>
     </div>
   )
 }

@@ -32,6 +32,9 @@ requiredMountCaseNames:
   - separated held segments keep their own ranges around a gap
   - a single segment directory draws no boundary
   - an empty directory is not indexed
+requiredPhaseCaseNames:
+  - phase starting at turn zero
+  - phase starting mid transcript
 requiredRecoveryCaseNames:
   - a rejected segment load enables retry
   - a void segment load remains retryable
@@ -48,7 +51,13 @@ requiredMutationNames:
   - a held gap repeats its continuation marker
   - a failed boundary load stays disabled
   - clearing a window retains its request cache
+  - the phase range returns to one based indexes
 mutations:
+  - name: the phase range returns to one based indexes
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: 'turns {formatInteger(phase.from)}–{formatInteger(phase.to)}'
+    replace: 'turns {formatInteger(phase.from + 1)}–{formatInteger(phase.to + 1)}'
+    expectedDiagnostic: 'phase starting at turn zero: phase caption'
   - name: the scrubber mounts one tick per turn
     file: src/ui/transcript/segments.js
     find: "const sample = Math.min(SEGMENT_SCRUBBER_TICKS, total)"

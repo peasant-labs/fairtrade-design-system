@@ -336,6 +336,18 @@ mountCases:
       truncation: false
       notIndexed: true
 
+phaseCases:
+  - name: phase starting at turn zero
+    directory: single segment session
+    loaded: [0]
+    phase: {id: exploration, label: exploration, from: 0, to: 9}
+    caption: turns 0–9
+  - name: phase starting mid transcript
+    directory: sparse 55 turn session
+    loaded: [2]
+    phase: {id: implementation, label: implementation, from: 32, to: 45, errors: 1}
+    caption: turns 32–45, 1 error
+
 recoveryCases:
   - name: a rejected segment load enables retry
     mode: rejected
