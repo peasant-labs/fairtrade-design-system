@@ -60,6 +60,11 @@ navigation:
   - {kind: context_from, status: resolved, localId: ses_contextsource, anchor: {kind: through_redacted_entry, sourceEntryRef: branch-entry, sourceRevisionRef: public-revision}}
   - {kind: started_by, status: resolved, localId: ses_startersource}
 partitions: [main, earlier, both]
+# The context demo opens in the default ledger view with the system filter off.
+# For the first main partition this makes turns 0, 2, 3 and 4 visible; turn 1
+# is retained system context, not an unloaded segment. The probe enables the
+# real system filter before checking all retained records and their contents.
+defaultMainVisibility: system-hidden
 themes: [dark, light]
 captures: [native-text-thinking-pair, short-native-system-context, unknown-literal-wrapper]
 viewport: {width: 1440, height: 1100}
@@ -298,6 +303,8 @@ invalidNavigation:
     navigation:
       - {kind: started_by, status: resolved, localId: ses_startersource, anchor: {kind: through_redacted_entry, revisionRef: public-revision}}
 countCases:
+  # Unknown is an absent measurement; the header omits its prompt chip rather
+  # than printing a numeric zero or an invented unknown-count chip.
   - {name: unmeasured, absent: true, expected: unknown}
   - {name: measured-zero, value: 0, expected: '0'}
   - {name: one-submission-five-records, value: 1, expected: '1'}

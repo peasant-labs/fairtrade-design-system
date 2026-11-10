@@ -2,6 +2,15 @@
 # `payload` and lists each closed control once across `present` and `absent`. `props` picks the
 # integrity value, whether the rendered content hash matches the served one, the presentation,
 # and a few view switches. `stateCases` and `interactions` are driven by `kind`.
+historyCases:
+  - name: migrated history remains uncertain
+    state: uncertain_migrated
+    label: migrated history
+    explanation: this earlier history was retained during migration. its ownership is uncertain, so it is separate from current turns and input submissions.
+  - name: unresolved history names its unresolved ownership
+    state: uncertain_unresolved
+    label: ownership unresolved
+    explanation: the ownership of this earlier history could not be resolved. it is retained separately from current turns and input submissions.
 payload:
   id: integrity-viewer
   harness: claude-code

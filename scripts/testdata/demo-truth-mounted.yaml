@@ -39,7 +39,7 @@ cases:
     query: app=transcript
     width: 390
     root: .txn-app
-    text: [9 turns, 18.4k tokens, turns 1–3, fairtrade-design-system]
+    text: [9 turns, 18.4k tokens, 3 turns, fairtrade-design-system]
     absent: [8 turns, turns 0–2, transcript-browser]
     tabular: .txn-app .rng
     marks: ['#turn-1 .txn-roleico [data-brand="claude"]']

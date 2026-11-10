@@ -31,6 +31,7 @@ import { zObservedModelID, zContentProvenance, zSourceEntryRef, zSessionRelation
 import { aggregateUsage } from './usage.js'
 import { isKnownTime } from './time.js'
 import { unwrapUserQuery, userQueryLeadLength, USER_QUERY_OPEN_TAG, USER_QUERY_CLOSE_TAG } from './title.js'
+import { EarlierHistoryState, UnknownEarlierHistoryState, parseEarlierHistoryState } from './earlier-history-state.js'
 
 /** @typedef {import('./wire-types.js').TranscriptWireInput} TranscriptWireInput */
 /** @typedef {import('./wire-types.js').SessionDetailPayload} SessionDetailPayload */
@@ -855,14 +856,23 @@ function buildFilterIndex(turnVMs, annotationsByTurn) {
  */
 export function adaptTranscript(payload, annotations, analytics, options) {
   const hasEvidence = hasNormalizedEvidence(payload)
+  // A future string state is preserved, while canonical validation still checks
+  // every other field and every cross-partition evidence invariant.
+  const originalHistory = payload.earlierHistory
+  const historyStates = Array.isArray(originalHistory) ? originalHistory.map(section => parseEarlierHistoryState(section?.state)) : []
   // Validate the ORIGINAL complete durable value, including all earlier sections,
   // before filtering. Never project away an invalid duplicate owner or attachment.
   if (hasEvidence) {
     try {
       // Cook the canonical normalized value, not the original evidence object.
       // Only the explicitly supported legacy git extension stays outside schema.
+      const validationPayload = Array.isArray(originalHistory) ? {
+        ...payload,
+        earlierHistory: originalHistory.map((section, index) => section && historyStates[index] instanceof UnknownEarlierHistoryState && typeof section.state === 'string' && section.state.length > 0
+          ? { ...section, state: EarlierHistoryState.Migrated.wire } : section),
+      } : payload
       payload = {
-        ...parseSessionDetailPayloadValue(payload),
+        ...parseSessionDetailPayloadValue(validationPayload),
         ...(payload.gitContext === undefined ? {} : { gitContext: payload.gitContext }),
       }
     } catch (cause) {
@@ -894,8 +904,7 @@ export function adaptTranscript(payload, annotations, analytics, options) {
     const id = `earlier-${index}`
     const earlier = cookPartition(payload, section.turns, section.nativeMetadata, id)
     return {
-      id, state: section.state,
-      explanation: 'ownership of this earlier history is uncertain. it is retained here, separate from current turns and input submissions.',
+      id, state: historyStates[index],
       turns: earlier.turns,
       nativeMetadata: section.nativeMetadata,
       usageScopes: aggregateUsage(section.turns),

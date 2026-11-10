@@ -34,10 +34,10 @@ export default function TranscriptContext({ relationships = [], earlierHistory =
       <button type="button" className="txn-earlier-toggle" aria-expanded={!!open[section.id]} aria-controls={`${prefix}-history-${section.id}`} onClick={() => toggle(section.id)}>
         {open[section.id] ? <ChevronDown aria-hidden="true" /> : <ChevronRight aria-hidden="true" />}
         <History aria-hidden="true" /> earlier history <span className="tnum">{section.turns.length}</span>
-        <span className="txn-context-status">uncertain ownership</span>
+        <span className="txn-context-status">{section.state.label}</span>
       </button>
       <div id={`${prefix}-history-${section.id}`} hidden={!open[section.id]}>
-        <p className="txn-context-note">{section.explanation}</p>
+        <p className="txn-context-note">{section.state.explanation}</p>
         <UsageScopes scopes={section.usageScopes} label="earlier history usage by scope" />
         {open[section.id] && section.turns.map(turn => <TurnCard key={turn.identity} turn={turn} openTools={openTools} toggleTool={toggleTool} attachmentUrl={attachmentUrl} />)}
       </div>

@@ -40,6 +40,19 @@ function assertExactNames(actual, required, family) {
 
 assertExactNames(fixture.members.map((member) => member.name), manifest.requiredMemberNames, 'members')
 assertExactNames(fixture.refusals.map((refusal) => refusal.name), manifest.requiredRefusalNames, 'refusals')
+assertExactNames(fixture.metadataCases.map((row) => row.name), manifest.requiredMetadataNames, 'metadata')
+
+describe('closed-value metadata', () => {
+  for (const row of fixture.metadataCases) {
+    it(row.name, () => {
+      const value = closed(row.wire, row.label, row.metadata)
+      assert.ok(Object.isFrozen(value))
+      assert.equal(value.wire, row.wire)
+      assert.equal(value.label, row.label)
+      for (const [key, expected] of Object.entries(row.expected)) assert.equal(value[key], expected)
+    })
+  }
+})
 
 describe('closed-value members', () => {
   for (const member of fixture.members) {

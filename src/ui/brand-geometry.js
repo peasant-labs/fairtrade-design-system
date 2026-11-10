@@ -28,13 +28,21 @@ export const BRAND_PATHS = {
   // Official Pi OAuth mark, unchanged geometry, MIT licensed:
   // https://github.com/earendil-works/pi/blob/da840b6216578c2a571d0374ac6a2091a83f9d91/packages/ai/src/auth/oauth/oauth-page.ts
   pi: 'M165.29 165.29 H517.36 V400 H400 V517.36 H282.65 V634.72 H165.29 Z M282.65 282.65 V400 H400 V282.65 Z M517.36 400 H634.72 V634.72 H517.36 Z',
+  // https://github.com/simple-icons/simple-icons/blob/develop/icons/cline.svg (CC0)
+  cline: 'm23.365 13.556-1.442-2.895V8.994c0-2.764-2.218-5.002-4.954-5.002h-2.464c.178-.367.276-.779.276-1.213A2.77 2.77 0 0 0 12.018 0a2.77 2.77 0 0 0-2.763 2.779c0 .434.098.846.276 1.213H7.067c-2.736 0-4.954 2.238-4.954 5.002v1.667L.64 13.549c-.149.29-.149.636 0 .927l1.472 2.855v1.667C2.113 21.762 4.33 24 7.067 24h9.902c2.736 0 4.954-2.238 4.954-5.002V17.33l1.44-2.865c.143-.286.143-.622.002-.91m-12.854 2.36a2.27 2.27 0 0 1-2.261 2.273 2.27 2.27 0 0 1-2.261-2.273v-4.042A2.27 2.27 0 0 1 8.249 9.6a2.267 2.267 0 0 1 2.262 2.274zm7.285 0a2.27 2.27 0 0 1-2.26 2.273 2.27 2.27 0 0 1-2.262-2.273v-4.042A2.267 2.267 0 0 1 15.535 9.6a2.267 2.267 0 0 1 2.261 2.274z',
+  // https://github.com/glincker/thesvg/blob/main/public/icons/grok-xai/default.svg (MIT)
+  grok: 'M9.27 15.29l7.978-5.897c.391-.29.95-.177 1.137.272.98 2.369.542 5.215-1.41 7.169-1.951 1.954-4.667 2.382-7.149 1.406l-2.711 1.257c3.889 2.661 8.611 2.003 11.562-.953 2.341-2.344 3.066-5.539 2.388-8.42l.006.007c-.983-4.232.242-5.924 2.75-9.383.06-.082.12-.164.179-.248l-3.301 3.305v-.01L9.267 15.292M7.623 16.723c-2.792-2.67-2.31-6.801.071-9.184 1.761-1.763 4.647-2.483 7.166-1.425l2.705-1.25a7.808 7.808 0 00-1.829-1A8.975 8.975 0 005.984 5.83c-2.533 2.536-3.33 6.436-1.962 9.764 1.022 2.487-.653 4.246-2.34 6.022-.599.63-1.199 1.259-1.682 1.925l7.62-6.815',
+  // https://devicons.io/devicons/font/devin-icon.svg (Devin brand asset)
+  devin: 'M38.3 201.7V77.6c0-5.5 3-10.5 7.7-13.3l107.5-62a15 15 0 0 1 15.3 0l107.5 62c4.7 2.8 7.6 7.8 7.6 13.3V141a62.4 62.4 0 0 0 92.4 53.3l55-31.7a15 15 0 0 1 15.2 0l107.5 62c4.7 2.8 7.7 7.9 7.7 13.3V362c0 5.5-3 10.5-7.7 13.3l-107.5 62a15 15 0 0 1-15.3 0L376.8 406a62.4 62.4 0 0 0-92.9 53.1v63.4c0 5.5-3 10.5-7.6 13.2l-107.5 62.1a15 15 0 0 1-15.3 0L46 535.7a15 15 0 0 1-7.7-13.3V398.3c0-5.5 3-10.5 7.7-13.3l107.5-62a15 15 0 0 1 15.3 0l55 31.8a62.4 62.4 0 0 0 92.3-54A66 66 0 0 0 285 246a62 62 0 0 0-61.2-.6l-55.2 32a15 15 0 0 1-15.3 0L45.9 214.9a15 15 0 0 1-7.6-13.2',
+  // https://devicons.io/devicons/font/kiro-icon.svg (Kiro brand asset)
+  kiro: 'M118.3 167c51.9-222.6 353.8-222.3 414.2-1.2 8.8 32.4 43 189.5-41.9 343.7-38.6 69.9-146 137.2-174.7 47-97.5 80.4-229.6 46-167.7-91.3l-8 3.6C51 501.4 43.6 438.6 61 406c11.2-21 18.2-33.4 23.4-47.4A273 273 0 0 0 99.1 296c6.8-46 7-90.2 19.2-129.2zm209.2.2a23 23 0 0 0-20.2 10.7c-5.4 8-8.3 20.6-8.3 36.5 0 17.6 3.8 47.3 28.5 47.3h.2c19 0 30.4-17.7 30.4-47.3 0-15.5-3.2-28.1-9.2-36.4a25 25 0 0 0-21.4-10.8m102 0a23 23 0 0 0-20.2 10.7c-5.4 8-8.3 20.6-8.3 36.5 0 17.6 3.8 47.3 28.5 47.3h.2c19 0 30.4-17.7 30.4-47.3 0-15.5-3.2-28.1-9.2-36.4a25 25 0 0 0-21.4-10.8',
 }
 
 /** @type {Record<string, string>} */
-export const BRAND_VIEW_BOX = { strike: '6 6 20 20', pi: '0 0 800 800' }
+export const BRAND_VIEW_BOX = { strike: '6 6 20 20', pi: '0 0 800 800', devin: '0 0 600 600', kiro: '0 0 600 600' }
 
 /* Pi's mark has a hole cut by its inner square, drawn with the even-odd fill rule */
-export const BRAND_FILL_RULE = { pi: 'evenodd' }
+export const BRAND_FILL_RULE = { pi: 'evenodd', grok: 'evenodd', kiro: 'evenodd' }
 
 /* aliases so callers can pass the company OR the product name and still resolve a mark.
    codex has no Simple Icons mark of its own; it is an OpenAI product, so it falls back to
@@ -55,7 +63,7 @@ export const BRAND_ALIAS = {
 /**
  * resolve any accepted name/alias to a canonical mark key, or null when unknown.
  * @param {string} name
- * @returns {('claude'|'gemini'|'openai'|'cursor'|'opencode'|'strike'|'pi'|'github')|null}
+ * @returns {('claude'|'gemini'|'openai'|'cursor'|'opencode'|'strike'|'pi'|'github'|'grok'|'devin'|'cline'|'kiro')|null}
  */
 export function resolveBrand(name) {
   if (!name) return null

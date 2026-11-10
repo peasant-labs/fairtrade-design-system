@@ -31,6 +31,7 @@
     "src/ui/ui-exports.contract.type-test.js",
     "src/ui/app-sidebar.contract.type-test.js",
     "src/ui/transcript/contract.type-test.js",
+    "src/ui/transcript/earlier-history-state.contract.type-test.js",
     "src/ui/transcript/adapter.contract.type-test.js",
     "src/ui/transcript/state-capabilities.contract.type-test.js",
     "src/ui/transcript/initial-position.contract.type-test.js",
