@@ -28,6 +28,7 @@ requiredMountCaseNames:
   - a region that starts wordless marks a continuing action run
   - two disjoint regions carry one gap boundary
   - a lone middle segment carries the older edge
+  - a held window beside a disjoint region keeps its gap boundary
   - a single segment directory draws no boundary
   - an empty directory is not indexed
 
@@ -37,6 +38,7 @@ requiredMutationNames:
   - the boundary drops its load control
   - the window renders partly loaded
   - a gap draws no continuation marker
+  - the truncation notice ignores byteLength
 mutations:
   - name: the scrubber mounts one tick per turn
     file: src/ui/transcript/segments.js
@@ -58,3 +60,8 @@ mutations:
     find: "isWordlessAssistant(firstVisibleAfter(internal.lastTurn))"
     replace: "false"
     expectedDiagnostic: "two disjoint regions carry one gap boundary: the continuation count must equal 1"
+  - name: the truncation notice ignores byteLength
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "{t.truncated && ("
+    replace: "{false && ("
+    expectedDiagnostic: "an oversized turn is alone, bounded and offers its full read: the truncation notice must be present"

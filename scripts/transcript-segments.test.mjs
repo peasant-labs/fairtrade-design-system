@@ -19,8 +19,6 @@
 import { loadFixturePair, assertFields, withMountedSource, click, createReport } from './mounted-parts.mjs'
 import {
   SEGMENT_SCRUBBER_TICKS,
-  boundaryCaption,
-  formatByteExtent,
   loadedRegions,
   loadedScope,
   mountedCardBound,
@@ -260,10 +258,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     }
     const expectedBoundaries = regionBoundaries(directory, loadedRegions(directory, loaded))
     for (const [index, node] of boundaryNodes.entries()) {
-      const expected = expectedBoundaries[index]
       const caption = text(node.querySelector('.txn-segboundary-caption'))
-      report.check(caption === boundaryCaption(expected), `${row.name}: boundary ${index} caption ${JSON.stringify(caption)} must equal ${JSON.stringify(boundaryCaption(expected))}`)
-      report.check(caption.includes(formatByteExtent(expected.byteLength)), `${row.name}: boundary ${index} caption must carry its byte extent`)
+      report.check(caption === row.expect.captions[index], `${row.name}: boundary ${index} caption ${JSON.stringify(caption)} must equal ${JSON.stringify(row.expect.captions[index])}`)
     }
     const truncation = mounted.container.querySelector('.txn-truncation')
     report.check(!!truncation === row.expect.truncation, `${row.name}: the truncation notice must be ${row.expect.truncation ? 'present' : 'absent'}`)
@@ -285,7 +281,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     const loadControl = boundaryNodes[0]?.querySelector('.txn-segboundary-load')
     if (loadControl && expectedBoundaries[0]) {
       await mounted.act(() => click(window, loadControl))
-      report.check(requests[0] === expectedBoundaries[0].loadSegment, `${row.name}: the control loads segment ${expectedBoundaries[0].loadSegment}`)
+      report.check(requests[requests.length - 1] === expectedBoundaries[0].loadSegment, `${row.name}: the control loads segment ${expectedBoundaries[0].loadSegment}`)
     }
     /* the checklist's mounted read at the middle and the end of the stream */
     for (const scrollTop of [0, 5000, 10_000]) {
@@ -298,17 +294,17 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(atPosition <= row.expect.maxCards, `${row.name}: mounted cards at scrollTop ${scrollTop} must not exceed ${row.expect.maxCards}`)
     }
     /* Files, filters and outline state the exact loaded-region scope. */
-    const scope = loadedScope(directory, loadedRegions(directory, loaded))
-    report.check(text(mounted.container.querySelector('.txn-rail-right .txn-scope')).includes(scope.filtersText), `${row.name}: the filters rail must state its loaded-region scope`)
-    report.check(text(mounted.container.querySelector('.txn-rail-left .txn-scope')).includes(scope.outlineText), `${row.name}: the outline must state its loaded-region scope`)
+    report.check(text(mounted.container.querySelector('.txn-rail-right .txn-scope')) === `${row.expect.filtersScope}. filters read the turns that are loaded.`, `${row.name}: the filters rail must state its loaded-region scope`)
+    report.check(text(mounted.container.querySelector('.txn-rail-left .txn-scope')) === row.expect.outlineScope, `${row.name}: the outline must state its loaded-region scope`)
     const filesTab = [...mounted.container.querySelectorAll('[role="tab"]')].find((node) => text(node).startsWith('files'))
     if (filesTab) {
       await mounted.act(() => click(window, filesTab))
       await mounted.settle()
       const filesPane = mounted.container.querySelector('.txn-files')
+      const scopeLine = filesPane?.querySelectorAll('.txn-scope')[0]
       const table = mounted.container.querySelector('.txn-filetable')
       const listed = table ? text(table) : ''
-      report.check(text(filesPane).includes(scope.filesText), `${row.name}: the Files tab must state its loaded-region scope`)
+      report.check(text(scopeLine) === `${row.expect.filesScope}. a file that appears only in an unloaded segment is not listed.`, `${row.name}: the Files tab must state its loaded-region scope`)
       if (loaded.length > 0) {
         report.check(listed.includes('loaded.js'), `${row.name}: a file from a loaded turn is listed`)
         report.check(!listed.includes('unloaded.js'), `${row.name}: a file only in an unloaded turn is not listed`)

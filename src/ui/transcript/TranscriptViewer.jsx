@@ -363,7 +363,7 @@ export default function TranscriptViewer({
   const boundaries = useMemo(() => (segmentMode ? regionBoundaries(directory, regions) : []), [segmentMode, directory, regions])
   const scope = useMemo(() => (segmentMode ? loadedScope(directory, regions) : null), [segmentMode, directory, regions])
   const scrubTicks = useMemo(() => (segmentMode ? scrubberTicks(directory) : []), [segmentMode, directory])
-  const loadedTurnBound = useMemo(() => (segmentMode ? mountedCardBound(renderedSegments) : 0), [segmentMode, renderedSegments])
+  const loadedTurnBound = useMemo(() => (segmentMode ? mountedCardBound(loadedSegments) : 0), [segmentMode, loadedSegments])
   const tabsId = useId()
   /* the served integrity flag: null draws nothing; otherwise the badge draws, and the listed
      positions are marked only when the rendered content is the content the flag refers to */
@@ -812,6 +812,36 @@ export default function TranscriptViewer({
   /* Runs of consecutive visible system turns. Ledger-only: classic keeps its full cards, so
      there is nothing to fold there. */
   const systemGroups = useMemo(() => (ledger ? groupSystemTurns(visibleTurns) : new Map()), [ledger, visibleTurns])
+
+  /* Where each boundary renders. A folded system-group member is not its own row. A
+     between boundary normally follows the last rendered turn before the gap; when a
+     held window leaves none, it renders before the first rendered turn after the gap
+     so a counted boundary can never be missing from the DOM. */
+  const boundaryPlacement = useMemo(() => {
+    if (!segmentMode) return { leading: null, trailing: null, after: new Map(), before: new Map(), count: 0 }
+    const isRenderedRow = (turn) => {
+      const group = systemGroups.get(turn.index)
+      return !group || group.owner.index === turn.index
+    }
+    const rows = visibleTurns.filter(isRenderedRow)
+    const lastVisibleBefore = (turnIndex) => [...rows].reverse().find((turn) => turn.index < turnIndex)
+    const firstVisibleAfter = (turnIndex) => rows.find((turn) => turn.index > turnIndex)
+    const after = new Map()
+    const before = new Map()
+    for (const boundary of boundaries) {
+      if (boundary.side !== 'between') continue
+      const preceding = lastVisibleBefore(boundary.firstTurn)
+      if (preceding) after.set(preceding.index, boundary)
+      else {
+        const following = firstVisibleAfter(boundary.lastTurn)
+        if (following) before.set(following.index, boundary)
+      }
+    }
+    const leading = boundaries.find((boundary) => boundary.side === 'older' || boundary.side === 'all') ?? null
+    const trailing = boundaries.find((boundary) => boundary.side === 'newer') ?? null
+    return { leading, trailing, after, before, count: after.size + before.size + (leading ? 1 : 0) + (trailing ? 1 : 0) }
+  }, [segmentMode, boundaries, visibleTurns, systemGroups])
+
 
   /* A model-actions block is not a turn: only a turn that draws a card (prose, or the system
      row) owns the reading position and the keyboard step. */
@@ -1915,7 +1945,7 @@ export default function TranscriptViewer({
                 <div className="txn-streamwrap">
                   <div className="txn-stream" ref={scrollRef} role="region" aria-label="full trace turns"
                     data-mounted-turn-bound={segmentMode ? loadedTurnBound : undefined}
-                    data-segment-boundaries={segmentMode ? boundaries.length : undefined}
+                    data-segment-boundaries={segmentMode ? boundaryPlacement.count : undefined}
                     data-segment-mode={segmentMode ? 'true' : undefined}
                     onWheel={releaseTurnNavigation} onTouchStart={releaseTurnNavigation} onPointerDown={releaseTurnNavigation}
                     onFocusCapture={() => {
@@ -2021,30 +2051,22 @@ export default function TranscriptViewer({
                           )}
                         </>
                       )
-                      /* Only rows that actually render as their own turn can carry a
-                         boundary: a folded system-group member renders inside its owner. */
-                      const renderedRows = visibleTurns.filter((turn) => {
+                      /* One gap boundary, placed once: after the last rendered turn
+                         before it, or before the first rendered turn after it when a
+                         held window leaves no preceding row. */
+                      const isRenderedRow = (turn) => {
                         const group = systemGroups.get(turn.index)
                         return !group || group.owner.index === turn.index
-                      })
-                      const lastVisibleBefore = (turnIndex) => [...renderedRows].reverse().find((turn) => turn.index < turnIndex)
-                      const firstVisibleAfter = (turnIndex) => renderedRows.find((turn) => turn.index > turnIndex)
-                      /* one gap boundary, placed once on the last rendered turn before it */
-                      const internalAfter = new Map()
-                      for (const boundary of boundaries) {
-                        if (boundary.side !== 'between') continue
-                        const after = lastVisibleBefore(boundary.firstTurn)
-                        if (after) internalAfter.set(after.index, boundary)
                       }
-                      const leading = boundaries.find((boundary) => boundary.side === 'older' || boundary.side === 'all')
-                      const trailing = boundaries.find((boundary) => boundary.side === 'newer')
+                      const firstVisibleAfter = (turnIndex) => visibleTurns.find((turn) => turn.index > turnIndex && isRenderedRow(turn))
+                      const firstRendered = visibleTurns.find(isRenderedRow)
+                      const { leading, trailing, after: internalAfter, before: internalBefore } = boundaryPlacement
                       const continuation = (where) => (
                         <div className="txn-action-continuation" role="note">
                           <span className="txn-action-continuation-rule" aria-hidden="true" />
                           <span>actions continue {where}</span>
                         </div>
                       )
-                      const firstRendered = renderedRows[0]
                       return (
                         <>
                           {leading && <TranscriptBoundary boundary={leading} loading={loadingSegment === leading.loadSegment} onLoadMore={() => loadBoundary(leading)} />}
@@ -2061,8 +2083,15 @@ export default function TranscriptViewer({
                           const turnCommits = anchoredCommits.filter((c) => c.turn === t.index)
                           const groupReveal = group && searchReveal && group.owner.index !== searchReveal.turn && group.members.some((member) => member.index === searchReveal.turn) ? searchReveal.sequence : 0
                           const internal = segmentMode ? internalAfter.get(t.index) ?? null : null
+                          const internalBeforeThis = segmentMode ? internalBefore.get(t.index) ?? null : null
                           return (
                             <Fragment key={t.identity ?? t.index}>
+                              {internalBeforeThis && (
+                                <>
+                                  <TranscriptBoundary boundary={internalBeforeThis} loading={loadingSegment === internalBeforeThis.loadSegment} onLoadMore={() => loadBoundary(internalBeforeThis)} />
+                                  {segmentMode && isWordlessAssistant(firstVisibleAfter(internalBeforeThis.lastTurn)) && continuation('from the unloaded turns between')}
+                                </>
+                              )}
                               <div className={ledger ? 'txn-turnrow' : undefined}>
                                 {showPhase && <PhaseDivider phase={phase} heading={PhaseHeading} />}
                                 {/* in ledger a faint rule marks where the role changes; classic gains none */}
