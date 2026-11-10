@@ -168,12 +168,13 @@ export const SELECTION_MODES = Object.freeze(/** @type {const} */ (['ci', 'local
 /**
  * The Fairtest budget, recorded in the run envelope rather than inferred from
  * a test count. Stage minutes sum to the total by construction; the envelope
- * test asserts the sum. The 24-minute total sits inside the unchanged
- * 30-minute CI job.
+ * test asserts the sum. The parallel mounted run is measured at under one
+ * minute locally; the 12-minute total keeps generous headroom on a slower CI
+ * runner inside the unchanged 30-minute job.
  * @type {{ totalMinutes: number, retries: number, journeyHtml: number, stages: ReadonlyArray<{ name: string, minutes: number }> }}
  */
 export const FAIRTEST_BUDGET = Object.freeze({
-  totalMinutes: 24,
+  totalMinutes: 12,
   retries: 0,
   journeyHtml: 0,
   stages: Object.freeze([
@@ -181,7 +182,7 @@ export const FAIRTEST_BUDGET = Object.freeze({
     Object.freeze({ name: 'list-and-argv', minutes: 0.2 }),
     Object.freeze({ name: 'selection-and-structure', minutes: 0.2 }),
     Object.freeze({ name: 'adapter-startup-and-teardown', minutes: 1.0 }),
-    Object.freeze({ name: 'mounted-rows', minutes: 18.5 }),
+    Object.freeze({ name: 'mounted-rows', minutes: 6.5 }),
     Object.freeze({ name: 'process-lifecycle', minutes: 2.0 }),
     Object.freeze({ name: 'evidence-verification', minutes: 1.0 }),
     Object.freeze({ name: 'preflight-and-upload', minutes: 1.0 }),

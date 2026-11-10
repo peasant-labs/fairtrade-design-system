@@ -5,7 +5,7 @@
 //
 // It proves the run root is fresh, creates the owned guards/ directory, and
 // writes the immutable guards/run-envelope.json that fixes the run id, project,
-// the four exclusive subtrees, the declared 24-minute budget, and the pinned
+// the four exclusive subtrees, the declared 12-minute budget, and the pinned
 // durable-artifact upload. It is browser-free and starts no service, so it runs
 // before any producer. Subsequent owners read the envelope; no later command
 // creates, repairs, or deletes it.

@@ -66,7 +66,7 @@
 # the real preparation seam (validated before created, and a stale row
 # directory refused with no step observed and its previous bytes untouched),
 # the Fairtest Playwright config runner shape (exactly one project, the exact
-# product/component journey matches, retries 0, workers 1, reducedMotion
+# product/component journey matches, retries 0, workers 4, reducedMotion
 # reduce, no webServer or reuseExistingServer), the single loopback host/port
 # owner both the config and the producer read, and the single owner of the
 # compact axe report shape. The driver contract family also proves reset is
@@ -1196,8 +1196,8 @@ cases:
     expectedTestMatch: ['**/product.journey.mjs', '**/component.journey.mjs']
     expectedTestDir: ./scripts/fairtest
     expectedRetries: 0
-    expectedWorkers: 1
-    expectedFullyParallel: false
+    expectedWorkers: 4
+    expectedFullyParallel: true
     expectedReducedMotion: reduce
     expectedViewport: {width: 1280, height: 720}
     forbiddenKeys: [webServer, reuseExistingServer]

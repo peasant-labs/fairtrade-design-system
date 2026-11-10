@@ -458,7 +458,7 @@ export function prepareProductRowDir(input = /** @type {ProductRowDirInput} */ (
 
 /**
  * Create a loopback static driver serving the exact built app from dist/.
- * The driver starts one http server on the fixed loopback port owned by
+ * The driver starts one http server on the requested loopback port owned by
  * fairtest-runtime.mjs and reports readiness over real HTTP. It refuses to
  * serve any resolved path outside distRoot (403) and refuses to bind a
  * non-loopback host, so the validation origin is loopback-only and can never
@@ -483,30 +483,31 @@ export function prepareProductRowDir(input = /** @type {ProductRowDirInput} */ (
 
 /**
  * Create a loopback static driver serving the exact built app from dist/.
- * The driver starts one http server on the fixed loopback port owned by
- * fairtest-runtime.mjs and reports readiness over real HTTP. It refuses to
- * serve any resolved path outside distRoot (403) and refuses to bind a
+ * The driver starts one http server on the requested loopback port (0 asks the
+ * OS for a free worker port) and reports readiness over real HTTP. It refuses
+ * to serve any resolved path outside distRoot (403) and refuses to bind a
  * non-loopback host, so the validation origin is loopback-only and can never
  * read a file beyond the served root. It satisfies the adapter's declared
  * driver contract: stop is safe to call when the driver is not running,
  * which is how a start that failed before the server listened is cleaned up
  * and released.
  * @param {object} [options] driver options
- * @param {number} [options.port] fixed loopback port
+ * @param {number} [options.port] loopback port, 0 for an OS-assigned worker port
  * @param {string} [options.host] loopback host, always the declared owner
  * @param {string} [options.distRoot] built app root served over HTTP
  * @returns {StaticProductDriver} the injected lifecycle driver for createAdapter
  */
 export function createProductStaticDriver(options = {}) {
-  const port = options.port ?? FAIRTEST_APP_PORT
+  const requestedPort = options.port ?? FAIRTEST_APP_PORT
   const host = options.host ?? FAIRTEST_APP_HOST
   const distRoot = options.distRoot ?? DIST_ROOT
-  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+  if (!Number.isInteger(requestedPort) || requestedPort < 0 || requestedPort > 65535) {
     throw new Error(
-      `product producer: invalid port ${JSON.stringify(port)} for field "port" at path driver.port; ` +
-      'repair: use the fixed loopback port owned by scripts/fairtest/fairtest-runtime.mjs for "port".',
+      `product producer: invalid port ${JSON.stringify(requestedPort)} for field "port" at path driver.port; ` +
+      'repair: use 0 for an OS-assigned worker port, or the fixed loopback port owned by scripts/fairtest/fairtest-runtime.mjs.',
     )
   }
+  let boundPort = requestedPort
   if (host !== FAIRTEST_APP_HOST) {
     throw new Error(
       `product producer: non-loopback host ${JSON.stringify(host)} for field "host" at path driver.host; ` +
@@ -547,7 +548,7 @@ export function createProductStaticDriver(options = {}) {
     }
     server = http.createServer(async (req, res) => {
       try {
-        const url = new URL(req.url || '/', `http://${host}:${port}`)
+        const url = new URL(req.url || '/', `http://${host}:${boundPort}`)
         let pathname = decodeURIComponent(url.pathname)
         if (pathname === '/') pathname = '/index.html'
         const file = join(distRoot, pathname)
@@ -569,7 +570,9 @@ export function createProductStaticDriver(options = {}) {
     await new Promise((responseResolve, responseReject) => {
       const activeServer = /** @type {import('node:http').Server} */ (server)
       activeServer.on('error', responseReject)
-      activeServer.listen(port, host, () => {
+      activeServer.listen(requestedPort, host, () => {
+        const address = activeServer.address()
+        if (address && typeof address === 'object') boundPort = address.port
         activeServer.removeListener('error', responseReject)
         responseResolve(undefined)
       })
@@ -578,8 +581,8 @@ export function createProductStaticDriver(options = {}) {
       const cause = error instanceof Error ? error.message : String(error)
       throw new Error(
         `product producer: driver start failed for field "port" at path driver.start; ` +
-        `could not listen on ${host}:${port}; caused by ${cause}; ` +
-        'repair: free the fixed loopback port or stop the previous adapter run before retrying.',
+        `could not listen on ${host}:${requestedPort === 0 ? '(OS-assigned)' : requestedPort}; caused by ${cause}; ` +
+        'repair: free the loopback port or stop the previous adapter run before retrying.',
       )
     })
     running = true
@@ -595,7 +598,7 @@ export function createProductStaticDriver(options = {}) {
     running = false
     stops += 1
     // A served page keeps keep-alive sockets open, and a bare close() waits
-    // for them, so a stopped driver can hold the fixed loopback port after it
+    // for them, so a stopped driver can hold its loopback port after it
     // reported itself stopped. Dropping the lingering sockets makes "stopped"
     // mean the port is actually free, which is what the next bounded session
     // on the same port depends on.
@@ -618,14 +621,14 @@ export function createProductStaticDriver(options = {}) {
         'repair: start the driver before reporting readiness.',
       )
     }
-    const body = await fetchText(`http://${host}:${port}/index.html`)
+    const body = await fetchText(`http://${host}:${boundPort}/index.html`)
     if (!body || (!body.includes('id="root"'))) {
       throw new Error(
         'product producer: readiness probe found no app mount point for field "ready" at path driver.readiness; ' +
         'repair: rebuild dist/ with pnpm build so the served index.html carries the app root.',
       )
     }
-    return { ready: true, host, port }
+    return { ready: true, host, port: boundPort }
   }
 
   return {
@@ -635,8 +638,8 @@ export function createProductStaticDriver(options = {}) {
     isRunning,
     readiness,
     stats: () => ({ stops }),
-    baseUrl: `http://${host}:${port}`,
-    port,
+    get baseUrl() { return `http://${host}:${boundPort}` },
+    get port() { return boundPort },
     host,
     distRoot,
   }
