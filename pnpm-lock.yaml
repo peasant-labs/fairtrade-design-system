@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@peasant-labs/schema':
-        specifier: 0.42.0
-        version: 0.42.0
+        specifier: 0.46.0
+        version: 0.46.0
       '@tanstack/react-table':
         specifier: ^8.21.3
         version: 8.21.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -726,8 +726,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@peasant-labs/schema@0.42.0':
-    resolution: {integrity: sha512-JNQOo3aKmGXWEO/yc10Y/jV44PL00N/RU5PiiSHXvHVhm3RfGHjHRO7HI766anO5rzBxbg3o2O6nRz91kBb9jw==}
+  '@peasant-labs/schema@0.46.0':
+    resolution: {integrity: sha512-BJ/Rrptu6VwwliSvoASA2LYkFE0+FtFRxmMOtuxw7ScBh7OMCv3C7LUu+bnoyAZLZLI7U/nCymCDdwbm4dJtpQ==}
     engines: {node: '>=26'}
 
   '@playwright/test@1.63.0':
@@ -3406,7 +3406,7 @@ snapshots:
   '@oxc-resolver/binding-win32-x64-msvc@11.21.3':
     optional: true
 
-  '@peasant-labs/schema@0.42.0':
+  '@peasant-labs/schema@0.46.0':
     dependencies:
       yaml: 2.9.0
       zod: 4.4.3

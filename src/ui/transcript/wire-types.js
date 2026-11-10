@@ -26,6 +26,12 @@ import {
 /** @typedef {import('@peasant-labs/schema').CommitInfo} CommitInfo */
 /** @typedef {import('@peasant-labs/schema').AnnotationSummary} AnnotationSummary */
 /** @typedef {import('@peasant-labs/schema').SessionDetailPayload} SessionDetailPayload */
+/** @typedef {import('@peasant-labs/schema').TranscriptSegmentDirectory} TranscriptSegmentDirectory */
+/** @typedef {import('@peasant-labs/schema').TranscriptSegmentRef} TranscriptSegmentRef */
+/** @typedef {import('@peasant-labs/schema').TranscriptSegment} TranscriptSegment */
+/** @typedef {import('@peasant-labs/schema').TranscriptTurn} TranscriptTurn */
+/** @typedef {import('@peasant-labs/schema').TranscriptWindow} TranscriptWindow */
+/** @typedef {import('@peasant-labs/schema').SessionDetailHeaderPayload} SessionDetailHeaderPayload */
 
 /** Canonical schema values exposed for compatibility with existing consumers. @type {readonly Role[]} */
 export const ROLES = Object.freeze(Object.values(SchemaRole))

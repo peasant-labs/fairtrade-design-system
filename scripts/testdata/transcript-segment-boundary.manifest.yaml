@@ -1,0 +1,8 @@
+# Required-NAME manifest for transcript-segment-boundary.yaml.
+requiredSideNames:
+  - newer edge
+  - older edge
+  - whole transcript unloaded
+requiredMissingNames:
+  - omitted boundary prop
+  - null boundary

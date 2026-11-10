@@ -34,7 +34,7 @@ export { TOOL_GROUPS } from './view-model.js'
    legacy-git normalisation site — plus the single-session analytics util. The
    analytics helpers keep their canonical wire-shaped signatures so consumers
    import one stable contract. Pure-render derivations live in the adapter. ─────────── */
-export { adaptTranscript, prefilterTurns, diffLines } from './adapter.js'
+export { adaptTranscript, prefilterTurns, diffLines, buildFiles, buildToolGroupCounts } from './adapter.js'
 export { default as TranscriptControlRow } from './ControlRow.jsx'
 export { default as TranscriptSystemGroup } from './SystemGroup.jsx'
 export { systemGroups } from './system-groups.js'
@@ -98,6 +98,23 @@ export { default as TranscriptCheckRow } from './CheckRow.jsx'
 export { default as TranscriptViewSwitch } from './ViewSwitch.jsx'
 export { default as TranscriptMinimap } from './Minimap.jsx'
 export { default as TranscriptScrubber } from './Scrubber.jsx'
+export { default as TranscriptSegmentBoundary } from './TranscriptBoundary.jsx'
+export {
+  SEGMENT_SCRUBBER_TICKS,
+  SEGMENT_OVERSCAN_TURNS,
+  boundaryCaption,
+  formatByteExtent,
+  loadedFiles,
+  loadedRegions,
+  loadedScope,
+  loadedToolGroupCounts,
+  mountedCardBound,
+  normaliseSegments,
+  regionBoundaries,
+  scrubberTicks,
+  turnsFromSegments,
+  windowCoverage,
+} from './segments.js'
 export { default as TranscriptScorecard } from './Scorecard.jsx'
 export { default as TranscriptLabelPopover } from './LabelPopover.jsx'
 export {
@@ -132,6 +149,12 @@ export { default as useTranscriptInitialPosition } from './useTranscriptInitialP
 /** @typedef {import('./wire-types.js').CommitInfo} CommitInfo */
 /** @typedef {import('./wire-types.js').AnnotationSummary} AnnotationSummary */
 /** @typedef {import('./wire-types.js').SessionDetailPayload} SessionDetailPayload */
+/** @typedef {import('./wire-types.js').TranscriptSegmentDirectory} TranscriptSegmentDirectory */
+/** @typedef {import('./wire-types.js').TranscriptSegmentRef} TranscriptSegmentRef */
+/** @typedef {import('./wire-types.js').TranscriptSegment} TranscriptSegment */
+/** @typedef {import('./wire-types.js').TranscriptTurn} TranscriptTurn */
+/** @typedef {import('./wire-types.js').TranscriptWindow} TranscriptWindow */
+/** @typedef {import('./wire-types.js').SessionDetailHeaderPayload} SessionDetailHeaderPayload */
 /** @typedef {import('./wire-types.js').TranscriptWireInput} TranscriptWireInput */
 
 /* ── state + capabilities types (JSDoc re-exports; erased at build) ──────────────
@@ -155,6 +178,12 @@ export { default as useTranscriptInitialPosition } from './useTranscriptInitialP
 
 /* ── cooked view-model types (JSDoc re-exports; erased at build) ──────────────── */
 /** @typedef {import('./view-model.js').TranscriptViewModel} TranscriptViewModel */
+/** @typedef {import('./segments.js').SegmentDirectoryVM} SegmentDirectoryVM */
+/** @typedef {import('./segments.js').SegmentRefVM} SegmentRefVM */
+/** @typedef {import('./segments.js').SegmentVM} SegmentVM */
+/** @typedef {import('./segments.js').SegmentWindowVM} SegmentWindowVM */
+/** @typedef {import('./segments.js').SegmentRegionVM} SegmentRegionVM */
+/** @typedef {import('./segments.js').SegmentBoundaryVM} SegmentBoundaryVM */
 /** @typedef {import('./view-model.js').RelationshipVM} RelationshipVM */
 /** @typedef {import('./view-model.js').EarlierHistoryVM} EarlierHistoryVM */
 /** @typedef {import('./adapter.js').AdaptTranscriptOptions} AdaptTranscriptOptions */

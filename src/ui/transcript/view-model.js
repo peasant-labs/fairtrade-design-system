@@ -219,6 +219,9 @@ export const TOOL_GROUPS = Object.freeze([
  * @property {string} [time]                 editorial display time, e.g. "8m ago" (render-when-present; else `timestamp`). Not derivable from the wire (relative to now) — a curated consumer supplies it.
  * @property {string} [timeTitle]            editorial absolute time for the hover title (render-when-present; else `timestamp`)
  * @property {AnnotationVM[]} annotations    annotations targeting this turn (may be empty)
+ * @property {number} [segmentIndex]        the segment this turn arrived in, when read as part of loaded regions
+ * @property {boolean} [truncated]          this turn's own text was bounded by the served-text bound
+ * @property {number} [byteLength]          pre-bound JSON size of content + arguments + result; the truncation notice's size
  */
 
 /* ── Annotations (cooked, per-turn) ──────────────────────────────────────────── */

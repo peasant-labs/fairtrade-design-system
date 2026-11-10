@@ -199,6 +199,19 @@ const sampleProps = {
   TranscriptDiffHunks: { hunks: txnDiffEntry.hunks },
   TranscriptDiffEntryCard: { entry: txnDiffEntry },
   TranscriptTurnCard: { turn: txnTurn, expandAll: true },
+  TranscriptSegmentBoundary: {
+    boundary: {
+      key: 'segment-boundary-newer-2-3',
+      side: 'newer',
+      firstTurn: 24,
+      lastTurn: 47,
+      segmentIndexes: [2, 3],
+      segmentCount: 2,
+      byteLength: 4096,
+      loadSegment: 2,
+    },
+    onLoadMore: () => {},
+  },
   // transcript composite + view chrome (consume the cooked TranscriptViewModel)
   TranscriptViewer: { viewModel: txnViewModel, capabilities: txnCaps },
   TranscriptOutlineRail: { viewModel: txnViewModel, tab: 'trace' },
@@ -229,6 +242,7 @@ const expectedExports = [
   'ToolCallRenderer',
   // transcript rendering primitives + composite (barrel presence; Transcript* convention)
   'TranscriptTurnCard',
+  'TranscriptSegmentBoundary',
   'TranscriptThinking',
   'TranscriptMarkdown',
   'TranscriptToolCall',

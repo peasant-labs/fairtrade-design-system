@@ -1,0 +1,51 @@
+# Focused server-render cases for TranscriptSegmentBoundary.
+# The library smoke renders one props object per export, so it covers the newer
+# edge only. These rows render the other sides, and the missing-boundary rows
+# prove a missing descriptor fails with a named error instead of an opaque read.
+# Shapes match SegmentBoundaryVM in src/ui/transcript/segments.js. Paired with
+# transcript-segment-boundary.manifest.yaml.
+
+sides:
+  - name: newer edge
+    boundary:
+      key: segment-boundary-newer-2-3
+      side: newer
+      firstTurn: 24
+      lastTurn: 47
+      segmentIndexes: [2, 3]
+      segmentCount: 2
+      byteLength: 4096
+      loadSegment: 2
+    label: load more
+    iconClass: lucide-chevron-down
+  - name: older edge
+    boundary:
+      key: segment-boundary-older-0-0
+      side: older
+      firstTurn: 0
+      lastTurn: 11
+      segmentIndexes: [0]
+      segmentCount: 1
+      byteLength: 1024
+      loadSegment: 0
+    label: load more
+    iconClass: lucide-chevron-up
+  - name: whole transcript unloaded
+    boundary:
+      key: segment-boundary-all-0-2
+      side: all
+      firstTurn: 0
+      lastTurn: 35
+      segmentIndexes: [0, 1, 2]
+      segmentCount: 3
+      byteLength: 3072
+      loadSegment: 0
+    label: load the transcript
+    iconClass: lucide-chevron-down
+
+missing:
+  - name: omitted boundary prop
+    props: {}
+  - name: null boundary
+    props:
+      boundary: null
