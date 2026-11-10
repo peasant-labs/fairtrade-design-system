@@ -4,6 +4,14 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.64
+
+- Conversation-first transcript controls: system-toggle intent `{version:1, system?: boolean}` where an absent value stays hidden and an explicit `false` is kept, a group-header control-kind facet that is owner-safe and whose counts ignore the own filter, and an ordered `contentParts` image renderer with inline thumbnails, click and keyboard expansion, alt text, lazy load, omission placeholders, and `attachmentUrl`.
+- Windowed reading is honest about what it cannot know. A failed covering load names the window that could not be loaded and offers `try again`; the surrounding transcript stays available, and a retry renders it. A held window names its own range, and one continuation marker marks a gap.
+- Earlier history reads behind an explicit action, cached per revision, with `migrated history` and `ownership unresolved` labelled from a closed set in the adapter rather than from a wire token.
+- Boundary captions name the unloaded extent by segment count and size, and the phase divider reports a turn count, so no caption prints a coordinate the directory cannot derive.
+- Re-pins `@peasant-labs/schema@0.48.0`.
+
 ## 0.0.63
 
 - Render very large transcripts in 1 MiB segments cut on complete entries, with a faded dotted boundary and one `load more` per unloaded extent. A window jump renders up to 10 assistant turns on each side of a user turn even when the surrounding segments are unloaded.
