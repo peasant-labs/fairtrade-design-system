@@ -13,6 +13,21 @@ assertExactNames(spec.shellCases.map(row => row.name), manifest.requiredShellNam
 assertExactNames(spec.railCases.map(row => row.name), manifest.requiredRailNames, 'transcript sidebar motion cases')
 const origin = `http://localhost:${process.env.JOURNEY_APP_PORT || 5180}`
 
+/**
+ * Wait for the disclosure body's height animation. The init script pauses new
+ * .txn-disclosure animations at creation, so once the animation exists it
+ * cannot finish; polling only waits for React's layout effect to create it
+ * under worker contention. A single rAF assumed the effect had already run,
+ * which is the #212 flake.
+ * @param {import('@playwright/test').Locator} body disclosure body
+ */
+async function waitForHeightAnimation(body) {
+  await expect.poll(
+    () => body.evaluate(el => el.getAnimations().some(animation => animation.effect.getKeyframes().some(frame => 'height' in frame))),
+    { message: 'the disclosure must create its height animation', timeout: 10_000 },
+  ).toBe(true)
+}
+
 test('transcript demo follows the page theme without resetting the reader', async ({ page }, info) => {
   await page.goto(`${origin}/?app=transcript&transcript=ledger-actions&fb=off&theme=${info.project.name}#inuse`)
   const viewer = page.locator('.txn-app')
@@ -216,6 +231,7 @@ for (const motion of spec.motion) for (const row of spec.cases) {
     // Interrupt the actual shared height animation, not merely the rail's CSS width.
     await change(!row.initiallyOpen)
     if (motion === 'no-preference') {
+      await waitForHeightAnimation(body)
       const midpoint = await body.evaluate(el => {
         const animation = el.getAnimations().find(a => a.effect.getKeyframes().some(frame => 'height' in frame))
         if (!animation) return null
@@ -225,6 +241,7 @@ for (const motion of spec.motion) for (const row of spec.cases) {
       })
       expect(midpoint, 'the interrupted disclosure must have a live height animation').not.toBeNull()
       await change(row.initiallyOpen)
+      await waitForHeightAnimation(body)
       const reversed = await body.evaluate(el => {
         const animation = el.getAnimations().find(a => a.effect.getKeyframes().some(frame => 'height' in frame))
         if (!animation) return null
@@ -242,6 +259,7 @@ for (const motion of spec.motion) for (const row of spec.cases) {
     for (const open of [!row.initiallyOpen, row.initiallyOpen]) {
       await change(open)
       if (motion === 'no-preference') {
+        await waitForHeightAnimation(body)
         const sample = await body.evaluate(async (el, closing) => {
           await new Promise(requestAnimationFrame)
           const animation = el.getAnimations().find(a => a.effect.getKeyframes().some(frame => 'height' in frame))
