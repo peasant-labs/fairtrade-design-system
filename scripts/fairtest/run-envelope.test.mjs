@@ -701,15 +701,15 @@ function inspectWorkflowOrder(text) {
 }
 
 /**
- * The budget guard: the job stays at 30 minutes and the workflow declares the
+ * The budget guard: the job stays at 40 minutes and the workflow declares the
  * same 12-minute Fairtest budget the run envelope records.
  * @param {string} text workflow source
  * @returns {void}
  */
 function inspectWorkflowBudget(text) {
   const job = gatesJob(text)
-  if (job['timeout-minutes'] !== 30) {
-    workflowFail('timeout-minutes', `the gates job must stay at 30 minutes, observed ${JSON.stringify(job['timeout-minutes'])}`)
+  if (job['timeout-minutes'] !== 40) {
+    workflowFail('timeout-minutes', `the gates job must stay at 40 minutes, observed ${JSON.stringify(job['timeout-minutes'])}`)
   }
   if (String(job.env?.FAIRTEST_BUDGET_MINUTES) !== String(FAIRTEST_BUDGET.totalMinutes)) {
     workflowFail('FAIRTEST_BUDGET_MINUTES', `expected ${FAIRTEST_BUDGET.totalMinutes} observed ${JSON.stringify(job.env?.FAIRTEST_BUDGET_MINUTES)}`)

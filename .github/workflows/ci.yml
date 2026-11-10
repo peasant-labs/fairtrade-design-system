@@ -75,7 +75,7 @@ jobs:
   gates:
     needs: determine-runner
     runs-on: ${{ fromJson(needs.determine-runner.outputs.runner) }}
-    timeout-minutes: 30
+    timeout-minutes: 40
     # The official Playwright image carries the browsers (pinned to the same
     # 1.63.0 the repo tests against) and their system dependencies, so jobs
     # never apt-install at runtime and never download browsers. --ipc=host
@@ -97,10 +97,11 @@ jobs:
       # the envelope can tell its own root apart from another run's.
       FAIRTEST_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
       FAIRTEST_RUN_ROOT: ${{ github.workspace }}/review-capture/fairtest/${{ github.run_id }}-${{ github.run_attempt }}
-      # The explicit Fairtest budget inside this unchanged 30-minute job. The
-      # run envelope records the same total and per-stage minutes; a drift
-      # between this declaration, the envelope, and the job timeout fails the
-      # workflow guard.
+      # The explicit Fairtest budget inside the 40-minute job. The run envelope
+      # records the same total and per-stage minutes; a drift between this
+      # declaration, the envelope, and the job timeout fails the workflow
+      # guard. The extra job headroom covers the slow ubuntu-latest fallback
+      # at four journey workers.
       FAIRTEST_BUDGET_MINUTES: "12"
       # The mounted-row worker budget. Each worker binds its own loopback port
       # from the runtime owner, so the rows run in parallel without sharing an
@@ -154,7 +155,7 @@ jobs:
       # the bounded product/component producer, then verification, an always-run
       # preflight, and a pinned whole-root upload. The 12-minute Fairtest budget
       # is declared in guards/run-envelope.json and enforced by the preflight;
-      # the enclosing 30-minute job is unchanged.
+      # the enclosing 40-minute job leaves headroom for the fallback runner.
       - name: Fairtest run envelope
         run: pnpm test:fairtest:init
 
