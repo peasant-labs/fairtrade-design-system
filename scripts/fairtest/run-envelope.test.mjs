@@ -689,8 +689,8 @@ function inspectWorkflowOrder(text) {
   if (uploadIndex < indices[indices.length - 1]) {
     workflowFail('Fairtest evidence upload', 'the upload step must follow the preflight')
   }
-  const journey = steps.find((entry) => entry.run === 'pnpm journey:ci --workers=4')
-  if (!journey) workflowFail('pnpm journey:ci', 'the full journey gate must run with exactly four workers')
+  const journey = steps.find((entry) => entry.run === 'pnpm journey:ci --workers=3')
+  if (!journey) workflowFail('pnpm journey:ci', 'the full journey gate must run with exactly three workers')
   const timeline = steps.find((entry) => typeof entry.run === 'string' && entry.run.includes('pnpm test:timeline-rendered'))
   if (!timeline) workflowFail('pnpm test:timeline-rendered', 'the existing timeline gate is missing from the job')
   const uploadStep = steps[uploadIndex]

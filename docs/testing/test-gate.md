@@ -93,8 +93,9 @@ Fairtest serial comparison was re-run on the same checkout and build.
 | `test:lib`, parallel lanes | 6m38s | 146 gates, 0 failed |
 | Fairtest mounted, serial (1 worker, product then component) | 2m32s | 1:42 + 49s |
 | Fairtest mounted, parallel (`--target=all`, 4 workers) | 43-49s | 24/24 rows, verifier pass |
-| Journey catalog, CI 3 workers (before #212) | 14m30s | recorded in the `gates` job |
-| Journey catalog, 4 workers (after the motion fix) | 11.6m | local full catalog, 502 passed, 58 skipped |
+| Journey catalog, local workstation, 4 workers | 11.6m | 502 passed, 58 skipped |
+| Journey catalog, CI microvm, 3 workers | 14m30s | 3-worker baseline recorded in the `gates` job |
+| Journey catalog, CI microvm, 4 workers | 18m09s | regression on the 4-vCPU runner; the cap stays 3 |
 
 The product rows are the long pole at roughly 25-32 seconds each; four workers
 let all four product routes overlap, while the twenty component rows fill the
@@ -103,9 +104,12 @@ remaining capacity.
 The motion journeys now wait for their height animation to be created instead
 of sampling one frame, so worker contention cannot turn a live animation into
 a null sample; the touch-target mutation poll does the same for its injected
-style. The CI journey cap is 4. Focused validation: 200/200 command-output runs
-(100 per theme), 400/400 disclosure cases at 20 repeats per theme, and 320/320
-rail/shell cases at 20 repeats per theme.
+style. The CI journey cap stays at 3: the same microvm measured 18m09s at 4
+workers against 14m30s at 3, so the extra worker is a regression on the
+4-vCPU runner. The fix was validated at 4 workers anyway: 200/200 command-output
+runs (100 per theme), 400/400 disclosure cases at 20 repeats per theme, and
+320/320 rail/shell cases at 20 repeats per theme. The job ceiling rises to 40
+minutes so the slower fallback runner has headroom.
 
 The current serial chain expands to 147 unique gates: the 146-gate row records
 the measurement taken when the lane runner landed, and the generated-artifact
