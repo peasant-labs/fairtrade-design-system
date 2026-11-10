@@ -79,6 +79,9 @@ try {
         document.querySelectorAll('[data-theme]').forEach(node => { node.dataset.theme = theme })
       }, theme)
       await page.evaluate(() => document.fonts.ready)
+      // Let the host's mount-time state restoration commit before the first
+      // user action; finding the stream alone does not mean the host is ready.
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
     }
     for (const testCase of fixture.cases.filter(item => !item.invalid)) {
       for (const partition of fixture.partitions) {
@@ -117,10 +120,20 @@ try {
             // Ledger folds wordless work into its source prose run; the turn's own
             // article stays as an identity anchor while the thinking body moves.
             const expectedThinking = testCase.expectedIndices.map(index => domain.turns.find(turn => turn.index === index)).filter(turn => turn.entryType === 'thinking').map(turn => turn.content)
-            await page.waitForFunction(expected => {
-              const actual = [...document.querySelectorAll('.txn-stream .txn-turnwrap[data-partition="main"] .txn-thinking-body')].map(node => node.textContent)
-              return JSON.stringify(actual) === JSON.stringify(expected)
-            }, {}, expectedThinking)
+            try {
+              if (expectedThinking.length) {
+                await openVisibleDisclosures(page, '.txn-stream .txn-turnwrap[data-partition="main"] .txn-modelactions-head[aria-expanded="false"]')
+                await page.waitForFunction(count => [...document.querySelectorAll('.txn-stream .txn-turnwrap[data-partition="main"] .txn-thinking-toggle')].filter(node => !node.closest('[inert], [hidden], [aria-hidden="true"]') && node.getClientRects().length).length >= count, {}, expectedThinking.length)
+                await openVisibleDisclosures(page, '.txn-stream .txn-turnwrap[data-partition="main"] .txn-thinking-toggle[aria-expanded="false"]')
+              }
+              await page.waitForFunction(expected => {
+                const actual = [...document.querySelectorAll('.txn-stream .txn-turnwrap[data-partition="main"] .txn-thinking-body')].map(node => node.textContent)
+                return JSON.stringify(actual) === JSON.stringify(expected)
+              }, {}, expectedThinking)
+            } catch (cause) {
+              const details = await page.$$eval('.txn-stream .txn-turnwrap[data-partition="main"] .txn-thinking', nodes => nodes.map(node => ({ text: node.textContent, expanded: node.querySelector('button')?.getAttribute('aria-expanded'), hidden: !!node.closest('[inert], [hidden], [aria-hidden="true"]') })))
+              throw new Error(`${theme}/${testCase.name}/${partition}: thinking bodies did not become visible; expected ${JSON.stringify(expectedThinking)}, observed ${JSON.stringify(details)}`, { cause })
+            }
             const bodies = await page.$$eval('.txn-stream .txn-turnwrap[data-partition="main"] .txn-thinking-body', nodes => nodes.map(node => node.textContent))
             assert.deepEqual(bodies, expectedThinking, `${testCase.name}: main thinking bodies retain their order and content in ledger action runs`)
           }
@@ -135,6 +148,7 @@ try {
             for (const tool of source.toolCalls ?? []) if (tool.result) {
               // Re-scan after parent disclosures settle: a tool in an earlier
               // section can mount after the initial page-wide scan.
+              await openVisibleDisclosures(page, `${selector} .txn-modelactions-head[aria-expanded="false"]`)
               await openVisibleDisclosures(page, `${selector} .txn-tc-head[aria-expanded="false"]`)
               try {
                 await page.waitForFunction((target, result) => [...document.querySelectorAll(`${target} .txn-code`)].some(node => node.textContent === result && !node.closest('[inert], [hidden], [aria-hidden="true"]')), {}, selector, tool.result)
@@ -174,6 +188,7 @@ try {
         await (await page.$('.txn-search-input')).type(fixture.navigationSearch)
         await page.keyboard.press('Escape')
         await (await page.$('.txn-earlier-toggle')).click()
+        await page.waitForSelector('.txn-earlier-toggle[aria-expanded="true"]')
         const beforeIndices = await page.$$eval('[data-partition="main"]', nodes => nodes.map(node => node.dataset.turn))
         const link = (await page.$$('.txn-context-link'))[i]
         await link.focus()
@@ -181,9 +196,11 @@ try {
         await page.keyboard.press('Enter')
         await page.waitForFunction(target => new URLSearchParams(location.search).get('contextTarget') === target, {}, testCase.expectedTargets[i])
         if (i === 0 && testCase.exact) assert.equal(new URL(page.url()).hash, '#turn-0')
-        assert.ok((await page.$eval('.txn-app', node => node.textContent)).includes(fixture.sources[testCase.expectedTargets[i]].content))
+        await page.waitForFunction(content => document.querySelector('.txn-app')?.textContent.includes(content), {}, fixture.sources[testCase.expectedTargets[i]].content)
+        await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
         await page.goBack()
         await page.waitForSelector('.txn-earlier-toggle[aria-expanded="true"]')
+        await page.waitForFunction(expected => document.querySelector('.txn-stream')?.scrollTop === expected, {}, before)
         assert.equal(await page.$eval('.txn-stream', node => node.scrollTop), before)
         assert.deepEqual(await page.$$eval('[data-partition="main"]', nodes => nodes.map(node => node.dataset.turn)), beforeIndices)
         await controlKey('f')
@@ -195,6 +212,7 @@ try {
         await page.keyboard.press('Escape')
         // Restore the pre-click state for the second independent source control.
         await (await page.$('.txn-earlier-toggle')).click()
+        await page.waitForSelector('.txn-earlier-toggle[aria-expanded="false"]')
       }
     }
     for (const testCase of fixture.countCases) {
