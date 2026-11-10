@@ -247,7 +247,7 @@
     "test:fairtest:select": "node scripts/fairtest/select-fairtest.mjs",
     "test:fairtest:selection-receipt": "node scripts/fairtest/selection-receipt.mjs",
     "test:fairtest:preflight": "node scripts/fairtest/preflight-fairtest.mjs",
-    "test:fairtest:envelope": "node --test scripts/fairtest/run-envelope.test.mjs scripts/fairtest/worktree-state.test.mjs",
+    "test:fairtest:envelope": "node --test scripts/fairtest/run-envelope.test.mjs scripts/fairtest/worktree-state.test.mjs scripts/fairtest/config-shape.test.mjs",
     "test:fairtest:boundary": "node scripts/assert-fairtest-boundary.mjs && node scripts/fairtest-source.mjs --smoke",
     "test:fairtest:dispatch": "node scripts/fairtest/assert-target-dispatch.mjs",
     "test:fairtest:mounted": "node scripts/fairtest/run-mounted.mjs",
