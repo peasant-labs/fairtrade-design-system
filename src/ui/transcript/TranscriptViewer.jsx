@@ -1883,7 +1883,7 @@ export default function TranscriptViewer({
               </button>
             </div>
             <div className="txn-rail-body" id="txn-rail-left-body">
-              <OutlineRail viewModel={railViewModel} tab={tab} presentation={presentation} activeTurn={activeTurn} scope={scope} onJump={(idx) => jumpTo(idx, { switchTab: false })} />
+              <OutlineRail viewModel={railViewModel} tab={tab} presentation={presentation} activeTurn={activeTurn} onJump={(idx) => jumpTo(idx, { switchTab: false })} />
             </div>
           </Collapsible>
           <Collapsible className="txn-rail-strip txn-rail-strip-left"
@@ -2331,7 +2331,6 @@ export default function TranscriptViewer({
                 counts={counts}
                 checkpoints={commits}
                 filtersActive={filtersActive}
-                scope={scope}
                 onClear={() => setFilters(DEFAULT_FILTERS)}
                 onJumpStart={() => jumpTo(navigableTurns[0]?.index ?? 0, { switchTab: false })}
                 onJumpLatest={() => jumpTo(navigableTurns[navigableTurns.length - 1]?.index ?? 0, { switchTab: false })}
@@ -2374,8 +2373,8 @@ export default function TranscriptViewer({
           </div>
           <div className="txn-mobile-drawer-body">
             {(mobileDrawer || exitingMobileDrawer) === 'outline'
-              ? <OutlineRail viewModel={railViewModel} tab={tab} presentation={presentation} activeTurn={activeTurn} scope={scope} onJump={(idx) => { jumpTo(idx, { switchTab: false }); closeMobileDrawer() }} />
-              : <FiltersRail tab={tab} filters={filters} onFiltersChange={setFilters} counts={counts} checkpoints={commits} filtersActive={filtersActive} scope={scope}
+              ? <OutlineRail viewModel={railViewModel} tab={tab} presentation={presentation} activeTurn={activeTurn} onJump={(idx) => { jumpTo(idx, { switchTab: false }); closeMobileDrawer() }} />
+              : <FiltersRail tab={tab} filters={filters} onFiltersChange={setFilters} counts={counts} checkpoints={commits} filtersActive={filtersActive}
                 onClear={() => setFilters(DEFAULT_FILTERS)}
                 onJumpStart={() => { jumpTo(navigableTurns[0]?.index ?? 0, { switchTab: false }); closeMobileDrawer() }}
                 onJumpLatest={() => { jumpTo(navigableTurns[navigableTurns.length - 1]?.index ?? 0, { switchTab: false }); closeMobileDrawer() }} />}

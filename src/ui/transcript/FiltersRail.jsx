@@ -44,7 +44,6 @@ const TOOL_GROUP_META = {
  * @param {{ categories: { prompts: number, responses: number, thinking: number, toolcalls: number, system?: number }, toolGroups: Partial<Record<ToolGroup, number>> }} [props.counts]
  * @param {CommitVM[]} [props.checkpoints]    cooked session commits → the checkpoint selector (render-when-present)
  * @param {number} [props.filtersActive]
- * @param {{filtersText?: string, complete?: boolean}} [props.scope] the loaded-region scope the controls have read
  * @param {Function} [props.onClear]
  * @param {Function} [props.onJumpStart]
  * @param {Function} [props.onJumpLatest]
@@ -61,7 +60,6 @@ export default function FiltersRail({
   counts = { categories: { prompts: 0, responses: 0, thinking: 0, toolcalls: 0 }, toolGroups: {} },
   checkpoints = [],
   filtersActive = 0,
-  scope,
   onClear = () => {},
   onJumpStart = () => {},
   onJumpLatest = () => {},
@@ -109,11 +107,6 @@ export default function FiltersRail({
 
   return (
     <div className="txn-filters">
-      {scope?.filtersText && (
-        <p className="txn-scope txn-rail-scope" role="status">
-          {scope.filtersText}. filters read the turns that are loaded.
-        </p>
-      )}
       <div className="txn-filters-top">
         <span className="txn-filters-cap">categories</span>
         {filtersActive > 0 && (

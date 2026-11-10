@@ -99,23 +99,19 @@ function LedgerTurnCards({ viewModel, activeTurn, onJump }) {
  * @param {import('./state-capabilities.js').TranscriptTab} props.tab
  * @param {Presentation} [props.presentation]          chrome mode; defaults to 'classic'
  * @param {number} [props.activeTurn]                   the active TURN INDEX, for the ledger cards
- * @param {{outlineText?: string}} [props.scope]        the loaded-region scope the outline has read
  * @param {(turnIndex: number) => void} [props.onJump]
  */
-export default function OutlineRail({ viewModel, tab, onJump = () => {}, presentation = 'classic', activeTurn, scope }) {
+export default function OutlineRail({ viewModel, tab, onJump = () => {}, presentation = 'classic', activeTurn }) {
   const files = viewModel?.files ?? []
   const highlights = viewModel?.highlights ?? []
   /* the cooked friction annotations: prefer the analytics-derived patterns, else the per-turn
      annotations flattened off the turns (both are AnnotationVM). */
   const annotations =
     viewModel?.analytics?.patternAnnotations ?? (viewModel?.turns ?? []).flatMap((t) => t.annotations ?? [])
-  const scopeNote = scope?.outlineText ? <p className="txn-scope txn-rail-scope" role="status">{scope.outlineText}</p> : null
 
   if (tab === 'diffs') {
     return (
-      <>
-        {scopeNote}
-        <ul className="txn-outline">
+      <ul className="txn-outline">
         {files.filter((f) => f.edited).sort((a, b) => b.adds + b.dels - (a.adds + a.dels)).map((f) => (
           <li key={f.path}>
             <button type="button" className="txn-ol-row" onClick={() => onJump(f.turn ?? 0)}>
@@ -126,15 +122,12 @@ export default function OutlineRail({ viewModel, tab, onJump = () => {}, present
           </li>
         ))}
       </ul>
-      </>
     )
   }
 
   if (tab === 'files') {
     return (
-      <>
-        {scopeNote}
-        <ul className="txn-outline">
+      <ul className="txn-outline">
         {[...files].sort((a, b) => a.leaf.localeCompare(b.leaf)).map((f) => (
           <li key={f.path}>
             <button type="button" className="txn-ol-row" onClick={() => onJump(f.turn ?? 0)}>
@@ -145,15 +138,12 @@ export default function OutlineRail({ viewModel, tab, onJump = () => {}, present
           </li>
         ))}
       </ul>
-      </>
     )
   }
 
   if (tab === 'highlights') {
     return (
-      <>
-        {scopeNote}
-        <ul className="txn-outline">
+      <ul className="txn-outline">
         {highlights.map((h) => {
           const Icon = HIGHLIGHT_ICON[h.kind] ?? ChevronRight
           const isStatic = h.kind === 'checkpoint'
@@ -167,15 +157,12 @@ export default function OutlineRail({ viewModel, tab, onJump = () => {}, present
           )
         })}
       </ul>
-      </>
     )
   }
 
   if (tab === 'annotations') {
     return (
-      <>
-        {scopeNote}
-        <div className="txn-outline-grouped">
+      <div className="txn-outline-grouped">
         {ANNOTATION_ORDER.map((kind) => {
           const items = annotations.filter((a) => a.kind === kind)
           if (!items.length) return null
@@ -197,7 +184,6 @@ export default function OutlineRail({ viewModel, tab, onJump = () => {}, present
           )
         })}
       </div>
-      </>
     )
   }
 
@@ -206,10 +192,7 @@ export default function OutlineRail({ viewModel, tab, onJump = () => {}, present
      task with no first turn offers no destination, so it is skipped rather than sent to turn 0. */
   if (tab === 'trace' && presentation === 'ledger') {
     return (
-      <>
-        {scopeNote}
-        <LedgerTurnCards viewModel={viewModel} activeTurn={activeTurn} onJump={onJump} />
-      </>
+      <LedgerTurnCards viewModel={viewModel} activeTurn={activeTurn} onJump={onJump} />
     )
   }
 
@@ -225,14 +208,11 @@ export default function OutlineRail({ viewModel, tab, onJump = () => {}, present
     error: t.error,
   }))
   return (
-    <>
-      {scopeNote}
-      <StepsWaterfall
-        className="txn-ol-waterfall"
-        tasks={waterfallTasks}
-        label="user turns by duration"
-        onJump={(id) => onJump(Number(id))}
-      />
-    </>
+    <StepsWaterfall
+      className="txn-ol-waterfall"
+      tasks={waterfallTasks}
+      label="user turns by duration"
+      onJump={(id) => onJump(Number(id))}
+    />
   )
 }

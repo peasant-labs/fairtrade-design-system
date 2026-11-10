@@ -294,8 +294,6 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(atPosition <= row.expect.maxCards, `${row.name}: mounted cards at scrollTop ${scrollTop} must not exceed ${row.expect.maxCards}`)
     }
     /* Files, filters and outline state the exact loaded-region scope. */
-    report.check(text(mounted.container.querySelector('.txn-rail-right .txn-scope')) === `${row.expect.filtersScope}. filters read the turns that are loaded.`, `${row.name}: the filters rail must state its loaded-region scope`)
-    report.check(text(mounted.container.querySelector('.txn-rail-left .txn-scope')) === row.expect.outlineScope, `${row.name}: the outline must state its loaded-region scope`)
     const filesTab = [...mounted.container.querySelectorAll('[role="tab"]')].find((node) => text(node).startsWith('files'))
     if (filesTab) {
       await mounted.act(() => click(window, filesTab))

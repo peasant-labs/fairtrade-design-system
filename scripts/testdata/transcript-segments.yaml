@@ -177,8 +177,6 @@ mountCases:
       boundarySides: [newer]
       captions:
         - turns 82–1311, 30 segments, 30 MiB
-      filtersScope: showing matches from 2 of 32 segments loaded
-      outlineScope: 2 of 32 segments loaded; the outline lists loaded user turns.
       filesScope: derived from 82 of 1312 turns, 2 of 32 segments loaded
       continuationCount: 0
       truncation: false
@@ -202,8 +200,6 @@ mountCases:
       captions:
         - turns 4–17, 1 segment, 4 KiB
         - turns 46–58, 1 segment, 4 KiB
-      filtersScope: showing matches from 2 of 4 segments loaded
-      outlineScope: 2 of 4 segments loaded; the outline lists loaded user turns.
       filesScope: derived from 28 of 55 turns, 2 of 4 segments loaded
       continuationCount: 0
       truncation: false
@@ -218,8 +214,6 @@ mountCases:
       boundarySides: [newer]
       captions:
         - turns 18–58, 3 segments, 12 KiB
-      filtersScope: showing matches from 1 of 4 segments loaded
-      outlineScope: 1 of 4 segments loaded; the outline lists loaded user turns.
       filesScope: derived from 14 of 55 turns, 1 of 4 segments loaded
       continuationCount: 0
       truncation: true
@@ -235,8 +229,6 @@ mountCases:
       captions:
         - turns 0–40, 1 segment, 1 MiB
         - turns 82–1311, 30 segments, 30 MiB
-      filtersScope: showing matches from 1 of 32 segments loaded
-      outlineScope: 1 of 32 segments loaded; the outline lists loaded user turns.
       filesScope: derived from 41 of 1312 turns, 1 of 32 segments loaded
       continuationCount: 1
       truncation: false
@@ -250,8 +242,6 @@ mountCases:
       boundarySides: [between]
       captions:
         - turns 18–45, 2 segments, 8 KiB
-      filtersScope: showing matches from 2 of 4 segments loaded
-      outlineScope: 2 of 4 segments loaded; the outline lists loaded user turns.
       filesScope: derived from 27 of 55 turns, 2 of 4 segments loaded
       continuationCount: 1
       truncation: false
@@ -266,8 +256,6 @@ mountCases:
       captions:
         - turns 4–31, 2 segments, 8 KiB
         - turns 46–58, 1 segment, 4 KiB
-      filtersScope: showing matches from 1 of 4 segments loaded
-      outlineScope: 1 of 4 segments loaded; the outline lists loaded user turns.
       filesScope: derived from 14 of 55 turns, 1 of 4 segments loaded
       continuationCount: 1
       truncation: false
@@ -291,8 +279,6 @@ mountCases:
       captions:
         - turns 4–17, 1 segment, 4 KiB
         - turns 32–45, 1 segment, 4 KiB
-      filtersScope: showing matches from 2 of 4 segments loaded
-      outlineScope: 2 of 4 segments loaded; the outline lists loaded user turns.
       filesScope: derived from 27 of 55 turns, 2 of 4 segments loaded
       continuationCount: 2
       truncation: false
@@ -305,8 +291,6 @@ mountCases:
       boundaryCount: 0
       boundarySides: []
       captions: []
-      filtersScope: all 1 segment loaded
-      outlineScope: all 1 segment loaded; the outline lists every user turn.
       filesScope: derived from all 10 loaded turns
       continuationCount: 0
       truncation: false
@@ -319,8 +303,6 @@ mountCases:
       boundaryCount: 0
       boundarySides: []
       captions: []
-      filtersScope: showing matches from 0 of 0 segments loaded
-      outlineScope: 0 of 0 segments loaded; the outline lists loaded user turns.
       filesScope: derived from 0 of 0 turns, 0 of 0 segments loaded
       continuationCount: 0
       truncation: false

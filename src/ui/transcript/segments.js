@@ -315,7 +315,7 @@ export function scrubberTicks(directory) {
   })
 }
 
-/** What the filters rail, the Files tab and the outline have actually read. */
+/** What the trace count and the Files tab have actually read. */
 export function loadedScope(directory, regions) {
   const totalSegments = Math.max(0, isFiniteNumber(directory?.totalSegments) ? directory.totalSegments : regions.length)
   const loadedSegments = regions.reduce((sum, region) => sum + region.refs.length, 0)
@@ -331,10 +331,6 @@ export function loadedScope(directory, regions) {
     loadedTurns,
     totalTurns,
     complete,
-    filtersText: complete ? segmentPart : `showing matches from ${segmentPart}`,
-    outlineText: complete
-      ? `${segmentPart}; the outline lists every user turn.`
-      : `${segmentPart}; the outline lists loaded user turns.`,
     filesText: complete
       ? `derived from all ${loadedTurns} loaded ${loadedTurns === 1 ? 'turn' : 'turns'}`
       : `derived from ${loadedTurns} of ${totalTurns} turns, ${segmentPart}`,
