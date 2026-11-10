@@ -25,7 +25,8 @@
                                   the DESIGN.md format, resolved from the same two blocks; the
                                   authored prose below the frontmatter is left untouched.
 
-   Run by `pnpm build` and checked fresh in CI (re-run, then `git diff --exit-code`). It reads
+   Run by `pnpm build` and checked fresh in CI by `scripts/check-generated-artifacts.mjs`
+   (snapshot, regenerate, compare bytes; it does not require a git repository). It reads
    values, never authors them: the CSS + the component files stay the only sources. usage: node scripts/gen-llm-artifacts.mjs */
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'

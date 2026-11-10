@@ -18,6 +18,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { createServer } from 'vite'
+import { FAIRTRADE_VITE_CACHE_DIR } from './vite-cache-dir.mjs'
 import react from '@vitejs/plugin-react'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -45,7 +46,7 @@ if (mutation) {
   })
 }
 
-const server = await createServer({ appType: 'custom', configFile: false, logLevel: 'silent', plugins, root: ROOT, server: { middlewareMode: true } })
+const server = await createServer({ cacheDir: FAIRTRADE_VITE_CACHE_DIR, appType: 'custom', configFile: false, logLevel: 'silent', plugins, root: ROOT, server: { middlewareMode: true } })
 const failures = []
 let totalChecks = 0
 function check(passed, message) {

@@ -898,9 +898,11 @@ function checkPortOwnerShape(entry, path) {
 
 /**
  * Derive the loopback-origin consumer set from the filesystem: every module
- * under scripts/fairtest/ plus the Fairtest Playwright config that reads a
- * FAIRTEST_APP_* origin symbol from the runtime owner. Hand-maintaining this
- * list would let a new consumer read (and potentially re-declare) the origin
+ * under scripts/fairtest/ plus the Fairtest Playwright config, filtered to
+ * modules that read a FAIRTEST_APP_* origin symbol from the runtime owner.
+ * The config is a candidate so re-adding an origin read there is caught, even
+ * though the current config declares no origin. Hand-maintaining this list
+ * would let a new consumer read (and potentially re-declare) the origin
  * ungoverned, so the port-owner case compares the declared consumers against
  * exactly this set.
  * @returns {string[]} repository-relative consumer module paths, sorted
@@ -913,7 +915,13 @@ function deriveLoopbackOriginConsumers() {
   return candidates
     .filter((relative) => {
       const text = readFileSync(resolve(ROOT, relative), 'utf8')
-      return /from '[^']*fairtest-runtime\.mjs'/.test(text) && /FAIRTEST_APP_(PORT|HOST|BASE_URL)/.test(text)
+      // Read the imported bindings, not any occurrence in the module: a guard
+      // that names the origin keys in a string (config-shape.test.mjs) is not a
+      // consumer, and a re-added import in the config still is.
+      for (const match of text.matchAll(/import\s*\{([^}]*)\}\s*from\s*'[^']*fairtest-runtime\.mjs'/g)) {
+        if (/\bFAIRTEST_APP_(?:PORT|HOST|BASE_URL)\b/.test(match[1])) return true
+      }
+      return false
     })
     .sort()
 }
@@ -1956,7 +1964,9 @@ function runRowDirPreparationCase(entry) {
  * config is imported, never re-described: exactly one project, the exact
  * product/component journey matches with no journey module left unmatched, the
  * declared retry and worker budget, the reduced-motion marker, and no
- * runner-managed server key anywhere in the config source.
+ * runner-managed server key anywhere in the config source. The required-CI
+ * subset of these invariants lives in config-shape.test.mjs; this fixture
+ * remains the full product-contract check.
  * @param {Record<string, unknown>} entry
  */
 async function runRunnerConfigCase(entry) {
@@ -1973,21 +1983,21 @@ async function runRunnerConfigCase(entry) {
   }
   assert.deepEqual(config.projects.map((/** @type {{ name: string }} */ project) => project.name), /** @type {string[]} */ (entry.expectedProjects), `${CORPUS_REL}: case "${name}" declares projects ${JSON.stringify(entry.expectedProjects)} for field "expectedProjects" at path cases.${name}.expectedProjects; repair: the Fairtest config carries exactly the one fairtest project.`)
   assert.equal(config.retries, entry.expectedRetries, `${CORPUS_REL}: case "${name}" declares retries ${JSON.stringify(entry.expectedRetries)} for field "expectedRetries" at path cases.${name}.expectedRetries; repair: the mounted rows are single-attempt evidence, so retries must stay ${JSON.stringify(entry.expectedRetries)}.`)
-  assert.equal(config.workers, entry.expectedWorkers, `${CORPUS_REL}: case "${name}" declares workers ${JSON.stringify(entry.expectedWorkers)} for field "expectedWorkers" at path cases.${name}.expectedWorkers; repair: each worker owns its own loopback origin, so workers must stay ${JSON.stringify(entry.expectedWorkers)}.`)
+  const runtime = /** @type {Record<string, any>} */ (await import(pathToFileURL(resolve(ROOT, RUNTIME_REL)).href))
+  // Workers have one runtime owner. The fixture pins the declared default; an
+  // explicit FAIRTEST_MOUNTED_WORKERS override changes the effective
+  // config.workers without failing this contract, so a local parallelism bump
+  // does not need a fixture edit.
+  assert.equal(config.workers, runtime.FAIRTEST_MOUNTED_WORKERS, `${CORPUS_REL}: case "${name}" declares workers ${JSON.stringify(config.workers)} which is not the effective owner in ${RUNTIME_REL} for field "expectedWorkers" at path cases.${name}.expectedWorkers; repair: read the worker budget from ${RUNTIME_REL} instead of declaring it again.`)
+  assert.equal(entry.expectedWorkers, runtime.FAIRTEST_DEFAULT_MOUNTED_WORKERS, `${CORPUS_REL}: case "${name}" expects workers ${JSON.stringify(entry.expectedWorkers)} which is not the declared default in ${RUNTIME_REL} for field "expectedWorkers" at path cases.${name}.expectedWorkers; repair: keep the fixture and the runtime default in sync.`)
   assert.equal(config.fullyParallel, entry.expectedFullyParallel, `${CORPUS_REL}: case "${name}" declares fullyParallel ${JSON.stringify(entry.expectedFullyParallel)} for field "expectedFullyParallel" at path cases.${name}.expectedFullyParallel; repair: the rows are row-keyed under one immutable run root and may run in parallel, so fullyParallel must stay ${JSON.stringify(entry.expectedFullyParallel)}.`)
   assert.equal(config.testDir, entry.expectedTestDir, `${CORPUS_REL}: case "${name}" declares testDir ${JSON.stringify(entry.expectedTestDir)} for field "expectedTestDir" at path cases.${name}.expectedTestDir; repair: the Fairtest config selects only the Fairtest journey directory.`)
   assert.equal(config.use.reducedMotion, entry.expectedReducedMotion, `${CORPUS_REL}: case "${name}" declares reducedMotion ${JSON.stringify(entry.expectedReducedMotion)} for field "expectedReducedMotion" at path cases.${name}.expectedReducedMotion; repair: the mounted rows must render with reduced motion.`)
   // One viewport owner: the config's declared value must match the fixture AND
   // the single runtime owner, so a fourth declaration beside them cannot appear
   // without one of the two comparisons failing.
-  const runtime = /** @type {Record<string, any>} */ (await import(pathToFileURL(resolve(ROOT, RUNTIME_REL)).href))
   assert.deepEqual({ ...config.use.viewport }, { .../** @type {Record<string, unknown>} */ (entry.expectedViewport) }, `${CORPUS_REL}: case "${name}" declares viewport ${JSON.stringify(config.use.viewport)} for field "expectedViewport" at path cases.${name}.expectedViewport; repair: declare the shared render viewport for "expectedViewport".`)
   assert.deepEqual({ ...config.use.viewport }, { ...runtime.PRODUCT_VIEWPORT }, `${CORPUS_REL}: case "${name}" declares viewport ${JSON.stringify(config.use.viewport)} which is not the one owner in ${RUNTIME_REL} for field "expectedViewport" at path cases.${name}.expectedViewport; repair: read the render viewport from ${RUNTIME_REL} instead of declaring it again.`)
-  // One worker-budget owner: the config's declared value and the fixture's
-  // expected value must both be the runtime constant, so the worker cap cannot
-  // be changed in only one of the three places that would need to agree.
-  assert.equal(config.workers, runtime.FAIRTEST_MOUNTED_WORKERS, `${CORPUS_REL}: case "${name}" declares workers ${JSON.stringify(config.workers)} which is not the one owner in ${RUNTIME_REL} for field "expectedWorkers" at path cases.${name}.expectedWorkers; repair: read the worker budget from ${RUNTIME_REL} instead of declaring it again.`)
-  assert.equal(entry.expectedWorkers, runtime.FAIRTEST_DEFAULT_MOUNTED_WORKERS, `${CORPUS_REL}: case "${name}" expects workers ${JSON.stringify(entry.expectedWorkers)} which is not the declared default in ${RUNTIME_REL} for field "expectedWorkers" at path cases.${name}.expectedWorkers; repair: keep the fixture and the runtime default in sync.`)
   const matches = Array.isArray(config.testMatch) ? config.testMatch : [config.testMatch]
   assert.deepEqual(matches, /** @type {string[]} */ (entry.expectedTestMatch), `${CORPUS_REL}: case "${name}" declares testMatch ${JSON.stringify(entry.expectedTestMatch)} for field "expectedTestMatch" at path cases.${name}.expectedTestMatch; repair: the config must select exactly the declared product and component journey entries.`)
   // Every mounted journey module on disk must be selected, so a component
@@ -2018,7 +2028,7 @@ async function runPortOwnerCase(entry) {
   const owner = /** @type {Record<string, any>} */ (await import(pathToFileURL(resolve(ROOT, ownerModule)).href))
   const config = /** @type {Record<string, any>} */ (await import(pathToFileURL(resolve(ROOT, CONFIG_REL)).href))
   for (const key of ['FAIRTEST_APP_HOST', 'FAIRTEST_APP_PORT', 'FAIRTEST_APP_BASE_URL']) {
-    assert.equal(config[key], owner[key], `${CORPUS_REL}: case "${name}" found the config declaring its own ${key} for field "ownerModule" at path cases.${name}.ownerModule; repair: import ${key} from ${ownerModule} instead of declaring it again.`)
+    assert.ok(!(key in config), `${CORPUS_REL}: case "${name}" found the config re-exporting ${key} for field "ownerModule" at path cases.${name}.ownerModule; repair: keep the loopback origin in ${ownerModule}; the config reads no origin.`)
   }
   assert.equal(owner.FAIRTEST_APP_BASE_URL, `http://${owner.FAIRTEST_APP_HOST}:${owner.FAIRTEST_APP_PORT}`, `${CORPUS_REL}: case "${name}" found a base URL outside the declared host and port for field "ownerModule" at path cases.${name}.ownerModule; repair: derive the base URL from the declared pair.`)
   assert.ok(!('baseURL' in config.default.use), `${CORPUS_REL}: case "${name}" found a runner-managed baseURL for field "ownerModule" at path cases.${name}.ownerModule; repair: rows must navigate by the running worker's absolute driver.baseUrl, never a fixed use.baseURL.`)
@@ -3771,6 +3781,9 @@ describe('fairtest host export ownership', async () => {
     'selection-receipt.mjs',
     'preflight-fairtest.mjs',
     'run-envelope.test.mjs',
+    'config-shape.test.mjs',
+    'worktree-state.mjs',
+    'worktree-state.test.mjs',
     'fairtest-dev.mjs',
     'local-bridge.test.mjs',
     'process-supervisor.mjs',
@@ -4008,19 +4021,20 @@ describe('fairtest host export ownership', async () => {
     }
   })
 
-  it('keeps the contract suites themselves free of port literals', async () => {
+  it('keeps the contract suites themselves free of fixed port literals', async () => {
     // The no-port-literal ownership rule cannot stop at the host modules: the
     // test files run in the same node --test invocation and could hold the
     // same second declaration. The suite list comes from the declared command
     // graph, so a suite the contract command runs is covered the moment it is
-    // declared there.
+    // declared there. Zero is the documented OS-assigned sentinel, not a fixed
+    // port, so it stays legal for the focused port-0 driver case.
     const contract = await import('./run-product-contract.mjs')
     for (const file of contract.PRODUCT_CONTRACT_SUITES) {
       const code = stripComments(readFileSync(resolve(ROOT, file), 'utf8'))
       assert.equal(
-        /\bport\s*[:=]\s*\d/.exec(code),
+        /\bport\s*[:=]\s*(?!0\b)\d/.exec(code),
         null,
-        `${file}: declares a loopback port literal at path ${file}; repair: take every port from claimScratchPort in scripts/fairtest/fairtest-runtime.mjs, never a number.`,
+        `${file}: declares a fixed loopback port literal at path ${file}; repair: take every port from claimScratchPort in scripts/fairtest/fairtest-runtime.mjs, never a fixed number.`,
       )
     }
   })
@@ -4192,6 +4206,26 @@ describe('product adapter lifecycle with the real static driver', () => {
     assert.equal(record.driverPort, port, 'the real driver must have been driven on the second claimed scratch port')
     assert.notEqual(port, fairtestScratchPort(REAL_DRIVER_PURPOSES.squatter), 'two purposes must never share one declared scratch port')
     assert.deepEqual(record.calls, ['start', 'reset', 'stop'], 'the absent-build failure must still run one reset before one stop')
+  })
+
+  it('reports the OS-assigned port from a port-0 start through readiness and baseUrl', { timeout: 30000 }, async () => {
+    const scratch = mkdtempSync(join(tmpdir(), 'fairtest-driver-port-0-'))
+    const distRoot = createStaticFixtureRoot(scratch)
+    const driver = createProductStaticDriver({ port: 0, host: FAIRTEST_APP_HOST, distRoot })
+    try {
+      assert.equal(driver.port, 0, 'the requested port starts at 0 before the OS assigns one')
+      await driver.start()
+      const ready = await driver.readiness()
+      assert.ok(driver.port !== 0, 'a port-0 start must report the OS-assigned port')
+      assert.equal(ready.port, driver.port, 'readiness must report the same bound port')
+      assert.equal(driver.baseUrl, `http://${FAIRTEST_APP_HOST}:${driver.port}`, 'baseUrl must follow the bound port')
+      const response = await readLoopbackResponse(`${driver.baseUrl}/index.html`)
+      assert.equal(response.status, 200, 'the bound origin must serve the built app')
+      assert.match(response.body, /id="root"/, 'the bound origin must serve the app mount point')
+    } finally {
+      await driver.stop()
+      rmSync(scratch, { recursive: true, force: true })
+    }
   })
 })
 

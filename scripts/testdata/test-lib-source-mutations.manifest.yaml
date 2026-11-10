@@ -1,0 +1,21 @@
+# Required-name manifest for the tracked-source writer scanner. The scanner
+# tests must cover every named case, and the real repository scan must name
+# exactly these files, so a dropped case or a new writer cannot hide.
+expectedScannerCaseCount: 11
+requiredScannerCaseNames:
+  - literal-src-path
+  - joined-src-segments
+  - resolved-src-literal
+  - transitive-identifier
+  - rename-destination
+  - rename-source
+  - append-alias
+  - scratch-copy
+  - tmpdir-src-segment
+  - public-write
+  - comment-mentions-src
+expectedSourceMutationFileCount: 3
+requiredSourceMutationFiles:
+  - scripts/timeline-a11y.test.mjs
+  - scripts/timeline-ghosts.test.mjs
+  - scripts/timeline-highlight.test.mjs
