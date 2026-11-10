@@ -6,6 +6,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import puppeteer from 'puppeteer-core'
 import { preview } from 'vite'
+import { FAIRTRADE_VITE_CACHE_DIR } from './vite-cache-dir.mjs'
 import YAML from 'yaml'
 import { SurfaceGate } from './surface-gate.mjs'
 
@@ -42,6 +43,7 @@ if (!builtJavaScript.includes(fixture.buildMarker)) {
 
 const server = await preview({
   root: ROOT,
+  cacheDir: FAIRTRADE_VITE_CACHE_DIR,
   configFile: false,
   logLevel: 'silent',
   preview: { host: '127.0.0.1', port: 0, strictPort: true },

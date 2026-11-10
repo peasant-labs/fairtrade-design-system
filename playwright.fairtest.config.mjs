@@ -15,9 +15,9 @@
  *
  * Loopback origin ownership: the host, the port, and the base URL have ONE
  * owner, scripts/fairtest/fairtest-runtime.mjs, which the row-scoped producer
- * also reads to bind its static driver. This config re-exports those values
- * unchanged; it never declares a host, a port, or a base URL of its own, so
- * the declared owner is the one production code actually reads.
+ * also reads to bind its static driver. This config declares no host, port, or
+ * base URL and re-exports none; it reads only the worker budget and the render
+ * viewport, so the declared owner is the one production code actually reads.
  *
  * Viewport ownership: the render viewport is a product-evidence parameter the
  * rendered-root predicate depends on, so it lives in the same runtime owner
@@ -42,11 +42,7 @@
  * `*.test.mjs` fixtures and the broad story smoke.
  */
 import { defineConfig } from '@playwright/test'
-import { FAIRTEST_APP_BASE_URL, FAIRTEST_APP_HOST, FAIRTEST_APP_PORT, FAIRTEST_MOUNTED_WORKERS, PRODUCT_VIEWPORT } from './scripts/fairtest/fairtest-runtime.mjs'
-
-/* Loopback host, port, and base URL, re-exported unchanged from their single
- * owner in scripts/fairtest/fairtest-runtime.mjs. Never a second declaration. */
-export { FAIRTEST_APP_BASE_URL, FAIRTEST_APP_HOST, FAIRTEST_APP_PORT }
+import { FAIRTEST_MOUNTED_WORKERS, PRODUCT_VIEWPORT } from './scripts/fairtest/fairtest-runtime.mjs'
 
 const RUN_ROOT = process.env.FAIRTEST_RUN_ROOT || ''
 

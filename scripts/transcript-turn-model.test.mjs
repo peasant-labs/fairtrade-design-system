@@ -7,6 +7,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { createRoot } from 'react-dom/client'
 import { JSDOM } from 'jsdom'
 import { createServer } from 'vite'
+import { FAIRTRADE_VITE_CACHE_DIR } from './vite-cache-dir.mjs'
 import YAML from 'yaml'
 
 const ROOT = resolve(new URL('..', import.meta.url).pathname)
@@ -35,7 +36,7 @@ const plugin = mutation ? {
   },
 } : null
 if (plugin) plugins.push(plugin)
-const server = await createServer({ appType: 'custom', configFile: false, logLevel: 'silent', root: ROOT, plugins })
+const server = await createServer({ cacheDir: FAIRTRADE_VITE_CACHE_DIR, appType: 'custom', configFile: false, logLevel: 'silent', root: ROOT, plugins })
 
 const failures = []
 try {

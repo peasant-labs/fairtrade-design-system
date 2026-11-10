@@ -3,6 +3,7 @@ import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { resolve } from 'node:path'
 import { preview } from 'vite'
+import { FAIRTRADE_VITE_CACHE_DIR } from './vite-cache-dir.mjs'
 import puppeteer from 'puppeteer-core'
 import YAML from 'yaml'
 import { installHarnessGuard } from './harness-guard.mjs'
@@ -21,7 +22,7 @@ assert.ok(bundle.includes('helper-tree-rail__path'), 'built artifact must contai
 assert.ok(bundle.includes('data-helper-paging'), 'built artifact must contain the host paging slot marker; rebuild this checkout')
 mkdirSync(output, { recursive: true })
 installHarnessGuard({ label: 'helper groups mounted probe' })
-const served = await preview({ configFile: false, preview: { port, strictPort: true, host: '127.0.0.1' } })
+const served = await preview({ cacheDir: FAIRTRADE_VITE_CACHE_DIR, configFile: false, preview: { port, strictPort: true, host: '127.0.0.1' } })
 const browser = await puppeteer.launch({ executablePath: chrome, headless: true, defaultViewport: { width: 1440, height: 1000 } })
 const evidence = { source: process.cwd(), commit: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), assets, probes: [] }
 const luminance = (css) => {

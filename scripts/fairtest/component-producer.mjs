@@ -29,13 +29,13 @@
 // repair. A failing row never writes a passing record.
 
 import { createHash } from 'node:crypto'
-import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
 import { join, resolve } from 'node:path'
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { FAIRTEST_APP_HOST, FAIRTEST_STORYBOOK_PORT, PRODUCT_VIEWPORT } from './fairtest-runtime.mjs'
 import { fairtestPath } from './fairtest-paths.mjs'
+import { readWorktreeState } from './worktree-state.mjs'
 import { assertProductThemeObservation, observeProductTheme } from './fairtrade-targets.mjs'
 import { AXE_RESULT_FIELDS, scanAxe, seriousViolations } from '../journey/lib/assertions.mjs'
 import {
@@ -427,32 +427,6 @@ function sha256(data) {
 }
 
 /**
- * Read the integration commit SHA and dirty state from the worktree that
- * produced the built Storybook artifact.
- * @returns {{ commit: string, dirty: boolean }} commit and dirty state
- */
-function readWorktreeState() {
-  let commit = 'unknown'
-  let dirty = true
-  try {
-    commit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
-  } catch (error) {
-    const cause = error instanceof Error ? error.message : String(error)
-    throw new Error(
-      `component producer: cannot read the integration commit for field "commit" at path provenance.commit; caused by ${cause}; ` +
-      'repair: run the mounted row inside the fairtrade worktree so git rev-parse HEAD resolves.',
-    )
-  }
-  try {
-    const status = execFileSync('git', ['status', '--porcelain'], { encoding: 'utf8' })
-    dirty = status.trim().length > 0
-  } catch {
-    dirty = true
-  }
-  return { commit, dirty }
-}
-
-/**
  * Fail-closed check that one axe scan carries exactly the shared compact
  * report field set.
  * @param {unknown} scan compact axe report
@@ -747,7 +721,7 @@ export async function collectComponentServedAssets({ baseUrl, servedHtml, label 
  */
 async function collectComponentProvenance({ baseUrl, servedHtml, viewport, targetIdentity, themeObservations, storyId }) {
   const { assetDigests } = await collectComponentServedAssets({ baseUrl, servedHtml })
-  const { commit, dirty } = readWorktreeState()
+  const { commit, dirty } = readWorktreeState({ label: 'component producer' })
   // The comparison reads storybook-static/, so the receipt names that tree, not
   // the product run root: servedFrom and root can never disagree.
   const comparison = assertServedDigestsMatchRunRoot({
