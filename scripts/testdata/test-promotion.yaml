@@ -6,8 +6,8 @@ records:
       productionPath: The built dist/ Fairtrade graph product under the actual Playwright host via FAIRTEST_RUN_ROOT=<run-root> pnpm test:fairtest:mounted -- --target=product.
       cost: Two bounded theme rows, one browser and service lifecycle, one named map-section action, and six small artifacts per row, inside the existing job budget with no retries.
       lifetime: One immutable run root created fresh per run plus one loopback service, cleaned up in finally on success, failure, timeout, and interruption.
-      concurrency: One product row at a time; row identity plus the immutable run root prevent stale or cross-run output.
-      ciParity: The exact command runs after a clean build in the pinned Playwright container; no local demo or external service is assumed. The pinned job's mounted steps invoke it for both targets, so a green CI run proves the rows ran.
+      concurrency: Product rows may run in parallel; each row writes its row-keyed producer directory under the immutable run root, and each Playwright worker owns an OS-assigned loopback port, so no row shares an origin or a protected producer key.
+      ciParity: The exact command runs after a clean build in the pinned Playwright container; no local demo or external service is assumed. The pinned job's one mounted step invokes it with --target=all, so a green CI run proves both target journeys ran.
       evidence: Computed styles, ARIA tree, axe report, screenshot, resolution, normalized theme observation, and served-build provenance with asset digests.
       mutation: A wrong theme, missing selector or part, unregistered action, missing artifact, or stale served asset kills the row for the intended reason.
       exitCondition: Remove or simplify the mounted row when a lower-level gate or an existing journey proves the same named risk.
@@ -29,8 +29,8 @@ records:
       productionPath: The built storybook-static direct iframe for one named story and its documented root node.
       cost: Two bounded component rows and six small artifacts; no app service, product row, or catalog duplicate.
       lifetime: One run root and one loopback storybook port with deterministic cleanup on every exit path.
-      concurrency: Component row identity is separate from product rows and cannot share a protected producer key.
-      ciParity: The exact component command runs after a clean storybook build in the pinned container.
+      concurrency: Component rows may run in parallel; component row identity is separate from product rows, each row writes its own keyed directory, and each Playwright worker owns an OS-assigned loopback port.
+      ciParity: The exact component command runs after a clean storybook build in the pinned container; the shared --target=all invocation proves the component rows ran.
       evidence: Mounted root, interaction result, ARIA, computed tokens, axe output, screenshot, resolution, and provenance.
       mutation: A missing root, wrong theme, missing interaction, or product-shaped proof kills the component owner.
       exitCondition: Keep only named component risks; remove the row if an existing journey proves the same behavior without mounting.

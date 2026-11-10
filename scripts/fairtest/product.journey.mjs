@@ -4,7 +4,7 @@
  * registered product route and theme.
  *
  * Each row drives the real built app from dist/ through the Fairtrade adapter
- * lifecycle on the fixed loopback port, observes the complete product tuple
+ * lifecycle on the worker-owned loopback port, observes the complete product tuple
  * (chrome, body, exact route, the route's initial section, mounted view,
  * normalized theme, and the route's page-level notice when it declares one),
  * performs the route's named section action with a trusted click, and writes
@@ -21,7 +21,7 @@
  */
 import { test, expect } from '@playwright/test'
 import { createAdapter } from './fairtrade-adapter.mjs'
-import { FAIRTEST_APP_HOST, FAIRTEST_APP_PORT } from './fairtest-runtime.mjs'
+import { FAIRTEST_APP_HOST } from './fairtest-runtime.mjs'
 import { PRODUCT_A11Y_GATE_POINT_SLOTS, PRODUCT_ROUTES, PRODUCT_TARGET, PRODUCT_TARGET_ID, productA11yPointLabels } from './fairtrade-targets.mjs'
 import {
   PRODUCT_ARTIFACT_CLASSES,
@@ -69,7 +69,9 @@ test.describe('fairtest mounted product', () => {
 
   test.beforeAll(async () => {
     runRoot = resolveProductRunRoot()
-    driver = createProductStaticDriver({ port: FAIRTEST_APP_PORT, host: FAIRTEST_APP_HOST })
+    // Each worker gets its own OS-assigned loopback port, so parallel rows
+    // never share an origin and a foreign local server cannot block the run.
+    driver = createProductStaticDriver({ port: 0, host: FAIRTEST_APP_HOST })
     adapter = await createAdapter({
       runId: sanitizeRunId(runRoot),
       driver,

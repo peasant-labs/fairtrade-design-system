@@ -101,7 +101,11 @@ jobs:
       # run envelope records the same total and per-stage minutes; a drift
       # between this declaration, the envelope, and the job timeout fails the
       # workflow guard.
-      FAIRTEST_BUDGET_MINUTES: "24"
+      FAIRTEST_BUDGET_MINUTES: "12"
+      # The mounted-row worker budget. Each worker binds its own loopback port
+      # from the runtime owner, so the rows run in parallel without sharing an
+      # origin. Kept explicit here so CI's parallelism is reviewable.
+      FAIRTEST_MOUNTED_WORKERS: "4"
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -148,7 +152,7 @@ jobs:
       # Fairtest durable evidence: one immutable run envelope, the browser-free
       # pre-service contracts (inventory, list, selection, selection receipt),
       # the bounded product/component producer, then verification, an always-run
-      # preflight, and a pinned whole-root upload. The 24-minute Fairtest budget
+      # preflight, and a pinned whole-root upload. The 12-minute Fairtest budget
       # is declared in guards/run-envelope.json and enforced by the preflight;
       # the enclosing 30-minute job is unchanged.
       - name: Fairtest run envelope
@@ -193,19 +197,15 @@ jobs:
           FAIRTEST_CI_PROCESS: "1"
         run: pnpm test:fairtest:process
 
-      # The bounded producer starts the one adapter-managed loopback service and
-      # writes a fresh producer/ subtree; JOURNEY_HTML=0 keeps report generation
-      # out of the budget. retries: 0 is declared by the one-project Fairtest
-      # Playwright config.
-      - name: Fairtest mounted product producer
+      # One bounded producer run mounts both journeys. Each Playwright worker
+      # starts its own adapter-managed loopback service on an OS-assigned port
+      # and writes row-keyed producer/ directories under the one immutable run
+      # root. JOURNEY_HTML=0 keeps report generation out of the budget;
+      # retries: 0 is declared by the one-project Fairtest Playwright config.
+      - name: Fairtest mounted producer
         env:
           JOURNEY_HTML: "0"
-        run: pnpm test:fairtest:mounted -- --target=product
-
-      - name: Fairtest mounted component producer
-        env:
-          JOURNEY_HTML: "0"
-        run: pnpm test:fairtest:mounted -- --target=component
+        run: pnpm test:fairtest:mounted -- --target=all
 
       - name: Fairtest evidence verification
         run: pnpm test:fairtest:verify

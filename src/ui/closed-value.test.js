@@ -14,11 +14,11 @@
 
    The member and refusal cases are named data in testdata/closed-value.yaml;
    the required-name manifest makes a deletion fail the suite. Run:
-   `node --test src/ui/closed-value.test.js`. */
+   `pnpm test:vitest` (or `pnpm test:closed-value`). */
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { describe, it } from 'node:test'
+import { describe, it } from 'vitest'
 import { fileURLToPath } from 'node:url'
 import YAML from 'yaml'
 import { closed } from './closed-value.js'

@@ -229,21 +229,22 @@ export function prepareComponentRowDir(input) {
  * readiness probe requires the iframe document and the built index. Satisfies
  * the adapter's declared driver contract: stop is safe on an idle driver.
  * @param {object} [options] driver options
- * @param {number} [options.port] fixed loopback port
+ * @param {number} [options.port] loopback port, 0 for an OS-assigned worker port
  * @param {string} [options.host] loopback host, always the declared owner
  * @param {string} [options.staticRoot] built Storybook root served over HTTP
  * @returns {StaticComponentDriver} the injected lifecycle driver for createAdapter
  */
 export function createComponentStaticDriver(options = {}) {
-  const port = options.port ?? FAIRTEST_STORYBOOK_PORT
+  const requestedPort = options.port ?? FAIRTEST_STORYBOOK_PORT
   const host = options.host ?? FAIRTEST_APP_HOST
   const staticRoot = options.staticRoot ?? STORYBOOK_ROOT
-  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+  if (!Number.isInteger(requestedPort) || requestedPort < 0 || requestedPort > 65535) {
     throw new Error(
-      `component producer: invalid port ${JSON.stringify(port)} for field "port" at path driver.port; ` +
-      'repair: use the fixed loopback port owned by scripts/fairtest/fairtest-runtime.mjs for "port".',
+      `component producer: invalid port ${JSON.stringify(requestedPort)} for field "port" at path driver.port; ` +
+      'repair: use 0 for an OS-assigned worker port, or the fixed loopback port owned by scripts/fairtest/fairtest-runtime.mjs.',
     )
   }
+  let boundPort = requestedPort
   if (host !== FAIRTEST_APP_HOST) {
     throw new Error(
       `component producer: non-loopback host ${JSON.stringify(host)} for field "host" at path driver.host; ` +
@@ -286,7 +287,7 @@ export function createComponentStaticDriver(options = {}) {
     }
     server = http.createServer((req, res) => {
       try {
-        const url = new URL(req.url || '/', `http://${host}:${port}`)
+        const url = new URL(req.url || '/', `http://${host}:${boundPort}`)
         let pathname = decodeURIComponent(url.pathname)
         if (pathname === '/') pathname = '/iframe.html'
         const file = join(staticRoot, pathname)
@@ -308,7 +309,9 @@ export function createComponentStaticDriver(options = {}) {
     await new Promise((responseResolve, responseReject) => {
       const activeServer = /** @type {import('node:http').Server} */ (server)
       activeServer.on('error', responseReject)
-      activeServer.listen(port, host, () => {
+      activeServer.listen(requestedPort, host, () => {
+        const address = activeServer.address()
+        if (address && typeof address === 'object') boundPort = address.port
         activeServer.removeListener('error', responseReject)
         responseResolve(undefined)
       })
@@ -317,8 +320,8 @@ export function createComponentStaticDriver(options = {}) {
       const cause = error instanceof Error ? error.message : String(error)
       throw new Error(
         `component producer: driver start failed for field "port" at path driver.start; ` +
-        `could not listen on ${host}:${port}; caused by ${cause}; ` +
-        'repair: free the fixed loopback port or stop the previous adapter run before retrying.',
+        `could not listen on ${host}:${requestedPort === 0 ? '(OS-assigned)' : requestedPort}; caused by ${cause}; ` +
+        'repair: free the loopback port or stop the previous adapter run before retrying.',
       )
     })
     running = true
@@ -349,14 +352,14 @@ export function createComponentStaticDriver(options = {}) {
         'repair: start the driver before reporting readiness.',
       )
     }
-    const body = await fetchText(`http://${host}:${port}/iframe.html`)
+    const body = await fetchText(`http://${host}:${boundPort}/iframe.html`)
     if (!body || !body.includes(`id="${COMPONENT_SELECTORS.storyRoot.replace(/^#/, '')}"`)) {
       throw new Error(
         'component producer: readiness probe found no story root for field "ready" at path driver.readiness; ' +
         'repair: rebuild storybook-static/ with pnpm build-storybook so the served iframe carries the story root.',
       )
     }
-    return { ready: true, host, port }
+    return { ready: true, host, port: boundPort }
   }
 
   return {
@@ -366,8 +369,8 @@ export function createComponentStaticDriver(options = {}) {
     isRunning,
     readiness,
     stats: () => ({ stops }),
-    baseUrl: `http://${host}:${port}`,
-    port,
+    get baseUrl() { return `http://${host}:${boundPort}` },
+    get port() { return boundPort },
     host,
     staticRoot,
   }

@@ -95,13 +95,14 @@ mutations:
     kind: trailing-document
     target: document
     expectedField: document[1]
-expectedWorkflowMutationCount: 16
+expectedWorkflowMutationCount: 17
 requiredWorkflowMutationNames:
   - workflow-upload-pin-becomes-a-tag
   - workflow-upload-drops-no-files-error
   - workflow-upload-drops-always
   - workflow-upload-retention-unbounded
   - workflow-budget-env-drifts
+  - workflow-mounted-target-drifts
   - workflow-drops-the-verification-step
   - workflow-drops-the-journey-gates
   - workflow-journey-unbounded-workers
@@ -131,9 +132,13 @@ workflowMutations:
     replace: "          retention-days: 90\n"
     expectedField: retention-days
   - name: workflow-budget-env-drifts
-    find: "      FAIRTEST_BUDGET_MINUTES: \"24\"\n"
+    find: "      FAIRTEST_BUDGET_MINUTES: \"12\"\n"
     replace: "      FAIRTEST_BUDGET_MINUTES: \"90\"\n"
     expectedField: FAIRTEST_BUDGET_MINUTES
+  - name: workflow-mounted-target-drifts
+    find: "        run: pnpm test:fairtest:mounted -- --target=all\n"
+    replace: "        run: pnpm test:fairtest:mounted -- --target=product\n"
+    expectedField: run
   - name: workflow-drops-the-verification-step
     find: "      - name: Fairtest evidence verification\n        run: pnpm test:fairtest:verify\n"
     replace: ''

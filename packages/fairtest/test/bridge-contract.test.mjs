@@ -324,7 +324,7 @@ describe('bridge contract structural units', () => {
 const CI_WORKFLOW = 'ci.yml'
 const PROCESS_STEP_NAME = 'Fairtest process lifecycle'
 const SELECTION_STEP_NAME = 'Fairtest inventory and selection (browser-free, before services)'
-const MOUNTED_STEP_NAME = 'Fairtest mounted product producer'
+const MOUNTED_STEP_NAME = 'Fairtest mounted producer'
 const PROCESS_COMMAND = 'pnpm test:fairtest:process'
 const PROCESS_ENV_FIELD = 'FAIRTEST_CI_PROCESS'
 
