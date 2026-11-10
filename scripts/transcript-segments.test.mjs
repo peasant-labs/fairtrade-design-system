@@ -293,7 +293,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       const atPosition = mounted.container.querySelectorAll('.txn-turn').length
       report.check(atPosition <= row.expect.maxCards, `${row.name}: mounted cards at scrollTop ${scrollTop} must not exceed ${row.expect.maxCards}`)
     }
-    /* Files, filters and outline state the exact loaded-region scope. */
+    /* The Files tab states the exact loaded-region scope. */
     const filesTab = [...mounted.container.querySelectorAll('[role="tab"]')].find((node) => text(node).startsWith('files'))
     if (filesTab) {
       await mounted.act(() => click(window, filesTab))
