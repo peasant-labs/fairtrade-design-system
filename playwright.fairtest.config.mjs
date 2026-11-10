@@ -26,9 +26,10 @@
  *
  * Parallel rows: fullyParallel is on and each Playwright worker starts its own
  * adapter-managed static server on an OS-assigned loopback port, so two workers
- * never bind the same origin. Rows navigate by the driver's absolute base URL;
- * use.baseURL below stays the declared default for shape checks and must not be
- * treated as the running worker's origin. The run root is still one immutable envelope:
+ * never bind the same origin. Rows navigate by the driver's absolute base URL,
+ * and the config deliberately declares no use.baseURL: a relative navigation
+ * would otherwise attach to a fixed port that no worker owns. The run root is
+ * still one immutable envelope:
  * every row writes a row-keyed producer directory, so a worker cannot overwrite
  * another worker's evidence subtree. The worker count and the parallel flag are
  * read from the runtime owner, and the `runner-config` cases in the product
@@ -63,7 +64,6 @@ export default defineConfig({
     : './node_modules/.cache/fairtest-playwright',
   reporter: [['list']],
   use: {
-    baseURL: FAIRTEST_APP_BASE_URL,
     viewport: { ...PRODUCT_VIEWPORT },
     reducedMotion: 'reduce',
     trace: 'retain-on-failure',

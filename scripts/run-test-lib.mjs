@@ -26,7 +26,8 @@
 // default because a maintainer usually wants the whole failure set in one run.
 
 import { spawn } from 'node:child_process'
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { createInterface } from 'node:readline'
@@ -42,7 +43,7 @@ const PKG = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
  * semaphore below keeps two heavy lanes from stacking on a small runner.
  * @type {Readonly<Record<string, { concurrency: number, weight: number, timeoutMs: number }>>}
  */
-const LANES = Object.freeze({
+export const LANES = Object.freeze({
   contract: { concurrency: 2, weight: 1, timeoutMs: 300_000 },
   guard: { concurrency: 3, weight: 1, timeoutMs: 300_000 },
   pure: { concurrency: 6, weight: 1, timeoutMs: 600_000 },
@@ -54,11 +55,13 @@ const LANES = Object.freeze({
   // half-applied mutation; the serial chain had the same ordering by accident.
   'source-mutation': { concurrency: 1, weight: 8, timeoutMs: 600_000 },
   pack: { concurrency: 1, weight: 1, timeoutMs: 300_000 },
-  bench: { concurrency: 1, weight: 1, timeoutMs: 600_000 },
+  // The benchmark asserts absolute timing ceilings, so it holds the whole
+  // budget exactly like the old serial chain ran it alone.
+  bench: { concurrency: 1, weight: 8, timeoutMs: 600_000 },
   vitest: { concurrency: 1, weight: 1, timeoutMs: 600_000 },
 })
 
-const GLOBAL_WEIGHT = 8
+export const GLOBAL_WEIGHT = 8
 
 const MUTATION_RE = /parts-mutations\.mjs|\.mutations\.mjs/
 const PACK_RE = /packed-tarball|assert-pack-contents/
@@ -66,7 +69,7 @@ const CONTRACT_RE = /^tsc(?:\s|$)/
 const BENCH_RE = /code-map-ranking-bench/
 const VITEST_RE = /^vitest(?:\s|$)/
 const GUARD_RE = /contrast|css-token-lint|breakpoint-scale|assert-structured-shiki|assert-package-provenance|design-decisions\.mjs|port-record/
-const SOURCE_MUTATION_RE = /timeline-a11y\.test\.mjs|timeline-ghosts\.test\.mjs/
+export const SOURCE_MUTATION_RE = /timeline-a11y\.test\.mjs|timeline-ghosts\.test\.mjs|timeline-highlight\.test\.mjs/
 const MOUNTED_RE = /withMountedSource|from ['"]jsdom['"]|import\(['"]jsdom['"]\)|createServer\(|react-dom\/client/
 const SSR_RE = /renderToStaticMarkup|react-dom\/server/
 
@@ -76,7 +79,7 @@ const SSR_RE = /renderToStaticMarkup|react-dom\/server/
  * @param {string} text script body
  * @returns {string[]} commands
  */
-function splitCommands(text) {
+export function splitCommands(text) {
   return text.split(' && ').map((part) => part.trim()).filter(Boolean)
 }
 
@@ -89,7 +92,7 @@ function splitCommands(text) {
  * @param {string[]} stack recursion guard
  * @returns {{ command: string, script: string | null, via: string[] }[]} leaves
  */
-function expandScript(name, stack = []) {
+export function expandScript(name, stack = []) {
   if (stack.includes(name)) {
     throw new Error(`test:lib runner: script cycle at ${[...stack, name].join(' -> ')} for field "scripts" at path package.json; repair: break the pnpm script cycle.`)
   }
@@ -117,7 +120,7 @@ function expandScript(name, stack = []) {
  * @param {string} command leaf command
  * @returns {string} lane name
  */
-function classify(command) {
+export function classify(command) {
   if (CONTRACT_RE.test(command)) return 'contract'
   if (PACK_RE.test(command)) return 'pack'
   if (BENCH_RE.test(command)) return 'bench'
@@ -142,7 +145,7 @@ function classify(command) {
  * both name them; running the second copy cannot add coverage.
  * @returns {{ command: string, label: string, lane: string }[]} gates
  */
-function buildGates() {
+export function buildGates() {
   const seen = new Set()
   const gates = []
   for (const leaf of expandScript(SOURCE_SCRIPT)) {
@@ -163,7 +166,7 @@ function buildGates() {
  * and retried in a loop, so a large reservation can wait behind a small one
  * without deadlocking.
  */
-class WeightedSemaphore {
+export class WeightedSemaphore {
   /** @param {number} capacity total weight */
   constructor(capacity) {
     this.capacity = capacity
@@ -174,6 +177,9 @@ class WeightedSemaphore {
 
   /** @param {number} weight weight to reserve @returns {Promise<void>} */
   async acquire(weight) {
+    if (!Number.isInteger(weight) || weight < 1 || weight > this.capacity) {
+      throw new Error(`test:lib runner: invalid reservation weight ${JSON.stringify(weight)} for field "weight" at path lanes.weight; repair: use an integer between 1 and the global budget ${this.capacity}.`)
+    }
     while (this.used + weight > this.capacity) {
       await new Promise((resolveWaiter) => this.waiters.push(resolveWaiter))
     }
@@ -215,9 +221,10 @@ function killTree(child) {
  * Execute one gate as a child process, streaming prefixed lines.
  * @param {{ command: string, label: string, lane: string }} gate gate to run
  * @param {{ timeoutMs: number }} lane lane budget
+ * @param {{ children: Set<import('node:child_process').ChildProcess> }} state run state
  * @returns {Promise<{ status: number | null, signal: NodeJS.Signals | null, timedOut: boolean, stderr: string[] }>} result
  */
-function execute(gate, lane) {
+function execute(gate, lane, state) {
   return new Promise((resolveResult) => {
     const child = spawn(gate.command, {
       cwd: ROOT,
@@ -232,6 +239,7 @@ function execute(gate, lane) {
       },
       stdio: ['ignore', 'pipe', 'pipe'],
     })
+    state.children.add(child)
     const stderr = []
     let timedOut = false
     let settled = false
@@ -240,12 +248,17 @@ function execute(gate, lane) {
       if (settled) return
       settled = true
       clearTimeout(timer)
+      state.children.delete(child)
       resolveResult({ status, signal, timedOut, stderr })
     }
     const timer = setTimeout(() => {
       timedOut = true
       killTree(child)
-      finish(124, 'SIGTERM')
+      // Wait for the real exit so a source-mutation gate's finally block can
+      // restore its tracked file. This is only a last-resort release if the
+      // child ignores SIGKILL or the shell layer never reports an exit.
+      const hardStop = setTimeout(() => finish(124, 'SIGKILL'), 6000)
+      hardStop.unref()
     }, lane.timeoutMs)
     if (child.stdout) {
       createInterface({ input: child.stdout }).on('line', (line) => {
@@ -270,7 +283,7 @@ function execute(gate, lane) {
  * Run one lane's gates with its own concurrency budget.
  * @param {string} laneName lane name
  * @param {{ command: string, label: string, lane: string }[]} gates lane gates
- * @param {{ semaphore: WeightedSemaphore, failFast: boolean, aborted: boolean, results: any[] }} state run state
+ * @param {{ semaphore: WeightedSemaphore, failFast: boolean, aborted: boolean, results: any[], children: Set<import('node:child_process').ChildProcess> }} state run state
  * @returns {Promise<void>}
  */
 async function runLane(laneName, gates, state) {
@@ -287,7 +300,7 @@ async function runLane(laneName, gates, state) {
       try {
         if (state.aborted && state.failFast) return
         process.stdout.write(`\n▶ ${gate.label} [${laneName}] ${gate.command}\n`)
-        const result = await execute(gate, lane)
+        const result = await execute(gate, lane, state)
         const durationMs = Math.round(performance.now() - started)
         const ok = result.status === 0 && !result.timedOut
         state.results.push({ ...gate, ...result, durationMs, ok })
@@ -338,6 +351,39 @@ function parseArgs(argv) {
 }
 
 /**
+ * Hash every file under src/ so a run can prove no gate left a tracked source
+ * mutation behind. A timed-out source-mutation gate can be killed before its
+ * `finally` restore runs, which would silently poison every later gate.
+ * @param {string} directory directory to walk
+ * @param {Map<string, string>} snapshot accumulator
+ * @returns {Map<string, string>} path-to-digest snapshot
+ */
+function collectSourceSnapshot(directory, snapshot) {
+  for (const entry of readdirSync(directory, { withFileTypes: true }).sort((left, right) => left.name.localeCompare(right.name))) {
+    const path = join(directory, entry.name)
+    if (entry.isDirectory()) collectSourceSnapshot(path, snapshot)
+    else if (entry.isFile()) snapshot.set(path, createHash('sha256').update(readFileSync(path)).digest('hex'))
+  }
+  return snapshot
+}
+
+/**
+ * Compare two source snapshots and return the changed relative paths.
+ * @param {Map<string, string>} before snapshot before the run
+ * @param {Map<string, string>} after snapshot after the run
+ * @returns {string[]} changed, added, or removed paths
+ */
+function sourceDifferences(before, after) {
+  const differences = []
+  for (const [path, digest] of before) {
+    if (!after.has(path)) differences.push(`removed ${path}`)
+    else if (after.get(path) !== digest) differences.push(`modified ${path}`)
+  }
+  for (const path of after.keys()) if (!before.has(path)) differences.push(`added ${path}`)
+  return differences.sort()
+}
+
+/**
  * Run the gate.
  * @returns {Promise<number>} process exit code
  */
@@ -366,15 +412,45 @@ async function main() {
     aborted: false,
     failed: false,
     results: /** @type {any[]} */ ([]),
+    children: /** @type {Set<import('node:child_process').ChildProcess>} */ (new Set()),
   }
+  const shutdown = () => {
+    for (const child of state.children) killTree(child)
+    process.exitCode = 130
+    const timer = setTimeout(() => process.exit(130), 2000)
+    timer.unref()
+  }
+  process.once('SIGINT', shutdown)
+  process.once('SIGTERM', shutdown)
+  const sourceBefore = collectSourceSnapshot(join(ROOT, 'src'), new Map())
   const started = performance.now()
   console.log(`test:lib: ${gates.length} unique gates, ${lanes.length} lanes, ${options.failFast ? 'fail-fast' : 'keep-going'}`)
   await Promise.all(lanes.map((lane) => runLane(lane, gates.filter((gate) => gate.lane === lane), state)))
   const durationMs = Math.round(performance.now() - started)
+  const sourceAfter = collectSourceSnapshot(join(ROOT, 'src'), new Map())
+  const sourceChanges = sourceDifferences(sourceBefore, sourceAfter)
+  if (sourceChanges.length > 0) {
+    state.failed = true
+    state.results.push({
+      label: 'source-tree-guard',
+      lane: 'source-mutation',
+      command: 'snapshot src/ before and after the gate',
+      ok: false,
+      status: 1,
+      timedOut: false,
+      durationMs: 0,
+      stderr: sourceChanges,
+    })
+  }
   const failed = state.results.filter((result) => !result.ok)
-  console.log(`\ntest:lib: ${state.results.length} gates in ${(durationMs / 1000).toFixed(1)}s, ${failed.length} failed`)
+  const skipped = gates.length - state.results.length
+  console.log(`\ntest:lib: ${state.results.length} of ${gates.length} gates in ${(durationMs / 1000).toFixed(1)}s, ${failed.length} failed${skipped > 0 ? `, ${skipped} not scheduled` : ''}`)
   for (const result of state.results) {
-    console.log(`  ${result.ok ? 'PASS' : 'FAIL'} ${result.label} [${result.lane}] ${(result.durationMs / 1000).toFixed(1)}s`)
+    console.log(`  ${result.ok ? 'PASS' : 'FAIL'} ${result.label} [${result.lane}] ${(result.durationMs / 1000).toFixed(1)}s :: ${result.command}`)
+  }
+  if (!state.failFast && skipped > 0) {
+    state.failed = true
+    console.error(`\ntest:lib: ${skipped} gates were not scheduled in keep-going mode; the runner must execute every gate when fail-fast is off.`)
   }
   if (failed.length > 0) {
     console.error('\ntest:lib failed gates:')
@@ -389,10 +465,15 @@ async function main() {
   return state.failed ? 1 : 0
 }
 
-main().then(
-  (code) => process.exit(code),
-  (error) => {
-    console.error(error instanceof Error ? error.message : String(error))
-    process.exit(1)
-  },
-)
+const isEntryPoint = process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href
+if (isEntryPoint) {
+  main().then(
+    (code) => {
+      process.exitCode = code
+    },
+    (error) => {
+      console.error(error instanceof Error ? error.message : String(error))
+      process.exitCode = 1
+    },
+  )
+}

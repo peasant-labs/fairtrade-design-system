@@ -22,7 +22,7 @@ import YAML from 'yaml'
 import { loadSingleDocument } from '../fairtest-single-document.mjs'
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { FAIRTEST_EVIDENCE_ROW_KEYS, fairtestEvidencePolicyInput, fairtestRegistryRows } from './fairtest-evidence-policy.mjs'
-import { FAIRTEST_MOUNTED_WORKERS } from './fairtest-runtime.mjs'
+import { FAIRTEST_DEFAULT_MOUNTED_WORKERS } from './fairtest-runtime.mjs'
 import {
   CI_ROW_KEYS,
   EVIDENCE_REL,
@@ -714,8 +714,8 @@ function inspectWorkflowBudget(text) {
   if (String(job.env?.FAIRTEST_BUDGET_MINUTES) !== String(FAIRTEST_BUDGET.totalMinutes)) {
     workflowFail('FAIRTEST_BUDGET_MINUTES', `expected ${FAIRTEST_BUDGET.totalMinutes} observed ${JSON.stringify(job.env?.FAIRTEST_BUDGET_MINUTES)}`)
   }
-  if (String(job.env?.FAIRTEST_MOUNTED_WORKERS) !== String(FAIRTEST_MOUNTED_WORKERS)) {
-    workflowFail('FAIRTEST_MOUNTED_WORKERS', `expected ${FAIRTEST_MOUNTED_WORKERS} observed ${JSON.stringify(job.env?.FAIRTEST_MOUNTED_WORKERS)}`)
+  if (String(job.env?.FAIRTEST_MOUNTED_WORKERS) !== String(FAIRTEST_DEFAULT_MOUNTED_WORKERS)) {
+    workflowFail('FAIRTEST_MOUNTED_WORKERS', `expected ${FAIRTEST_DEFAULT_MOUNTED_WORKERS} observed ${JSON.stringify(job.env?.FAIRTEST_MOUNTED_WORKERS)}`)
   }
   if (!String(job.env?.FAIRTEST_RUN_ROOT ?? '').includes('/review-capture/fairtest/')) {
     workflowFail('FAIRTEST_RUN_ROOT', `the job must declare the one run root, observed ${JSON.stringify(job.env?.FAIRTEST_RUN_ROOT)}`)

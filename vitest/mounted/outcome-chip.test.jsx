@@ -1,14 +1,21 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
+import YAML from 'yaml'
 import TranscriptOutcomeChip from '../../src/ui/transcript/OutcomeChip.jsx'
 
-/* Mounted pilot: this is the same production component the existing
+/* Mounted pilot: the same production component the existing
  * scripts/transcript-outcome-chip.test.mjs renders through renderToStaticMarkup,
- * but it mounts a real React root in the Vitest jsdom environment. The point is
- * to prove the migration path: Vitest's Vite transform imports the .jsx source
- * directly, and jsdom provides the DOM without a bespoke per-file Vite server. */
+ * mounted here as a real React root in Vitest's jsdom environment. The named
+ * cases come from the shared fixture, so this test and the subprocess gate
+ * cannot drift into two color/label tables. */
+
+// Vitest exposes a transformed import.meta.url, not always a file: URL, so the
+// repository-root fixture path is resolved from the command's working directory.
+const fixture = YAML.parse(readFileSync(resolve(process.cwd(), 'scripts/testdata/transcript-outcome-chip.yaml'), 'utf8'))
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -44,26 +51,22 @@ async function mount(outcome) {
 }
 
 describe('TranscriptOutcomeChip mounted under Vitest', () => {
-  it('renders the ok tone for a canonical resolved outcome', async () => {
-    const mounted = await mount('resolved')
-    const chip = mounted.querySelector('.chip')
-    expect(chip).not.toBeNull()
-    expect(chip?.className).toBe('chip chip-ok')
-    expect(chip?.getAttribute('title')).toBe('outcome, resolved')
-    expect(chip?.textContent?.trim()).toBe('resolved')
-    expect(chip?.querySelector('svg')).not.toBeNull()
-  })
+  for (const testCase of fixture.cases) {
+    it(testCase.name, async () => {
+      const mounted = await mount(testCase.outcome)
+      const chip = mounted.querySelector('.chip')
+      expect(chip).not.toBeNull()
+      expect(chip?.className).toBe(testCase.expectedClass)
+      expect(chip?.getAttribute('title')).toBe(testCase.expectedTitle)
+      expect(chip?.textContent?.trim()).toBe(testCase.expectedLabel)
+      expect(chip?.querySelector(`svg.${testCase.expectedIconClass}`)).not.toBeNull()
+    })
+  }
 
-  it('renders the err tone for the annotation not_resolved value', async () => {
-    const mounted = await mount('not_resolved')
-    const chip = mounted.querySelector('.chip')
-    expect(chip?.className).toBe('chip chip-err')
-    expect(chip?.getAttribute('title')).toBe('outcome, not resolved')
-    expect(chip?.textContent?.trim()).toBe('not resolved')
-  })
-
-  it('renders nothing for an unknown outcome', async () => {
-    const mounted = await mount('unknown-value')
-    expect(mounted.childElementCount).toBe(0)
-  })
+  for (const testCase of fixture.renderNothingCases) {
+    it(testCase.name, async () => {
+      const mounted = await mount(testCase.outcome ?? undefined)
+      expect(mounted.childElementCount).toBe(0)
+    })
+  }
 })

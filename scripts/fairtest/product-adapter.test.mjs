@@ -1987,7 +1987,7 @@ async function runRunnerConfigCase(entry) {
   // expected value must both be the runtime constant, so the worker cap cannot
   // be changed in only one of the three places that would need to agree.
   assert.equal(config.workers, runtime.FAIRTEST_MOUNTED_WORKERS, `${CORPUS_REL}: case "${name}" declares workers ${JSON.stringify(config.workers)} which is not the one owner in ${RUNTIME_REL} for field "expectedWorkers" at path cases.${name}.expectedWorkers; repair: read the worker budget from ${RUNTIME_REL} instead of declaring it again.`)
-  assert.equal(entry.expectedWorkers, runtime.FAIRTEST_MOUNTED_WORKERS, `${CORPUS_REL}: case "${name}" expects workers ${JSON.stringify(entry.expectedWorkers)} which is not the one owner in ${RUNTIME_REL} for field "expectedWorkers" at path cases.${name}.expectedWorkers; repair: keep the fixture and the runtime worker budget in sync.`)
+  assert.equal(entry.expectedWorkers, runtime.FAIRTEST_DEFAULT_MOUNTED_WORKERS, `${CORPUS_REL}: case "${name}" expects workers ${JSON.stringify(entry.expectedWorkers)} which is not the declared default in ${RUNTIME_REL} for field "expectedWorkers" at path cases.${name}.expectedWorkers; repair: keep the fixture and the runtime default in sync.`)
   const matches = Array.isArray(config.testMatch) ? config.testMatch : [config.testMatch]
   assert.deepEqual(matches, /** @type {string[]} */ (entry.expectedTestMatch), `${CORPUS_REL}: case "${name}" declares testMatch ${JSON.stringify(entry.expectedTestMatch)} for field "expectedTestMatch" at path cases.${name}.expectedTestMatch; repair: the config must select exactly the declared product and component journey entries.`)
   // Every mounted journey module on disk must be selected, so a component
@@ -2021,7 +2021,7 @@ async function runPortOwnerCase(entry) {
     assert.equal(config[key], owner[key], `${CORPUS_REL}: case "${name}" found the config declaring its own ${key} for field "ownerModule" at path cases.${name}.ownerModule; repair: import ${key} from ${ownerModule} instead of declaring it again.`)
   }
   assert.equal(owner.FAIRTEST_APP_BASE_URL, `http://${owner.FAIRTEST_APP_HOST}:${owner.FAIRTEST_APP_PORT}`, `${CORPUS_REL}: case "${name}" found a base URL outside the declared host and port for field "ownerModule" at path cases.${name}.ownerModule; repair: derive the base URL from the declared pair.`)
-  assert.equal(config.default.use.baseURL, owner.FAIRTEST_APP_BASE_URL, `${CORPUS_REL}: case "${name}" found the runner resolving a different base URL for field "ownerModule" at path cases.${name}.ownerModule; repair: build use.baseURL from the declared owner.`)
+  assert.ok(!('baseURL' in config.default.use), `${CORPUS_REL}: case "${name}" found a runner-managed baseURL for field "ownerModule" at path cases.${name}.ownerModule; repair: rows must navigate by the running worker's absolute driver.baseUrl, never a fixed use.baseURL.`)
   const driver = createProductStaticDriver()
   assert.equal(driver.port, owner.FAIRTEST_APP_PORT, `${CORPUS_REL}: case "${name}" found the static driver defaulting to another port for field "portEnvName" at path cases.${name}.portEnvName; repair: default the driver to the declared owner.`)
   assert.equal(driver.host, owner.FAIRTEST_APP_HOST, `${CORPUS_REL}: case "${name}" found the static driver defaulting to another host for field "ownerModule" at path cases.${name}.ownerModule; repair: default the driver to the declared owner.`)

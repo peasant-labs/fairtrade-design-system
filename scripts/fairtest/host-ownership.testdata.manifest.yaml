@@ -1,13 +1,14 @@
 # Required-name inventory and executable mutations for
 # host-ownership.testdata.yaml. Every row name must appear exactly once, and
 # every mutation must fail for its intended field.
-expectedExportCount: 148
+expectedExportCount: 149
 requiredExportNames:
   - fairtest-runtime-fairtest_repo_root
   - fairtest-runtime-fairtest_app_host
   - fairtest-runtime-fairtest_app_port
   - fairtest-runtime-fairtest_app_base_url
   - fairtest-runtime-product_viewport
+  - fairtest-runtime-fairtest_default_mounted_workers
   - fairtest-runtime-fairtest_mounted_workers
   - fairtest-runtime-fairtest_scratch_purposes
   - fairtest-runtime-fairtest_scratch_port_base

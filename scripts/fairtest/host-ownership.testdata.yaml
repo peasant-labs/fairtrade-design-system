@@ -26,7 +26,7 @@
 #                                  declaring one.
 #
 # Runs with node --test inside the declared Fairtest product-contract command.
-expectedExportCount: 148
+expectedExportCount: 149
 exports:
   - name: fairtest-runtime-fairtest_repo_root
     file: fairtest-runtime.mjs
@@ -47,6 +47,10 @@ exports:
   - name: fairtest-runtime-product_viewport
     file: fairtest-runtime.mjs
     symbol: PRODUCT_VIEWPORT
+    owner: runtime-constants-owner
+  - name: fairtest-runtime-fairtest_default_mounted_workers
+    file: fairtest-runtime.mjs
+    symbol: FAIRTEST_DEFAULT_MOUNTED_WORKERS
     owner: runtime-constants-owner
   - name: fairtest-runtime-fairtest_mounted_workers
     file: fairtest-runtime.mjs

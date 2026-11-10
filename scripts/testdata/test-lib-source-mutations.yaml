@@ -1,0 +1,8 @@
+# Required-NAME manifest for gates that rewrite a tracked file under src/.
+# The runner test scans scripts/*.test.mjs for a writeFileSync that names src/
+# and asserts this exact set, so a new mutating gate cannot be added without
+# joining the exclusive source-mutation lane.
+sourceMutationGates:
+  - timeline-a11y.test.mjs
+  - timeline-ghosts.test.mjs
+  - timeline-highlight.test.mjs

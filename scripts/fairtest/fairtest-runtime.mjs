@@ -97,12 +97,15 @@ export const PRODUCT_VIEWPORT = Object.freeze({ width: 1280, height: 720 })
  * server cannot occupy a worker's port. The run root is still one immutable
  * envelope: every row writes a row-keyed producer directory, so no worker
  * overwrites another worker's subtree. Override with
- * FAIRTEST_MOUNTED_WORKERS; the runner config and the config-shape fixture
- * read this one value.
+ * FAIRTEST_MOUNTED_WORKERS; the runner config reads this value. The
+ * config-shape fixture pins FAIRTEST_DEFAULT_MOUNTED_WORKERS, so running the
+ * product contract with an override is expected to disagree with the fixture.
  * @type {number}
  */
+export const FAIRTEST_DEFAULT_MOUNTED_WORKERS = 4
+
 export const FAIRTEST_MOUNTED_WORKERS = (() => {
-  const raw = Number(process.env.FAIRTEST_MOUNTED_WORKERS || 4)
+  const raw = Number(process.env.FAIRTEST_MOUNTED_WORKERS || FAIRTEST_DEFAULT_MOUNTED_WORKERS)
   if (!Number.isInteger(raw) || raw < 1) {
     throw new Error(
       `fairtest runtime: invalid worker budget ${JSON.stringify(process.env.FAIRTEST_MOUNTED_WORKERS)} for field "FAIRTEST_MOUNTED_WORKERS" at path runtime.workers; ` +

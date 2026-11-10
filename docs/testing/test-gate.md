@@ -31,23 +31,29 @@ without a second hand list.
 | `mutation` | 3 | 2 | mutation orchestrators in their own child processes |
 | `source-mutation` | 1 | 8 | gates that rewrite a tracked source file and restore it |
 | `pack` | 1 | 1 | tarball and packed-content checks (shared pnpm store) |
-| `bench` | 1 | 1 | the timing benchmark |
+| `bench` | 1 | 8 | the timing benchmark (absolute ceilings, so it runs alone) |
 | `vitest` | 1 | 1 | the Vitest pilot project |
 
 A weighted semaphore (capacity 8) bounds total memory across lanes. The
-`source-mutation` lane holds the whole budget, so `timeline-a11y` and
-`timeline-ghosts` cannot expose a half-applied `src/ui/graph` mutation to a
-reader such as `insight-panel`.
+`source-mutation` lane holds the whole budget, so `timeline-a11y`,
+`timeline-ghosts`, and `timeline-highlight` cannot expose a half-applied
+`src/ui/graph` mutation to a reader such as `insight-panel`. A post-run `src/`
+snapshot also fails the gate if a timed-out mutation left a tracked file
+changed. `scripts/run-test-lib.test.mjs` keeps that inventory honest and pins
+the lane classification.
 
 ## Fairtest mounted rows
 
 `playwright.fairtest.config.mjs` is now `fullyParallel: true` with
-`FAIRTEST_MOUNTED_WORKERS` workers (default 4). Each Playwright worker starts its
-own adapter-managed static server on an OS-assigned loopback port, so workers do
-not share an origin and a foreign local server cannot occupy a worker's port.
-The run root is still one immutable envelope: every row writes a row-keyed
-`producer/<row-key>/` directory, so no worker can overwrite another worker's
-evidence.
+`FAIRTEST_MOUNTED_WORKERS` workers (default
+`FAIRTEST_DEFAULT_MOUNTED_WORKERS`, 4). Each Playwright worker starts its own
+adapter-managed static server on an OS-assigned loopback port, so workers do not
+share an origin and a foreign local server cannot occupy a worker's port. The
+config declares no `use.baseURL`: rows navigate by the running worker's absolute
+`driver.baseUrl`, so a relative navigation cannot attach to a fixed port no
+worker owns. The run root is still one immutable envelope: every row writes a
+row-keyed `producer/<row-key>/` directory, so no worker can overwrite another
+worker's evidence.
 
 `pnpm test:fairtest:mounted -- --target=all` runs both journeys in one
 invocation. `--target=product` and `--target=component` remain for focused local
@@ -69,7 +75,11 @@ stage from 18.5 to 6.5 minutes, after the measurements below.
 The rest of the library gate still runs as subprocesses. Most remaining fixture
 scripts call `process.exit()` and are spawned by the mutation orchestrators, so
 they must keep their standalone entrypoints until the mutation harness itself
-moves. That is the follow-up milestone, not this pilot.
+moves. That is the follow-up milestone, not this pilot. `pnpm test:gates` also
+includes `pnpm test:vitest`, so the focused aggregate still covers the
+closed-value test after it moved off `node --test`. The mutation pilot
+deliberately re-runs one mutation gate; that duplicate cost is the pilot's only
+overhead.
 
 ## Measurements
 
@@ -80,7 +90,7 @@ Fairtest serial comparison was re-run on the same checkout and build.
 | run | wall clock | notes |
 | --- | --- | --- |
 | `test:lib`, pre-change | 14m31s | recorded in #205; different machine |
-| `test:lib`, parallel lanes | 6m12s | 145 gates, 0 failed |
+| `test:lib`, parallel lanes | 6m38s | 146 gates, 0 failed |
 | Fairtest mounted, serial (1 worker, product then component) | 2m32s | 1:42 + 49s |
 | Fairtest mounted, parallel (`--target=all`, 4 workers) | 43-49s | 24/24 rows, verifier pass |
 
