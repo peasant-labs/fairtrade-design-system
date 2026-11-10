@@ -82,7 +82,7 @@ cases:
     query: '?transcript=classic'
     probes:
       - {selector: '.txn-app', text: 9 turns, absent: 8 turns}
-      - {selector: '.rng', text: turns 1–3, absent: turns 0–2}
+      - {selector: '.rng', text: turns 0–2, absent: turns 1–3}
       - {selector: '.txn-app .subtask-foot', text: returned to claude}
       - {selector: '.txn-app .subtask-foot [data-brand="claude"]', count: 1}
       - {selector: '.txn-app .subtask-foot .lucide-corner-down-right', count: 1}
