@@ -28,6 +28,7 @@ import FiltersRail from './FiltersRail.jsx'
 import TranscriptSystemGroup from './SystemGroup.jsx'
 import { systemGroups as groupSystemTurns } from './system-groups.js'
 import { systemGroupFacetKinds, filterSystemGroupMembers, systemGroupFacetKey, systemGroupFacetSelected, toggleSystemGroupFacet } from './system-group-facet.js'
+import { hasImageParts } from './image-parts.js'
 import TranscriptMinimap from './Minimap.jsx'
 import Scrubber from './Scrubber.jsx'
 import Scorecard from './Scorecard.jsx'
@@ -296,6 +297,7 @@ export default function TranscriptViewer({
   LinkComponent,
   renderTurnPanel,
   renderTurnActions,
+  attachmentUrl,
   anchorHref,
   headerActions,
   utilityActions,
@@ -713,10 +715,10 @@ export default function TranscriptViewer({
      there is nothing to fold there. */
   const systemGroups = useMemo(() => (ledger ? groupSystemTurns(visibleTurns) : new Map()), [ledger, visibleTurns])
 
-  /* A model-actions block is not a turn: only a turn that draws a card (prose, or the system
-     row) owns the reading position and the keyboard step. */
+  /* A model-actions block is not a turn: only a turn that draws a card (prose, an image, or the
+     system row) owns the reading position and the keyboard step. */
   const cardTurns = useMemo(
-    () => visibleTurns.filter((t) => t.role === 'system' || String(t.displayContent ?? t.content ?? '').trim() !== ''),
+    () => visibleTurns.filter((t) => t.role === 'system' || hasImageParts(t) || String(t.displayContent ?? t.content ?? '').trim() !== ''),
     [visibleTurns],
   )
 
@@ -1804,6 +1806,7 @@ export default function TranscriptViewer({
                           registerRef={registerRef}
                           onLabel={labelTurn}
                           renderActions={renderTurnActions}
+                          attachmentUrl={attachmentUrl}
                           savedLabel={savedLabels[t.index]}
                           compact={filters.views.compact}
                           expandAll={filters.views.expandAll}

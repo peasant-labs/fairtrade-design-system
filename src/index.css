@@ -4105,6 +4105,32 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 .txn-systemgroup-owner,
 .txn-systemgroup-rows { padding-inline-start: var(--sp-4); }
 
+/* an image part: a bounded thumbnail inline in the turn's source order. The trigger is the
+   button itself, so a click and a keyboard activation open the same larger view. */
+.txn-image { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-1); margin: var(--sp-3) 0; }
+.txn-image-open {
+  display: block; padding: 0; max-inline-size: 100%;
+  background: transparent; border: var(--bd); border-radius: 0; cursor: zoom-in;
+}
+.txn-image-open:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
+.txn-image-thumb {
+  display: block; max-inline-size: 100%;
+  max-block-size: calc(var(--sp-8) * 3);
+  object-fit: contain; background: var(--surface-2);
+}
+.txn-image-caption { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-4); }
+.txn-image-full { display: block; max-inline-size: 100%; max-block-size: calc(var(--sp-8) * 8); object-fit: contain; }
+/* an image whose bytes are absent: the reason and the recorded metadata, no broken glyph */
+.txn-image-omitted {
+  display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2);
+  margin: var(--sp-3) 0; padding: var(--sp-2) var(--sp-3);
+  border: var(--bd); color: var(--ink-3);
+  font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-mono);
+}
+.txn-image-omitted .lucide { width: var(--ic-sm); height: var(--ic-sm); flex: none; }
+.txn-image-omitted-title { color: var(--ink-2); }
+.txn-image-omitted-detail { color: var(--ink-4); text-transform: none; }
+
 /* the empty reading state's one action: reveal the bookkeeping the default hides */
 .txn-empty-show-system {
   display: inline-flex; align-items: center;

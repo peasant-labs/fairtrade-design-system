@@ -9,3 +9,7 @@ cases:
   - {name: access-list, rowPrefix: component-access-list, storyId: in-use-publish--access, layout: centered, action: null, tie: namedRemove}
   - {name: setting-groups, rowPrefix: component-setting-groups, storyId: in-use-settings--groups, layout: centered, action: open-collapsed-group, tie: bothGroupsOpen}
   - {name: publish-dialog, rowPrefix: component-publish-dialog, storyId: in-use-publish--popup-scan-failed, layout: fullscreen, action: null, tie: publishOff}
+  - {name: images-inline, rowPrefix: component-images-inline, storyId: in-use-transcript-transcriptviewer--images-inline, layout: fullscreen, action: expand-inline-image, tie: imageExpanded}
+  - {name: images-omitted, rowPrefix: component-images-omitted, storyId: in-use-transcript-transcriptviewer--images-omitted, layout: fullscreen, action: null, tie: omittedPlaceholders}
+  - {name: image-only-turn, rowPrefix: component-image-only-turn, storyId: in-use-transcript-transcriptviewer--image-only-turn, layout: fullscreen, action: null, tie: imageOnlyCard}
+  - {name: images-unavailable, rowPrefix: component-images-unavailable, storyId: in-use-transcript-transcriptviewer--images-unavailable, layout: fullscreen, action: null, tie: unavailablePlaceholders}

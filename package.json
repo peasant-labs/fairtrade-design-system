@@ -247,7 +247,8 @@
     "test:fairtest:verify": "node scripts/fairtest/verify-fairtest.mjs",
     "test:transcript-system-groups": "node scripts/transcript-system-groups.test.mjs",
     "test:transcript-system-groups:mutations": "node scripts/parts-mutations.mjs scripts/transcript-system-groups.test.mjs scripts/testdata/transcript-system-groups.manifest.yaml",
-    "test:system-group-facet": "node scripts/system-group-facet.test.mjs"
+    "test:system-group-facet": "node scripts/system-group-facet.test.mjs",
+    "test:transcript-content-parts": "node scripts/transcript-content-parts.test.mjs"
   },
   "dependencies": {
     "@peasant-labs/schema": "0.45.0",

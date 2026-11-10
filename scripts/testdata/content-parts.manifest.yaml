@@ -1,0 +1,13 @@
+requiredCaseNames:
+  - text and image parts round-trip in source order
+  - an image-only turn is retained with no text
+  - an unknown part kind is dropped without inventing evidence
+  - a missing image object is dropped
+  - an omitted image keeps its reason
+  - a turn without parts has no cooked parts
+  - an empty parts list falls back to the text
+  - rendered order follows the recorded order
+  - two images render in the order they were recorded
+  - alt text names one image's recorded facts
+  - alt text places an image among its siblings
+  - alt text never comes back empty for a bare part

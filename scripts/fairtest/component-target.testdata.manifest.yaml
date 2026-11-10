@@ -1,6 +1,6 @@
 # Required-name inventory and executable mutations for
 # component-target.testdata.yaml.
-expectedCaseCount: 69
+expectedCaseCount: 73
 requiredCaseNames:
   - component-row-dark-absent-theme-passes
   - component-row-dark-empty-theme-passes
@@ -13,6 +13,10 @@ requiredCaseNames:
   - component-story-url-offline-banner-light-passes
   - component-story-url-digest-split-dark-passes
   - component-story-url-stats-strip-light-passes
+  - component-story-url-images-inline-dark-passes
+  - component-story-url-images-omitted-light-passes
+  - component-story-url-image-only-turn-dark-passes
+  - component-story-url-images-unavailable-light-passes
   - component-story-unregistered-fails
   - component-setup-dark-passes
   - component-setup-light-passes

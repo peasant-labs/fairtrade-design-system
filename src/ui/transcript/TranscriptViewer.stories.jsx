@@ -685,3 +685,157 @@ export const HostOwnedHeader = {
     await userEvent.keyboard('{Escape}')
   },
 }
+
+/* ── ordered image parts ───────────────────────────────────────────────────────
+   A turn's contentParts are the producer's blocks in source order. The viewer draws
+   each text block as Markdown and each image block inline, as a bounded thumbnail that
+   opens a larger view from the same control by mouse or keyboard. The host owns the
+   route: `attachmentUrl` resolves one content reference to something the browser can
+   load. These stories serve a drawn placeholder image so a capture shows the renderer,
+   not a network dependency. */
+const imageSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400" viewBox="0 0 640 400">
+  <rect width="640" height="400" fill="#2b2a26"/>
+  <rect x="40" y="48" width="560" height="230" fill="none" stroke="#d6ae66" stroke-width="3"/>
+  <circle cx="512" cy="120" r="38" fill="#d6ae66"/>
+  <path d="M40 278 L200 180 L320 262 L440 142 L600 278" fill="none" stroke="#8fae7a" stroke-width="6"/>
+</svg>`
+const storyAttachmentUrl = () => `data:image/svg+xml;utf8,${encodeURIComponent(imageSvg)}`
+const pngRef = 'a'.repeat(64)
+const jpegRef = 'b'.repeat(64)
+
+const imagePayload = {
+  id: 'sess_images',
+  harness: 'claude-code',
+  startTime: '',
+  endTime: '',
+  turnCount: 2,
+  toolCallCount: 0,
+  turns: [
+    {
+      index: 0,
+      role: 'user',
+      content: 'here are the screenshots, the second one shows the failing run',
+      depth: 0,
+      contentParts: [
+        { type: 'text', text: 'here are the screenshots' },
+        { type: 'image', image: { ref: pngRef, mediaType: 'image/png', byteSize: 4096, width: 640, height: 400 } },
+        { type: 'text', text: 'the second one shows the failing run' },
+        { type: 'image', image: { ref: jpegRef, mediaType: 'image/png', byteSize: 2048, width: 320, height: 200 } },
+      ],
+    },
+    { index: 1, role: 'assistant', content: 'reading both now.', depth: 0, provider: 'claude-code', toolCalls: [] },
+  ],
+}
+
+const imageOnlyPayload = {
+  id: 'sess_image_only',
+  harness: 'claude-code',
+  turnCount: 2,
+  toolCallCount: 0,
+  turns: [
+    {
+      index: 0,
+      role: 'user',
+      content: '',
+      depth: 0,
+      contentParts: [
+        { type: 'image', image: { ref: pngRef, mediaType: 'image/png', byteSize: 4096, width: 640, height: 400 } },
+      ],
+    },
+    { index: 1, role: 'assistant', content: 'the screenshot shows a failed typecheck.', depth: 0, provider: 'claude-code', toolCalls: [] },
+  ],
+}
+
+const omittedPayload = {
+  id: 'sess_images_omitted',
+  harness: 'claude-code',
+  turnCount: 1,
+  toolCallCount: 0,
+  turns: [
+    {
+      index: 0,
+      role: 'user',
+      content: 'the four images that could not be carried',
+      depth: 0,
+      contentParts: [
+        { type: 'text', text: 'the four images that could not be carried' },
+        { type: 'image', image: { mediaType: 'image/png', width: 4000, height: 3000, omittedReason: 'too_large' } },
+        { type: 'image', image: { omittedReason: 'unsupported' } },
+        { type: 'image', image: { ref: pngRef, omittedReason: 'missing' } },
+        { type: 'image', image: { omittedReason: 'not_published' } },
+      ],
+    },
+  ],
+}
+
+const imageArgs = { viewModel: adaptTranscript(imagePayload), capabilities: readOnlyCaps, attachmentUrl: storyAttachmentUrl }
+
+/** The shared play: two bounded, lazily loaded thumbnails with alt text, and the first opens a
+    larger view from the thumbnail control by click and then by keyboard. */
+async function imageRenderPlay({ canvasElement }) {
+  const thumbs = canvasElement.querySelectorAll('.txn-image-thumb')
+  await expect(thumbs.length).toBe(2)
+  await expect(thumbs[0]).toHaveAttribute('loading', 'lazy')
+  await expect(thumbs[0].getAttribute('alt')).toMatch(/^image 1 of 2, image\/png, 640 by 400 pixels/)
+  await expect(thumbs[1].getAttribute('alt')).toMatch(/^image 2 of 2/)
+  /* the inline text blocks stay in source order around the images */
+  const body = canvasElement.querySelector('#turn-0 .txn-turn > div:last-child')
+  const order = [...body.children].map((node) => (node.matches('.txn-image') ? 'image' : 'text'))
+  await expect(order).toEqual(['text', 'image', 'text', 'image'])
+  const opener = canvasElement.querySelector('.txn-image-open')
+  await userEvent.click(opener)
+  const page = within(canvasElement.ownerDocument.body)
+  const dialog = await page.findByRole('dialog')
+  await expect(within(dialog).getByRole('img')).toHaveClass('txn-image-full')
+  await userEvent.keyboard('{Escape}')
+  await waitFor(() => expect(page.queryByRole('dialog')).toBeNull())
+  opener.focus()
+  await userEvent.keyboard('{Enter}')
+  await waitFor(() => expect(page.getByRole('dialog')).toBeVisible())
+  await userEvent.keyboard('{Escape}')
+  await waitFor(() => expect(page.queryByRole('dialog')).toBeNull())
+}
+
+export const ImagesInline = { args: imageArgs, play: imageRenderPlay }
+
+export const ImagesOmitted = {
+  args: { viewModel: adaptTranscript(omittedPayload), capabilities: readOnlyCaps, attachmentUrl: storyAttachmentUrl },
+  play: async ({ canvasElement }) => {
+    const notices = canvasElement.querySelectorAll('.txn-image-omitted')
+    await expect(notices.length).toBe(4)
+    await expect(notices[0]).toHaveAttribute('data-image-omitted', 'too_large')
+    await expect(notices[0]).toHaveTextContent('image too large')
+    await expect(notices[0]).toHaveTextContent('over the 16 MiB limit')
+    await expect(notices[1]).toHaveTextContent('image type not supported')
+    await expect(notices[2]).toHaveTextContent('image unavailable')
+    await expect(notices[3]).toHaveTextContent('image not published')
+    /* an omitted image never asks for bytes */
+    await expect(canvasElement.querySelectorAll('.txn-image-thumb').length).toBe(0)
+  },
+}
+
+export const ImageOnlyTurn = {
+  args: { viewModel: adaptTranscript(imageOnlyPayload), capabilities: readOnlyCaps, attachmentUrl: storyAttachmentUrl },
+  play: async ({ canvasElement }) => {
+    const card = canvasElement.querySelector('#turn-0 .txn-turn')
+    await expect(card).not.toBeNull()
+    await expect(card.querySelectorAll('.txn-image-thumb').length).toBe(1)
+    /* an image-only prompt is a card of its own, not an empty banner */
+    await expect(card.querySelector('.txn-md-prose')).toBeNull()
+    await expect(card.querySelector('.txn-image-thumb').getAttribute('alt')).toBe('image 1, image/png, 640 by 400 pixels, 4 KiB')
+  },
+}
+
+/** A present image the host can resolve but the browser cannot load: the renderer says so
+    instead of leaving a broken glyph. The data URL is a valid scheme with undecodable bytes, so
+    the load fails deterministically with no network. */
+export const ImagesUnavailable = {
+  args: { viewModel: adaptTranscript(imagePayload), capabilities: readOnlyCaps, attachmentUrl: () => 'data:image/png;base64,not-an-image' },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(canvasElement.querySelectorAll('.txn-image-omitted').length).toBe(2))
+    for (const notice of canvasElement.querySelectorAll('.txn-image-omitted')) {
+      await expect(notice).toHaveTextContent('image unavailable')
+    }
+    await expect(canvasElement.querySelectorAll('.txn-image-thumb').length).toBe(0)
+  },
+}
