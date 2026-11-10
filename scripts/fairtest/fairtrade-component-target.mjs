@@ -255,6 +255,7 @@ export const COMPONENT_RENDER_PHASES = Object.freeze({
  * @property {string} [includes]
  * @property {string} [token]
  * @property {boolean} [nonEmpty]
+ * @property {boolean} [afterAction] read this probe after the interaction
  */
 
 /**
