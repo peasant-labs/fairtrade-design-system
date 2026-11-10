@@ -130,3 +130,4 @@ mutations:
     find: " && !isCard(turn)"
     replace: ""
     expectedDiagnostic: "a flagged prose turn with work draws one outline"
+requiredRetainedImageCaseName: retained history resolves its image through the host

@@ -67,11 +67,16 @@ function countedParts(summary = {}) {
 }
 
 /**
- * True when a turn has words of its own, so it draws a card (a turn that is only work is inline detail).
- * @param {{ displayContent?: unknown, content?: unknown } | null | undefined} turn
+ * True when a turn has content of its own, so it draws a card (a turn that is only work is inline
+ * detail). An image block counts as content even when the turn carries no words: a pasted
+ * screenshot is not an empty turn.
+ * @param {{ displayContent?: unknown, content?: unknown, contentParts?: import('./view-model.js').ContentPartVM[] } | null | undefined} turn
  * @returns {boolean}
  */
 export function turnHasProse(turn) {
+  const parts = turn?.contentParts ?? []
+  if (parts.some((part) => part?.type === 'image')) return true
+  if (parts.some((part) => part?.type === 'text' && String(part.text ?? '').trim() !== '')) return true
   return String(turn?.displayContent ?? turn?.content ?? '').trim().length > 0
 }
 

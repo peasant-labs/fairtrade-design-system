@@ -96,8 +96,8 @@ mutations:
     expectedDiagnostic: "summary_mounted_head: the group noun"
   - name: a closed group counts every member
     file: src/ui/transcript/TranscriptViewer.jsx
-    find: "      return group.owner.index === turn.index || openSystemGroups[group.id] === true"
-    replace: "      return true"
+    find: "      if (openSystemGroups[group.id] !== true) return false"
+    replace: "      if (false) return false"
     expectedDiagnostic: "closed_group_is_one_minimap_tick_and_one_progress_count"
   - name: the owner row loses its inset
     file: src/index.css

@@ -21,6 +21,7 @@ const { fixture, manifest } = loadFixturePair(FIXTURE, MANIFEST, {
   historyCases: 'requiredHistoryCaseNames',
 })
 if (fixture.thinkingCase?.name !== manifest.requiredThinkingCaseName) throw new Error(`${FIXTURE}: thinkingCase must be named ${JSON.stringify(manifest.requiredThinkingCaseName)}`)
+if (fixture.retainedImageCase?.name !== manifest.requiredRetainedImageCaseName) throw new Error(`${FIXTURE}: retainedImageCase must be named ${JSON.stringify(manifest.requiredRetainedImageCaseName)}`)
 
 /* a name alone does not protect a meaning: every row's kind is pinned by name too. */
 function assertKindMap(rows, required, label) {
@@ -73,6 +74,7 @@ const FILTERS = {
 }
 const SERVED_HASH = 'sha256:served'
 const OTHER_HASH = 'sha256:other'
+const ATTACHMENT_URL = 'data:image/png;base64,iVBORw0KGgo='
 
 const report = createReport('transcript integrity viewer')
 const text = (node) => (node?.textContent ?? '').replace(/\s+/g, ' ').trim()
@@ -206,6 +208,29 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     report.check(!!rowNode?.querySelector('.txn-integrity-mark'), `${name}: the flagged turn's thinking must lead with a mark`)
     const thinkingMark = rowNode?.querySelector('.txn-integrity-mark')
     report.check(!!thinkingMark && text(thinkingMark) === INTEGRITY_COPY.turnMark && thinkingMark.getAttribute('aria-hidden') !== 'true', `${name}: the mark must be readable, not hidden`)
+    await mounted.unmount()
+  }
+
+  {
+    /* earlier history is its own index domain; the host's attachment resolver must reach it */
+    const { name, payload, ref } = fixture.retainedImageCase
+    const retainedVm = adaptTranscript(payload)
+    const section = retainedVm.earlierHistory?.[0]
+    if (!section) throw new Error(`${FIXTURE}: the retained-image payload must cook one earlier-history section`)
+    const requested = []
+    const mounted = await mount(React.createElement(TranscriptViewer, {
+      viewModel: retainedVm,
+      capabilities: CAPABILITIES,
+      presentation: 'ledger',
+      earlierHistoryOpen: { [section.id]: true },
+      attachmentUrl: (value) => { requested.push(value); return ATTACHMENT_URL },
+    }))
+    await mounted.settle(SETTLE_MS)
+    const image = mounted.container.querySelector('.txn-earlier .txn-image-thumb')
+    report.check(!!image, `${name}: the retained image must render under its earlier section, not as a placeholder`)
+    report.check(requested.includes(ref), `${name}: the host resolver must receive the recorded content reference`)
+    report.check(image?.getAttribute('src') === ATTACHMENT_URL, `${name}: the rendered image must use the host's resolved URL`)
+    report.check(!mounted.container.querySelector('.txn-earlier .txn-image-omitted'), `${name}: a resolved image must not render the unavailable placeholder`)
     await mounted.unmount()
   }
 

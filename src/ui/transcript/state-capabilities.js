@@ -74,7 +74,7 @@
  * `tags` gate semantic friction tags; `views` are display toggles; `checkpoint`
  * scopes the trace to a commit (`'all'` = unscoped).
  * @typedef {object} TranscriptFilters
- * @property {{ prompts: boolean, responses: boolean, thinking: boolean, toolcalls: boolean, system?: boolean }} categories  system defaults to true when absent from saved or host-controlled state
+ * @property {{ prompts: boolean, responses: boolean, thinking: boolean, toolcalls: boolean, system?: boolean }} categories  `system` is absent in a state saved before the category existed, and absent means HIDDEN (the documented default); only an explicit `true` reveals the entries
  * @property {Partial<Record<import('./view-model.js').ToolGroup, boolean>>} toolGroups
  * @property {{ errors: boolean, retries: boolean, revert: boolean }} tags
  * @property {{ hidden: boolean, expandAll: boolean, compact: boolean }} views
@@ -193,6 +193,7 @@
  * @property {import('react').ReactNode} [beforeHeader]                in-flow content before the session header
  * @property {(turn: import('./view-model.js').TurnVM) => unknown} [renderTurnPanel]  host per-turn extension rendered under each turn card
  * @property {(turn: import('./view-model.js').TurnVM) => unknown} [renderTurnActions]  host-owned per-turn actions; replaces the built-in label affordance (hosts with typed label models keep their own popovers)
+ * @property {(ref: string) => string | null | undefined} [attachmentUrl]  resolve one image part's content reference to a URL the browser can load (the host's local attachment route). A present image the host cannot resolve renders its unavailable placeholder instead of a broken image; omitted images never call it
  * @property {(turnIndex: number) => string} [anchorHref]              host permalink for a turn's copy-anchor action; a root-relative return is absolutized against the page origin. Omitted, the demo copies its bare '#turn-N' placeholder
  * @property {unknown} [headerActions]                                 host session-level actions rendered at the head of the hero action row (attest etc.); the composite's own actions stay the shared tail
  * @property {import('react').ReactNode} [utilityActions]                host secondary actions, in the header on desktop and the bottom bar on phones

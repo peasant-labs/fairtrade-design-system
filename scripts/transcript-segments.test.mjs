@@ -65,12 +65,14 @@ const { fixture, manifest } = loadFixturePair(FIXTURE, MANIFEST, {
   historyCases: 'requiredHistoryCaseNames',
   typeMutations: 'requiredTypeMutationNames',
   unknownHistoryInvalidCases: 'requiredUnknownHistoryInvalidNames',
+  wordlessCases: 'requiredWordlessCaseNames',
 })
 
 for (const row of fixture.directories) assertFields(row, ['name', 'totalTurns', 'totalSegments', 'firstTurn', 'segmentTurns', 'segmentBytes'], `${FIXTURE} ${row.name}`)
 for (const row of fixture.loadCases) assertFields(row, ['name', 'directory', 'loaded', 'expect'], `${FIXTURE} ${row.name}`)
 for (const row of fixture.windowCases) assertFields(row, ['name', 'directory', 'loaded', 'window', 'expect'], `${FIXTURE} ${row.name}`)
 for (const row of fixture.mountCases) assertFields(row, ['name', 'directory', 'loaded', 'expect'], `${FIXTURE} ${row.name}`, ['window', 'oversizedTurn', 'noLoader'])
+for (const row of fixture.wordlessCases) assertFields(row, ['name', 'turn', 'wordless'], `${FIXTURE} ${row.name}`)
 for (const row of fixture.phaseCases) assertFields(row, ['name', 'directory', 'loaded', 'phase', 'caption'], `${FIXTURE} ${row.name}`)
 for (const row of fixture.phaseCountCases) assertFields(row, ['name', 'turns', 'expectedCount', 'expectedFrom', 'expectedTo'], `${FIXTURE} ${row.name}`)
 for (const row of fixture.recoveryCases) assertFields(row, ['name', 'mode', 'directory', 'loaded', 'requests'], `${FIXTURE} ${row.name}`, ['window', 'restoredTurn', 'failureCopy', 'retryCopy'])
@@ -190,6 +192,12 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     const phase = detectPhases(row.turns)[0]
     report.check(phase?.turnCount === row.expectedCount, `${row.name}: phase count must equal ${row.expectedCount}`)
     report.check(phase?.from === row.expectedFrom && phase?.to === row.expectedTo, `${row.name}: phase retains its source indexes`)
+  }
+
+  const { isWordlessAssistant } = await load('/src/ui/transcript/segments.js')
+  for (const row of fixture.wordlessCases) {
+    const wordless = isWordlessAssistant(row.turn)
+    report.check(wordless === row.wordless, `${row.name}: an image is content, not an action continuation`)
   }
 
   const viewer = (props, extra) => React.createElement(TranscriptViewer, {
@@ -537,4 +545,4 @@ function dirSession() {
   return 'sess_segment_fixture'
 }
 
-report.finish(`${fixture.directories.length} directories, ${fixture.loadCases.length} load cases, ${fixture.windowCases.length} window cases, ${fixture.mountCases.length} mounted cases, and ${boundaryFixture.sides.length} boundary sides.`)
+report.finish(`${fixture.directories.length} directories, ${fixture.loadCases.length} load cases, ${fixture.windowCases.length} window cases, ${fixture.mountCases.length} mounted cases, ${fixture.wordlessCases.length} wordless cases, and ${boundaryFixture.sides.length} boundary sides.`)

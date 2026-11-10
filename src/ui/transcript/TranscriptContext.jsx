@@ -14,8 +14,9 @@ import { UsageScopes } from './UsageDisclosure.jsx'
  * @param {(id: string) => void} props.toggle
  * @param {Record<string, boolean>} props.openTools
  * @param {(id: string) => void} props.toggleTool
+ * @param {(ref: string) => string | null | undefined} [props.attachmentUrl]  host resolver for an image part's content reference, so retained history renders its images too
  */
-export default function TranscriptContext({ relationships = [], earlierHistory = [], onNavigate, open, toggle, openTools, toggleTool }) {
+export default function TranscriptContext({ relationships = [], earlierHistory = [], onNavigate, open, toggle, openTools, toggleTool, attachmentUrl }) {
   const prefix = useId()
   if (!relationships.length && !earlierHistory.length) return null
   return <section className="txn-context" aria-label="session context">
@@ -38,7 +39,7 @@ export default function TranscriptContext({ relationships = [], earlierHistory =
       <div id={`${prefix}-history-${section.id}`} hidden={!open[section.id]}>
         <p className="txn-context-note">{section.state.explanation}</p>
         <UsageScopes scopes={section.usageScopes} label="earlier history usage by scope" />
-        {open[section.id] && section.turns.map(turn => <TurnCard key={turn.identity} turn={turn} openTools={openTools} toggleTool={toggleTool} />)}
+        {open[section.id] && section.turns.map(turn => <TurnCard key={turn.identity} turn={turn} openTools={openTools} toggleTool={toggleTool} attachmentUrl={attachmentUrl} />)}
       </div>
     </section>)}
   </section>

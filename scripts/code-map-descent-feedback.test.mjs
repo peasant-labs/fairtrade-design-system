@@ -19,6 +19,7 @@ import { createRoot } from 'react-dom/client'
 import { JSDOM } from 'jsdom'
 import react from '@vitejs/plugin-react'
 import { createServer } from 'vite'
+import { FAIRTRADE_VITE_CACHE_DIR } from './vite-cache-dir.mjs'
 
 const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { url: 'https://fairtrade.invalid/map' })
 const previousGlobals = new Map()
@@ -222,6 +223,7 @@ async function runCanonicalCollapseReframesScenario(MapCanvas) {
 }
 
 const server = await createServer({
+  cacheDir: FAIRTRADE_VITE_CACHE_DIR,
   appType: 'custom', configFile: false, logLevel: 'silent', plugins: [react()],
   root: process.cwd(), server: { middlewareMode: true },
 })

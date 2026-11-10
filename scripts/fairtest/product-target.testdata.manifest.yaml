@@ -245,7 +245,7 @@ mutations:
     kind: bad-value
     target: config-port-owner-single-declaration
     field: consumerModules
-    value: [playwright.fairtest.config.mjs, scripts/fairtest/product-producer.mjs, scripts/fairtest/product.journey.mjs]
+    value: [scripts/fairtest/product-producer.mjs, scripts/fairtest/product.journey.mjs]
     expectedField: consumerModules
   - name: host-literal-guard-mutation-moves-no-literal
     kind: bad-value

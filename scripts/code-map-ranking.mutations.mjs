@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join, normalize, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
 import { build } from 'vite'
+import { FAIRTRADE_VITE_CACHE_DIR } from './vite-cache-dir.mjs'
 import YAML from 'yaml'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -105,6 +106,7 @@ try {
     try {
       await build({
         root: resolve(HERE, '..'),
+        cacheDir: FAIRTRADE_VITE_CACHE_DIR,
         configFile: false,
         logLevel: 'silent',
         plugins: [inMemorySourcePlugin(new Map([[SOURCE_PATH, source.replace(item.find, item.replace)]]))],

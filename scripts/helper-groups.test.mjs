@@ -4,6 +4,7 @@ import React, { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { JSDOM } from 'jsdom'
 import { createServer } from 'vite'
+import { FAIRTRADE_VITE_CACHE_DIR } from './vite-cache-dir.mjs'
 import react from '@vitejs/plugin-react'
 import YAML from 'yaml'
 import { installHarnessGuard } from './harness-guard.mjs'
@@ -108,7 +109,7 @@ for (const [key, value] of Object.entries({ window: dom.window, document: dom.wi
   Object.defineProperty(globalThis, key, { configurable: true, value })
 }
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
-const server = await createServer({ configFile: false, plugins: [react()], server: { middlewareMode: true }, logLevel: 'silent' })
+const server = await createServer({ cacheDir: FAIRTRADE_VITE_CACHE_DIR, configFile: false, plugins: [react()], server: { middlewareMode: true }, logLevel: 'silent' })
 try {
   const { HelperGroup, HelperGroupListItem, HelperThreadRow, useHelperSelection,
     helperOwnerState, helperSelectionIds, helperOwnerToggle, helperMemberToggle, HELPER_OWNER_STATE } = await server.ssrLoadModule('/src/ui/index.js')

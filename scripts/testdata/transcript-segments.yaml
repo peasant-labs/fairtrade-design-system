@@ -9,6 +9,7 @@
 # Turn roles follow one formula so continuation and filter cases are deterministic:
 # identity % 6 == 0 is a user turn, % 7 == 0 is a system turn, every other turn is an
 # assistant turn with one tool call. `oversizedTurn` marks a single bounded turn.
+# `wordlessCases` name which turns are action continuations: an image is content.
 
 vitestSelection:
   heldWindow: a held window beside a disjoint region keeps its gap boundary
@@ -480,3 +481,25 @@ recoveryCases:
       segments: [1, 2]
       hasOlder: true
       hasNewer: true
+# An empty assistant turn can continue model actions from an unloaded segment.
+# An image is content of its own, so it is not that continuation even when its text is empty.
+wordlessCases:
+  - name: an empty assistant turn continues an action run
+    turn:
+      role: assistant
+      content: ""
+    wordless: true
+  - name: an image-bearing assistant turn is content
+    turn:
+      role: assistant
+      content: ""
+      contentParts:
+        - type: image
+          image:
+            ref: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    wordless: false
+  - name: prose is not an action continuation
+    turn:
+      role: assistant
+      content: a reply
+    wordless: false

@@ -12,6 +12,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import YAML from 'yaml'
+import { FAIRTRADE_VITE_CACHE_DIR } from './vite-cache-dir.mjs'
 
 export const ROOT = resolve(new URL('..', import.meta.url).pathname)
 
@@ -119,7 +120,7 @@ export async function withMountedSource(run, { url = 'https://fairtrade.invalid/
   const { createRoot } = await import('react-dom/client')
   // This harness only uses ssrLoadModule. Scanning index.html and prebundling the
   // client application wastes memory and can race separate mutation processes.
-  const server = await createServer({ appType: 'custom', configFile: false, logLevel: 'silent', plugins: [mutationPlugin(), react()], root: ROOT, optimizeDeps: { noDiscovery: true, include: [] }, server: { middlewareMode: true } })
+  const server = await createServer({ cacheDir: FAIRTRADE_VITE_CACHE_DIR, appType: 'custom', configFile: false, logLevel: 'silent', plugins: [mutationPlugin(), react()], root: ROOT, optimizeDeps: { noDiscovery: true, include: [] }, server: { middlewareMode: true } })
   const roots = []
   try {
     const load = (path) => server.ssrLoadModule(path)

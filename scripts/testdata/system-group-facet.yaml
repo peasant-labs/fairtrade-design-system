@@ -1,0 +1,102 @@
+# Cases for the per-kind facet on a system-entry group head
+# (src/ui/transcript/system-group-facet.js + TranscriptSystemGroup).
+#
+# The facet is derived, not declared: a group offers the kinds its own members carry plus an
+# unclassified bucket for members the producer did not classify. Selecting a kind narrows the
+# group only, counts are computed before that selection, the owner row always renders, and the
+# selection is ephemeral (it never writes the reader's filters and a new session clears it).
+#
+# scripts/system-group-facet.test.mjs drives the pure helpers from `cases` and mounts the REAL
+# viewer for `mountedCases`.
+payload:
+  id: system-group-facet
+  harness: claude-code
+  startTime: '2026-10-06T12:00:00Z'
+  endTime: '2026-10-06T12:10:00Z'
+  turnCount: 2
+  turns:
+    - {index: 0, role: user, content: 'run the checks', timestamp: '2026-10-06T12:00:00Z', depth: 0}
+    - {index: 1, role: system, content: 'mode: normal', controlKind: mode, timestamp: '2026-10-06T12:01:00Z', depth: 0}
+    - {index: 2, role: system, content: 'permission mode: auto', controlKind: permission-mode, timestamp: '2026-10-06T12:02:00Z', depth: 0}
+    - {index: 3, role: system, content: 'a compaction notice the producer did not classify', timestamp: '2026-10-06T12:03:00Z', depth: 0}
+    - {index: 4, role: system, content: 'session title: Peasant Session', controlKind: custom-title, timestamp: '2026-10-06T12:04:00Z', depth: 0}
+    - {index: 5, role: assistant, content: 'checks are running', timestamp: '2026-10-06T12:05:00Z', depth: 0}
+# a group of a single kind: there is nothing to choose, so no facet renders
+singleKindPayload:
+  id: system-group-facet-single
+  harness: claude-code
+  turnCount: 1
+  turns:
+    - {index: 0, role: user, content: 'run the checks', timestamp: '2026-10-06T12:00:00Z', depth: 0}
+    - {index: 1, role: system, content: 'mode: normal', controlKind: mode, timestamp: '2026-10-06T12:01:00Z', depth: 0}
+    - {index: 2, role: system, content: 'mode: accept edits', controlKind: mode, timestamp: '2026-10-06T12:02:00Z', depth: 0}
+    - {index: 3, role: assistant, content: 'checks are running', timestamp: '2026-10-06T12:03:00Z', depth: 0}
+# a second session, used to prove the selection does not outlive one reading
+otherPayload:
+  id: system-group-facet-other
+  harness: claude-code
+  turnCount: 1
+  turns:
+    - {index: 0, role: user, content: 'run the checks again', timestamp: '2026-10-06T13:00:00Z', depth: 0}
+    - {index: 1, role: system, content: 'mode: normal', controlKind: mode, timestamp: '2026-10-06T13:01:00Z', depth: 0}
+    - {index: 2, role: system, content: 'permission mode: auto', controlKind: permission-mode, timestamp: '2026-10-06T13:02:00Z', depth: 0}
+    - {index: 3, role: assistant, content: 'checks are running', timestamp: '2026-10-06T13:03:00Z', depth: 0}
+
+cases:
+  - name: kinds come from the group's own members
+    kind: kinds
+    members: [mode, permission-mode, mode, null]
+    expected:
+      - {id: mode, label: mode, count: 2}
+      - {id: permission-mode, label: permission-mode, count: 1}
+      - {id: unclassified, label: unclassified, count: 1}
+  - name: a member without a producer kind lands in the unclassified bucket
+    kind: unclassified
+  - name: narrowing leaves every count untouched
+    kind: counts
+    members: [mode, permission-mode, mode, null]
+    selection: {permission-mode: false}
+    expected:
+      - {id: mode, label: mode, count: 2}
+      - {id: permission-mode, label: permission-mode, count: 1}
+      - {id: unclassified, label: unclassified, count: 1}
+  - name: toggling flips one kind and leaves its siblings
+    kind: toggle
+    selection: {}
+    id: mode
+    expected: {mode: false}
+  - name: toggling the same kind twice restores it
+    kind: toggle
+    selection: {mode: false}
+    id: mode
+    expected: {mode: true}
+  - name: no selection shows every member
+    kind: filter
+    members: [mode, permission-mode, null]
+    expected: [mode, permission-mode, unclassified]
+  - name: a narrowed selection keeps only its kind
+    kind: filter
+    members: [mode, permission-mode, null]
+    selection: {permission-mode: false, unclassified: false}
+    expected: [mode]
+
+mountedCases:
+  - name: the head offers the kinds actually present
+    kind: facet_offers_present_kinds
+    expected: [custom-title, mode, permission-mode, unclassified]
+  - name: the owner row always renders
+    kind: owner_always_renders
+  - name: the folded members follow the facet
+    kind: folded_members_filter
+  - name: counts ignore the facet's own selection
+    kind: counts_ignore_facet_selection
+  - name: the facet is never nested in the disclosure
+    kind: facet_controls_not_nested_in_disclosure
+  - name: a toggle never writes the reader's filters
+    kind: selection_never_writes_filters
+  - name: a new session starts unfiltered
+    kind: selection_resets_on_session_change
+  - name: a single-kind group offers no facet
+    kind: single_kind_group_offers_no_facet
+  - name: every chip is a keyboard-reachable toggle
+    kind: facet_keyboard_and_aria

@@ -158,7 +158,7 @@ mutations:
     expectedDiagnostic: "compact mode must collapse the action list"
   - name: the system category ignores its checkbox
     file: src/ui/transcript/filters.js
-    find: "  if (turn.role === 'system') return categories.system === false ? null : turn"
+    find: "  if (turn.role === 'system') return categories.system === true ? turn : null"
     replace: "  if (turn.role === 'system') return turn"
     expectedDiagnostic: "the system category hides and restores only system turns: system rows must be absent at rest"
   - name: Bash input regains its icon

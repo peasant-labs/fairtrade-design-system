@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join, normalize, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
 import YAML from 'yaml'
+import { FAIRTRADE_VITE_CACHE_DIR } from './vite-cache-dir.mjs'
 import { InsightPanel } from '../dist/lib/graph.js'
 import { LIB_EXTERNALS } from './lib-externals.mjs'
 
@@ -77,6 +78,7 @@ try {
     try {
       await build({
         root: ROOT,
+        cacheDir: FAIRTRADE_VITE_CACHE_DIR,
         configFile: false,
         logLevel: 'silent',
         plugins: [react(), inMemorySourcePlugin(new Map([[realPath, original.replace(mutation.find, mutation.replace)]]))],
