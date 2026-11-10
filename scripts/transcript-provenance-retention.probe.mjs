@@ -17,8 +17,17 @@ const dirty = execFileSync('git', ['status', '--porcelain'], { encoding: 'utf8' 
 assert.ok(!dirty || process.env.ALLOW_DIRTY_CAPTURE === '1', 'Commit the verified sources before final capture; dirty captures are development evidence only.')
 const output = resolve(process.env.CONTEXT_CAPTURE_DIR ?? `/tmp/opencode/context-fairtrade-${revision.slice(0, 8)}${dirty ? '-dirty' : ''}`)
 await mkdir(output, { recursive: true })
-// The header meta row names the count `prompts`, singular for exactly one; absent stays `unknown`.
+// The header omits an absent count; present counts use singular for exactly one.
 const promptsLabel = (count) => `${count} ${String(count) === '1' ? 'prompt' : 'prompts'}`
+async function promptChips(page) {
+  return page.$$eval('.txn-header .metaitem', nodes => nodes.map(node => node.textContent.trim().replace(/\s+/g, ' ')).filter(text => /\bprompts?$/.test(text)))
+}
+async function openVisibleDisclosures(page, selector) {
+  for (const button of await page.$$(selector)) {
+    const visible = await button.evaluate(node => node.isConnected && !node.closest('[inert], [hidden], [aria-hidden="true"]') && node.getClientRects().length > 0)
+    if (visible) await button.click()
+  }
+}
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json', '.mp4': 'video/mp4' }
 const server = createServer(async (req, res) => {
   try {
@@ -60,7 +69,7 @@ try {
     }
     async function open(query = {}) {
       const params = new URLSearchParams({ app: 'transcript', transcript: 'context', ...query })
-      await page.goto(`${origin}/?${params}#inuse`, { waitUntil: 'networkidle0' })
+      await page.goto(`${origin}/?${params}#inuse`, { waitUntil: 'domcontentloaded' })
       await page.waitForSelector('.txn-app .txn-stream')
       await page.evaluate(theme => {
         document.documentElement.dataset.theme = theme
@@ -72,9 +81,18 @@ try {
       for (const partition of fixture.partitions) {
         await open({ contextCase: testCase.name, contextPartition: partition })
         const input = buildContextFixture(fixture, testCase.name, partition)
-        const mainIndices = partition === 'earlier' ? [] : testCase.expectedIndices
+        assert.equal(fixture.defaultMainVisibility, 'system-hidden')
+        const mainIndices = partition === 'earlier' ? [] : testCase.expectedIndices.filter(index => input.turns.find(turn => turn.index === index)?.role !== 'system')
         assert.deepEqual(await page.$$eval('.txn-turnwrap[data-partition="main"]', nodes => nodes.map(node => Number(node.dataset.turn))), mainIndices)
         assert.equal(await page.$$eval('.txn-turnwrap[data-partition="earlier-0"]', nodes => nodes.length), 0, 'earlier defaults collapsed')
+        if (partition !== 'earlier' && mainIndices.length !== testCase.expectedIndices.length) {
+          const systemFilter = await page.$$('.txn-checkrow')
+          const label = (await Promise.all(systemFilter.map(async node => ({ node, text: await node.$eval('.txn-cr-label', el => el.textContent) })))).find(item => item.text === 'system')?.node
+          assert.ok(label, 'the system filter must be available to reveal retained system context')
+          await (await label.$('input')).click()
+          await openVisibleDisclosures(page, '.txn-systemgroup-head[aria-expanded="false"]')
+          assert.deepEqual(await page.$$eval('.txn-turnwrap[data-partition="main"]', nodes => nodes.map(node => Number(node.dataset.turn))), testCase.expectedIndices, 'enabling system restores every retained main turn')
+        }
         if (partition !== 'main') {
           const disclosure = await page.$('.txn-earlier-toggle')
           const beforeRequests = requests.length
@@ -85,28 +103,41 @@ try {
           assert.deepEqual(await page.$$eval('.txn-turnwrap[data-partition="earlier-0"]', nodes => nodes.map(node => Number(node.id.split('-').at(-1)))), testCase.expectedIndices)
           assert.equal(await page.$$eval('.txn-earlier [data-turn], .txn-earlier [data-turn-control]', nodes => nodes.length), 0, 'earlier must not alias main navigation')
         }
-        for (const button of await page.$$('.txn-thinking-toggle[aria-expanded="false"], .txn-tc-head[aria-expanded="false"]')) await button.click()
-        for (const summary of await page.$$('.txn-native-details > summary')) await summary.click()
+        await openVisibleDisclosures(page, '.txn-systemrow-head[aria-expanded="false"], .txn-modelactions-head[aria-expanded="false"]')
+        await openVisibleDisclosures(page, '.txn-thinking-toggle[aria-expanded="false"], .txn-tc-head[aria-expanded="false"]')
+        await openVisibleDisclosures(page, '.txn-native-details:not([open]) > summary')
         const domains = partition === 'main' ? [{ id: 'main', turns: input.turns }] : partition === 'earlier'
           ? [{ id: 'earlier-0', turns: input.earlierHistory[0].turns }]
           : [{ id: 'main', turns: input.turns }, { id: 'earlier-0', turns: input.earlierHistory[0].turns }]
         for (const domain of domains) {
+          if (domain.id === 'main' && !testCase.legacy) {
+            // Ledger folds wordless work into its source prose run; the turn's own
+            // article stays as an identity anchor while the thinking body moves.
+            const expectedThinking = testCase.expectedIndices.map(index => domain.turns.find(turn => turn.index === index)).filter(turn => turn.entryType === 'thinking').map(turn => turn.content)
+            await page.waitForFunction(expected => {
+              const actual = [...document.querySelectorAll('.txn-stream .txn-turnwrap[data-partition="main"] .txn-thinking-body')].map(node => node.textContent)
+              return JSON.stringify(actual) === JSON.stringify(expected)
+            }, {}, expectedThinking)
+            const bodies = await page.$$eval('.txn-stream .txn-turnwrap[data-partition="main"] .txn-thinking-body', nodes => nodes.map(node => node.textContent))
+            assert.deepEqual(bodies, expectedThinking, `${testCase.name}: main thinking bodies retain their order and content in ledger action runs`)
+          }
           for (const index of testCase.expectedIndices) {
             const source = domain.turns.find(turn => turn.index === index)
             const selector = domain.id === 'main' ? `[data-turn="${index}"]` : `#${domain.id}-turn-${index}`
             const card = await page.$(selector)
             assert.ok(card)
             if (source.sourceEntryRef) assert.equal(await card.evaluate(node => node.dataset.sourceEntryRef), source.sourceEntryRef)
-            if (source.entryType === 'thinking') assert.equal(await card.$eval('.txn-thinking-body', node => node.textContent), source.content)
-            else if (!testCase.legacy && source.content) assert.ok((await card.evaluate(node => node.textContent)).includes(source.content), `${testCase.name}: literal content missing`)
+            if (source.entryType === 'thinking' && domain.id !== 'main') assert.equal(await card.$eval('.txn-thinking-body', node => node.textContent), source.content)
+            else if (source.entryType !== 'thinking' && !testCase.legacy && source.content) assert.ok((await card.evaluate(node => node.textContent)).includes(source.content), `${testCase.name}: literal content missing`)
             for (const tool of source.toolCalls ?? []) if (tool.result) {
+              await page.waitForFunction((target, result) => [...document.querySelectorAll(`${target} .txn-code`)].some(node => node.textContent === result && !node.closest('[inert], [hidden], [aria-hidden="true"]')), {}, selector, tool.result)
               const outputs = await card.$$eval('.txn-code', nodes => nodes.map(node => node.textContent))
               assert.ok(outputs.includes(tool.result), `${testCase.name}: exact result missing`)
             }
           }
         }
         if (testCase.name === 'pi-native-attachments') assert.ok((await page.$eval('.txn-stream', node => node.textContent)).includes('NativeAttachmentRetained'))
-        assert.ok((await page.$eval('.txn-header', node => node.textContent)).includes(promptsLabel(input.inputSubmissionCount ?? 'unknown')))
+        assert.deepEqual(await promptChips(page), input.inputSubmissionCount == null ? [] : [promptsLabel(input.inputSubmissionCount)], `${testCase.name}/${partition}: prompt chip reflects measurement presence`)
         if (partition === 'both' && fixture.captures.includes(testCase.name)) {
           await page.evaluate(() => document.getElementById('inuse-stage').scrollIntoView({ block: 'center' }))
           const viewer = await page.$('.txn-app')
@@ -157,7 +188,7 @@ try {
     }
     for (const testCase of fixture.countCases) {
       await open({ contextCount: testCase.name })
-      assert.ok((await page.$eval('.txn-header', node => node.textContent)).includes(promptsLabel(testCase.expected)))
+      assert.deepEqual(await promptChips(page), testCase.absent ? [] : [promptsLabel(testCase.expected)], `${testCase.name}: prompt chip reflects measurement presence`)
     }
     await open()
     const styles = await page.evaluate(() => {
