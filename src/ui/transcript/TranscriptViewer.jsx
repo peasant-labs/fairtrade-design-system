@@ -731,7 +731,7 @@ export default function TranscriptViewer({
      filter unchanged. Search enumerates this set so a hit can never exist that no reveal can
      show, and an initial position can reveal one of these without writing the reader's filters. */
   const systemHiddenTurns = useMemo(() => {
-    if (filters.categories?.system !== false) return []
+    if (filters.categories?.system === true) return []
     const { checkpoint } = filters
     const selCommit = checkpoint !== 'all' ? commits.find((c) => c.shortHash === checkpoint || c.hash === checkpoint) : null
     const ctx = {
@@ -1733,7 +1733,7 @@ export default function TranscriptViewer({
                     />
                     {visibleTurns.length === 0 && (
                       <div className="empty"><div className="ring"><FilterIcon size={20} aria-hidden="true" /></div><EmptyHeading>no turns to display</EmptyHeading>
-                        {filters.categories.system === false && counts.categories.system > 0 ? (
+                        {filters.categories.system !== true && counts.categories.system > 0 ? (
                           <>
                             <p>
                               {counts.categories.system === 1

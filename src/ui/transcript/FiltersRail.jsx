@@ -141,7 +141,7 @@ export default function FiltersRail({
             </div>
           )}
         </div>
-        <CheckRow checked={categories.system !== false} onChange={() => patchCategories({ system: categories.system === false })} count={counts.categories.system ?? 0}>system</CheckRow>
+        <CheckRow checked={categories.system === true} onChange={() => patchCategories({ system: categories.system !== true })} count={counts.categories.system ?? 0}>system</CheckRow>
       </div>
 
       <div className="txn-filter-divider" />

@@ -249,7 +249,7 @@
     "test:transcript-system-groups:mutations": "node scripts/parts-mutations.mjs scripts/transcript-system-groups.test.mjs scripts/testdata/transcript-system-groups.manifest.yaml"
   },
   "dependencies": {
-    "@peasant-labs/schema": "0.41.0",
+    "@peasant-labs/schema": "0.45.0",
     "@tanstack/react-table": "^8.21.3",
     "lucide-react": "^1.18.0",
     "mermaid": "12.2.0",

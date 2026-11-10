@@ -38,6 +38,13 @@ export { adaptTranscript, prefilterTurns, diffLines } from './adapter.js'
 export { default as TranscriptControlRow } from './ControlRow.jsx'
 export { default as TranscriptSystemGroup } from './SystemGroup.jsx'
 export { systemGroups } from './system-groups.js'
+export {
+  DEFAULT_TRANSCRIPT_FILTERS,
+  FILTER_INTENT_VERSION,
+  applyFilterIntent,
+  encodeFilterIntent,
+  normalizeFilterIntent,
+} from './filters.js'
 export { systemGroupSummary } from './system-summary.js'
 export {
   computeTasks,

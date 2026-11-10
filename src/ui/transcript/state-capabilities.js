@@ -74,7 +74,7 @@
  * `tags` gate semantic friction tags; `views` are display toggles; `checkpoint`
  * scopes the trace to a commit (`'all'` = unscoped).
  * @typedef {object} TranscriptFilters
- * @property {{ prompts: boolean, responses: boolean, thinking: boolean, toolcalls: boolean, system?: boolean }} categories  system defaults to true when absent from saved or host-controlled state
+ * @property {{ prompts: boolean, responses: boolean, thinking: boolean, toolcalls: boolean, system?: boolean }} categories  `system` is absent in a state saved before the category existed, and absent means HIDDEN (the documented default); only an explicit `true` reveals the entries
  * @property {Partial<Record<import('./view-model.js').ToolGroup, boolean>>} toolGroups
  * @property {{ errors: boolean, retries: boolean, revert: boolean }} tags
  * @property {{ hidden: boolean, expandAll: boolean, compact: boolean }} views
