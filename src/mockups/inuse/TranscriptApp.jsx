@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import separatorsRaw from '../../../scripts/testdata/transcript-ledger-turns-separators.yaml?raw'
 const separators = JSON.parse(separatorsRaw)
 import mermaidGlyphsRaw from '../../../scripts/testdata/transcript-mermaid-glyphs.yaml?raw'
@@ -740,6 +740,7 @@ function buildMockupVM() {
 
 import { piPayload } from './pi-fixture.js'
 import { readingPayload } from './reading-fixture.js'
+import { buildSegmentsModel } from './segments-fixture.js'
 import nestingSource from '../../../scripts/testdata/transcript-nesting.yaml?raw'
 import { integrityBoundProps } from './integrity-fixture.js'
 import { usePublishFlow } from './PublishFlowDemo.jsx'
@@ -756,7 +757,43 @@ const CAPABILITIES = {
 
 export default function TranscriptApp({ theme = 'dark' }) {
   if (new URLSearchParams(window.location.search).get('transcript') === 'context') return <ContextTranscriptDemo theme={theme} />
+  if (new URLSearchParams(window.location.search).get('transcript') === 'segments') return <SegmentsTranscriptDemo theme={theme} />
   return <DefaultTranscriptApp theme={theme} />
+}
+
+/* The segmented demo: a directory, the segments the host has loaded, and a window
+   descriptor when the reader jumps. The viewer itself asks for the adjacent segment
+   on load-more, the scrubber sample, or a window's covering run. */
+function SegmentsTranscriptDemo({ theme }) {
+  const model = useMemo(() => buildSegmentsModel(), [])
+  const initialTurn = useMemo(() => {
+    const raw = new URLSearchParams(window.location.search).get('turn')
+    return raw != null && /^\d+$/.test(raw) ? Number(raw) : null
+  }, [])
+  const [loaded, setLoaded] = useState(() => (initialTurn == null ? [model.segments[0]] : []))
+  const [windowDescriptor, setWindowDescriptor] = useState(null)
+  useEffect(() => {
+    if (initialTurn != null) setWindowDescriptor(model.windowFor(initialTurn))
+  }, [initialTurn, model])
+  const loadSegment = (index) => setLoaded((previous) => (
+    previous.some((segment) => segment.index === index)
+      ? previous
+      : [...previous, model.segments[index]].filter((segment) => segment != null).sort((a, b) => a.index - b.index)
+  ))
+  return (
+    <TranscriptViewer
+      viewModel={model.vm}
+      theme={theme}
+      capabilities={CAPABILITIES}
+      presentation="classic"
+      directory={model.directory}
+      segments={loaded}
+      window={windowDescriptor}
+      onLoadSegment={loadSegment}
+      onLoadWindow={(anchor) => setWindowDescriptor(model.windowFor(anchor))}
+      showOutcome={false}
+    />
+  )
 }
 
 /** the canonical demo session as a cooked view model; the village transcript page reuses it. */

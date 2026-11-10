@@ -1,0 +1,201 @@
+# Transcript segment viewer fixtures: the loaded-region model, the boundary, the
+# scrubber sample, the window descriptor and the mounted card bound.
+#
+# Large sessions are described by parameters, never by a turn list: `totalTurns`,
+# `totalSegments` and `segmentTurns` generate the same directory and segment shape
+# the producer emits (clean turn ranges, about the byte budget per segment), so the
+# 10,000-turn and 32 MiB cases stay cheap while asserting the real mounted counts.
+#
+# Turn roles follow one formula so continuation and filter cases are deterministic:
+# identity % 6 == 0 is a user turn, % 7 == 0 is a system turn, every other turn is an
+# assistant turn with one tool call. `oversizedTurn` marks a single bounded turn.
+
+directories:
+  - name: 32 mib session
+    totalTurns: 1312
+    totalSegments: 32
+    firstTurn: 0
+    segmentTurns: 41
+    segmentBytes: 1048576
+  - name: 10000 turn directory
+    totalTurns: 10000
+    totalSegments: 200
+    firstTurn: 0
+    segmentTurns: 50
+    segmentBytes: 1572864
+  - name: 10000 turn crowd directory
+    totalTurns: 10000
+    totalSegments: 400
+    firstTurn: 0
+    segmentTurns: 25
+    segmentBytes: 786432
+  - name: sparse 55 turn session
+    totalTurns: 55
+    totalSegments: 4
+    firstTurn: 4
+    segmentTurns: 14
+    segmentBytes: 4096
+
+loadCases:
+  - name: opening segment 0 leaves one newer boundary
+    directory: sparse 55 turn session
+    loaded: [0]
+    expect:
+      boundarySides: [newer]
+      loadSegments: [1]
+      ticks: 4
+      boundaryCount: 1
+  - name: loading the next segment keeps one boundary and appends
+    directory: sparse 55 turn session
+    loaded: [0, 1]
+    expect:
+      boundarySides: [newer]
+      loadSegments: [2]
+      ticks: 4
+      boundaryCount: 1
+  - name: loading the final segment closes the newer boundary
+    directory: sparse 55 turn session
+    loaded: [0, 1, 2, 3]
+    expect:
+      boundarySides: []
+      loadSegments: []
+      ticks: 4
+      boundaryCount: 0
+  - name: two disjoint regions carry a gap boundary
+    directory: sparse 55 turn session
+    loaded: [0, 3]
+    expect:
+      boundarySides: [between]
+      loadSegments: [1]
+      ticks: 4
+      boundaryCount: 1
+  - name: a jump into the middle carries a boundary before and after
+    directory: sparse 55 turn session
+    loaded: [2]
+    expect:
+      boundarySides: [older, newer]
+      loadSegments: [1, 3]
+      ticks: 4
+      boundaryCount: 2
+  - name: a 32 segment directory samples 32 ticks
+    directory: 32 mib session
+    loaded: [0]
+    expect:
+      boundarySides: [newer]
+      loadSegments: [1]
+      ticks: 32
+      boundaryCount: 1
+  - name: a 200 segment directory samples 200 ticks
+    directory: 10000 turn directory
+    loaded: [0]
+    expect:
+      boundarySides: [newer]
+      loadSegments: [1]
+      ticks: 200
+      boundaryCount: 1
+  - name: a 400 segment directory still samples 200 ticks
+    directory: 10000 turn crowd directory
+    loaded: [0]
+    expect:
+      boundarySides: [newer]
+      loadSegments: [1]
+      ticks: 200
+      boundaryCount: 1
+
+windowCases:
+  - name: a jump into an unloaded middle segment requests its covering run in order
+    directory: sparse 55 turn session
+    loaded: [0]
+    window:
+      requestedAnchor: 30
+      anchorTurn: 30
+      span: 10
+      firstTurn: 18
+      lastTurn: 43
+      segments: [1, 2]
+      hasOlder: true
+      hasNewer: true
+    expect:
+      missing: [1, 2]
+      requests: [1, 2]
+      complete: false
+      regionCount: 1
+  - name: a window whose segments are already loaded requests nothing
+    directory: sparse 55 turn session
+    loaded: [0, 1, 2]
+    window:
+      requestedAnchor: 30
+      anchorTurn: 30
+      span: 10
+      firstTurn: 18
+      lastTurn: 43
+      segments: [1, 2]
+      hasOlder: true
+      hasNewer: true
+    expect:
+      missing: []
+      requests: []
+      complete: true
+      regionCount: 1
+  - name: a window adjacent to a loaded segment merges into it
+    directory: sparse 55 turn session
+    loaded: [0, 1]
+    window:
+      requestedAnchor: 30
+      anchorTurn: 30
+      span: 10
+      firstTurn: 18
+      lastTurn: 43
+      segments: [1, 2]
+      hasOlder: true
+      hasNewer: true
+    expect:
+      missing: [2]
+      requests: [2]
+      complete: false
+      regionCount: 1
+
+mountCases:
+  - name: two loaded segments mount at most their own turns
+    directory: 32 mib session
+    loaded: [0, 1]
+    expect:
+      maxCards: 82
+      boundaryCount: 1
+      truncation: false
+      continuation: false
+  - name: a window in the middle mounts only its covering segments' turns
+    directory: sparse 55 turn session
+    loaded: [1, 2]
+    window:
+      requestedAnchor: 30
+      anchorTurn: 30
+      span: 10
+      firstTurn: 18
+      lastTurn: 43
+      segments: [1, 2]
+      hasOlder: true
+      hasNewer: true
+    expect:
+      maxCards: 28
+      boundaryCount: 2
+      truncation: false
+      continuation: false
+  - name: an oversized turn is alone, bounded and offers its full read
+    directory: sparse 55 turn session
+    loaded: [0]
+    oversizedTurn: 9
+    expect:
+      maxCards: 14
+      boundaryCount: 1
+      truncation: true
+      truncationCopy: 4 MiB
+      continuation: false
+  - name: a region that starts wordless marks a continuing action run
+    directory: 32 mib session
+    loaded: [1]
+    expect:
+      maxCards: 41
+      boundaryCount: 2
+      truncation: false
+      continuation: true

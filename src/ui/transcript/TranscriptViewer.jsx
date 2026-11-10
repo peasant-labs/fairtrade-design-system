@@ -14,6 +14,21 @@ import ProviderIcon from '../ProviderIcon.jsx'
 import { formatDurationMins, formatDurationMs } from './time.js'
 import { DEFAULT_TRANSCRIPT_FILTERS, categoryCounts, filtersActive as countActiveFilters, projectTurn } from './filters.js'
 import { actionGroups } from './action-groups.js'
+import {
+  formatByteExtent,
+  isWordlessAssistant,
+  loadedRegions,
+  loadedScope,
+  loadedFiles,
+  loadedToolGroupCounts,
+  mountedCardBound,
+  normaliseSegments,
+  regionBoundaries,
+  scrubberTicks,
+  turnsFromSegments,
+  windowCoverage,
+} from './segments.js'
+import TranscriptBoundary from './TranscriptBoundary.jsx'
 import { turnAtReadingLine } from './scroll-position.js'
 import useReaderWidthAnchor from './useReaderWidthAnchor.js'
 import TurnCard from './TurnCard.jsx'
@@ -310,6 +325,11 @@ export default function TranscriptViewer({
   integrity,
   transcriptContentHash,
   contentHash,
+  directory,
+  segments: segmentsProp,
+  window: windowProp,
+  onLoadSegment,
+  onLoadWindow,
 }) {
   if (breadcrumb != null && breadcrumbContext != null) {
     throw new TypeError('TranscriptViewer cannot use breadcrumb and breadcrumbContext together; pass either a complete breadcrumb or ancestor context, not both.')
@@ -320,7 +340,25 @@ export default function TranscriptViewer({
   const TitleHeading = headingTag(pageLevel, 0)
   const PhaseHeading = headingTag(pageLevel, 1)
   const EmptyHeading = headingTag(pageLevel, 1)
-  const vm = viewModel
+  const segmentMode = segmentsProp != null
+  const loadedSegments = useMemo(() => (segmentMode ? normaliseSegments(segmentsProp) : []), [segmentMode, segmentsProp])
+  const coverage = useMemo(() => (segmentMode ? windowCoverage(windowProp, loadedSegments) : null), [segmentMode, windowProp, loadedSegments])
+  /* A window renders only once every covering segment is in hand. A partly loaded
+     window is held back, so the reader never meets a false boundary inside it. */
+  const heldWindow = !!(segmentMode && coverage?.required && !coverage.complete)
+  const renderedSegments = useMemo(
+    () => (segmentMode
+      ? (heldWindow ? loadedSegments.filter((segment) => !coverage.indexes.includes(segment.index)) : loadedSegments)
+      : []),
+    [segmentMode, heldWindow, loadedSegments, coverage],
+  )
+  const segmentTurns = useMemo(() => (segmentMode ? turnsFromSegments(renderedSegments) : null), [segmentMode, renderedSegments])
+  const vm = useMemo(() => (segmentMode ? { ...viewModel, turns: segmentTurns } : viewModel), [segmentMode, viewModel, segmentTurns])
+  const regions = useMemo(() => (segmentMode ? loadedRegions(directory, renderedSegments) : []), [segmentMode, directory, renderedSegments])
+  const boundaries = useMemo(() => (segmentMode ? regionBoundaries(directory, regions) : []), [segmentMode, directory, regions])
+  const scope = useMemo(() => (segmentMode ? loadedScope(directory, regions) : null), [segmentMode, directory, regions])
+  const scrubTicks = useMemo(() => (segmentMode ? scrubberTicks(directory) : []), [segmentMode, directory])
+  const loadedTurnBound = useMemo(() => (segmentMode ? mountedCardBound(renderedSegments) : 0), [segmentMode, renderedSegments])
   const tabsId = useId()
   /* the served integrity flag: null draws nothing; otherwise the badge draws, and the listed
      positions are marked only when the rendered content is the content the flag refers to */
@@ -535,6 +573,32 @@ export default function TranscriptViewer({
 
   const session = vm?.session ?? {}
   const turns = vm?.turns ?? []
+
+  /* ── segmented window loading ──────────────────────────────────────────────────
+     A window descriptor names its covering segments in order. The viewer asks for
+     each one it does not hold, in descriptor order, exactly once; once all are in
+     hand the region renders whole. A window whose turns are already mounted asks
+     for nothing. */
+  const pendingJumpRef = useRef(null)
+  const pendingSeekRef = useRef(null)
+  const ackScrollRef = useRef(null)
+  const windowRequestRef = useRef({ key: '', indexes: new Set() })
+  const windowKey = segmentMode && windowProp
+    ? `${windowProp.revision ?? ''}:${windowProp.anchorTurn}:${(windowProp.segments ?? []).join(',')}`
+    : ''
+  const loadedIndexKey = loadedSegments.map((segment) => segment.index).join(',')
+  useEffect(() => {
+    if (!segmentMode || !windowKey || typeof onLoadSegment !== 'function') return
+    if (windowRequestRef.current.key !== windowKey) windowRequestRef.current = { key: windowKey, indexes: new Set() }
+    const held = new Set(loadedSegments.map((segment) => segment.index))
+    for (const index of windowProp.segments ?? []) {
+      if (held.has(index) || windowRequestRef.current.indexes.has(index)) continue
+      windowRequestRef.current.indexes.add(index)
+      onLoadSegment(index)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [segmentMode, windowKey, loadedIndexKey, onLoadSegment])
+
   useEffect(() => {
     setSearchMeasurements({ query: '', sections: {} })
     setSelectedSearchRange(null)
@@ -641,15 +705,51 @@ export default function TranscriptViewer({
 
   /* ── cooked slices off the VM ───────────────────────────────────────────────── */
   const phases = vm?.analytics?.phases ?? []
-  const tasks = vm?.tasks ?? []
-  const files = vm?.files ?? []
-  const diffs = vm?.diffs ?? []
-  const highlights = vm?.highlights ?? []
+  /* A segmented viewer reads only what it has loaded. The VM's task/file/highlight
+     slices may describe the whole session (the host supplies the header projection),
+     so keep the entries whose turns are in the rendered regions. */
+  const loadedTurnIndexes = useMemo(() => new Set(segmentTurns?.map((turn) => turn.index) ?? []), [segmentTurns])
+  const inLoadedTurns = useCallback((turnIndex) => !segmentMode || loadedTurnIndexes.has(turnIndex), [segmentMode, loadedTurnIndexes])
+  const tasks = useMemo(
+    () => (segmentMode
+      ? (vm?.tasks ?? []).filter((task) => (task.turnIndices ?? []).some((index) => loadedTurnIndexes.has(index)))
+      : vm?.tasks ?? []),
+    [segmentMode, vm?.tasks, loadedTurnIndexes],
+  )
+  const files = useMemo(
+    () => (segmentMode ? loadedFiles(segmentTurns ?? []) : vm?.files ?? []),
+    [segmentMode, segmentTurns, vm?.files],
+  )
+  const diffs = useMemo(
+    () => (segmentMode ? (vm?.diffs ?? []).filter((diff) => inLoadedTurns(diff.turn)) : vm?.diffs ?? []),
+    [segmentMode, vm?.diffs, inLoadedTurns],
+  )
+  const highlights = useMemo(
+    () => (segmentMode ? (vm?.highlights ?? []).filter((highlight) => inLoadedTurns(highlight.turn)) : vm?.highlights ?? []),
+    [segmentMode, vm?.highlights, inLoadedTurns],
+  )
   const scorecardBands = vm?.analytics?.scorecardBands ?? []
   const commits = session?.git?.commits ?? []
-  const annotations = vm?.analytics?.patternAnnotations ?? turns.flatMap((t) => t.annotations ?? [])
-  const toolGroupCounts = vm?.filterIndex?.toolGroupCounts ?? {}
+  const annotations = useMemo(
+    () => (segmentMode
+      ? turns.flatMap((turn) => turn.annotations ?? [])
+      : vm?.analytics?.patternAnnotations ?? turns.flatMap((t) => t.annotations ?? [])),
+    [segmentMode, vm?.analytics?.patternAnnotations, turns],
+  )
+  const toolGroupCounts = useMemo(
+    () => (segmentMode ? loadedToolGroupCounts(segmentTurns ?? []) : vm?.filterIndex?.toolGroupCounts ?? {}),
+    [segmentMode, segmentTurns, vm?.filterIndex?.toolGroupCounts],
+  )
   const activeModel = turns.find((turn) => turn.index === activeTurn)?.effectiveModel
+  /* The left rail reads the same loaded regions the trace does: its tasks, files and
+     annotations come from the turns the viewer actually holds, never a whole-session
+     projection. */
+  const railViewModel = useMemo(
+    () => (segmentMode
+      ? { ...vm, tasks, files, diffs, highlights, analytics: { ...(vm?.analytics ?? {}), patternAnnotations: annotations } }
+      : vm),
+    [segmentMode, vm, tasks, files, diffs, highlights, annotations],
+  )
 
   /* user-prompt → its task (a task's first turn is its user prompt). */
   const taskByFirstTurn = useMemo(() => {
@@ -855,6 +955,14 @@ export default function TranscriptViewer({
       return 'applied'
     }
     const sc = scrollRef.current
+    /* A deep link to a turn in an unloaded segment asks for that turn's window. */
+    if (position.kind === 'turn' && segmentMode && !turns.some((turn) => turn.index === position.turnIndex) && typeof onLoadWindow === 'function') {
+      if (pendingJumpRef.current !== position.turnIndex) {
+        pendingJumpRef.current = position.turnIndex
+        onLoadWindow(position.turnIndex)
+      }
+      return 'pending'
+    }
     // A turn hidden only by the system category is not mounted; reveal it temporarily and
     // let the readiness pass retry once it is present. The reader's filters are untouched.
     if (position.kind === 'turn' && systemHiddenTurns.some((turn) => turn.index === position.turnIndex)) {
@@ -939,7 +1047,7 @@ export default function TranscriptViewer({
     traceReadingPositionRef.current = null
     setTraceReadingPosition(null)
     return 'applied'
-  }, [session?.id, tab, traceReadingPosition, turns, viewMode, visibleTurns])
+  }, [session?.id, tab, traceReadingPosition, turns, viewMode, visibleTurns, segmentMode, onLoadWindow])
 
   useTranscriptInitialPosition({
     sessionId: session?.id,
@@ -1033,6 +1141,15 @@ export default function TranscriptViewer({
       setTab('trace')
     }
     setViewMode('list')
+    /* A jump to a turn the viewer has not loaded asks the host for that turn's window
+       descriptor. The window's covering segments arrive through onLoadSegment; the
+       pending effect below lands the reader once they are mounted. */
+    if (segmentMode && !turns.some((turn) => turn.index === idx) && typeof onLoadWindow === 'function') {
+      pendingJumpRef.current = idx
+      selectTurn(idx)
+      onLoadWindow(idx)
+      return
+    }
     const group = openGroupForTurn(idx)
     // A closed group is one stop at its owner; once opened, its members are stops of their own.
     const groupOpen = group ? openSystemGroups[group.id] === true : false
@@ -1054,6 +1171,67 @@ export default function TranscriptViewer({
       })
     }
   }
+  /* Land a jump once its window's covering segments are mounted. */
+  useEffect(() => {
+    const target = pendingJumpRef.current
+    if (target == null) return
+    if (!turns.some((turn) => turn.index === target)) return
+    pendingJumpRef.current = null
+    jumpTo(target, { switchTab: false })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [turns])
+  /* A requested segment (boundary, scrubber, window) arrives as new props. Hold the
+     reader's turn when content is prepended: remember the reading line, then correct
+     the scroll offset against the same turn after layout. */
+  useLayoutEffect(() => {
+    const pending = ackScrollRef.current
+    if (!pending) return
+    ackScrollRef.current = null
+    const sc = scrollRef.current
+    if (!sc || tab !== 'trace' || viewMode !== 'list') return
+    const el = turnRefs.current[pending.turnIndex]
+    if (!el) return
+    sc.scrollTop = el.offsetTop - pending.offset
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadedIndexKey, turns])
+  function captureReadingAnchor() {
+    const sc = scrollRef.current
+    if (!sc || typeof document === 'undefined') return null
+    const anchor = navigableTurns.find((turn) => {
+      const el = turnRefs.current[turn.index]
+      return el && el.offsetTop + el.offsetHeight > sc.scrollTop
+    }) ?? navigableTurns[0]
+    const el = anchor ? turnRefs.current[anchor.index] : null
+    return el ? { turnIndex: anchor.index, offset: sc.scrollTop - el.offsetTop } : null
+  }
+  function loadSegmentAt(index, { prepend = false } = {}) {
+    if (typeof onLoadSegment !== 'function' || index == null || index < 0) return
+    if (prepend) {
+      const anchor = captureReadingAnchor()
+      if (anchor) ackScrollRef.current = anchor
+    }
+    onLoadSegment(index)
+  }
+  function loadBoundary(boundary) {
+    loadSegmentAt(boundary?.loadSegment, { prepend: boundary?.side === 'older' || boundary?.side === 'between' })
+  }
+  function seekScrubTick(tick) {
+    if (!tick) return
+    if (turns.some((turn) => turn.index === tick.firstTurn)) {
+      jumpTo(tick.firstTurn, { switchTab: false })
+      return
+    }
+    pendingSeekRef.current = tick
+    onLoadSegment?.(tick.index)
+  }
+  useEffect(() => {
+    const pending = pendingSeekRef.current
+    if (!pending) return
+    if (!turns.some((turn) => turn.index === pending.firstTurn)) return
+    pendingSeekRef.current = null
+    jumpTo(pending.firstTurn, { switchTab: false })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [turns])
   function stepTurn(dir) {
     const ids = (navigableTurns.length ? navigableTurns : visibleTurns).map((t) => t.index)
     const cur = ids.indexOf(activeTurnRef.current)
@@ -1658,7 +1836,7 @@ export default function TranscriptViewer({
               </button>
             </div>
             <div className="txn-rail-body" id="txn-rail-left-body">
-              <OutlineRail viewModel={vm} tab={tab} presentation={presentation} activeTurn={activeTurn} onJump={(idx) => jumpTo(idx, { switchTab: false })} />
+              <OutlineRail viewModel={railViewModel} tab={tab} presentation={presentation} activeTurn={activeTurn} scope={scope} onJump={(idx) => jumpTo(idx, { switchTab: false })} />
             </div>
           </Collapsible>
           <Collapsible className="txn-rail-strip txn-rail-strip-left"
@@ -1687,14 +1865,24 @@ export default function TranscriptViewer({
                     <>
                       {session.harness && <ProviderIcon harness={session.harness} accent />}
                       {activeModel && <span className="txn-sticky-model mono">{activeModel}</span>}
-                      <Scrubber turns={turns} active={activeTurn} onSeek={seekScrub} draggingRef={draggingRef} />
+                      <Scrubber
+                        turns={turns}
+                        ticks={segmentMode ? scrubTicks : undefined}
+                        active={activeTurn}
+                        activeTick={segmentMode ? (regions.find((region) => region.turns.some((turn) => turn.index === activeTurn))?.firstSegment ?? 0) : 0}
+                        onSeek={seekScrub}
+                        onSeekTick={seekScrubTick}
+                        draggingRef={draggingRef}
+                      />
                     </>
                   )}
                 </div>
               </Collapsible>
               <div className={"txn-trace-head" + (viewMode === 'graph' ? ' txn-trace-head-graph' : '')}>
                 <span className="txn-trace-count tnum">
-                  {visibleConversationCount === conversationTurns.length ? `${conversationTurns.length} turns` : `${visibleConversationCount} of ${conversationTurns.length} turns`}
+                  {segmentMode && scope && !scope.complete
+                    ? `${visibleConversationCount} of ${scope.totalTurns} turns`
+                    : visibleConversationCount === conversationTurns.length ? `${conversationTurns.length} turns` : `${visibleConversationCount} of ${conversationTurns.length} turns`}
                 </span>
                 <div className="txn-trace-actions">
                   <div className="bs-seg txn-viewtoggle" role="group" aria-label="view mode">
@@ -1713,6 +1901,9 @@ export default function TranscriptViewer({
               ) : (
                 <div className="txn-streamwrap">
                   <div className="txn-stream" ref={scrollRef} role="region" aria-label="full trace turns"
+                    data-mounted-turn-bound={segmentMode ? loadedTurnBound : undefined}
+                    data-segment-boundaries={segmentMode ? boundaries.length : undefined}
+                    data-segment-mode={segmentMode ? 'true' : undefined}
                     onWheel={releaseTurnNavigation} onTouchStart={releaseTurnNavigation} onPointerDown={releaseTurnNavigation}
                     onFocusCapture={() => {
                     const snapshot = readTraceReadingSnapshot()
@@ -1751,7 +1942,14 @@ export default function TranscriptViewer({
                             </button>
                           </>
                         ) : (
-                          <p>every turn is filtered out. clear a filter to bring them back.</p>
+                          <p>{segmentMode && boundaries.length > 0
+                            ? 'no turn in the loaded segments matches this view. the session continues past the loaded regions.'
+                            : 'every turn is filtered out. clear a filter to bring them back.'}</p>
+                        )}
+                        {segmentMode && boundaries.length > 0 && (
+                          <button type="button" className="txn-empty-load" onClick={() => loadBoundary(boundaries[0])}>
+                            load more
+                          </button>
                         )}
                       </div>
                     )}
@@ -1766,71 +1964,110 @@ export default function TranscriptViewer({
                       const groups = ledger ? actionLayout.groups : new Map()
                       const foldedWork = ledger ? actionLayout.folded : new Set()
                       const renderTurn = (t) => (
-                        <TurnCard
-                          headingLevel={pageLevel + 2}
-                          presentation={presentation}
-                          turn={t}
-                          active={activeTurn === t.index}
-                          onSelect={ledger ? selectTurn : undefined}
-                          revealRequest={searchReveal?.turn === t.index ? searchReveal.sequence : 0}
-                          openTools={openTools}
-                          toggleTool={toggleTool}
-                          onCopyAnchor={copyAnchor}
-                          copied={copiedTurn === t.index}
-                          registerRef={registerRef}
-                          onLabel={labelTurn}
-                          renderActions={renderTurnActions}
-                          savedLabel={savedLabels[t.index]}
-                          compact={filters.views.compact}
-                          expandAll={filters.views.expandAll}
-                          modelActions={groups.get(t.index)}
-                          actionReveal={searchReveal && (ledger ? (actionLayout.locations.get(searchReveal.turn)?.owner ?? searchReveal.turn) === t.index : searchReveal.turn === t.index) ? searchReveal : undefined}
-                          registerActionRef={registerActionRef}
-                          suppressWork={foldedWork.has(t.index)}
-                          flagged={integrityState?.positions.has(t.sourcePosition) ?? false}
-                          flaggedPositions={integrityState?.positions}
-                        />
+                        <>
+                          <TurnCard
+                            headingLevel={pageLevel + 2}
+                            presentation={presentation}
+                            turn={t}
+                            active={activeTurn === t.index}
+                            onSelect={ledger ? selectTurn : undefined}
+                            revealRequest={searchReveal?.turn === t.index ? searchReveal.sequence : 0}
+                            openTools={openTools}
+                            toggleTool={toggleTool}
+                            onCopyAnchor={copyAnchor}
+                            copied={copiedTurn === t.index}
+                            registerRef={registerRef}
+                            onLabel={labelTurn}
+                            renderActions={renderTurnActions}
+                            savedLabel={savedLabels[t.index]}
+                            compact={filters.views.compact}
+                            expandAll={filters.views.expandAll}
+                            modelActions={groups.get(t.index)}
+                            actionReveal={searchReveal && (ledger ? (actionLayout.locations.get(searchReveal.turn)?.owner ?? searchReveal.turn) === t.index : searchReveal.turn === t.index) ? searchReveal : undefined}
+                            registerActionRef={registerActionRef}
+                            suppressWork={foldedWork.has(t.index)}
+                            flagged={integrityState?.positions.has(t.sourcePosition) ?? false}
+                            flaggedPositions={integrityState?.positions}
+                          />
+                          {t.truncated && (
+                            <div className="txn-truncation" role="note">
+                              <span className="txn-truncation-copy">this turn's text is truncated; {formatByteExtent(t.byteLength)} in full.</span>
+                              {callbacks.onLoadFullTurn && (
+                                <button type="button" className="txn-truncation-load" onClick={() => callbacks.onLoadFullTurn(t.index)}>
+                                  load this turn in full
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </>
                       )
-                      return visibleTurns.map((t, i) => {
-                      const group = systemGroups.get(t.index)
-                      /* members 2..N render inside the owner's fold, never as their own row */
-                      if (group && group.owner.index !== t.index) return null
-                      const prev = visibleTurns[i - 1]
-                      const phase = phases.find((p) => t.index >= p.from && t.index <= p.to)
-                      const prevPhase = prev ? phases.find((p) => prev.index >= p.from && prev.index <= p.to) : null
-                      const showPhase = filters.views.hidden && phase && (!prevPhase || prevPhase.id !== phase.id)
-                      const task = taskByFirstTurn.get(t.index)
-                      const turnCommits = anchoredCommits.filter((c) => c.turn === t.index)
-                      const groupReveal = group && searchReveal && group.owner.index !== searchReveal.turn && group.members.some((member) => member.index === searchReveal.turn) ? searchReveal.sequence : 0
-                      return (
-                        <div key={t.identity ?? t.index} className={ledger ? 'txn-turnrow' : undefined}>
-                          {showPhase && <PhaseDivider phase={phase} heading={PhaseHeading} />}
-                          {/* in ledger a faint rule marks where the role changes; classic gains none */}
-                          {ledger && !showPhase && prev && prev.role !== t.role && <hr className="txn-turn-rule" aria-hidden="true" />}
-                          {/* in ledger the rail card carries the task identity and duration and
-                              the turn head carries the per-turn identity, so the classic
-                              boundary would repeat both before the first line of prose. */}
-                          {!ledger && t.role === 'user' && task && <TaskBoundary task={task} />}
-                          {group ? (
-                            <TranscriptSystemGroup
-                              group={group}
-                              open={openSystemGroups[group.id] === true}
-                              onToggle={(open) => setOpenSystemGroups((previous) => ({ ...previous, [group.id]: open }))}
-                              owner={renderTurn(t)}
-                              revealRequest={groupReveal}
-                            >
-                              {group.members.slice(1).map((member) => (
-                                <div key={member.identity ?? member.index}>{renderTurn(member)}</div>
-                              ))}
-                            </TranscriptSystemGroup>
-                          ) : renderTurn(t)}
-                          {/* host per-turn extension (touched-files panels etc.) —
-                              rendered under the card, inside the turn's anchor block */}
-                          {renderTurnPanel ? renderTurnPanel(t) : null}
-                          {turnCommits.map((c) => <CheckpointMarker key={c.hash} commit={c} />)}
+                      const boundaryAfterTurn = (region) => boundaries.find((boundary) => boundary.side === 'between' && boundary.loadSegment - 1 === region.lastSegment)
+                      const regionOf = (turnIndex) => regions.find((region) => turnIndex >= region.firstTurn && turnIndex <= region.lastTurn)
+                      const firstVisibleOfRegion = (region) => visibleTurns.find((turn) => turn.index >= region.firstTurn && turn.index <= region.lastTurn)
+                      const nextRegionAfter = (region) => regions.find((candidate) => candidate.firstSegment > region.lastSegment)
+                      const leading = boundaries.find((boundary) => boundary.side === 'older' || boundary.side === 'all')
+                      const trailing = boundaries.find((boundary) => boundary.side === 'newer')
+                      const continuation = (where) => (
+                        <div className="txn-action-continuation" role="note">
+                          <span className="txn-action-continuation-rule" aria-hidden="true" />
+                          <span>actions continue {where}</span>
                         </div>
                       )
-                    })
+                      const firstRegion = regions[0]
+                      return (
+                        <>
+                          {leading && <TranscriptBoundary boundary={leading} onLoadMore={(index) => loadBoundary(leading)} />}
+                          {segmentMode && leading && firstRegion && isWordlessAssistant(firstVisibleOfRegion(firstRegion)) && continuation('from the unloaded turn above')}
+                          {visibleTurns.map((t, i) => {
+                          const group = systemGroups.get(t.index)
+                          /* members 2..N render inside the owner's fold, never as their own row */
+                          if (group && group.owner.index !== t.index) return null
+                          const prev = visibleTurns[i - 1]
+                          const phase = phases.find((p) => t.index >= p.from && t.index <= p.to)
+                          const prevPhase = prev ? phases.find((p) => prev.index >= p.from && prev.index <= p.to) : null
+                          const showPhase = filters.views.hidden && phase && (!prevPhase || prevPhase.id !== phase.id)
+                          const task = taskByFirstTurn.get(t.index)
+                          const turnCommits = anchoredCommits.filter((c) => c.turn === t.index)
+                          const groupReveal = group && searchReveal && group.owner.index !== searchReveal.turn && group.members.some((member) => member.index === searchReveal.turn) ? searchReveal.sequence : 0
+                          const region = segmentMode ? regionOf(t.index) : null
+                          const followingRegion = region ? nextRegionAfter(region) : null
+                          const internal = region ? boundaryAfterTurn(region) : null
+                          return (
+                            <Fragment key={t.identity ?? t.index}>
+                              <div className={ledger ? 'txn-turnrow' : undefined}>
+                                {showPhase && <PhaseDivider phase={phase} heading={PhaseHeading} />}
+                                {/* in ledger a faint rule marks where the role changes; classic gains none */}
+                                {ledger && !showPhase && prev && prev.role !== t.role && <hr className="txn-turn-rule" aria-hidden="true" />}
+                                {/* in ledger the rail card carries the task identity and duration and
+                                    the turn head carries the per-turn identity, so the classic
+                                    boundary would repeat both before the first line of prose. */}
+                                {!ledger && t.role === 'user' && task && <TaskBoundary task={task} />}
+                                {group ? (
+                                  <TranscriptSystemGroup
+                                    group={group}
+                                    open={openSystemGroups[group.id] === true}
+                                    onToggle={(open) => setOpenSystemGroups((previous) => ({ ...previous, [group.id]: open }))}
+                                    owner={renderTurn(t)}
+                                    revealRequest={groupReveal}
+                                  >
+                                    {group.members.slice(1).map((member) => (
+                                      <div key={member.identity ?? member.index}>{renderTurn(member)}</div>
+                                    ))}
+                                  </TranscriptSystemGroup>
+                                ) : renderTurn(t)}
+                                {/* host per-turn extension (touched-files panels etc.) —
+                                    rendered under the card, inside the turn's anchor block */}
+                                {renderTurnPanel ? renderTurnPanel(t) : null}
+                                {turnCommits.map((c) => <CheckpointMarker key={c.hash} commit={c} />)}
+                              </div>
+                              {internal && <TranscriptBoundary boundary={internal} onLoadMore={(index) => loadBoundary(internal)} />}
+                              {segmentMode && internal && followingRegion && isWordlessAssistant(firstVisibleOfRegion(followingRegion)) && continuation('from the unloaded turns between')}
+                            </Fragment>
+                          )
+                        })}
+                          {trailing && <TranscriptBoundary boundary={trailing} onLoadMore={(index) => loadBoundary(trailing)} />}
+                        </>
+                      )
                     })()}
                     {looseCommits.map((c) => <CheckpointMarker key={c.hash} commit={c} />)}
                   </div>
@@ -1934,6 +2171,10 @@ export default function TranscriptViewer({
               <div className="txn-files-head">
                 <span className="txn-files-count tnum">{files.length} {files.length === 1 ? 'file' : 'files'}</span>
               </div>
+              {scope && <p className="txn-scope" role="status">{scope.filesText}. a file that appears only in an unloaded segment is not listed.</p>}
+              {scope && !scope.complete && files.length === 0 && (
+                <p className="txn-scope txn-scope-unloaded">no file appears in the loaded turns. load more to widen the read.</p>
+              )}
               <table className="dtable txn-filetable">
                 <thead>
                   <tr>
@@ -2017,6 +2258,7 @@ export default function TranscriptViewer({
                 counts={counts}
                 checkpoints={commits}
                 filtersActive={filtersActive}
+                scope={scope}
                 onClear={() => setFilters(DEFAULT_FILTERS)}
                 onJumpStart={() => jumpTo(navigableTurns[0]?.index ?? 0, { switchTab: false })}
                 onJumpLatest={() => jumpTo(navigableTurns[navigableTurns.length - 1]?.index ?? 0, { switchTab: false })}
@@ -2059,8 +2301,8 @@ export default function TranscriptViewer({
           </div>
           <div className="txn-mobile-drawer-body">
             {(mobileDrawer || exitingMobileDrawer) === 'outline'
-              ? <OutlineRail viewModel={vm} tab={tab} presentation={presentation} activeTurn={activeTurn} onJump={(idx) => { jumpTo(idx, { switchTab: false }); closeMobileDrawer() }} />
-              : <FiltersRail tab={tab} filters={filters} onFiltersChange={setFilters} counts={counts} checkpoints={commits} filtersActive={filtersActive}
+              ? <OutlineRail viewModel={railViewModel} tab={tab} presentation={presentation} activeTurn={activeTurn} scope={scope} onJump={(idx) => { jumpTo(idx, { switchTab: false }); closeMobileDrawer() }} />
+              : <FiltersRail tab={tab} filters={filters} onFiltersChange={setFilters} counts={counts} checkpoints={commits} filtersActive={filtersActive} scope={scope}
                 onClear={() => setFilters(DEFAULT_FILTERS)}
                 onJumpStart={() => { jumpTo(navigableTurns[0]?.index ?? 0, { switchTab: false }); closeMobileDrawer() }}
                 onJumpLatest={() => { jumpTo(navigableTurns[navigableTurns.length - 1]?.index ?? 0, { switchTab: false }); closeMobileDrawer() }} />}

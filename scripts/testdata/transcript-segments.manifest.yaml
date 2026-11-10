@@ -1,0 +1,54 @@
+# Required-NAME manifest for transcript-segments.yaml: deletion protection. The gate
+# (scripts/transcript-segments.test.mjs) asserts each family's names equal these lists
+# exactly, as sets. Membership is asserted, never a bare count.
+requiredDirectoryNames:
+  - 32 mib session
+  - 10000 turn directory
+  - 10000 turn crowd directory
+  - sparse 55 turn session
+requiredLoadCaseNames:
+  - opening segment 0 leaves one newer boundary
+  - loading the next segment keeps one boundary and appends
+  - loading the final segment closes the newer boundary
+  - two disjoint regions carry a gap boundary
+  - a jump into the middle carries a boundary before and after
+  - a 32 segment directory samples 32 ticks
+  - a 200 segment directory samples 200 ticks
+  - a 400 segment directory still samples 200 ticks
+requiredWindowCaseNames:
+  - a jump into an unloaded middle segment requests its covering run in order
+  - a window whose segments are already loaded requests nothing
+  - a window adjacent to a loaded segment merges into it
+requiredMountCaseNames:
+  - two loaded segments mount at most their own turns
+  - a window in the middle mounts only its covering segments' turns
+  - an oversized turn is alone, bounded and offers its full read
+  - a region that starts wordless marks a continuing action run
+
+# Production mutations the gate must kill (scripts/parts-mutations.mjs).
+requiredMutationNames:
+  - the scrubber mounts one tick per turn
+  - the boundary drops its load control
+  - the window renders partly loaded
+  - the truncation notice ignores byteLength
+mutations:
+  - name: the scrubber mounts one tick per turn
+    file: src/ui/transcript/segments.js
+    find: "const sample = Math.min(SEGMENT_SCRUBBER_TICKS, total)"
+    replace: "const sample = total"
+    expectedDiagnostic: "10000 turn crowd directory mounted: 200 scrubber ticks on 400 segments"
+  - name: the boundary drops its load control
+    file: src/ui/transcript/TranscriptBoundary.jsx
+    find: "onClick={() => onLoadMore?.(boundary.loadSegment)}"
+    replace: "onClick={() => undefined}"
+    expectedDiagnostic: "two loaded segments mount at most their own turns: the control loads segment 2"
+  - name: the window renders partly loaded
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "const heldWindow = !!(segmentMode && coverage?.required && !coverage.complete)"
+    replace: "const heldWindow = false"
+    expectedDiagnostic: "a window adjacent to a loaded segment merges into it: no window turn renders before its covering run is complete"
+  - name: the truncation notice ignores byteLength
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "{t.truncated && ("
+    replace: "{false && ("
+    expectedDiagnostic: "an oversized turn is alone, bounded and offers its full read: the truncation notice must be present"

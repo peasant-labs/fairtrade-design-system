@@ -116,6 +116,7 @@
  * @property {() => void} [onChangeVisibility]
  * @property {(format: 'json' | 'jsonl' | 'markdown') => void} [onExport]
  * @property {(navigation: import('@peasant-labs/schema').SessionRelationshipNavigation) => void} [onNavigateRelationship] authorized read target only; host owns current route and Back restoration
+ * @property {(turnIndex: number) => void} [onLoadFullTurn] the reader asked for a bounded turn in full; the host performs the existing continuation read and replaces that turn
  */
 
 /* ── graph slot (render-prop; the graph-engine seam) ─────────────────────────── */
@@ -207,6 +208,11 @@
  * @property {import('@peasant-labs/schema').VillageTranscriptIntegrity | null} [integrity]  the served integrity value, passed through untouched. Present and well formed means flagged: the header shows the badge in every presentation and width. Absent, null or malformed renders nothing
  * @property {string | null} [transcriptContentHash]                   the detail response's `transcript.content_hash`, the content `integrity.flagged_turns` refer to
  * @property {string | null} [contentHash]                             the bare hash of the content `viewModel` was cooked from (the content route's `Village-Content-Hash` header). Turns are marked only when it equals `transcriptContentHash` and both are non-empty
+ * @property {import('./segments.js').SegmentDirectoryVM | null} [directory] the transcript's only global index (segment refs, totals, revision). Supplied with `segments`, the viewer renders loaded regions instead of a whole-session turn list
+ * @property {import('./segments.js').SegmentVM[] | Map<number, import('./segments.js').SegmentVM> | Record<number, import('./segments.js').SegmentVM>} [segments] the segments the host has loaded, already cooked to `TurnVM`s; the viewer never mounts a turn it was not given
+ * @property {import('./segments.js').SegmentWindowVM | null} [window] a jump descriptor: where the window is and which covering segments to load. It carries no turn content
+ * @property {(segmentIndex: number) => void | Promise<unknown>} [onLoadSegment] load one segment; the boundary, the scrubber and a window all request through this one path
+ * @property {(anchorTurn: number, span?: number) => void | Promise<unknown>} [onLoadWindow] resolve a jump's window descriptor from a turn identity
  */
 
 /**

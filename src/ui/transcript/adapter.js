@@ -1010,6 +1010,9 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
     const shown = displayedPrompt(t.role, content, provider)
     if (shown !== undefined) turnVM.displayContent = shown
     if (t.usage) turnVM.usage = t.usage
+    const served = /** @type {{truncated?: boolean, byteLength?: number}} */ (t)
+    if (served.truncated === true) turnVM.truncated = true
+    if (typeof served.byteLength === 'number' && served.byteLength >= 0) turnVM.byteLength = served.byteLength
     if (t.sourceEntryRef) turnVM.sourceEntryRef = t.sourceEntryRef
     if (t.provenance) turnVM.provenance = t.provenance
     if (t.entryType) turnVM.entryType = t.entryType

@@ -2266,6 +2266,26 @@
   .txn-scrub-tick.txn-tick-on { background: var(--amber); height: 16px; box-shadow: var(--glow-soft); }
   .txn-scrub-bracket { position: absolute; top: 2px; bottom: 2px; width: 6px; transform: translateX(-3px); border: 1px solid var(--amber); background: color-mix(in srgb, var(--amber) 14%, transparent); }
   .txn-scrub:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
+  .txn-scrub-segment-tick { width: var(--stroke-emphasis); height: 11px; }
+
+  /* the segmented transcript: one faded dotted rule per unloaded edge, its extent
+     caption and one load-more control. A boundary is a place in a document, never a
+     numbered page. */
+  .txn-segboundary { display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); padding: var(--sp-3) var(--sp-2); }
+  .txn-segboundary-rule { width: 0; min-height: var(--sp-6); border-left: 1px dotted color-mix(in srgb, var(--ink-4) 55%, transparent); }
+  .txn-segboundary-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--sp-2); }
+  .txn-segboundary-caption { font-family: var(--font-mono); font-size: var(--fs-label); line-height: 1.5; color: var(--ink-3); }
+  .txn-segboundary-load, .txn-empty-load { display: inline-flex; align-items: center; gap: var(--sp-1); min-height: var(--target-min); padding: var(--sp-1) var(--sp-3); border: var(--bd); border-radius: 0; background: var(--surface); color: var(--ink-2); font-family: var(--font-mono); font-size: var(--fs-label); line-height: 1.5; cursor: pointer; }
+  .txn-segboundary-load:hover:not(:disabled), .txn-empty-load:hover:not(:disabled) { background: var(--surface-hover); color: var(--ink); }
+  .txn-segboundary-load:disabled, .txn-empty-load:disabled { color: var(--ink-4); cursor: default; }
+  .txn-segboundary-load:focus-visible, .txn-empty-load:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
+  .txn-action-continuation { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-1) var(--sp-2); color: var(--ink-4); font-family: var(--font-mono); font-size: var(--fs-label); line-height: 1.5; }
+  .txn-action-continuation-rule { flex: 1; border-top: 1px dotted color-mix(in srgb, var(--ink-5) 60%, transparent); }
+  .txn-scope { margin: 0 0 var(--sp-2); color: var(--ink-3); font-family: var(--font-mono); font-size: var(--fs-label); line-height: 1.5; }
+  .txn-rail-scope { padding: var(--sp-2) var(--sp-3); border-bottom: var(--bd); }
+  .txn-truncation { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); margin: var(--sp-1) 0 var(--sp-2); padding: var(--sp-1) var(--sp-3); border-left: 1px dotted color-mix(in srgb, var(--ink-4) 55%, transparent); color: var(--ink-3); font-family: var(--font-mono); font-size: var(--fs-label); line-height: 1.5; }
+  .txn-truncation-load { min-height: var(--target-min); padding: var(--sp-1) var(--sp-2); border: var(--bd); border-radius: 0; background: var(--surface); color: var(--ink); font-family: var(--font-mono); font-size: var(--fs-label); cursor: pointer; }
+  .txn-truncation-load:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
 
   /* ---- tab strip ---- */
   .txn-tabs { flex: none; gap: var(--sp-5); padding: 0 var(--sp-4); position: sticky; top: 0; z-index: 10; background: var(--surface); }
