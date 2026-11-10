@@ -2,6 +2,7 @@ import { useCallback, useId, useMemo, useState } from 'react'
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
 import { useReactTable, getCoreRowModel, getSortedRowModel, getFilteredRowModel, getPaginationRowModel } from '@tanstack/react-table'
 import { DataTablePaginationControls } from './DataTableControls.jsx'
+import { alignClass } from './table/align-class.js'
 
 /**
  * a sortable + selectable data table. square, hairline, mono headers; both themes
@@ -347,13 +348,6 @@ export default function DataTable({
    Set instance with the same keys. */
 function selectedKey(set) {
   return [...set].map(String).sort().join('\0')
-}
-
-/* align -> alignment modifier class (right and decimal values also carry .tnum) */
-function alignClass(base, align) {
-  if (align === 'right' || align === 'decimal') return `${base} tbl-right`
-  if (align === 'center') return `${base} tbl-center`
-  return base
 }
 
 function decimalParts(value) {

@@ -17,6 +17,10 @@
   "include": [
     "src/ui/**/*.jsx",
     "src/ui/index.js",
+    "src/ui/closed-value.js",
+    "src/ui/groupPageRows.js",
+    "src/ui/table/column-align.js",
+    "src/ui/table/align-class.js",
     "src/ui/graph/index.js",
     "src/ui/commons/index.js",
     "src/ui/analytics/index.js"

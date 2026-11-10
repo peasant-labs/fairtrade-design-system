@@ -298,7 +298,7 @@ cases:
   - name: ledger keeps a turn's thinking disclosure
     kind: thinking
     mountFilters: *system_on
-  - name: a turn without tools has no work group
+  - name: a run with no work draws no block
     kind: no-tools
     mountFilters: *system_on
   - name: the ledger head carries only the role line and its controls
@@ -310,7 +310,7 @@ cases:
   - name: a role change draws one rule and the first turn draws none
     kind: turn-rules
     mountFilters: *system_on
-  - name: a user turn's actions share one block after its first prose turn
+  - name: each prose turn owns the actions that follow it
     kind: model-actions
     mountFilters: *system_on
   - name: a turn with no words is inline detail, not a card

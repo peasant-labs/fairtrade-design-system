@@ -1,7 +1,7 @@
 {
   "$description": "fairtrade component manifest, generated from src/ui. import from the barrel: import { Button } from \"src/ui\". every component is token-styled (classes in src/index.css) and works in both themes. props shows the Storybook-controllable props; full prop docs are the JSDoc in each file.",
   "import": "src/ui (barrel: src/ui/index.js)",
-  "count": 63,
+  "count": 64,
   "components": [
     {
       "name": "Accordion",
@@ -1921,6 +1921,47 @@
         "Default",
         "ReachesDone",
         "SkipWithEsc"
+      ]
+    },
+    {
+      "name": "TranscriptLibraryTable",
+      "category": "misc",
+      "title": "refactoring the ledger",
+      "file": "src/ui/TranscriptLibraryTable.jsx",
+      "exports": [
+        "TranscriptLibraryTable",
+        "groupPageRows",
+        "groupKeysFor"
+      ],
+      "doc": "TranscriptLibraryTable - the one shared transcript library table: a real table",
+      "props": {
+        "caption": {
+          "control": "text"
+        },
+        "page": {
+          "control": "object"
+        },
+        "rows": {
+          "control": "object"
+        },
+        "nextGroupKeys": {
+          "control": "object"
+        },
+        "continuedGroupKeys": {
+          "control": "object"
+        }
+      },
+      "stories": [
+        "ContinuingGroupPageTwo",
+        "FullHeaderOnPage",
+        "ContinuesOnNextPage",
+        "ExactPageBoundary",
+        "FirstPage",
+        "CompleteList",
+        "SavedView",
+        "SavedViewCollapsed",
+        "Empty",
+        "Narrow"
       ]
     },
     {

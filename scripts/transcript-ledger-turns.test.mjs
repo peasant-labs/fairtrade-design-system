@@ -120,7 +120,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   if (!toolsTurn?.effectiveModel) throw new Error(`${FIXTURE}: the payload must cook turn 1 with its observed model`)
   const systemTurn = vm.turns.find((turn) => turn.index === 2)
   if (!systemTurn) throw new Error(`${FIXTURE}: the payload must cook the system turn 2`)
-  const toolLessTurns = [3, 5]
+  const toolLessTurns = [4, 5]
   for (const index of toolLessTurns) {
     const turn = vm.turns.find((entry) => entry.index === index)
     if (!turn || (turn.toolCalls ?? []).length !== 0) throw new Error(`${FIXTURE}: turn ${index} must cook with no tool calls`)
@@ -496,10 +496,9 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(!!article, `${row.name}: the tool turn must still mount`)
       report.check(article?.querySelector('.txn-turnhead-ledger') === null, `${row.name}: a turn with no words must draw no card head`)
       report.check(article?.querySelector('.txn-roleico') === null, `${row.name}: a turn with no words must draw no role well`)
-      /* its work folds into the block after the user turn's first prose turn, turn 3 */
-      report.check(article?.querySelector('.txn-modelactions, .txn-work') === null, `${row.name}: a wordless turn before the first prose turn draws no work of its own`)
-      const block = mounted.container.querySelector('#turn-3 .txn-modelactions')
-      report.check(!!block, `${row.name}: its work must render in the block after the first prose turn`)
+      /* a leading wordless run has no prose in its segment, so it anchors at its own first work turn */
+      const block = article?.querySelector('.txn-modelactions')
+      report.check(!!block, `${row.name}: the wordless run anchors its work on its own first work turn`)
       report.check(!!block?.querySelector('.txn-modelactions-head'), `${row.name}: the block names the run`)
       report.check(!!block?.querySelector('.txn-modelactions-rows'), `${row.name}: the action list starts expanded`)
       const heading = byId(mounted.container, article?.getAttribute('aria-labelledby'))
@@ -512,7 +511,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(container.querySelectorAll('.txn-work').length === 0, `${row.name}: no ledger turn keeps a work row of its own beside the block`)
       for (const group of ownership.groups) {
         const block = container.querySelector(`#turn-${group.owner} .txn-modelactions`)
-        report.check(!!block, `${row.name}: a user turn starts a new block; the user turn's block must sit after its first prose turn`)
+        report.check(!!block, `${row.name}: each prose turn starts its own run; the block must sit on that run's prose turn`)
         const commands = [...(block?.querySelectorAll('.txn-toolcall .path') ?? [])].map(el => text(el))
         report.check(same(commands, group.tools.map(id => `printf ${id}-command`)), `${row.name}: exact distinct action membership`)
       }
@@ -520,9 +519,9 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       await mounted.unmount()
     } else if (row.kind === 'thinking') {
       const mounted = await mountViewer('ledger')
-      /* turn 4's thinking is part of its user turn's block, after turn 1 */
+      /* turn 4's thinking belongs to the run its own prose turn 3 starts */
       report.check(mounted.container.querySelector('#turn-4 .txn-thinking-toggle') === null, `${row.name}: the thinking turn draws no thinking line of its own`)
-      const toggle = mounted.container.querySelector('#turn-1 .txn-thinking-toggle')
+      const toggle = mounted.container.querySelector('#turn-3 .txn-thinking-toggle')
       report.check(!!toggle, `${row.name}: a turn with thinking must keep its thinking disclosure`)
       /* the thinking row has the tool-call shape: kind, word count, time */
       report.check(toggle?.classList.contains('tc-head') && toggle?.closest('.txn-toolcall') === null, `${row.name}: thinking must use the tool-row head without counting as a tool call`)
@@ -532,18 +531,19 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(text(toggle?.querySelector('.right .txn-tc-dur')) === fixture.mountedThinking.duration, `${row.name}: the row must show the time spent ${JSON.stringify(fixture.mountedThinking.duration)}, received ${JSON.stringify(text(toggle?.querySelector('.right .txn-tc-dur')))}`)
       if (toggle) await mounted.act(() => click(window, toggle))
       await mounted.settle()
-      const body = mounted.container.querySelector('#turn-1 .txn-thinking-body')
+      const body = mounted.container.querySelector('#turn-3 .txn-thinking-body')
       report.check(!!body?.querySelector('.txn-thinking-box'), `${row.name}: opening Think must put its text in an output box`)
       report.check(/check the fixture/.test(text(body)), `${row.name}: opening the disclosure must reveal the thinking text, received ${JSON.stringify(text(body))}`)
       await mounted.unmount()
     } else if (row.kind === 'no-tools') {
       const mounted = await mountViewer('ledger')
       const total = mounted.container.querySelectorAll('.txn-modelactions').length
-      report.check(total === 1, `${row.name}: the payload's one user turn carries one block, received ${total}`)
+      report.check(total === 2, `${row.name}: the payload's prose runs carry their own blocks, received ${total}`)
       for (const index of toolLessTurns) {
-        report.check(mounted.container.querySelector(`#turn-${index} .txn-modelactions`) === null, `${row.name}: the tool-less turn ${index} must render no block`)
+        report.check(mounted.container.querySelector(`#turn-${index} .txn-modelactions`) === null, `${row.name}: the run at turn ${index} has no work and must render no block`)
       }
       report.check(!!mounted.container.querySelector('#turn-1 .txn-modelactions'), `${row.name}: the turn with tools keeps its block`)
+      report.check(!!mounted.container.querySelector('#turn-3 .txn-modelactions'), `${row.name}: the prose turn with thinking keeps its block`)
       await mounted.unmount()
     } else {
       throw new Error(`${FIXTURE}: unknown case kind ${JSON.stringify(row.kind)}`)

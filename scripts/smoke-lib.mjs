@@ -6,6 +6,7 @@ import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import * as ui from '../dist/lib/ui.js'
 import * as icons from '../dist/lib/icons.js'
+import * as closedValue from '../dist/lib/closed-value.js'
 import * as graph from '../dist/lib/graph.js'
 import * as commons from '../dist/lib/commons.js'
 import * as analytics from '../dist/lib/analytics.js'
@@ -24,7 +25,7 @@ const TYPES = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist', 'lib',
 const typeFailures = []
 // index.d.ts/icons.d.ts back ./ui + ./icons; graph/commons back the per-surface
 // ./graph + ./commons entries (their "types" targets in package.json exports).
-for (const decl of ['index.d.ts', 'icons.d.ts', 'graph/index.d.ts', 'commons/index.d.ts', 'analytics/index.d.ts', 'share/index.d.ts']) {
+for (const decl of ['index.d.ts', 'icons.d.ts', 'closed-value.d.ts', 'graph/index.d.ts', 'commons/index.d.ts', 'analytics/index.d.ts', 'share/index.d.ts']) {
   const p = join(TYPES, decl)
   if (!existsSync(p)) typeFailures.push(`${decl}: missing from dist/lib/types (tsc did not emit it)`)
   else if (statSync(p).size === 0) typeFailures.push(`${decl}: present but empty in dist/lib/types`)
@@ -112,8 +113,24 @@ const promptDigest = {
   ],
 }
 
+const libraryGroupBy = closedValue.closed('project', 'project')
+const libraryColumnId = closedValue.closed('transcript', 'transcript')
+const libraryColumns = [{ id: libraryColumnId, label: 'transcript', align: ui.ColumnAlign.Start, render: (row) => row.title }]
+
 const sampleProps = {
   UnverifiedPullRequests: { pullRequests: [], onSourceSelect: () => {} },
+  TranscriptLibraryTable: {
+    caption: 'sample transcripts',
+    rows: [{ id: 'a', title: 'sample session', project: 'acme' }],
+    rowKey: (row) => row.id,
+    columns: libraryColumns,
+    groupBy: libraryGroupBy,
+    groupKeys: (row) => [row.project],
+    groupLabel: (id) => id,
+    nextGroupKeys: null,
+    continuedGroupKeys: null,
+    page: null,
+  },
   VillageObservations: observationFixtures.base,
   HelperGroup: { ...helperFixtures.smoke.group, getMemberKey: (id) => id,
     renderMember: (id) => React.createElement(ui.HelperThreadRow, helperFixtures.rows[id]),
@@ -204,6 +221,10 @@ const expectedExports = [
   'ChartBar',
   'ChartLine',
   'DataTable',
+  'TranscriptLibraryTable',
+  'groupPageRows',
+  'groupKeysFor',
+  'ColumnAlign',
   'Timeline',
   'ToolCallRenderer',
   // transcript rendering primitives + composite (barrel presence; Transcript* convention)
@@ -285,6 +306,21 @@ for (const name of expectedIcons) {
 const iconCount = Object.keys(icons).length
 if (iconCount < 100) {
   failures.push(`dist/lib/icons.js re-exported only ${iconCount} symbols; expected the full lucide-react surface (>100)`)
+}
+
+// ./closed-value: the shared closed-set factory resolves from the built entry and
+// returns a frozen member whose hooks derive from the wire. This is the one
+// definition site every surface set (and a host's own set) is built from.
+if (typeof closedValue.closed !== 'function') {
+  failures.push('closed: missing from dist/lib/closed-value.js (shared closed-set factory export)')
+} else {
+  const probe = closedValue.closed('probe-wire', 'probe-label')
+  if (!Object.isFrozen(probe)) failures.push('closed: dist/lib/closed-value.js did not return a frozen member')
+  if (probe.wire !== 'probe-wire') failures.push('closed: a built member does not preserve its wire')
+  if (probe.String() !== 'probe-wire' || probe.toString() !== 'probe-wire' || probe.toJSON() !== 'probe-wire') {
+    failures.push('closed: a built member derives its text and JSON from the label, not the wire')
+  }
+  if (JSON.stringify(probe) !== '"probe-wire"') failures.push('closed: a built member does not serialize with toJSON()')
 }
 
 // Per-surface entries (./graph, ./commons): confirm each surface bundle resolves

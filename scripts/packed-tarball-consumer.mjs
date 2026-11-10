@@ -30,7 +30,13 @@ for (const group of input.importGroups) {
     assert.ok(name in mod, `${specifier} is missing the ${name} export in the packed package`)
     // a component or helper is callable; a registry (a section list) is a frozen data array
     const value = mod[name]
-    assert.ok(typeof value === 'function' || (Array.isArray(value) && value.length > 0 && Object.isFrozen(value)), `${specifier}.${name} is ${typeof value}, expected a callable export or a non-empty frozen registry`)
+    // a component or helper is callable; a registry is a non-empty frozen array
+    // (a section list, a page-size set); a closed set is a non-empty frozen object
+    // (ColumnAlign). Anything else is a shape the package does not promise.
+    const callable = typeof value === 'function'
+    const frozenRegistry = Array.isArray(value) && value.length > 0 && Object.isFrozen(value)
+    const frozenMemberSet = value !== null && typeof value === 'object' && !Array.isArray(value) && Object.isFrozen(value) && Object.keys(value).length > 0
+    assert.ok(callable || frozenRegistry || frozenMemberSet, `${specifier}.${name} is ${typeof value}, expected a callable export, a non-empty frozen registry, or a frozen closed set`)
     resolved.set(name, mod[name])
   }
 }
