@@ -4,6 +4,11 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.63
+
+- Render very large transcripts in 1 MiB segments cut on complete entries, with a faded dotted boundary and one `load more` per unloaded extent. A window jump renders up to 10 assistant turns on each side of a user turn even when the surrounding segments are unloaded.
+- The scrubber samples at most 200 segment ticks; the Files tab, filters, outline, and truncation notice state their loaded-region scope.
+
 ## 0.0.62
 
 - Add `TranscriptLibraryTable`, the shared library table: numbered pages of transcripts, host grouping with a compact continuation row, multi-membership, the `ColumnAlign` closed set, and a controlled saved view where `groupBy` is URL-owned and `visibleColumns`/`collapsed` are device-owned. Exports `groupPageRows`, `groupKeysFor`, and the table's contract types from `/ui`.
