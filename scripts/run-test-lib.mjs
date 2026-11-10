@@ -319,6 +319,9 @@ function parseArgs(argv) {
   }
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index]
+    // pnpm forwards the `--` separator it was invoked with; it is not an
+    // option. Accept it so `pnpm test:lib -- --lane pure` works as documented.
+    if (arg === '--') continue
     if (arg === '--fail-fast') options.failFast = true
     else if (arg === '--keep-going') options.failFast = false
     else if (arg === '--lane') options.lane = argv[++index] ?? null
