@@ -1,0 +1,11 @@
+# Required-name manifest for the generated-artifact freshness gate.
+# The checker must cover exactly these repo-relative paths; deleting one row or
+# adding an unchecked path fails scripts/check-generated-artifacts.test.mjs.
+requiredPaths:
+  - public/tokens.json
+  - public/components.json
+  - packages/tokens/tokens.css
+  - packages/tokens/tokens.json
+  - packages/tokens/base.css
+  - packages/tokens/fonts.css
+  - DESIGN.md
