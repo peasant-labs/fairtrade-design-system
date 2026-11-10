@@ -18,12 +18,16 @@ import {
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..')
 
-test('the serial chain has one reviewable source and no duplicate gates', () => {
+test('the serial chain matches the required-name gate inventory', () => {
+  const fixture = YAML.parse(readFileSync(join(HERE, 'testdata', 'test-lib-gates.yaml'), 'utf8'))
   const leaves = expandScript('test:lib:serial')
-  assert.ok(leaves.length >= 145, `the serial chain must expand to at least 145 leaves, observed ${leaves.length}`)
+  assert.equal(leaves.length, fixture.expectedLeafCount, `the serial chain expanded to ${leaves.length} leaves; the required inventory records ${fixture.expectedLeafCount}`)
   const gates = buildGates()
+  assert.equal(gates.length, fixture.expectedGateCount, `the deduped chain has ${gates.length} gates; the required inventory records ${fixture.expectedGateCount}`)
   const commands = gates.map((gate) => gate.command)
   assert.equal(new Set(commands).size, commands.length, 'buildGates must deduplicate exact commands')
+  assert.equal(new Set(fixture.requiredGateCommands).size, fixture.requiredGateCommands.length, 'the required inventory must not repeat a command')
+  assert.deepEqual([...commands].sort(), [...fixture.requiredGateCommands].sort(), `the gate inventory changed; add or remove the command in ${join('scripts', 'testdata', 'test-lib-gates.yaml')}`)
   for (const gate of gates) {
     assert.ok(LANES[gate.lane], `gate ${JSON.stringify(gate.command)} has unknown lane ${JSON.stringify(gate.lane)}`)
   }
