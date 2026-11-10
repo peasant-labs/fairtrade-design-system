@@ -191,7 +191,9 @@ export default function OutlineRail({ viewModel, tab, onJump = () => {}, present
      prompt the reader is jumping to. The card covering the active turn is marked current. A
      task with no first turn offers no destination, so it is skipped rather than sent to turn 0. */
   if (tab === 'trace' && presentation === 'ledger') {
-    return <LedgerTurnCards viewModel={viewModel} activeTurn={activeTurn} onJump={onJump} />
+    return (
+      <LedgerTurnCards viewModel={viewModel} activeTurn={activeTurn} onJump={onJump} />
+    )
   }
 
   /* trace → the per-task duration trail. Map each cooked TaskGroupVM onto a StepsWaterfall row;

@@ -700,11 +700,18 @@ function buildDiffs(turnVMs) {
 }
 
 /** @param {TurnVM[]} turnVMs @returns {FileEntryVM[]} */
-function buildFiles(turnVMs) {
+/**
+ * Aggregate the per-file read/edit/write counts and churn from cooked turns. Shared
+ * by the whole-transcript view model and a segmented viewer's loaded regions, so the
+ * Files tab has one derivation.
+ * @param {TurnVM[]} turnVMs
+ * @returns {FileEntryVM[]}
+ */
+export function buildFiles(turnVMs) {
   /** @type {Map<string, FileEntryVM>} */
   const map = new Map()
   for (const turn of turnVMs) {
-    for (const tc of turn.toolCalls) {
+    for (const tc of turn.toolCalls ?? []) {
       const path = tc.filePath
       if (!path) continue
       let e = map.get(path)
@@ -797,14 +804,25 @@ function tagForKind(kind) {
 }
 
 /**
+ * Tool-group counts for a set of cooked turns. Shared by the full filter index and a
+ * segmented viewer's loaded regions.
+ * @param {TurnVM[]} turnVMs
+ * @returns {Record<ToolGroup, number>}
+ */
+export function buildToolGroupCounts(turnVMs) {
+  /** @type {Record<ToolGroup, number>} */
+  const toolGroupCounts = { edits: 0, bash: 0, read: 0, search: 0, fetch: 0, tasks: 0, other: 0 }
+  for (const turn of turnVMs) for (const tc of turn.toolCalls ?? []) toolGroupCounts[tc.group]++
+  return toolGroupCounts
+}
+
+/**
  * @param {TurnVM[]} turnVMs
  * @param {Record<number, AnnotationVM[]>} annotationsByTurn
  * @returns {FilterIndexVM}
  */
 function buildFilterIndex(turnVMs, annotationsByTurn) {
-  /** @type {Record<ToolGroup, number>} */
-  const toolGroupCounts = { edits: 0, bash: 0, read: 0, search: 0, fetch: 0, tasks: 0, other: 0 }
-  for (const turn of turnVMs) for (const tc of turn.toolCalls) toolGroupCounts[tc.group]++
+  const toolGroupCounts = buildToolGroupCounts(turnVMs)
 
   /** @type {Record<string, number>} */
   const tagCounts = {}
@@ -1087,6 +1105,9 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
     if (contentParts) turnVM.contentParts = contentParts
     if (shown !== undefined) turnVM.displayContent = shown
     if (t.usage) turnVM.usage = t.usage
+    const served = /** @type {{truncated?: boolean, byteLength?: number}} */ (t)
+    if (served.truncated === true) turnVM.truncated = true
+    if (typeof served.byteLength === 'number' && served.byteLength >= 0) turnVM.byteLength = served.byteLength
     if (t.sourceEntryRef) turnVM.sourceEntryRef = t.sourceEntryRef
     if (t.provenance) turnVM.provenance = t.provenance
     if (t.entryType) turnVM.entryType = t.entryType
