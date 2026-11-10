@@ -1,4 +1,4 @@
-import { formatCount } from '../format.js'
+import { formatCount, formatInteger } from '../format.js'
 import { headingTag, pageHeadingLevel } from '../heading.js'
 import { Fragment, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -346,6 +346,8 @@ export default function TranscriptViewer({
   /* A window renders only once every covering segment is in hand. A partly loaded
      window is held back, so the reader never meets a false boundary inside it. */
   const heldWindow = !!(segmentMode && coverage?.required && !coverage.complete)
+  const heldSegments = heldWindow ? loadedSegments.filter((segment) => coverage.indexes.includes(segment.index)) : []
+  const heldRegions = loadedRegions(directory, heldSegments)
   const renderedSegments = useMemo(
     () => (segmentMode
       ? (heldWindow ? loadedSegments.filter((segment) => !coverage.indexes.includes(segment.index)) : loadedSegments)
@@ -598,13 +600,18 @@ export default function TranscriptViewer({
     : ''
   const loadedIndexKey = loadedSegments.map((segment) => segment.index).join(',')
   useEffect(() => {
-    if (!segmentMode || !windowKey || typeof onLoadSegment !== 'function') return
+    if (!segmentMode || !windowKey) {
+      windowRequestRef.current = { key: '', indexes: new Set() }
+      return
+    }
+    if (typeof onLoadSegment !== 'function') return
     if (windowRequestRef.current.key !== windowKey) windowRequestRef.current = { key: windowKey, indexes: new Set() }
     const held = new Set(loadedSegments.map((segment) => segment.index))
     for (const index of windowProp.segments ?? []) {
       if (held.has(index) || windowRequestRef.current.indexes.has(index)) continue
       windowRequestRef.current.indexes.add(index)
-      onLoadSegment(index)
+      const result = onLoadSegment(index)
+      if (result && typeof result.then === 'function') Promise.resolve(result).catch(() => {})
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [segmentMode, windowKey, loadedIndexKey, onLoadSegment])
@@ -1253,10 +1260,11 @@ export default function TranscriptViewer({
       const anchor = captureReadingAnchor()
       if (anchor) ackScrollRef.current = anchor
     }
-    setLoadingSegment(index)
     const result = onLoadSegment(index)
     if (result && typeof result.then === 'function') {
-      Promise.resolve(result).finally(() => setLoadingSegment((current) => (current === index ? null : current)))
+      setLoadingSegment(index)
+      const clear = () => setLoadingSegment((current) => (current === index ? null : current))
+      Promise.resolve(result).then(clear, clear)
     }
   }
   function loadBoundary(boundary) {
@@ -2082,10 +2090,20 @@ export default function TranscriptViewer({
                           <span>actions continue {where}</span>
                         </div>
                       )
+                      let heldPosition = 0
+                      const heldBefore = (turnIndex) => {
+                        const notes = []
+                        while (heldPosition < heldRegions.length && heldRegions[heldPosition].firstTurn < turnIndex) {
+                          const region = heldRegions[heldPosition++]
+                          notes.push(<div key={region.key} className="txn-held-window tnum" role="status">turns {formatInteger(region.firstTurn)}–{formatInteger(region.lastTurn)}, loading window</div>)
+                        }
+                        return notes
+                      }
                       return (
                         <>
+                          {leading && heldBefore(leading.firstTurn)}
                           {leading && <TranscriptBoundary boundary={leading} loading={loadingSegment === leading.loadSegment} onLoadMore={() => loadBoundary(leading)} />}
-                          {segmentMode && leading && firstRendered && isWordlessAssistant(firstRendered) && continuation('from the unloaded turn above')}
+                          {segmentMode && leading && firstRendered && !internalBefore.has(firstRendered.index) && isWordlessAssistant(firstRendered) && continuation('from the unloaded turn above')}
                           {visibleTurns.map((t, i) => {
                           const group = systemGroups.get(t.index)
                           /* members 2..N render inside the owner's fold, never as their own row */
@@ -2101,12 +2119,14 @@ export default function TranscriptViewer({
                           const internalBeforeThis = segmentMode ? internalBefore.get(t.index) ?? null : null
                           return (
                             <Fragment key={t.identity ?? t.index}>
+                              {heldBefore(internalBeforeThis?.firstTurn ?? t.index)}
                               {internalBeforeThis && (
                                 <>
                                   <TranscriptBoundary boundary={internalBeforeThis} loading={loadingSegment === internalBeforeThis.loadSegment} onLoadMore={() => loadBoundary(internalBeforeThis)} />
                                   {segmentMode && isWordlessAssistant(firstVisibleAfter(internalBeforeThis.lastTurn)) && continuation('from the unloaded turns between')}
                                 </>
                               )}
+                              {heldBefore(t.index)}
                               <div className={ledger ? 'txn-turnrow' : undefined}>
                                 {showPhase && <PhaseDivider phase={phase} heading={PhaseHeading} />}
                                 {/* in ledger a faint rule marks where the role changes; classic gains none */}
@@ -2133,11 +2153,13 @@ export default function TranscriptViewer({
                                 {renderTurnPanel ? renderTurnPanel(t) : null}
                                 {turnCommits.map((c) => <CheckpointMarker key={c.hash} commit={c} />)}
                               </div>
+                              {internal && heldBefore(internal.firstTurn)}
                               {internal && <TranscriptBoundary boundary={internal} loading={loadingSegment === internal.loadSegment} onLoadMore={() => loadBoundary(internal)} />}
                               {segmentMode && internal && isWordlessAssistant(firstVisibleAfter(internal.lastTurn)) && continuation('from the unloaded turns between')}
                             </Fragment>
                           )
                         })}
+                          {heldBefore(trailing?.firstTurn ?? Infinity)}
                           {trailing && <TranscriptBoundary boundary={trailing} loading={loadingSegment === trailing.loadSegment} onLoadMore={() => loadBoundary(trailing)} />}
                         </>
                       )

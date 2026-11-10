@@ -210,8 +210,8 @@
  * @property {string | null} [contentHash]                             the bare hash of the content `viewModel` was cooked from (the content route's `Village-Content-Hash` header). Turns are marked only when it equals `transcriptContentHash` and both are non-empty
  * @property {import('./segments.js').SegmentDirectoryVM | null} [directory] the transcript's only global index (segment refs, totals, revision). Supplied with `segments`, the viewer renders loaded regions instead of a whole-session turn list
  * @property {import('./segments.js').SegmentVM[] | Map<number, import('./segments.js').SegmentVM> | Record<number, import('./segments.js').SegmentVM>} [segments] the segments the host has loaded, already cooked to `TurnVM`s; the viewer never mounts a turn it was not given
- * @property {import('./segments.js').SegmentWindowVM | null} [window] a jump descriptor: where the window is and which covering segments to load. It carries no turn content
- * @property {(segmentIndex: number) => void | Promise<unknown>} [onLoadSegment] load one segment; the boundary, the scrubber and a window all request through this one path
+ * @property {import('./segments.js').SegmentWindowVM | null} [window] a jump descriptor: where the window is and which covering segments to load. It carries no turn content. If a covering load fails, the host reports the error and clears this prop to null; clearing restores held turns and permits the same window to be requested again
+ * @property {(segmentIndex: number) => void | Promise<unknown>} [onLoadSegment] load one segment; the boundary, the scrubber and a window all request through this one path. Return a promise that settles on success or failure to disable the boundary while pending; rejection re-enables it. A void return leaves the boundary enabled so the host can retry. The host owns error reporting
  * @property {(anchorTurn: number, span?: number) => void | Promise<unknown>} [onLoadWindow] resolve a jump's window descriptor from a turn identity
  */
 

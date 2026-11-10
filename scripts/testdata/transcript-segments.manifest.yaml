@@ -29,8 +29,13 @@ requiredMountCaseNames:
   - two disjoint regions carry one gap boundary
   - a lone middle segment carries the older edge
   - a held window beside a disjoint region keeps its gap boundary
+  - separated held segments keep their own ranges around a gap
   - a single segment directory draws no boundary
   - an empty directory is not indexed
+requiredRecoveryCaseNames:
+  - a rejected segment load enables retry
+  - a void segment load remains retryable
+  - clearing a failed window allows the same request again
 
 # Production mutations the gate must kill (scripts/parts-mutations.mjs).
 requiredMutationNames:
@@ -39,6 +44,10 @@ requiredMutationNames:
   - the window renders partly loaded
   - a gap draws no continuation marker
   - the truncation notice ignores byteLength
+  - the held window loses its caption
+  - a held gap repeats its continuation marker
+  - a failed boundary load stays disabled
+  - clearing a window retains its request cache
 mutations:
   - name: the scrubber mounts one tick per turn
     file: src/ui/transcript/segments.js
@@ -65,3 +74,23 @@ mutations:
     find: "{t.truncated && ("
     replace: "{false && ("
     expectedDiagnostic: "an oversized turn is alone, bounded and offers its full read: the truncation notice must be present"
+  - name: the held window loses its caption
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: 'while (heldPosition < heldRegions.length && heldRegions[heldPosition].firstTurn < turnIndex) {'
+    replace: 'while (false) {'
+    expectedDiagnostic: 'a held window beside a disjoint region keeps its gap boundary: the held range must be named'
+  - name: a held gap repeats its continuation marker
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: '!internalBefore.has(firstRendered.index) && '
+    replace: ''
+    expectedDiagnostic: 'a held window beside a disjoint region keeps its gap boundary: the continuation count must equal 1'
+  - name: a failed boundary load stays disabled
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: 'Promise.resolve(result).then(clear, clear)'
+    replace: 'Promise.resolve(result).then(clear, () => {})'
+    expectedDiagnostic: 'a rejected segment load enables retry: failed or untracked load permits retry'
+  - name: clearing a window retains its request cache
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "windowRequestRef.current = { key: '', indexes: new Set() }"
+    replace: 'void 0'
+    expectedDiagnostic: 'clearing a failed window allows the same request again: the same missing segment is requested again'
