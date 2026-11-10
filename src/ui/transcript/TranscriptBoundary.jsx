@@ -13,6 +13,34 @@ import { boundaryCaption } from './segments.js'
 
 /** @typedef {import('./segments.js').SegmentBoundaryVM} SegmentBoundaryVM */
 
+/** Thrown when a host mounts the boundary without the unloaded-edge descriptor. */
+export class TranscriptSegmentBoundaryError extends Error {
+  /**
+   * @param {string} message
+   */
+  constructor(message) {
+    super(message)
+    this.name = 'TranscriptSegmentBoundaryError'
+  }
+}
+
+/**
+ * @param {unknown} boundary
+ * @returns {TranscriptSegmentBoundaryError}
+ */
+function missingBoundaryError(boundary) {
+  const received = boundary === undefined ? 'undefined' : boundary === null ? 'null' : typeof boundary
+  return new TranscriptSegmentBoundaryError([
+    'TranscriptSegmentBoundary cannot render.',
+    `What went wrong: the boundary prop is missing. Received: ${received}.`,
+    'Why it happened: TranscriptSegmentBoundary reads boundary.side, and the caller passed no SegmentBoundaryVM.',
+    'Where: TranscriptBoundary in src/ui/transcript/TranscriptBoundary.jsx.',
+    'When: during render, before the boundary rule is drawn.',
+    'What it means: the host mounted the segment boundary without the unloaded-edge descriptor, so the caption and load control have nothing to name.',
+    'How to fix: pass a SegmentBoundaryVM as the boundary prop (side of "older", "newer", "between", or "all", plus firstTurn, lastTurn, segmentIndexes, segmentCount, byteLength, and loadSegment) and an onLoadMore handler.',
+  ].join(' '))
+}
+
 /**
  * @param {object} props
  * @param {SegmentBoundaryVM} props.boundary
@@ -20,6 +48,7 @@ import { boundaryCaption } from './segments.js'
  * @param {boolean} [props.loading]        the host is fetching the adjacent segment
  */
 export default function TranscriptBoundary({ boundary, onLoadMore, loading = false }) {
+  if (boundary == null) throw missingBoundaryError(boundary)
   const older = boundary.side === 'older'
   const Icon = older ? ChevronUp : ChevronDown
   const label = boundary.side === 'all' ? 'load the transcript' : 'load more'

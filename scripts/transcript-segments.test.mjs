@@ -16,9 +16,12 @@
 
    Run: pnpm test:transcript-segments
    Mutations: pnpm test:transcript-segments:mutations */
-import { loadFixturePair, assertFields, withMountedSource, click, createReport } from './mounted-parts.mjs'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { JSDOM } from 'jsdom'
+import { loadFixturePair, assertExactNames, assertFields, withMountedSource, click, createReport } from './mounted-parts.mjs'
 import {
   SEGMENT_SCRUBBER_TICKS,
+  boundaryCaption,
   loadedRegions,
   loadedScope,
   mountedCardBound,
@@ -30,6 +33,26 @@ import {
 
 const FIXTURE = 'scripts/testdata/transcript-segments.yaml'
 const MANIFEST = 'scripts/testdata/transcript-segments.manifest.yaml'
+const BOUNDARY_FIXTURE = 'scripts/testdata/transcript-segment-boundary.yaml'
+const BOUNDARY_MANIFEST = 'scripts/testdata/transcript-segment-boundary.manifest.yaml'
+const { fixture: boundaryFixture } = loadFixturePair(BOUNDARY_FIXTURE, BOUNDARY_MANIFEST, {
+  sides: 'requiredSideNames',
+  missing: 'requiredMissingNames',
+})
+const BOUNDARY_FIELDS = ['key', 'side', 'firstTurn', 'lastTurn', 'segmentIndexes', 'segmentCount', 'byteLength', 'loadSegment']
+for (const row of boundaryFixture.sides) {
+  assertFields(row, ['name', 'boundary', 'label', 'iconClass'], `${BOUNDARY_FIXTURE} ${row.name}`)
+  assertFields(row.boundary, BOUNDARY_FIELDS, `${BOUNDARY_FIXTURE} ${row.name} boundary`)
+}
+for (const row of boundaryFixture.missing) {
+  assertFields(row, ['name', 'props'], `${BOUNDARY_FIXTURE} ${row.name}`)
+  assertFields(row.props, [], `${BOUNDARY_FIXTURE} ${row.name} props`, ['boundary'])
+  if ('boundary' in row.props && row.props.boundary != null) {
+    throw new Error(`${BOUNDARY_FIXTURE} ${row.name}: a missing-boundary row must omit boundary or set it to null`)
+  }
+}
+assertExactNames(boundaryFixture.sides.map((row) => row.boundary.side), ['older', 'newer', 'all'], `${BOUNDARY_FIXTURE} side set`)
+
 const { fixture, manifest } = loadFixturePair(FIXTURE, MANIFEST, {
   directories: 'requiredDirectoryNames',
   loadCases: 'requiredLoadCaseNames',
@@ -379,10 +402,61 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     report.check(scrubber?.getAttribute('aria-valuemax') === '200', `${name} mounted: the scrubber announces its sample, not the turn count`)
     await mounted.unmount()
   }
+
+  /* The library smoke renders one props object per export, so only the newer
+     edge is covered there. Render the production boundary for every side and
+     for a missing descriptor. */
+  const boundaryModule = await load('/src/ui/transcript/TranscriptBoundary.jsx')
+  const TranscriptBoundary = boundaryModule.default
+  const { TranscriptSegmentBoundaryError } = boundaryModule
+  const captions = []
+  const icons = new Set()
+  const labels = new Set()
+  for (const row of boundaryFixture.sides) {
+    const markup = renderToStaticMarkup(React.createElement(TranscriptBoundary, {
+      boundary: row.boundary,
+      onLoadMore: () => {},
+    }))
+    const document = new JSDOM(markup).window.document
+    const node = document.querySelector('[data-segment-boundary]')
+    const caption = text(node?.querySelector('.txn-segboundary-caption'))
+    const button = node?.querySelector('button.txn-segboundary-load')
+    const expectedCaption = boundaryCaption(row.boundary)
+    const renderedIcon = [...(document.querySelector('svg')?.classList ?? [])].find((name) => name.startsWith('lucide-chevron-'))
+    captions.push(caption)
+    if (renderedIcon) icons.add(renderedIcon)
+    labels.add(text(button))
+    report.check(node?.dataset.segmentBoundary === row.boundary.side, `${row.name}: side ${node?.dataset.segmentBoundary} must equal ${row.boundary.side}`)
+    report.check(node?.classList.contains(`txn-segboundary-${row.boundary.side}`), `${row.name}: the side class must be txn-segboundary-${row.boundary.side}`)
+    report.check(Number(node?.dataset.segmentCount) === row.boundary.segmentCount, `${row.name}: segment count must equal ${row.boundary.segmentCount}`)
+    report.check(caption === expectedCaption, `${row.name}: caption ${JSON.stringify(caption)} must equal ${JSON.stringify(expectedCaption)}`)
+    report.check(!!document.querySelector(`svg.${row.iconClass}`), `${row.name}: expected the ${row.iconClass} icon`)
+    report.check(document.querySelectorAll('svg').length === 1, `${row.name}: a boundary draws one icon`)
+    report.check(text(button).includes(row.label), `${row.name}: the control must read ${JSON.stringify(row.label)}`)
+    report.check(button?.getAttribute('aria-label')?.includes(expectedCaption), `${row.name}: the accessible name must include the caption`)
+    report.check(button?.hasAttribute('disabled') === false, `${row.name}: a supplied onLoadMore leaves the control enabled`)
+  }
+  report.check(new Set(captions).size === captions.length, `boundary sides must render distinct captions, received ${JSON.stringify(captions)}`)
+  report.check(icons.has('lucide-chevron-up') && icons.has('lucide-chevron-down'), 'both boundary icon branches must render')
+  report.check(labels.has('load more') && labels.has('load the transcript'), 'both boundary load labels must render')
+  for (const row of boundaryFixture.missing) {
+    let thrown = null
+    try {
+      renderToStaticMarkup(React.createElement(TranscriptBoundary, row.props))
+    } catch (error) {
+      thrown = error
+    }
+    report.check(thrown instanceof TranscriptSegmentBoundaryError, `${row.name}: a missing boundary must throw TranscriptSegmentBoundaryError`)
+    report.check(thrown?.name === 'TranscriptSegmentBoundaryError', `${row.name}: error name must be TranscriptSegmentBoundaryError, received ${thrown?.name}`)
+    for (const phrase of ['boundary prop is missing', 'TranscriptSegmentBoundary', 'TranscriptBoundary.jsx', 'How to fix', 'SegmentBoundaryVM']) {
+      report.check(String(thrown?.message ?? '').includes(phrase), `${row.name}: the error must say ${JSON.stringify(phrase)}`)
+    }
+    report.check(!String(thrown?.message ?? '').includes('Cannot read properties of undefined'), `${row.name}: the error must not be an opaque property read`)
+  }
 })
 
 function dirSession() {
   return 'sess_segment_fixture'
 }
 
-report.finish(`${fixture.directories.length} directories, ${fixture.loadCases.length} load cases, ${fixture.windowCases.length} window cases and ${fixture.mountCases.length} mounted cases.`)
+report.finish(`${fixture.directories.length} directories, ${fixture.loadCases.length} load cases, ${fixture.windowCases.length} window cases, ${fixture.mountCases.length} mounted cases, and ${boundaryFixture.sides.length} boundary sides.`)
