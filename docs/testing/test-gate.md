@@ -61,6 +61,14 @@ runs. The required CI step uses `--target=all`; the verifier reads all 24 rows.
 The declared Fairtest budget dropped from 24 to 12 minutes, and the mounted-row
 stage from 18.5 to 6.5 minutes, after the measurements below.
 
+## Journey shards
+
+CI runs the full Playwright catalog as two shards on separate runners, each
+with three workers. The Storybook smoke divides each theme's catalog into four
+disjoint chunks so those walks can share the worker pool. The timeline route
+gate runs once, on shard 1. The required `gates` check aggregates the Fairtest
+job and the complete journey matrix and fails if either is not successful.
+
 ## Vitest pilot
 
 `vitest.config.mjs` runs three files:
@@ -96,6 +104,13 @@ Fairtest serial comparison was re-run on the same checkout and build.
 | Journey catalog, local workstation, 4 workers | 11.6m | 502 passed, 58 skipped |
 | Journey catalog, CI microvm, 3 workers | 14m30s | 3-worker baseline recorded in the `gates` job |
 | Journey catalog, CI microvm, 4 workers | 18m09s | regression on the 4-vCPU runner; the cap stays 3 |
+| Journey catalog, local workstation, two sequential shards, 3 workers each | 15m04s / 15m03s | Ryzen 9 7950X3D, 32 logical CPUs; each shard 256 passed, 29 skipped, 0 failed; shard 1 overlapped another browser run |
+
+The local shards were measured sequentially, not on two CI runners. A listing
+comparison found 285 tests per shard, no overlap and no omissions across the
+570-test catalog. The increase from the earlier 560-test measurement includes
+the split Storybook walks and other catalog changes. The CI microvm timing and
+the under-10-minute target remain to be measured on the actual matrix jobs.
 
 The product rows are the long pole at roughly 25-32 seconds each; four workers
 let all four product routes overlap, while the twenty component rows fill the

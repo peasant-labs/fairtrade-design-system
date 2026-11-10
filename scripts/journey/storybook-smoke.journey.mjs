@@ -5,9 +5,8 @@
  * an empty root. Clicks are trusted input events, so this also absorbs what
  * scripts/check-map-pointer.mjs proves separately with a raw CDP mouse.
  *
- * One test per theme; stories run serially in a single page. A story that
- * fails is retried once in isolation is unnecessary here — serial execution
- * has no tab-pool contention to absorb.
+ * Each theme is partitioned into chunks; stories within a chunk run serially
+ * in one page, while Playwright distributes chunks between workers and shards.
  */
 import { readFile } from 'node:fs/promises'
 import { test as base, expect } from '@playwright/test'
@@ -26,9 +25,13 @@ const test = base.extend({
   },
 })
 
+const STORY_CHUNKS = 4
+
 test.describe('storybook smoke', () => {
-  // The full catalog is hundreds of stories through one serial page; the
-  // shared 60s timeout cannot hold it.
+  // Each chunk walks a quarter of the catalog through one page. Four chunks
+  // per theme let the worker pool run the walk in parallel instead of one
+  // serial 5.5m test; retain the original timeout to allow slower runners
+  // and contended local runs enough time to finish each chunk.
   test.setTimeout(600_000)
   // The served Storybook is started once for the whole run. Check it is still
   // there before the catalog walk (a failed beforeAll stops the remaining
@@ -40,54 +43,58 @@ test.describe('storybook smoke', () => {
   test.beforeEach(async () => {
     await assertWebServerServing()
   })
-  test('every story renders without JS errors', async ({ page, theme }) => {
-    const idx = JSON.parse(await readFile('storybook-static/index.json', 'utf8'))
-    const ids = Object.values(idx.entries || idx.stories || {})
-      .filter((e) => e.type !== 'docs')
-      .map((e) => e.id)
-    expect(ids.length).toBeGreaterThan(0)
+  for (let chunk = 0; chunk < STORY_CHUNKS; chunk += 1) {
+    test(`every story renders without JS errors (chunk ${chunk + 1}/${STORY_CHUNKS})`, async ({ page, theme }) => {
+      const idx = JSON.parse(await readFile('storybook-static/index.json', 'utf8'))
+      const ids = Object.values(idx.entries || idx.stories || {})
+        .filter((e) => e.type !== 'docs')
+        .map((e) => e.id)
+      expect(ids.length).toBeGreaterThan(0)
+      const slice = ids.filter((_, index) => index % STORY_CHUNKS === chunk)
+      expect(slice.length).toBeGreaterThan(0)
 
-    const failures = []
-    for (const id of ids) {
-      const errs = []
-      const onConsole = (m) => {
-        if (m.type() === 'error' && !RESOURCE_NOISE.test(m.text())) errs.push(m.text())
-      }
-      const onPageError = (e) => errs.push('pageerror: ' + e.message)
-      page.on('console', onConsole)
-      page.on('pageerror', onPageError)
-      try {
-        await page.goto(storyUrl(id, theme), { waitUntil: 'domcontentloaded', timeout: 20000 })
-        // The story signals readiness through its root mounting; play()
-        // runs inside the iframe on load. One macrotask of grace lets
-        // settle-time console errors flush through.
-        await page.waitForFunction(
-          () => {
+      const failures = []
+      for (const id of slice) {
+        const errs = []
+        const onConsole = (m) => {
+          if (m.type() === 'error' && !RESOURCE_NOISE.test(m.text())) errs.push(m.text())
+        }
+        const onPageError = (e) => errs.push('pageerror: ' + e.message)
+        page.on('console', onConsole)
+        page.on('pageerror', onPageError)
+        try {
+          await page.goto(storyUrl(id, theme), { waitUntil: 'domcontentloaded', timeout: 20000 })
+          // The story signals readiness through its root mounting; play()
+          // runs inside the iframe on load. One macrotask of grace lets
+          // settle-time console errors flush through.
+          await page.waitForFunction(
+            () => {
+              const r = document.querySelector('#storybook-root,#root')
+              return (r && r.childElementCount > 0) || document.querySelector('.dlg-overlay [role="dialog"]') !== null
+            },
+            null,
+            { timeout: 15000 },
+          )
+          await page.waitForTimeout(50)
+          const empty = await page.evaluate(() => {
             const r = document.querySelector('#storybook-root,#root')
-            return (r && r.childElementCount > 0) || document.querySelector('.dlg-overlay [role="dialog"]') !== null
-          },
-          null,
-          { timeout: 15000 },
-        )
-        await page.waitForTimeout(50)
-        const empty = await page.evaluate(() => {
-          const r = document.querySelector('#storybook-root,#root')
-          return (!r || r.childElementCount === 0) && !document.querySelector('.dlg-overlay [role="dialog"]')
-        })
-        if (empty) errs.push('smoke: empty root')
-        if (errs.length) failures.push({ id, errs: errs.slice(0, 2) })
-      } catch (e) {
-        // A dead static server surfaces here as a navigation failure on the
-        // story being loaded. Re-check liveness first: when the server is gone,
-        // one actionable failure naming it beats a list of connection refusals
-        // against the story ids that happened to be next.
-        await assertWebServerServing()
-        failures.push({ id, errs: ['goto: ' + e.message] })
-      } finally {
-        page.off('console', onConsole)
-        page.off('pageerror', onPageError)
+            return (!r || r.childElementCount === 0) && !document.querySelector('.dlg-overlay [role="dialog"]')
+          })
+          if (empty) errs.push('smoke: empty root')
+          if (errs.length) failures.push({ id, errs: errs.slice(0, 2) })
+        } catch (e) {
+          // A dead static server surfaces here as a navigation failure on the
+          // story being loaded. Re-check liveness first: when the server is gone,
+          // one actionable failure naming it beats a list of connection refusals
+          // against the story ids that happened to be next.
+          await assertWebServerServing()
+          failures.push({ id, errs: ['goto: ' + e.message] })
+        } finally {
+          page.off('console', onConsole)
+          page.off('pageerror', onPageError)
+        }
       }
-    }
-    expect(failures, JSON.stringify(failures.slice(0, 5), null, 2)).toEqual([])
-  })
+      expect(failures, JSON.stringify(failures.slice(0, 5), null, 2)).toEqual([])
+    })
+  }
 })

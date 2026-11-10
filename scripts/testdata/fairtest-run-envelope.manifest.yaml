@@ -95,7 +95,7 @@ mutations:
     kind: trailing-document
     target: document
     expectedField: document[1]
-expectedWorkflowMutationCount: 18
+expectedWorkflowMutationCount: 26
 requiredWorkflowMutationNames:
   - workflow-upload-pin-becomes-a-tag
   - workflow-upload-drops-no-files-error
@@ -108,6 +108,14 @@ requiredWorkflowMutationNames:
   - workflow-drops-the-journey-gates
   - workflow-journey-unbounded-workers
   - workflow-journey-adds-filter
+  - workflow-journey-drops-shard
+  - workflow-gates-aggregator-drops-a-need
+  - workflow-gates-aggregator-ignores-failure
+  - workflow-journey-matrix-excludes-shard
+  - workflow-journey-skips-step
+  - workflow-timeline-drops-mutation
+  - workflow-gates-aggregator-suppresses-failure
+  - workflow-gates-aggregator-always-passes
   - workflow-drops-the-envelope-guard
   - workflow-drops-the-compat-gate
   - workflow-drops-the-type-program-gate
@@ -149,17 +157,49 @@ workflowMutations:
     replace: ''
     expectedField: Fairtest evidence verification
   - name: workflow-drops-the-journey-gates
-    find: "      - name: Journey gates\n        run: pnpm journey:ci --workers=3\n"
+    find: "      - name: Journey gates\n        run: pnpm journey:ci --workers=3 --shard=${{ matrix.shard }}/2\n"
     replace: ''
-    expectedField: pnpm journey:ci
+    expectedField: shard
   - name: workflow-journey-unbounded-workers
-    find: "        run: pnpm journey:ci --workers=3\n"
-    replace: "        run: pnpm journey:ci --workers=100%\n"
-    expectedField: pnpm journey:ci
+    find: "        run: pnpm journey:ci --workers=3 --shard=${{ matrix.shard }}/2\n"
+    replace: "        run: pnpm journey:ci --workers=100% --shard=${{ matrix.shard }}/2\n"
+    expectedField: shard
   - name: workflow-journey-adds-filter
-    find: "        run: pnpm journey:ci --workers=3\n"
-    replace: "        run: pnpm journey:ci --workers=3 --grep=token\n"
-    expectedField: pnpm journey:ci
+    find: "        run: pnpm journey:ci --workers=3 --shard=${{ matrix.shard }}/2\n"
+    replace: "        run: pnpm journey:ci --workers=3 --shard=${{ matrix.shard }}/2 --grep=token\n"
+    expectedField: shard
+  - name: workflow-journey-drops-shard
+    find: "        run: pnpm journey:ci --workers=3 --shard=${{ matrix.shard }}/2\n"
+    replace: "        run: pnpm journey:ci --workers=3 --shard=1/2\n"
+    expectedField: shard
+  - name: workflow-gates-aggregator-drops-a-need
+    find: "    needs: [fairtest, journeys]\n"
+    replace: "    needs: [fairtest]\n"
+    expectedField: needs
+  - name: workflow-gates-aggregator-ignores-failure
+    find: "          test \"${{ needs.journeys.result }}\" = \"success\"\n"
+    replace: ''
+    expectedField: needs.result
+  - name: workflow-journey-matrix-excludes-shard
+    find: "        shard: [1, 2]\n"
+    replace: "        shard: [1, 2]\n        exclude:\n          - shard: 2\n"
+    expectedField: matrix.shard
+  - name: workflow-journey-skips-step
+    find: "      - name: Journey gates\n        run:"
+    replace: "      - name: Journey gates\n        if: matrix.shard == 1\n        run:"
+    expectedField: shard
+  - name: workflow-timeline-drops-mutation
+    find: "pnpm test:timeline-rendered && pnpm test:timeline-session-route:mutations"
+    replace: "pnpm test:timeline-rendered"
+    expectedField: pnpm test:timeline-rendered
+  - name: workflow-gates-aggregator-suppresses-failure
+    find: "      - name: Require both gate jobs\n        run:"
+    replace: "      - name: Require both gate jobs\n        continue-on-error: true\n        run:"
+    expectedField: needs.result
+  - name: workflow-gates-aggregator-always-passes
+    find: '          test "${{ needs.journeys.result }}" = "success"'
+    replace: '          echo "${{ needs.journeys.result }}"'
+    expectedField: needs.result
   - name: workflow-drops-the-envelope-guard
     find: "          pnpm test:fairtest:envelope\n"
     replace: ''
