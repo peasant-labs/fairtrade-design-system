@@ -1,5 +1,8 @@
 requiredCaseNames:
   - renders-project-group-branch-session
+  - host-selection-survives-forest-replacement
+  - missing-parent-and-cycle-fail-closed
+  - duplicate-ids-fail-closed
   - state-all-some-none
   - state-comes-from-host
   - locked-row-disabled-and-announced
@@ -10,3 +13,23 @@ requiredCaseNames:
   - unknown-state-fails-closed-counted
   - label-keeps-case
   - no-paging-props
+requiredMutationNames:
+  - ignore-host-state
+  - no-descendant-cascade
+  - omit-lock-announcement
+mutations:
+  - name: ignore-host-state
+    file: src/ui/SelectionTree.jsx
+    find: 'checked={node.state === SelectionNodeState.All}'
+    replace: 'checked={true}'
+    expectedDiagnostic: 'state-comes-from-host'
+  - name: no-descendant-cascade
+    file: src/ui/SelectionTree.jsx
+    find: 'for (const child of byParent.get(current.id) ?? []) walk(child)'
+    replace: ''
+    expectedDiagnostic: 'project-toggle-selects-descendants'
+  - name: omit-lock-announcement
+    file: src/ui/SelectionTree.jsx
+    find: 'aria-label={node.locked ? `${node.label}, locked` : node.label}'
+    replace: 'aria-label={node.label}'
+    expectedDiagnostic: 'accessible name must announce'

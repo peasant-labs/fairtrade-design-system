@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useCallback, useId, useMemo, useState } from 'react'
 import { ChevronRight } from 'lucide-react'
 import BrandMark from './BrandMark.jsx'
+import Checkbox from './Checkbox.jsx'
 import { formatInteger } from './format.js'
 import {
   parseNodeKind,
@@ -20,7 +21,7 @@ import './SelectionTree.css'
  * @property {string | import('./selection-tree-values.js').SelectionNodeKind} kind
  * @property {string | import('./selection-tree-values.js').SelectionNodeState} state host-supplied tri-state. Drawn as given.
  * @property {string} label user content. Rendered with its case unchanged.
- * @property {string} [sessionId] host identity. Not the id reported on toggle.
+ * @property {string} [sessionId] session identity; for session rows the server sets it equal to id, which is reported.
  * @property {string} [harness] provider name, shown as given when present.
  * @property {number} [childCount] displayed as given. Not counted from children.
  * @property {boolean} [locked] disables this row's checkbox and is announced.
@@ -44,7 +45,7 @@ import './SelectionTree.css'
  * input order. Session ids that are selected but are not in this forest stay
  * at the end, in their previous order, so a toggle does not drop them.
  *
- * `value`, when passed, is that same set (a Set or an array). Checkbox glyphs
+ * `value` is that same set (a Set or an array). Checkbox glyphs
  * still come only from each node's `state`. A parent whose children are all
  * selected still draws `none` when the host says `none`.
  *
@@ -52,13 +53,15 @@ import './SelectionTree.css'
  *
  * @typedef {Object} SelectionTreeProps
  * @property {readonly SelectionTreeNode[]} [nodes]
- * @property {ReadonlySet<string> | readonly string[]} [value]
+ * @property {ReadonlySet<string> | readonly string[]} value
  * @property {(ids: readonly string[]) => void} [onSelectionChange]
  * @property {string} [ariaLabel]
  */
 
 /**
  * A server-grouped selection forest. See SelectionTreeProps for the id contract.
+ * Replaces GroupedMultiSelect for hosts migrating to server-grouped state.
+ * Keep the nodes array reference stable between forest changes to avoid reparsing.
  * @param {SelectionTreeProps} props
  */
 export default function SelectionTree({
@@ -67,13 +70,10 @@ export default function SelectionTree({
   onSelectionChange,
   ariaLabel = 'sessions',
 }) {
-  const list = Array.isArray(nodes) ? nodes : []
-  const prepared = useMemo(() => prepareForest(list), [list])
-  const isControlled = value !== undefined
-  const [internal, setInternal] = useState(() => seedSelection(prepared.visible))
+  if (!Array.isArray(nodes)) throw new TypeError('SelectionTree: nodes must be an array of server-grouped nodes; pass an empty array while loading.')
+  const prepared = useMemo(() => prepareForest(nodes), [nodes])
   const [collapsed, setCollapsed] = useState(() => new Set())
-  const baseId = useId().replace(/:/g, '')
-  const selected = isControlled ? idsFromValue(value) : internal
+  const selected = idsFromValue(value)
 
   const toggle = useCallback((nodeId) => {
     const node = prepared.byId.get(nodeId)
@@ -86,9 +86,8 @@ export default function SelectionTree({
       else current.delete(id)
     }
     const next = reportSelection(current, prepared.roots, prepared.byParent, selected)
-    if (!isControlled) setInternal(next)
     onSelectionChange?.(next)
-  }, [isControlled, onSelectionChange, prepared, selected])
+  }, [onSelectionChange, prepared, selected])
 
   const toggleCollapsed = useCallback((nodeId) => {
     setCollapsed((prev) => {
@@ -99,16 +98,7 @@ export default function SelectionTree({
     })
   }, [])
 
-  if (!Array.isArray(nodes)) {
-    throw new TypeError(
-      'SelectionTree failed in src/ui/SelectionTree.jsx: nodes must be an array of server-grouped nodes, ' +
-        `received ${nodes === null ? 'null' : typeof nodes}. ` +
-        'The host groups the forest and supplies each node state before render. ' +
-        'Pass that array. An empty forest is an empty array, not a missing prop.',
-    )
-  }
-
-  const notice = diagnosticText(prepared.unknownKind, prepared.unknownState, prepared.unreadable)
+  const notice = diagnosticText(prepared.unknownKind, prepared.unknownState, prepared.unreadable, prepared.unreachable, prepared.duplicates)
 
   return (
     <div
@@ -124,7 +114,6 @@ export default function SelectionTree({
             key={node.id}
             node={node}
             depth={0}
-            baseId={baseId}
             byParent={prepared.byParent}
             collapsed={collapsed}
             onToggle={toggle}
@@ -143,17 +132,16 @@ export default function SelectionTree({
  * @param {Object} props
  * @param {PreparedNode} props.node
  * @param {number} props.depth
- * @param {string} props.baseId
  * @param {ReadonlyMap<string, readonly PreparedNode[]>} props.byParent
  * @param {ReadonlySet<string>} props.collapsed
  * @param {(id: string) => void} props.onToggle
  * @param {(id: string) => void} props.onCollapse
  */
-function SelectionNode({ node, depth, baseId, byParent, collapsed, onToggle, onCollapse }) {
+function SelectionNode({ node, depth, byParent, collapsed, onToggle, onCollapse }) {
   const children = byParent.get(node.id) ?? []
   const branch = children.length > 0
   const open = branch && !collapsed.has(node.id)
-  const panelId = `${baseId}-${domToken(node.id)}`
+  const panelId = useId()
   const indent = { paddingInlineStart: `calc(var(--sp-4) * ${depth})` }
 
   return (
@@ -180,7 +168,11 @@ function SelectionNode({ node, depth, baseId, byParent, collapsed, onToggle, onC
         ) : (
           <span className="st-disclosure st-disclosure-spacer" aria-hidden="true" />
         )}
-        <RowCheck node={node} onToggle={() => onToggle(node.id)} />
+        <Checkbox labelClassName="st-hit" checked={node.state === SelectionNodeState.All}
+          indeterminate={node.state === SelectionNodeState.Some} disabled={node.locked}
+          aria-checked={node.state === SelectionNodeState.Some ? 'mixed' : node.state === SelectionNodeState.All ? 'true' : 'false'}
+          aria-label={node.locked ? `${node.label}, locked` : node.label}
+          onChange={() => onToggle(node.id)}><span className="st-label">{node.label}</span></Checkbox>
         <span className="st-kind">{node.kind.label}</span>
         {typeof node.childCount === 'number' && Number.isFinite(node.childCount) && (
           <span className="st-count">
@@ -203,7 +195,6 @@ function SelectionNode({ node, depth, baseId, byParent, collapsed, onToggle, onC
               key={child.id}
               node={child}
               depth={depth + 1}
-              baseId={baseId}
               byParent={byParent}
               collapsed={collapsed}
               onToggle={onToggle}
@@ -213,33 +204,6 @@ function SelectionNode({ node, depth, baseId, byParent, collapsed, onToggle, onC
         </ul>
       )}
     </li>
-  )
-}
-
-/**
- * @param {{ node: PreparedNode, onToggle: () => void }} props
- */
-function RowCheck({ node, onToggle }) {
-  const ref = useRef(null)
-  const mixed = node.state === SelectionNodeState.Some
-  useEffect(() => {
-    if (ref.current) ref.current.indeterminate = mixed
-  }, [mixed])
-  const name = node.locked ? `${node.label}, locked` : node.label
-  return (
-    <label className="check st-hit">
-      <input
-        ref={ref}
-        type="checkbox"
-        className="check-box"
-        checked={node.state === SelectionNodeState.All}
-        disabled={node.locked}
-        aria-checked={mixed ? 'mixed' : node.state === SelectionNodeState.All ? 'true' : 'false'}
-        aria-label={name}
-        onChange={onToggle}
-      />
-      <span className="st-label">{node.label}</span>
-    </label>
   )
 }
 
@@ -266,12 +230,20 @@ function prepareForest(nodes) {
   let unknownKind = 0
   let unknownState = 0
   let unreadable = 0
+  let duplicates = 0
+  const seenIds = new Set()
 
   for (const node of nodes) {
     if (!node || typeof node.id !== 'string' || node.id === '') {
       unreadable += 1
       continue
     }
+    if (seenIds.has(node.id)) {
+      duplicates += dropped.has(node.id) ? 1 : 2
+      dropped.add(node.id)
+      continue
+    }
+    seenIds.add(node.id)
     let kind
     try {
       kind = parseNodeKind(node.kind)
@@ -301,7 +273,6 @@ function prepareForest(nodes) {
     })
   }
 
-  const byId = new Map(parsed.map((node) => [node.id, node]))
   let changed = true
   while (changed) {
     changed = false
@@ -312,13 +283,13 @@ function prepareForest(nodes) {
     }
   }
 
-  const visible = parsed.filter((node) => !dropped.has(node.id))
+  const candidates = parsed.filter((node) => !dropped.has(node.id))
   /** @type {Map<string, PreparedNode[]>} */
   const byParent = new Map()
   /** @type {PreparedNode[]} */
   const roots = []
-  for (const node of visible) {
-    const parent = node.parentId && byId.has(node.parentId) && !dropped.has(node.parentId) ? node.parentId : null
+  for (const node of candidates) {
+    const parent = node.parentId
     if (!parent) {
       roots.push(node)
       continue
@@ -328,6 +299,16 @@ function prepareForest(nodes) {
     byParent.set(parent, list)
   }
 
+  const reached = new Set()
+  const pending = [...roots]
+  while (pending.length) {
+    const node = pending.pop()
+    if (reached.has(node.id)) continue
+    reached.add(node.id)
+    pending.push(...(byParent.get(node.id) ?? []))
+  }
+  const visible = candidates.filter((node) => reached.has(node.id))
+
   return {
     visible,
     roots,
@@ -336,17 +317,9 @@ function prepareForest(nodes) {
     unknownKind,
     unknownState,
     unreadable,
+    unreachable: candidates.length - visible.length,
+    duplicates,
   }
-}
-
-/**
- * @param {readonly PreparedNode[]} visible
- * @returns {readonly string[]}
- */
-function seedSelection(visible) {
-  return visible
-    .filter((node) => node.kind === SelectionNodeKind.Session && node.state === SelectionNodeState.All)
-    .map((node) => node.id)
 }
 
 /**
@@ -397,7 +370,7 @@ function reportSelection(next, roots, byParent, previous) {
 }
 
 /**
- * @param {ReadonlySet<string> | readonly string[] | undefined} value
+ * @param {ReadonlySet<string> | readonly string[]} value
  * @returns {readonly string[]}
  */
 function idsFromValue(value) {
@@ -406,7 +379,7 @@ function idsFromValue(value) {
   throw new TypeError(
     'SelectionTree failed in src/ui/SelectionTree.jsx: value must be a Set or an array of session-node ids, ' +
       `received ${value === null ? 'null' : typeof value}. ` +
-      'Pass the full set last reported by onSelectionChange, or omit value for an uncontrolled tree. ' +
+      'Pass the full set last reported by onSelectionChange. ' +
       'Do not pass a paging cursor or a second tree.',
   )
 }
@@ -415,14 +388,18 @@ function idsFromValue(value) {
  * @param {number} unknownKind
  * @param {number} unknownState
  * @param {number} unreadable
+ * @param {number} unreachable
+ * @param {number} duplicates
  * @returns {string}
  */
-function diagnosticText(unknownKind, unknownState, unreadable) {
+function diagnosticText(unknownKind, unknownState, unreadable, unreachable, duplicates) {
   /** @type {string[]} */
   const parts = []
   if (unknownKind > 0) parts.push(`${formatInteger(unknownKind)} ${rows(unknownKind)} hidden: unknown kind`)
   if (unknownState > 0) parts.push(`${formatInteger(unknownState)} ${rows(unknownState)} hidden: unknown state`)
   if (unreadable > 0) parts.push(`${formatInteger(unreadable)} ${rows(unreadable)} hidden: missing id`)
+  if (unreachable > 0) parts.push(`${formatInteger(unreachable)} ${rows(unreachable)} hidden: missing parent or cycle`)
+  if (duplicates > 0) parts.push(`${formatInteger(duplicates)} duplicate ${rows(duplicates)} hidden`)
   return parts.join('. ')
 }
 
@@ -432,12 +409,4 @@ function diagnosticText(unknownKind, unknownState, unreadable) {
  */
 function rows(count) {
   return count === 1 ? 'row' : 'rows'
-}
-
-/**
- * @param {string} id
- * @returns {string}
- */
-function domToken(id) {
-  return id.replace(/[^A-Za-z0-9_-]/g, '-')
 }

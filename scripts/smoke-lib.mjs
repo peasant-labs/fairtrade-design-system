@@ -170,6 +170,7 @@ const sampleProps = {
   RepoPicker: { open: true, onClose: () => {}, owners: [{ id: 'acme', login: 'acme', kind: 'org', repos: [{ id: 'acme/api', name: 'acme/api' }] }], initialSelected: ['acme/api'], onSave: () => {} },
   SelectionTree: {
     ariaLabel: 'sessions',
+    value: [],
     nodes: [
       { id: 'project-a', kind: 'project', state: 'some', label: 'IngestPipeline', childCount: 1 },
       { id: 'session-a', parentId: 'project-a', kind: 'session', state: 'none', label: 'Parse raw events', harness: 'claude' },

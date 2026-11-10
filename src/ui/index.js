@@ -101,7 +101,6 @@ export {
   parseNodeKind,
   parseNodeState,
   SelectionNodeParseError,
-  SELECTION_TREE_PROPS,
 } from './selection-tree-values.js'
 export { default as EvidenceCaption, EvidenceTarget } from './EvidenceCaption.jsx'
 export { default as PromptDigest } from './PromptDigest.jsx'

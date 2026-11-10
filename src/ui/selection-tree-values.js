@@ -109,12 +109,6 @@ export function parseNodeState(raw) {
 }
 
 /**
- * Props SelectionTree reads. Paging, cursors, and storage are not in this set.
- * @type {readonly ['nodes', 'value', 'onSelectionChange', 'ariaLabel']}
- */
-export const SELECTION_TREE_PROPS = Object.freeze(['nodes', 'value', 'onSelectionChange', 'ariaLabel'])
-
-/**
  * @template {SelectionNodeKind | SelectionNodeState} Member
  * @param {unknown} raw
  * @param {ReadonlyMap<string, Member>} byWire

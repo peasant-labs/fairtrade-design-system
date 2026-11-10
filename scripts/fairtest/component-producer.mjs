@@ -1288,12 +1288,14 @@ export async function captureComponentRow(page, theme, options = {}) {
   const themeObservedAtMs = themeObservation.observedAtMs
 
   const factsBefore = await requireComponentFacts(page, story, story.before, 'before')
-  const computedStyles = await requireComponentStyles(page, story)
+  const computedStylesBefore = await requireComponentStyles(page, { ...story, computed: story.computed.filter((probe) => !probe.afterAction) })
 
   if (story.action) {
     await performComponentAction(page, story, story.action)
   }
   const factsAfter = await requireComponentFacts(page, story, story.after, 'after')
+  const computedStylesAfter = await requireComponentStyles(page, { ...story, computed: story.computed.filter((probe) => probe.afterAction) })
+  const computedStyles = { ...computedStylesBefore, ...computedStylesAfter }
 
   const observedAfter = await page.evaluate((selectors) => {
     const root = document.querySelector(selectors.root)

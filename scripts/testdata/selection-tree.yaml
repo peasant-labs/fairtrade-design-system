@@ -10,6 +10,39 @@ cases:
     expect:
       kinds: [project, group, branch, session]
       labels: [IngestPipeline, local clone, main, Parse raw events]
+      depths: [0, 1, 2, 3]
+
+  - name: host-selection-survives-forest-replacement
+    nodes: []
+    value: []
+    rerender:
+      nodes:
+        - {id: session-a, kind: session, state: all, label: Kept}
+        - {id: session-b, kind: session, state: all, label: Toggle}
+      value: [session-a, session-b]
+      toggle: session-b
+      expectIds: [session-a]
+
+  - name: missing-parent-and-cycle-fail-closed
+    nodes:
+      - {id: project-a, kind: project, state: none, label: Visible}
+      - {id: orphan, parentId: gone, kind: session, state: none, label: Orphan}
+      - {id: cycle-a, parentId: cycle-b, kind: group, state: none, label: Cycle A}
+      - {id: cycle-b, parentId: cycle-a, kind: group, state: none, label: Cycle B}
+    expect:
+      labels: [Visible]
+      absent: [Orphan, Cycle A, Cycle B]
+      diagnostic: "3 rows hidden: missing parent or cycle"
+
+  - name: duplicate-ids-fail-closed
+    nodes:
+      - {id: duplicate, kind: project, state: none, label: Duplicate A}
+      - {id: duplicate, kind: project, state: none, label: Duplicate B}
+      - {id: visible, kind: session, state: none, label: Visible}
+    expect:
+      labels: [Visible]
+      absent: [Duplicate A, Duplicate B]
+      diagnostic: "2 duplicate rows hidden"
 
   - name: state-all-some-none
     nodes:

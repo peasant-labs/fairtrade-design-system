@@ -75,6 +75,7 @@ function TriBox({ state }) {
 
 /**
  * A grouped tri-state multi-select tree. See GroupedMultiSelectProps.
+ * @deprecated For a server-grouped forest with host-owned state, migrate to SelectionTree.
  * @param {GroupedMultiSelectProps} props
  */
 export default function GroupedMultiSelect({

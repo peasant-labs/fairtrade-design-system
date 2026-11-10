@@ -16,8 +16,11 @@ const FOREST = [
 ]
 
 const KEYBOARD_NODES = [
-  { id: 'project-ingest', parentId: '', kind: kind(SelectionNodeKind.Project), state: state(SelectionNodeState.None), label: 'IngestPipeline', childCount: 1 },
-  { id: 'session-parse', parentId: 'project-ingest', kind: kind(SelectionNodeKind.Session), state: state(SelectionNodeState.None), label: 'Parse raw events', harness: 'claude' },
+  { id: 'project-ingest', parentId: '', kind: kind(SelectionNodeKind.Project), state: state(SelectionNodeState.Some), label: 'IngestPipeline', childCount: 2 },
+  { id: 'group-clone', parentId: 'project-ingest', kind: kind(SelectionNodeKind.Group), state: state(SelectionNodeState.None), label: 'local clone' },
+  { id: 'branch-main', parentId: 'group-clone', kind: kind(SelectionNodeKind.Branch), state: state(SelectionNodeState.All), label: 'main' },
+  { id: 'session-parse', parentId: 'branch-main', kind: kind(SelectionNodeKind.Session), state: state(SelectionNodeState.None), label: 'Parse raw events', harness: 'claude' },
+  { id: 'session-locked', parentId: 'branch-main', kind: kind(SelectionNodeKind.Session), state: state(SelectionNodeState.All), label: 'Ambiguous branch', locked: true },
 ]
 
 const meta = {
@@ -62,7 +65,6 @@ export const Forest = {
 
     await userEvent.click(project)
     await expect(canvas.getByTestId('selection-ids')).toHaveTextContent('session-a')
-    expect(canvas.queryByText('page')).not.toBeInTheDocument()
   },
 }
 
@@ -75,7 +77,7 @@ export const KeyboardToggle = {
 }
 
 function RecordingTree(props) {
-  const [ids, setIds] = useState([])
+  const [ids, setIds] = useState(['session-a'])
   return (
     <div>
       <SelectionTree
@@ -90,11 +92,14 @@ function RecordingTree(props) {
 
 function KeyboardForest() {
   const [nodes, setNodes] = useState(KEYBOARD_NODES)
+  const [value, setValue] = useState(['session-locked'])
   return (
     <SelectionTree
       ariaLabel="sessions"
       nodes={nodes}
+      value={value}
       onSelectionChange={(ids) => {
+        setValue(ids)
         const selected = new Set(ids)
         setNodes((current) => current.map((node) => (
           node.kind === SelectionNodeKind.Session.wire

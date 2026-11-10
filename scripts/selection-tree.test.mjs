@@ -13,7 +13,7 @@ const source = readFileSync(resolve('src/ui/SelectionTree.jsx'), 'utf8')
 
 await withMountedSource(async ({ load, mount, window, React }) => {
   const ui = await load('/src/ui/index.js')
-  const { SelectionTree, SELECTION_TREE_PROPS } = ui
+  const { SelectionTree } = ui
 
   for (const row of fixture.cases) {
     if (row.steps) {
@@ -31,9 +31,21 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       continue
     }
 
+    if (row.rerender) {
+      const emitted = []
+      const onSelectionChange = (ids) => emitted.push([...ids])
+      const mounted = await mount(React.createElement(SelectionTree, { nodes: row.nodes, value: row.value, onSelectionChange }))
+      await mounted.rerender(React.createElement(SelectionTree, { nodes: row.rerender.nodes, value: row.rerender.value, onSelectionChange }))
+      await fireChange(mounted, window, row.rerender.toggle)
+      report.check(JSON.stringify(emitted) === JSON.stringify([row.rerender.expectIds]), `${row.name}: host selection after rescan`)
+      await mounted.unmount()
+      continue
+    }
+
     const emitted = []
     const props = {
       nodes: row.nodes,
+      value: row.value ?? [],
       ariaLabel: 'sessions',
       onSelectionChange: (ids) => { emitted.push([...ids]) },
       ...(row.paging ?? {}),
@@ -46,6 +58,10 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     if (expected.kinds) {
       const kinds = [...root.querySelectorAll('[data-kind]')].map((node) => node.getAttribute('data-kind'))
       report.check(JSON.stringify(kinds) === JSON.stringify(expected.kinds), `${row.name}: kinds expected ${JSON.stringify(expected.kinds)}, received ${JSON.stringify(kinds)}`)
+    }
+    if (expected.depths) {
+      const depths = [...root.querySelectorAll('[data-node-id]')].map((node) => Number(node.getAttribute('data-depth')))
+      report.check(JSON.stringify(depths) === JSON.stringify(expected.depths), `${row.name}: nesting depth`)
     }
     if (expected.labels) {
       const labels = [...root.querySelectorAll('.st-label')].map((node) => node.textContent)
@@ -72,6 +88,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
         const input = root.querySelector(`[data-node-id="${id}"] input[type="checkbox"]`)
         report.check(input?.disabled === true, `${row.name}: ${id} checkbox must be disabled`)
         report.check((root.querySelector(`[data-node-id="${id}"]`)?.textContent ?? '').includes(expected.announced), `${row.name}: ${id} must announce ${expected.announced}`)
+        report.check((input?.getAttribute('aria-label') ?? '').includes(expected.announced), `${row.name}: ${id} accessible name must announce ${expected.announced}`)
       }
     }
     if (expected.counts) {
@@ -96,13 +113,10 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(css.includes('.st-label') && css.includes('text-transform: none') && !css.includes('text-transform: lowercase'), `${row.name}: label css must not lowercase user content`)
     }
     if (expected.forbiddenProps) {
-      report.check(
-        JSON.stringify([...SELECTION_TREE_PROPS]) === JSON.stringify(['nodes', 'value', 'onSelectionChange', 'ariaLabel']),
-        `${row.name}: the public prop list gained a paging prop`,
-      )
+      const params = source.match(/function SelectionTree\s*\(([\s\S]*?)\)\s*\{/)?.[1] ?? null
+      report.check(params !== null, `${row.name}: cannot read parameter list`)
       for (const name of expected.forbiddenProps) {
-        report.check(!SELECTION_TREE_PROPS.includes(name), `${row.name}: ${name} must not be a SelectionTree prop`)
-        report.check(!new RegExp(`\\b${name}\\b`).test(source.split('function SelectionTree')[1]?.split('{')[0] ?? ''), `${row.name}: ${name} must not be a destructured prop`)
+        report.check(params !== null && !new RegExp(`\\b${name}\\b`).test(params), `${row.name}: ${name} must not be a destructured prop`)
       }
     }
     if (expected.noStorage) {
@@ -135,6 +149,7 @@ async function renderAndToggle(mount, window, React, SelectionTree, step) {
   const emitted = []
   const props = {
     nodes: step.nodes,
+    value: step.value ?? [],
     ariaLabel: 'sessions',
     onSelectionChange: (ids) => { emitted.push([...ids]) },
   }

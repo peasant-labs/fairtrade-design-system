@@ -251,6 +251,7 @@ export const COMPONENT_RENDER_PHASES = Object.freeze({
  * @property {string} name record field the value is written under
  * @property {string} selector element selector inside the story root
  * @property {string} property computed-style property name
+ * @property {boolean} [afterAction] read this probe after the interaction
  * @property {string} [equals]
  * @property {string} [includes]
  * @property {string} [token]
@@ -537,7 +538,8 @@ export const COMPONENT_STORIES = Object.freeze([
     }),
     computed: Object.freeze([
       Object.freeze({ name: 'targetFloor', selector: '.st-hit', property: 'minHeight', token: '--target-min' }),
-      Object.freeze({ name: 'focusRingOffset', selector: '.st-hit .check-box', property: 'outlineOffset', token: '--focus-ring-offset' }),
+      Object.freeze({ name: 'focusRingWidth', selector: '.st-hit .check-box:focus-visible', property: 'outlineWidth', token: '--focus-ring-width', afterAction: true }),
+      Object.freeze({ name: 'focusRingStyle', selector: '.st-hit .check-box:focus-visible', property: 'outlineStyle', equals: 'solid', afterAction: true }),
       Object.freeze({ name: 'square', selector: '.st', property: 'borderRadius', equals: '0px' }),
       Object.freeze({ name: 'labelCase', selector: '.st-label', property: 'textTransform', equals: 'none' }),
     ]),

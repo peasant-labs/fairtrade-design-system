@@ -87,7 +87,7 @@ try {
       "if (JSON.stringify(probe) !== '\"probe-wire\"') failures.push('./closed-value: a member does not serialize with toJSON()')",
       "if (typeof ui.SelectionTree !== 'function') failures.push('SelectionTree missing from packed ./ui')",
       "if (typeof ui.parseNodeKind !== 'function') failures.push('parseNodeKind missing from packed ./ui')",
-      "const tree = renderToStaticMarkup(React.createElement(ui.SelectionTree, { ariaLabel: 'sessions', nodes: [{ id: 'project-a', kind: 'project', state: 'none', label: 'IngestPipeline', childCount: 1 }, { id: 'session-a', parentId: 'project-a', kind: 'session', state: 'none', label: 'Parse raw events' }] }))",
+      "const tree = renderToStaticMarkup(React.createElement(ui.SelectionTree, { ariaLabel: 'sessions', value: [], nodes: [{ id: 'project-a', kind: 'project', state: 'none', label: 'IngestPipeline', childCount: 1 }, { id: 'session-a', parentId: 'project-a', kind: 'session', state: 'none', label: 'Parse raw events' }] }))",
       "if (!tree.includes('IngestPipeline') || !tree.includes('Parse raw events')) failures.push('packed SelectionTree did not render the server forest from dist/lib/ui.js')",
       `for (const sub of ${JSON.stringify(cssSubs)}) {`,
       '  const spec = "@peasant-labs/fairtrade/" + sub',
