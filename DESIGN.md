@@ -780,7 +780,9 @@ The data families are the data table, pagination, accordion, timeline, toast and
   tokens, undistorted and paired with the provider name. A mark beside its visible name is
   decorative; a mark standing alone as the identity passes `label`. Claude, Gemini, OpenAI, Cursor
   and opencode geometry originates from Simple Icons (CC0, inlined). Strike's comes unchanged from
-  its official project favicon, used with the project's permission. Pi uses the official OAuth mark
+  its official project favicon, used with the project's permission. Cline uses the Simple Icons mark;
+  Grok uses theSVG's mark, and Devin and Kiro use the monochrome brand marks catalogued by Devicons.
+  Pi uses the official OAuth mark
   from `earendil-works/pi` (MIT) in the mauve token. The opencode mark is provisional upstream.
 - **The brand stalk** (`#logo`, five paths in `src/sections-react/00-defs.jsx`) is the only inline
   brand glyph: the nav brand and the in-use banner.

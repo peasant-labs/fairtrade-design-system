@@ -10,6 +10,15 @@
 # identity % 6 == 0 is a user turn, % 7 == 0 is a system turn, every other turn is an
 # assistant turn with one tool call. `oversizedTurn` marks a single bounded turn.
 
+vitestSelection:
+  heldWindow: a held window beside a disjoint region keeps its gap boundary
+  failedWindow: a rejected covering load names the window and retries successfully
+  phase: phase starting mid transcript
+typeMutations:
+  - name: a new history state is missing from the ordered inventory
+    find: "  Unresolved: closed('uncertain_unresolved'"
+    replace: "  Future: closed('future_history_state', 'future history', { explanation: 'future' }),\n  Unresolved: closed('uncertain_unresolved'"
+
 directories:
   - name: 32 mib session
     totalTurns: 1312
@@ -47,6 +56,28 @@ directories:
     firstTurn: 0
     segmentTurns: 0
     segmentBytes: 0
+
+historyPayload: {id: history-fixture, harness: claude-code, startTime: '2026-09-20T10:00:00Z', endTime: '2026-09-20T10:01:00Z', durationMins: 1, totalTokens: 0, tokensIn: 0, tokensOut: 0, turnCount: 0, toolCallCount: 0, turns: []}
+historyCases:
+  - name: migrated earlier history
+    state: uncertain_migrated
+    label: migrated history
+    explanation: this earlier history was retained during migration. its ownership is uncertain, so it is separate from current turns and input submissions.
+  - name: earlier history with unresolved ownership
+    state: uncertain_unresolved
+    label: ownership unresolved
+    explanation: the ownership of this earlier history could not be resolved. it is retained separately from current turns and input submissions.
+  - name: future history state remains unknown
+    state: future_history_state
+    label: unknown history state
+    explanation: the ownership of this earlier history is not known. it is retained separately from current turns and input submissions.
+  - name: prototype-looking history state remains unknown
+    state: __proto__
+    label: unknown history state
+    explanation: the ownership of this earlier history is not known. it is retained separately from current turns and input submissions.
+unknownHistoryInvalidCases:
+  - name: a future state does not excuse missing turns
+    section: {state: future_history_state, turns: null}
 
 loadCases:
   - name: opening segment 0 leaves one newer boundary

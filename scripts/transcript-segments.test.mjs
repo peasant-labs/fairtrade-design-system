@@ -19,6 +19,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { JSDOM } from 'jsdom'
 import { loadFixturePair, assertExactNames, assertFields, withMountedSource, click, createReport } from './mounted-parts.mjs'
+import { buildDirectory, makeSegment, makeSegments } from './transcript-segment-fixture.mjs'
 import {
   SEGMENT_SCRUBBER_TICKS,
   boundaryCaption,
@@ -61,6 +62,9 @@ const { fixture, manifest } = loadFixturePair(FIXTURE, MANIFEST, {
   phaseCases: 'requiredPhaseCaseNames',
   phaseCountCases: 'requiredPhaseCountCaseNames',
   recoveryCases: 'requiredRecoveryCaseNames',
+  historyCases: 'requiredHistoryCaseNames',
+  typeMutations: 'requiredTypeMutationNames',
+  unknownHistoryInvalidCases: 'requiredUnknownHistoryInvalidNames',
 })
 
 for (const row of fixture.directories) assertFields(row, ['name', 'totalTurns', 'totalSegments', 'firstTurn', 'segmentTurns', 'segmentBytes'], `${FIXTURE} ${row.name}`)
@@ -70,68 +74,12 @@ for (const row of fixture.mountCases) assertFields(row, ['name', 'directory', 'l
 for (const row of fixture.phaseCases) assertFields(row, ['name', 'directory', 'loaded', 'phase', 'caption'], `${FIXTURE} ${row.name}`)
 for (const row of fixture.phaseCountCases) assertFields(row, ['name', 'turns', 'expectedCount', 'expectedFrom', 'expectedTo'], `${FIXTURE} ${row.name}`)
 for (const row of fixture.recoveryCases) assertFields(row, ['name', 'mode', 'directory', 'loaded', 'requests'], `${FIXTURE} ${row.name}`, ['window', 'restoredTurn', 'failureCopy', 'retryCopy'])
+for (const row of fixture.historyCases) assertFields(row, ['name', 'state', 'label', 'explanation'], `${FIXTURE} ${row.name}`)
+for (const [key, family] of [['heldWindow', fixture.mountCases], ['failedWindow', fixture.recoveryCases], ['phase', fixture.phaseCases]]) {
+  if (!family.some(row => row.name === fixture.vitestSelection[key])) throw new Error(`${FIXTURE}: selected ${key} case must exist`)
+}
 
 const DIRECTORY = new Map(fixture.directories.map((row) => [row.name, row]))
-
-/** Build the directory refs the producer would emit for a parameterised fixture. */
-function buildDirectory(def) {
-  const refs = []
-  let first = def.firstTurn
-  const lastTurn = def.firstTurn + def.totalTurns - 1
-  for (let index = 0; index < def.totalSegments; index += 1) {
-    const last = Math.min(lastTurn, first + def.segmentTurns - 1)
-    refs.push({ index, firstTurn: first, lastTurn: last, byteLength: def.segmentBytes })
-    first = last + 1
-  }
-  return {
-    sessionId: 'sess_segment_fixture',
-    revision: '7',
-    totalTurns: def.totalTurns,
-    totalSegments: def.totalSegments,
-    segments: refs,
-  }
-}
-
-const roleFor = (index) => (index % 6 === 0 ? 'user' : index % 7 === 0 ? 'system' : 'assistant')
-
-/** One cooked turn for the fixture's synthetic session. An assistant turn is wordless
-    with one tool call, so an action run crossing a window edge is observable. */
-function makeTurn(index) {
-  const role = roleFor(index)
-  const turn = { index, role, label: String(index), depth: 0, content: '', annotations: [], identity: `main:${index}`, sourceIndexUnique: true }
-  if (role === 'user') turn.content = `request ${index}`
-  else if (role === 'system') turn.content = `system note ${index}`
-  else turn.toolCalls = [{ id: `call-${index}`, name: 'Read', group: 'read', filePath: `/src/file-${index % 3}.js`, sourceIndex: 0, sourceIdUnique: true }]
-  return turn
-}
-
-function makeSegment(directory, def, index, oversizedTurn) {
-  const ref = directory.segments[index]
-  const turns = []
-  for (let turnIndex = ref.firstTurn; turnIndex <= ref.lastTurn; turnIndex += 1) {
-    const turn = makeTurn(turnIndex)
-    if (turnIndex === oversizedTurn) {
-      turn.truncated = true
-      turn.byteLength = 4 * 1024 * 1024
-      turn.content = 'an oversized assistant turn'
-    }
-    turns.push(turn)
-  }
-  return {
-    index,
-    firstTurn: ref.firstTurn,
-    lastTurn: ref.lastTurn,
-    byteLength: ref.byteLength,
-    hasOlder: index > 0,
-    hasNewer: index < def.totalSegments - 1,
-    turns,
-  }
-}
-
-function makeSegments(def, indexes, oversizedTurn) {
-  const directory = buildDirectory(def)
-  return indexes.map((index) => makeSegment(directory, def, index, oversizedTurn))
-}
 
 const report = createReport('transcript segments')
 
@@ -218,6 +166,25 @@ const text = (node) => (node?.textContent ?? '').replace(/\s+/g, ' ').trim()
 await withMountedSource(async ({ load, mount, window, React }) => {
   const { default: TranscriptViewer } = await load('/src/ui/transcript/TranscriptViewer.jsx')
   const { detectPhases } = await load('/src/ui/transcript/analytics.js')
+  const { adaptTranscript } = await load('/src/ui/transcript/adapter.js')
+  const { ALL_EARLIER_HISTORY_STATES, EarlierHistoryState } = await load('/src/ui/transcript/earlier-history-state.js')
+  report.check(JSON.stringify(ALL_EARLIER_HISTORY_STATES) === JSON.stringify(Object.values(EarlierHistoryState)), 'history state inventory contains every member')
+
+  for (const row of fixture.historyCases) {
+    const payload = { ...fixture.historyPayload, earlierHistory: [{ state: row.state, turns: [] }] }
+    const cooked = adaptTranscript(payload)
+    report.check(cooked.earlierHistory[0].state.wire === row.state, `${row.name}: wire state is preserved`)
+    report.check(Object.isFrozen(cooked.earlierHistory[0].state), `${row.name}: state is immutable`)
+    const mounted = await mount(React.createElement(TranscriptViewer, { viewModel: cooked, capabilities: CAPABILITIES, earlierHistoryOpen: { [cooked.earlierHistory[0].id]: true } }))
+    report.check(text(mounted.container.querySelector('.txn-earlier .txn-context-status')) === row.label, `${row.name}: mounted history label`)
+    report.check(text(mounted.container.querySelector('.txn-earlier .txn-context-note')) === row.explanation, `${row.name}: mounted history explanation`)
+    await mounted.unmount()
+  }
+  for (const row of fixture.unknownHistoryInvalidCases) {
+    let refused = false
+    try { adaptTranscript({ ...fixture.historyPayload, earlierHistory: [row.section] }) } catch { refused = true }
+    report.check(refused, `${row.name}: canonical evidence validation still refuses the payload`)
+  }
 
   for (const row of fixture.phaseCountCases) {
     const phase = detectPhases(row.turns)[0]

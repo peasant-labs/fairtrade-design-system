@@ -428,10 +428,8 @@ export const TOOL_GROUPS = Object.freeze([
 
 /**
  * @typedef {object} EarlierHistoryVM
- * @property {string} label reader-facing ownership status
  * @property {string} id
- * @property {import('@peasant-labs/schema').EarlierHistoryState} state
- * @property {string} explanation
+ * @property {import('./earlier-history-state.js').ParsedEarlierHistoryState} state
  * @property {TurnVM[]} turns
  * @property {import('@peasant-labs/schema').NativeMetadataRecord[]} [nativeMetadata]
  * @property {UsageScopeVM[]} usageScopes

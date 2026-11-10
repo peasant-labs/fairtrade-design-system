@@ -21,6 +21,18 @@ members:
     wire: 0
     label: not offered
 
+metadataCases:
+  - name: explanation-metadata
+    wire: example
+    label: example label
+    metadata: {explanation: retained explanation}
+    expected: {explanation: retained explanation}
+  - name: metadata-cannot-override-core-fields
+    wire: canonical
+    label: canonical label
+    metadata: {wire: replacement, label: replacement}
+    expected: {}
+
 refusals:
   - name: empty-string-wire
     wire: ''

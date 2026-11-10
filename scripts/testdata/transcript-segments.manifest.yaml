@@ -8,6 +8,15 @@ requiredDirectoryNames:
   - sparse 55 turn session
   - single segment session
   - empty session
+requiredHistoryCaseNames:
+  - migrated earlier history
+  - earlier history with unresolved ownership
+  - future history state remains unknown
+  - prototype-looking history state remains unknown
+requiredUnknownHistoryInvalidNames:
+  - a future state does not excuse missing turns
+requiredTypeMutationNames:
+  - a new history state is missing from the ordered inventory
 requiredLoadCaseNames:
   - opening segment 0 leaves one newer boundary
   - loading the next segment keeps one boundary and appends
@@ -50,6 +59,8 @@ requiredRecoveryCaseNames:
 
 # Production mutations the gate must kill (scripts/parts-mutations.mjs).
 requiredMutationNames:
+  - a history label is dropped
+  - the history state inventory omits a member
   - a failed covering load is silently dropped
   - a failed window request is silently dropped
   - the scrubber mounts one tick per turn
@@ -65,6 +76,16 @@ requiredMutationNames:
   - the boundary falls back to raw indexes
   - the phase count includes an extra turn
 mutations:
+  - name: a history label is dropped
+    file: src/ui/transcript/earlier-history-state.js
+    find: "'migrated history'"
+    replace: "'history'"
+    expectedDiagnostic: 'migrated earlier history: mounted history label'
+  - name: the history state inventory omits a member
+    file: src/ui/transcript/earlier-history-state.js
+    find: '  EarlierHistoryState.Unresolved,'
+    replace: ''
+    expectedDiagnostic: 'history state inventory contains every member'
   - name: a failed window request is silently dropped
     file: src/ui/transcript/TranscriptViewer.jsx
     find: "const result = onLoadWindow(anchor)\n      if (result && typeof result.then === 'function') Promise.resolve(result).catch(fail)"

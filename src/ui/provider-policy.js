@@ -3,7 +3,7 @@
 import { Harness as SchemaHarness, isHarness } from '@peasant-labs/schema'
 
 /** @typedef {import('@peasant-labs/schema').Harness} Harness */
-/** @typedef {'claude'|'gemini'|'openai'|'opencode'|'cursor'|'strike'|'pi'} ProviderBrand */
+/** @typedef {'claude'|'gemini'|'openai'|'opencode'|'cursor'|'strike'|'pi'|'grok'|'devin'|'cline'|'kiro'} ProviderBrand */
 /** @typedef {'amber'|'teal'|'olive'|'mauve'|'clay'} ProviderAccent */
 
 /** @type {readonly Harness[]} */
@@ -19,6 +19,12 @@ export const PROVIDER_DISPLAY_NAMES = Object.freeze({
   antigravity: 'Google Antigravity',
   strike: 'Strike',
   pi: 'Pi',
+  'grok-build': 'Grok Build',
+  'devin-desktop': 'Devin Desktop',
+  cline: 'Cline',
+  kiro: 'Kiro',
+  'kiro-cli': 'Kiro CLI',
+  'kiro-crew': 'Kiro Crew',
 })
 
 /** @type {Readonly<Record<Harness, ProviderBrand>>} */
@@ -31,6 +37,12 @@ export const PROVIDER_BRANDS = Object.freeze({
   antigravity: 'gemini',
   strike: 'strike',
   pi: 'pi',
+  'grok-build': 'grok',
+  'devin-desktop': 'devin',
+  cline: 'cline',
+  kiro: 'kiro',
+  'kiro-cli': 'kiro',
+  'kiro-crew': 'kiro',
 })
 
 /** @type {Readonly<Record<Harness, ProviderAccent>>} */
@@ -43,6 +55,12 @@ export const PROVIDER_ACCENTS = Object.freeze({
   antigravity: 'teal',
   strike: 'clay',
   pi: 'mauve',
+  'grok-build': 'olive',
+  'devin-desktop': 'teal',
+  cline: 'mauve',
+  kiro: 'mauve',
+  'kiro-cli': 'mauve',
+  'kiro-crew': 'mauve',
 })
 
 /**
