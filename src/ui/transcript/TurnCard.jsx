@@ -8,6 +8,8 @@ import Thinking from './Thinking.jsx'
 import ToolCall from './ToolCall.jsx'
 import TranscriptSystemRow from './SystemRow.jsx'
 import TranscriptControlRow from './ControlRow.jsx'
+import TranscriptImageAttachment from './ImageAttachment.jsx'
+import { imageParts } from './image-parts.js'
 import TranscriptWorkGroup, { ModelActions } from './WorkGroup.jsx'
 import { turnHasProse } from './work-summary.js'
 import UsageDisclosure from './UsageDisclosure.jsx'
@@ -58,6 +60,7 @@ function turnTimeLabel(ts) {
  * @param {(turnIndex: number, el: HTMLElement | null) => void} [props.registerRef]
  * @param {(turnIndex: number) => void} [props.onLabel]   omit to hide the "label" affordance
  * @param {(turn: object) => unknown} [props.renderActions]  host-owned per-turn actions; replaces the built-in label button (hosts with their own label models render their own popover)
+ * @param {(ref: string) => string | null | undefined} [props.attachmentUrl]  host resolver for an image part's content reference
  * @param {{ outcome: string, flag?: string }} [props.savedLabel]
  * @param {boolean} [props.compact]
  * @param {boolean} [props.expandAll]
@@ -88,6 +91,7 @@ export default function TurnCard({
   registerRef = () => {},
   onLabel,
   renderActions,
+  attachmentUrl,
   savedLabel,
   compact = false,
   expandAll = false,
@@ -222,6 +226,34 @@ export default function TurnCard({
     </div>
   )
 
+  /* The producer's ordered content parts are the turn's body when present: text blocks render as
+     Markdown and image blocks render inline, in the order they were recorded. A turn with no parts
+     (every payload before content_parts_v1) renders its `content` exactly as before. */
+  const parts = turn.contentParts
+  const images = imageParts(parts)
+  const hasRenderablePart = images.length > 0 || (parts ?? []).some((part) => part?.type === 'text' && String(part.text ?? '').trim() !== '')
+  let imagePosition = 0
+  const bodyContent = parts && hasRenderablePart ? (
+    parts.map((part, i) => {
+      if (part?.type === 'text') {
+        return String(part.text ?? '').trim() === '' ? null : <Markdown key={`part-${i}`} text={part.text} />
+      }
+      if (part?.type !== 'image') return null
+      imagePosition += 1
+      return (
+        <TranscriptImageAttachment
+          key={`part-${i}`}
+          part={part}
+          position={imagePosition}
+          total={images.length}
+          attachmentUrl={attachmentUrl}
+        />
+      )
+    })
+  ) : (
+    <Markdown text={turn.displayContent ?? turn.content} />
+  )
+
   const body = (
     <>
       {savedLabel && !ledger && (
@@ -238,7 +270,7 @@ export default function TurnCard({
           </span>
         </div>
       )}
-      <Markdown text={turn.displayContent ?? turn.content} />
+      {bodyContent}
       {!ledger && turn.thinking && <Thinking block={turn.thinking} actionRef={el => registerActionRef?.(turn.index, 'thinking', el)} revealRequest={actionReveal?.where === 'thinking' ? actionReveal.sequence : 0} />}
       <UsageDisclosure usage={turn.usage} />
       {turn.toolCalls && !ledger && (

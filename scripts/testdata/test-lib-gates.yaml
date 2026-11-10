@@ -2,8 +2,8 @@
 # named here; deleting a gate or adding one without updating this file fails
 # scripts/run-test-lib.test.mjs. The two counts pin the raw leaf list and the deduped gate
 # list, so a duplicate or a dropped composite is visible before the set comparison.
-expectedLeafCount: 150
-expectedGateCount: 147
+expectedLeafCount: 154
+expectedGateCount: 151
 requiredGateCommands:
   - PI_MOUNTED_TEST=1 node scripts/pi-transcript.test.mjs
   - node --test scripts/check-generated-artifacts.test.mjs
@@ -92,6 +92,10 @@ requiredGateCommands:
     scripts/testdata/setting-row.manifest.yaml
   - node scripts/parts-mutations.mjs scripts/settings-nav.test.mjs
     scripts/testdata/settings-nav.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/system-group-facet.test.mjs
+    scripts/testdata/system-group-facet.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/transcript-content-parts.test.mjs
+    scripts/testdata/content-parts.manifest.yaml
   - node scripts/parts-mutations.mjs
     scripts/transcript-integrity-viewer.test.mjs
     scripts/testdata/transcript-integrity-viewer.manifest.yaml
@@ -137,6 +141,7 @@ requiredGateCommands:
   - node scripts/setting-row.test.mjs
   - node scripts/settings-nav.test.mjs
   - node scripts/share-card.test.mjs
+  - node scripts/system-group-facet.test.mjs
   - node scripts/smoke-changes.mjs
   - node scripts/smoke-lib.mjs
   - node scripts/smoke-map.mjs
@@ -149,6 +154,7 @@ requiredGateCommands:
   - node scripts/timeline-highlight.test.mjs
   - node scripts/timeline-navigation.test.mjs
   - node scripts/transcript-composite-width.test.mjs
+  - node scripts/transcript-content-parts.test.mjs
   - node scripts/transcript-filters.test.mjs
   - node scripts/transcript-header-condense.mutations.mjs
   - node scripts/transcript-header-condense.test.mjs

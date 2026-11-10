@@ -38,6 +38,13 @@ export { adaptTranscript, prefilterTurns, diffLines, buildFiles, buildToolGroupC
 export { default as TranscriptControlRow } from './ControlRow.jsx'
 export { default as TranscriptSystemGroup } from './SystemGroup.jsx'
 export { systemGroups } from './system-groups.js'
+export {
+  DEFAULT_TRANSCRIPT_FILTERS,
+  FILTER_INTENT_VERSION,
+  applyFilterIntent,
+  encodeFilterIntent,
+  normalizeFilterIntent,
+} from './filters.js'
 export { systemGroupSummary } from './system-summary.js'
 export {
   computeTasks,
@@ -82,6 +89,7 @@ export { default as TranscriptToolCall } from './ToolCall.jsx'
 export { default as TranscriptWorkGroup } from './WorkGroup.jsx'
 export { default as UnverifiedPullRequests } from './UnverifiedPullRequests.jsx'
 export { default as TranscriptSystemRow } from './SystemRow.jsx'
+export { default as TranscriptImageAttachment } from './ImageAttachment.jsx'
 export { default as TranscriptToolBody } from './ToolBody.jsx'
 export { default as TranscriptTaskBody } from './TaskBody.jsx'
 export { default as TranscriptDiffEntryCard, DiffHunks as TranscriptDiffHunks } from './DiffEntryCard.jsx'

@@ -12,7 +12,7 @@ const counts = {
 }
 const checkpoints = [{ hash: '9f3c1ad0', shortHash: '9f3c1ad', message: 'port TurnRow + tool renderers' }]
 const baseFilters = {
-  categories: { prompts: true, responses: true, thinking: true, toolcalls: true },
+  categories: { prompts: true, responses: true, thinking: true, toolcalls: true, system: false },
   toolGroups: { edits: true, bash: true, read: true, search: true, fetch: true, tasks: true, other: true },
   tags: { errors: false, retries: false, revert: false },
   views: { hidden: true, expandAll: false, compact: false },

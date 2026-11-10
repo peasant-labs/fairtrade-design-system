@@ -21,6 +21,10 @@ requiredWindowCaseNames:
   - a jump into an unloaded middle segment requests its covering run in order
   - a window whose segments are already loaded requests nothing
   - a window adjacent to a loaded segment merges into it
+requiredWordlessCaseNames:
+  - an empty assistant turn continues an action run
+  - an image-bearing assistant turn is content
+  - prose is not an action continuation
 requiredMountCaseNames:
   - two loaded segments mount at most their own turns
   - a window in the middle mounts only its covering segments' turns
@@ -39,6 +43,7 @@ requiredMutationNames:
   - the window renders partly loaded
   - a gap draws no continuation marker
   - the truncation notice ignores byteLength
+  - an image turn is treated as a wordless continuation
 mutations:
   - name: the scrubber mounts one tick per turn
     file: src/ui/transcript/segments.js
@@ -65,3 +70,8 @@ mutations:
     find: "{t.truncated && ("
     replace: "{false && ("
     expectedDiagnostic: "an oversized turn is alone, bounded and offers its full read: the truncation notice must be present"
+  - name: an image turn is treated as a wordless continuation
+    file: src/ui/transcript/segments.js
+    find: "&& !hasImageParts(turn)"
+    replace: ""
+    expectedDiagnostic: "an image-bearing assistant turn is content: an image is content, not an action continuation"

@@ -17,8 +17,12 @@
 import assert from 'node:assert/strict'
 import {
   DEFAULT_TRANSCRIPT_FILTERS,
+  applyFilterIntent,
   categoryCounts,
+  encodeFilterIntent,
+  filtersActive,
   kindsOf,
+  normalizeFilterIntent,
   cascadeToolGroups,
   matchesFilters,
   projectTurn,
@@ -27,6 +31,7 @@ import {
   toolGroupsState,
 } from '../src/ui/transcript/filters.js'
 import { TOOL_GROUPS } from '../src/ui/transcript/view-model.js'
+import { assertExactNames, loadStrictYaml } from './mounted-parts.mjs'
 
 const allGroups = (on) => Object.fromEntries(TOOL_GROUPS.map((id) => [id, on]))
 
@@ -100,12 +105,14 @@ check('unchecking tool calls drops tool-only turns, not the text beside a call',
   assert.deepEqual(visible(withCategories({ toolcalls: false })), [0, 1, 2, 7, 8, 9])
 })
 
-check('system turns survive older filter state with the other categories off', () => {
-  // State saved before the category existed carries no `system` key, and an
-  // absent key is enabled: only an explicit false hides the bookkeeping.
+check('system turns are hidden by default and absent means hidden', () => {
+  // State saved before the category existed carries no `system` key. Absence follows the
+  // documented default (hidden), so an old saved state cannot silently reveal the
+  // bookkeeping; only an explicit true does.
   const older = { ...DEFAULT_FILTERS.categories, prompts: false, responses: false, thinking: false, toolcalls: false }
   delete older.system
-  assert.deepEqual(visible({ ...DEFAULT_FILTERS, categories: older }), [6])
+  assert.deepEqual(visible({ ...DEFAULT_FILTERS, categories: older }), [])
+  assert.deepEqual(visible({ ...DEFAULT_FILTERS, categories: { ...older, system: true } }), [6])
 })
 
 check('a multi-part turn leaves only when every part it carries is unwanted', () => {
@@ -264,6 +271,60 @@ check('umbrella off hides exactly the tool-only turns its badge counted', () => 
   const toolOnly = TURNS.filter((t) => kindsOf(t).length === 1 && kindsOf(t)[0] === 'toolcalls')
   assert.equal(hidden.length, toolOnly.length)
   assert.equal(categoryCounts(TURNS).toolcalls, toolOnly.length + 2) // + the two text+tool turns
+})
+
+/* ── the versioned filter-intent contract ────────────────────────────────────── */
+
+const INTENT_FIXTURE = 'scripts/testdata/filter-intent.yaml'
+const INTENT_MANIFEST = 'scripts/testdata/filter-intent.manifest.yaml'
+const intentFixture = loadStrictYaml(INTENT_FIXTURE)
+const intentManifest = loadStrictYaml(INTENT_MANIFEST)
+
+assertExactNames(intentFixture.cases.map((row) => row.name), intentManifest.requiredCaseNames, `${INTENT_FIXTURE} cases`)
+assertExactNames(intentFixture.encodeCases.map((row) => row.name), intentManifest.requiredEncodeCaseNames, `${INTENT_FIXTURE} encode cases`)
+
+/* The base has the entries VISIBLE: that is what makes "absent" observable. If absence
+   inherited the base instead of following the default, these cases would fail. */
+const VISIBLE_BASE = { ...DEFAULT_FILTERS, categories: { ...DEFAULT_FILTERS.categories, system: true } }
+
+for (const row of intentFixture.cases) {
+  check(`intent: ${row.name}`, () => {
+    assert.deepEqual(normalizeFilterIntent(row.stored), row.normalized)
+    const applied = applyFilterIntent(VISIBLE_BASE, row.stored)
+    assert.equal(applied.categories.system, row.system)
+    // nothing but the system category moves, and stored state never supplies a checkpoint
+    assert.deepEqual(applied.categories.prompts, VISIBLE_BASE.categories.prompts)
+    assert.deepEqual(applied.views, VISIBLE_BASE.views)
+    assert.equal(applied.checkpoint, VISIBLE_BASE.checkpoint)
+  })
+}
+
+for (const row of intentFixture.encodeCases) {
+  check(`intent encode: ${row.name}`, () => {
+    const filters = {
+      ...DEFAULT_FILTERS,
+      ...(row.categories ? { categories: { ...row.categories } } : {}),
+      ...(row.toolGroups ? { toolGroups: { ...row.toolGroups } } : {}),
+      ...(row.tags ? { tags: { ...row.tags } } : {}),
+      ...(row.views ? { views: { ...row.views } } : {}),
+      ...(row.checkpoint ? { checkpoint: row.checkpoint } : {}),
+    }
+    assert.deepEqual(encodeFilterIntent(filters), row.expected)
+  })
+}
+
+check('an encoded intent round-trips through the applier', () => {
+  for (const categories of [{ system: true }, { system: false }, {}]) {
+    const filters = { ...DEFAULT_FILTERS, categories: { ...DEFAULT_FILTERS.categories, ...categories } }
+    const applied = applyFilterIntent(DEFAULT_FILTERS, encodeFilterIntent(filters))
+    assert.equal(applied.categories.system, filters.categories.system === true, JSON.stringify(categories))
+  }
+})
+
+check('an explicit hidden toggle is not an active filter', () => {
+  assert.equal(filtersActive(DEFAULT_FILTERS), 0)
+  assert.equal(filtersActive({ ...DEFAULT_FILTERS, categories: { prompts: true, responses: true, thinking: true, toolcalls: true } }), 0)
+  assert.equal(filtersActive({ ...DEFAULT_FILTERS, categories: { ...DEFAULT_FILTERS.categories, system: true } }), 1)
 })
 
 if (failures.length) {

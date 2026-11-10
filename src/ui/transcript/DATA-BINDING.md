@@ -37,6 +37,15 @@ The adapter cooks the canonical parser's returned value, including its optional-
 normalization, while retaining the explicitly supported legacy `gitContext` extension.
 Optional empty refs do not weaken required usage-owner/source or attachment validation.
 
+`TurnDetail.contentParts` is the producer's ordered text/image blocks, and the adapter copies them
+into `TurnVM.contentParts` in the recorded order. `content` stays the text fallback: a payload with
+no parts renders exactly as before, and a part kind this contract does not render is dropped rather
+than guessed at. An image-bearing turn is retained even when its text is empty (an image-only
+prompt is content, not an empty legacy banner), and equal-text collapse never merges two image
+turns. The renderer resolves a present image's `ref` through the host's `attachmentUrl` prop; an
+omitted image (too large, unsupported, missing, or `not_published`) renders its reason and never
+requests bytes.
+
 Cooked `TurnVM.identity` is scoped by `partition` (`main` or `earlier-N`) plus source ref, falling
 back to the index only for legacy rows. Refs/provenance and folded refs/provenance are retained.
 `vm.earlierHistory` contains independently cooked turns, usage scopes and native metadata. Main

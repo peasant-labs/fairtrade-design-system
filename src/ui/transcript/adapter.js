@@ -30,7 +30,7 @@ import { computeAnalytics, computeTurnLabels, computeTaskGroups } from './analyt
 import { zObservedModelID, zContentProvenance, zSourceEntryRef, zSessionRelationshipNavigation, parseSessionDetailPayloadValue } from '@peasant-labs/schema'
 import { aggregateUsage } from './usage.js'
 import { isKnownTime } from './time.js'
-import { unwrapUserQuery } from './title.js'
+import { unwrapUserQuery, userQueryLeadLength, USER_QUERY_OPEN_TAG, USER_QUERY_CLOSE_TAG } from './title.js'
 
 /** @typedef {import('./wire-types.js').TranscriptWireInput} TranscriptWireInput */
 /** @typedef {import('./wire-types.js').SessionDetailPayload} SessionDetailPayload */
@@ -213,6 +213,75 @@ function withKnownTime(turn) {
 }
 
 /**
+ * A turn carrying an ordered image block is content of its own, even when its text is empty:
+ * an image-only prompt keeps its carrier turn (the producer retains it) instead of being
+ * dropped as a legacy empty banner.
+ * @param {TurnDetail} turn
+ */
+function hasImageBlock(turn) {
+  return (turn.contentParts ?? []).some((part) => part?.type === 'image' && !!part.image)
+}
+
+/**
+ * The producer's ordered content parts, copied into the cooked shape. Only the two kinds this
+ * contract renders survive; an unknown future part kind is dropped rather than guessed at, and
+ * the text fallback (`content`) still carries the words for anything the producer folded there.
+ * @param {TurnDetail} turn
+ * @returns {import('./view-model.js').ContentPartVM[] | undefined}
+ */
+function contentPartsOf(turn) {
+  const parts = Array.isArray(turn.contentParts) ? turn.contentParts : []
+  /** @type {import('./view-model.js').ContentPartVM[]} */
+  const cooked = []
+  for (const part of parts) {
+    if (part?.type === 'text' && typeof part.text === 'string') cooked.push({ type: 'text', text: part.text })
+    else if (part?.type === 'image' && part.image) cooked.push({ type: 'image', image: part.image })
+  }
+  return cooked.length > 0 ? cooked : undefined
+}
+
+/**
+ * Strip a harness's `<user_query>` wrapper from an ORDERED part list without flattening it.
+ *
+ * `unwrapUserQuery` normalizes a whole prompt string, but a turn whose text and images are
+ * separate blocks must keep its blocks in source order: replacing every text block with the
+ * normalized prompt would move an image relative to the words around it. Instead the same
+ * wrapper tokens are removed from the blocks they sit in — the leading wrapper from the first
+ * text block, the closing tag (and the prelude it implies) from the block that holds it — so a
+ * cursor prompt's displayed words are the user's, in the order they were recorded.
+ *
+ * @param {import('./view-model.js').ContentPartVM[]} [parts]
+ * @returns {import('./view-model.js').ContentPartVM[] | undefined}
+ */
+function stripUserQueryParts(parts) {
+  if (!parts) return parts
+  let opened = false
+  let closed = false
+  let changed = false
+  const stripped = parts.map((part) => {
+    if (part.type !== 'text' || closed) return part
+    let text = part.text
+    if (!opened) {
+      const lead = userQueryLeadLength(text)
+      if (lead === 0) return part
+      text = text.slice(lead)
+      opened = true
+    }
+    const end = text.indexOf(USER_QUERY_CLOSE_TAG)
+    if (end !== -1) {
+      const after = text.slice(end + USER_QUERY_CLOSE_TAG.length)
+      const rest = after.trim()
+      text = text.slice(0, end) + (rest !== '' && !rest.startsWith(USER_QUERY_OPEN_TAG) ? after : '')
+      closed = true
+    }
+    if (text === part.text) return part
+    changed = true
+    return { ...part, text }
+  })
+  return changed ? stripped : parts
+}
+
+/**
  * Default turn prefilter the adapter applies independently per partition:
  * preserve normalized evidence, including unknown provenance and folded refs.
  * Only truly legacy rows lose empty/short banners or collapse equal adjacent
@@ -229,6 +298,8 @@ export function prefilterTurns(turns) {
     // The short-banner heuristic is for unlabelled legacy rows only; a control
     // record with a short value is not a stray banner.
     if (t.controlKind) return true
+    // An image is content: an image-only prompt has empty text but is not a banner.
+    if (hasImageBlock(t)) return true
     const hasContent = !!t.content?.trim()
     const hasTools = (t.toolCalls?.length ?? 0) > 0
     if (!hasContent && !hasTools) return false
@@ -239,7 +310,7 @@ export function prefilterTurns(turns) {
   const deduped = []
   for (const curr of filtered) {
     const prev = deduped[deduped.length - 1]
-    if (prev && !protectedTurn(prev) && !protectedTurn(curr) && prev.role === curr.role && prev.content === curr.content && prev.content.trim() !== '') {
+    if (prev && !protectedTurn(prev) && !protectedTurn(curr) && !hasImageBlock(prev) && !hasImageBlock(curr) && prev.role === curr.role && prev.content === curr.content && prev.content.trim() !== '') {
       const prevHasTools = (prev.toolCalls?.length ?? 0) > 0
       const currHasTools = (curr.toolCalls?.length ?? 0) > 0
       if (currHasTools && !prevHasTools) deduped[deduped.length - 1] = curr
@@ -1025,7 +1096,13 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
       turnVM.isControl = true
     }
     if (thinking) turnVM.thinking = thinking
+    /* A cursor prompt's <user_query> wrapper is display chrome, and it must leave a turn's ordered
+       blocks too: the same normalization that produces `displayContent` is applied per block, so
+       the words shown are the reader's and an image keeps the place it was recorded in. */
     const shown = displayedPrompt(t.role, content, provider)
+    const parts = contentPartsOf(t)
+    const contentParts = shown !== undefined ? stripUserQueryParts(parts) : parts
+    if (contentParts) turnVM.contentParts = contentParts
     if (shown !== undefined) turnVM.displayContent = shown
     if (t.usage) turnVM.usage = t.usage
     const served = /** @type {{truncated?: boolean, byteLength?: number}} */ (t)

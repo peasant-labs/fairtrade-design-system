@@ -336,6 +336,13 @@ const SETTING_GROUPS_BOTH_OPEN = Object.freeze({ name: 'both-groups-open', selec
 const PUBLISH_DIALOG_OFF = Object.freeze({ name: 'publish-off', role: Object.freeze({ role: 'button', name: 'publish to 2 collectives' }), matches: '.pub-primary:disabled', count: 1 })
 const PUBLISH_DIALOG_RESCAN_ON = Object.freeze({ name: 'rescan-on', role: Object.freeze({ role: 'button', name: 're-scan' }), matches: '.pub-rescan:enabled', count: 1 })
 
+const IMAGE_INLINE_THUMBS = Object.freeze({ name: 'inline image thumbnails', selector: '#turn-0 .txn-image-thumb', count: 2 })
+const IMAGE_INLINE_LAZY = Object.freeze({ name: 'lazy image thumbnails', selector: '#turn-0 .txn-image-thumb[loading="lazy"]', count: 2 })
+const IMAGE_INLINE_ALT = Object.freeze({ name: 'described image thumbnails', selector: '#turn-0 .txn-image-thumb[alt]', count: 2 })
+const IMAGE_INLINE_OPENERS = Object.freeze({ name: 'inline image openers', selector: '#turn-0 .txn-image-open', count: 2 })
+const IMAGE_EXPANDED = Object.freeze({ name: 'expanded image', selector: '.txn-image-full', count: 1 })
+const IMAGE_EXPANDED_DIALOG = Object.freeze({ name: 'expanded image dialog', role: Object.freeze({ role: 'dialog', name: 'image 1 of 2' }), count: 1 })
+
 /**
  * The mounted story rows, in row order. Floors are measured on the real built
  * Storybook after each row's action, in both themes, and sit below the
@@ -510,6 +517,98 @@ export const COMPONENT_STORIES = Object.freeze([
       Object.freeze({ name: 'panelBorderRadius', selector: '.dialog-wide', property: 'borderRadius', equals: '0px' }),
     ]),
     floors: Object.freeze({ descendants: 60, textLength: 350, ariaChars: 800, screenshotBytes: 15000 }),
+  }),
+  Object.freeze({
+    key: 'images-inline',
+    rowPrefix: 'component-images-inline',
+    targetId: 'fairtrade-images-inline-story',
+    storyId: 'in-use-transcript-transcriptviewer--images-inline',
+    layout: 'fullscreen',
+    before: Object.freeze([IMAGE_INLINE_THUMBS, IMAGE_INLINE_LAZY, IMAGE_INLINE_ALT, IMAGE_INLINE_OPENERS]),
+    action: Object.freeze({
+      name: 'expand-inline-image',
+      kind: 'click',
+      target: Object.freeze({ name: 'inline image opener', selector: '#turn-0 .txn-image-open', count: 2 }),
+    }),
+    after: Object.freeze([IMAGE_EXPANDED_DIALOG, IMAGE_EXPANDED]),
+    gateTie: Object.freeze({ field: 'imageExpanded', expectation: IMAGE_EXPANDED }),
+    computed: Object.freeze([
+      Object.freeze({ name: 'openerBorderRadius', selector: '#turn-0 .txn-image-open', property: 'borderRadius', equals: '0px' }),
+      Object.freeze({ name: 'captionFontFamily', selector: '#turn-0 .txn-image-caption', property: 'fontFamily', token: '--font-mono' }),
+    ]),
+    // After expansion the active root is the portaled image dialog, not the
+    // transcript behind it. Its image, title and close control are compact;
+    // the before-facts above independently prove the mounted transcript turn.
+    floors: Object.freeze({ descendants: 10, textLength: 12, ariaChars: 80, screenshotBytes: 4000 }),
+  }),
+  Object.freeze({
+    key: 'images-omitted',
+    rowPrefix: 'component-images-omitted',
+    targetId: 'fairtrade-images-omitted-story',
+    storyId: 'in-use-transcript-transcriptviewer--images-omitted',
+    layout: 'fullscreen',
+    before: Object.freeze([
+      Object.freeze({ name: 'omitted image placeholders', selector: '#turn-0 .txn-image-omitted', count: 4 }),
+      Object.freeze({ name: 'too large placeholder', selector: '#turn-0 .txn-image-omitted[data-image-omitted="too_large"]', count: 1 }),
+      Object.freeze({ name: 'unsupported placeholder', selector: '#turn-0 .txn-image-omitted[data-image-omitted="unsupported"]', count: 1 }),
+      Object.freeze({ name: 'missing placeholder', selector: '#turn-0 .txn-image-omitted[data-image-omitted="missing"]', count: 1 }),
+      Object.freeze({ name: 'not published placeholder', selector: '#turn-0 .txn-image-omitted[data-image-omitted="not_published"]', count: 1 }),
+      Object.freeze({ name: 'no image request for omitted bytes', selector: '#turn-0 .txn-image-thumb', count: 0 }),
+    ]),
+    action: null,
+    after: Object.freeze([]),
+    gateTie: Object.freeze({
+      field: 'omittedPlaceholders',
+      expectation: Object.freeze({ name: 'omitted image placeholders', selector: '#turn-0 .txn-image-omitted', count: 4 }),
+    }),
+    computed: Object.freeze([
+      Object.freeze({ name: 'noticeFontFamily', selector: '#turn-0 .txn-image-omitted', property: 'fontFamily', token: '--font-mono' }),
+      Object.freeze({ name: 'noticeBorderRadius', selector: '#turn-0 .txn-image-omitted', property: 'borderRadius', equals: '0px' }),
+    ]),
+    floors: Object.freeze({ descendants: 60, textLength: 100, ariaChars: 150, screenshotBytes: 3000 }),
+  }),
+  Object.freeze({
+    key: 'image-only-turn',
+    rowPrefix: 'component-image-only-turn',
+    targetId: 'fairtrade-image-only-turn-story',
+    storyId: 'in-use-transcript-transcriptviewer--image-only-turn',
+    layout: 'fullscreen',
+    before: Object.freeze([
+      Object.freeze({ name: 'image-only card', selector: '#turn-0 .txn-image-thumb', count: 1 }),
+      Object.freeze({ name: 'no invented prose', selector: '#turn-0 .txn-md-prose', count: 0 }),
+      Object.freeze({ name: 'described image', selector: '#turn-0 .txn-image-thumb[alt]', count: 1 }),
+    ]),
+    action: null,
+    after: Object.freeze([]),
+    gateTie: Object.freeze({
+      field: 'imageOnlyCard',
+      expectation: Object.freeze({ name: 'image-only card', selector: '#turn-0 .txn-image-thumb', count: 1 }),
+    }),
+    computed: Object.freeze([
+      Object.freeze({ name: 'thumbnailObjectFit', selector: '#turn-0 .txn-image-thumb', property: 'objectFit', equals: 'contain' }),
+    ]),
+    floors: Object.freeze({ descendants: 40, textLength: 60, ariaChars: 120, screenshotBytes: 2500 }),
+  }),
+  Object.freeze({
+    key: 'images-unavailable',
+    rowPrefix: 'component-images-unavailable',
+    targetId: 'fairtrade-images-unavailable-story',
+    storyId: 'in-use-transcript-transcriptviewer--images-unavailable',
+    layout: 'fullscreen',
+    before: Object.freeze([
+      Object.freeze({ name: 'unavailable image placeholders', selector: '#turn-0 .txn-image-omitted[data-image-omitted="unavailable"]', count: 2 }),
+      Object.freeze({ name: 'no broken image element', selector: '#turn-0 .txn-image-thumb', count: 0 }),
+    ]),
+    action: null,
+    after: Object.freeze([]),
+    gateTie: Object.freeze({
+      field: 'unavailablePlaceholders',
+      expectation: Object.freeze({ name: 'unavailable image placeholders', selector: '#turn-0 .txn-image-omitted[data-image-omitted="unavailable"]', count: 2 }),
+    }),
+    computed: Object.freeze([
+      Object.freeze({ name: 'unavailableNoticeBorderRadius', selector: '#turn-0 .txn-image-omitted', property: 'borderRadius', equals: '0px' }),
+    ]),
+    floors: Object.freeze({ descendants: 50, textLength: 80, ariaChars: 120, screenshotBytes: 2500 }),
   }),
 ])
 

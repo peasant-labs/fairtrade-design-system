@@ -58,12 +58,14 @@ const { fixture, manifest } = loadFixturePair(FIXTURE, MANIFEST, {
   loadCases: 'requiredLoadCaseNames',
   windowCases: 'requiredWindowCaseNames',
   mountCases: 'requiredMountCaseNames',
+  wordlessCases: 'requiredWordlessCaseNames',
 })
 
 for (const row of fixture.directories) assertFields(row, ['name', 'totalTurns', 'totalSegments', 'firstTurn', 'segmentTurns', 'segmentBytes'], `${FIXTURE} ${row.name}`)
 for (const row of fixture.loadCases) assertFields(row, ['name', 'directory', 'loaded', 'expect'], `${FIXTURE} ${row.name}`)
 for (const row of fixture.windowCases) assertFields(row, ['name', 'directory', 'loaded', 'window', 'expect'], `${FIXTURE} ${row.name}`)
 for (const row of fixture.mountCases) assertFields(row, ['name', 'directory', 'loaded', 'expect'], `${FIXTURE} ${row.name}`, ['window', 'oversizedTurn'])
+for (const row of fixture.wordlessCases) assertFields(row, ['name', 'turn', 'wordless'], `${FIXTURE} ${row.name}`)
 
 const DIRECTORY = new Map(fixture.directories.map((row) => [row.name, row]))
 
@@ -211,6 +213,11 @@ const text = (node) => (node?.textContent ?? '').replace(/\s+/g, ' ').trim()
 
 await withMountedSource(async ({ load, mount, window, React }) => {
   const { default: TranscriptViewer } = await load('/src/ui/transcript/TranscriptViewer.jsx')
+  const { isWordlessAssistant } = await load('/src/ui/transcript/segments.js')
+  for (const row of fixture.wordlessCases) {
+    const wordless = isWordlessAssistant(row.turn)
+    report.check(wordless === row.wordless, `${row.name}: an image is content, not an action continuation`)
+  }
 
   const viewer = (props, extra) => React.createElement(TranscriptViewer, {
     viewModel: viewModel(props.segments ?? [], extra),
@@ -459,4 +466,4 @@ function dirSession() {
   return 'sess_segment_fixture'
 }
 
-report.finish(`${fixture.directories.length} directories, ${fixture.loadCases.length} load cases, ${fixture.windowCases.length} window cases, ${fixture.mountCases.length} mounted cases, and ${boundaryFixture.sides.length} boundary sides.`)
+report.finish(`${fixture.directories.length} directories, ${fixture.loadCases.length} load cases, ${fixture.windowCases.length} window cases, ${fixture.mountCases.length} mounted cases, ${fixture.wordlessCases.length} wordless cases, and ${boundaryFixture.sides.length} boundary sides.`)

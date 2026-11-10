@@ -1,0 +1,78 @@
+# Cases for the versioned filter-intent contract (src/ui/transcript/filters.js).
+# A host stores what the reader chose across visits, and this contract is the one rule for
+# reading that stored value back. The shape is closed: {version: 1, system?: boolean}.
+# Absence follows the documented default (system entries HIDDEN); an explicit false is kept
+# as written; a version this module does not know degrades to the default rather than
+# guessing at fields it cannot read; checkpoints and views are session state and never
+# survive the round trip.
+#
+# scripts/transcript-filters.test.mjs normalizes each `stored` value, applies the result over
+# a base whose system category is ON, and asserts both the normalized intent and the resolved
+# system flag. The ON base is what makes "absent" observable: it proves absence hides the
+# entries instead of inheriting the base's visible state.
+cases:
+  - name: an absent system follows the hidden default
+    stored: {version: 1}
+    normalized: {version: 1}
+    system: false
+  - name: explicit true reveals the entries
+    stored: {version: 1, system: true}
+    normalized: {version: 1, system: true}
+    system: true
+  - name: explicit false is kept
+    stored: {version: 1, system: false}
+    normalized: {version: 1, system: false}
+    system: false
+  - name: a pre-toggle saved state cannot reveal the entries
+    stored: {version: 1, categories: {system: true}}
+    normalized: {version: 1}
+    system: false
+  - name: an unknown version follows the default
+    stored: {version: 2, system: true}
+    normalized: {version: 1}
+    system: false
+  - name: a missing version follows the default
+    stored: {system: true}
+    normalized: {version: 1}
+    system: false
+  - name: a non-object value follows the default
+    stored: 'system:true'
+    normalized: {version: 1}
+    system: false
+  - name: an absent value follows the default
+    stored: null
+    normalized: {version: 1}
+    system: false
+  - name: an array value follows the default
+    stored: [1, true]
+    normalized: {version: 1}
+    system: false
+  - name: a non-boolean system is ignored
+    stored: {version: 1, system: 'true'}
+    normalized: {version: 1}
+    system: false
+  - name: checkpoint and views never enter the intent
+    stored: {version: 1, system: true, checkpoint: '9f3c1ad0', views: {compact: true, hidden: false}}
+    normalized: {version: 1, system: true}
+    system: true
+
+# The encoded intent is the deviation map a host writes back. Only a revealed toggle is a
+# deviation from the documented default, so a hidden or untouched toggle encodes no system
+# key at all and the reader keeps following future default changes.
+encodeCases:
+  - name: the default encodes no dimension
+    categories: {prompts: true, responses: true, thinking: true, toolcalls: true, system: false}
+    expected: {version: 1}
+  - name: an untouched system key encodes no dimension
+    categories: {prompts: true, responses: true, thinking: true, toolcalls: true}
+    expected: {version: 1}
+  - name: a revealed toggle encodes true
+    categories: {prompts: true, responses: true, thinking: true, toolcalls: true, system: true}
+    expected: {version: 1, system: true}
+  - name: other deviations are not persisted
+    categories: {prompts: false, responses: true, thinking: true, toolcalls: false, system: true}
+    toolGroups: {edits: false, bash: true, read: true, search: true, fetch: true, tasks: true, other: true}
+    tags: {errors: true, retries: false, revert: false}
+    views: {hidden: false, expandAll: true, compact: true}
+    checkpoint: '9f3c1ad0'
+    expected: {version: 1, system: true}

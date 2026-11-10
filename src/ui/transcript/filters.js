@@ -21,8 +21,16 @@
    `tool calls` off would either delete the text too or do nothing.
 
    System turns have their own category and are HIDDEN by default: harness bookkeeping is
-   not conversation, so the reader opts into it. A host that restores filter state saved
-   before the category existed keeps that older state's explicit choice. */
+   not conversation, so the reader opts into it. ABSENT MEANS HIDDEN: a filter object that
+   carries no `system` key — saved before the category existed, or supplied by a host that
+   only overrides other dimensions — follows the documented default rather than silently
+   revealing the bookkeeping. Only an explicit `true` shows the entries.
+
+   The reader's choice outlives one page: a host persists the versioned INTENT this module
+   defines ({@link normalizeFilterIntent} / {@link applyFilterIntent} /
+   {@link encodeFilterIntent}) in its own local store. The intent is a deviation map from
+   this default, never the resolved filter object, so a reader who never touched the toggle
+   keeps following the default. */
 
 import { TOOL_GROUPS } from './view-model.js'
 
@@ -45,6 +53,85 @@ export const DEFAULT_TRANSCRIPT_FILTERS = Object.freeze({
   checkpoint: 'all',
 })
 
+/* ── the versioned filter-intent contract ──────────────────────────────────────
+   A host that remembers the reader's choice across visits stores the INTENT below, not
+   the resolved filters. Today the only remembered dimension is `categories.system`, and
+   the shape is CLOSED: `{version: 1, system?: boolean}`. Everything else — checkpoints,
+   views, tool groups, tags — is session state that must never be persisted, so encoding
+   never emits it and normalizing drops it.
+
+   Absence means "follow the documented default" (system entries hidden). That is why a
+   pre-toggle saved state cannot turn the bookkeeping on, and why a reader who never
+   touched the toggle keeps following future default changes. An explicit `false` is kept
+   as written: it distinguishes a reader who deliberately hid the entries from one who
+   never expressed a choice, which matters if this default is ever revisited.
+
+   A version this module does not know is not interpreted: it normalizes to the version-1
+   shape with no dimensions, so a newer host's state degrades to the current default
+   instead of guessing at fields it cannot read. */
+
+/** The only intent version this module reads or writes. @type {number} */
+export const FILTER_INTENT_VERSION = 1
+
+/**
+ * The persisted reader intent: a closed, versioned deviation map. `system` is present
+ * only when the reader expressed that toggle, and absent means the documented default.
+ * @typedef {object} FilterIntent
+ * @property {number} version  the intent contract version (1)
+ * @property {boolean} [system] explicit `categories.system`; absent follows the default
+ */
+
+/**
+ * Normalize a value read back from a host's local store into the closed intent shape.
+ * Unknown keys are dropped, a non-object or an unknown version degrades to no dimensions,
+ * and a non-boolean `system` is ignored. Never throws: stored state is untrusted input.
+ *
+ * @param {unknown} raw
+ * @returns {FilterIntent}
+ */
+export function normalizeFilterIntent(raw) {
+  const record = raw && typeof raw === 'object' && !Array.isArray(raw) ? /** @type {Record<string, unknown>} */ (raw) : null
+  /** @type {FilterIntent} */
+  const intent = { version: FILTER_INTENT_VERSION }
+  if (!record || record.version !== FILTER_INTENT_VERSION) return intent
+  if (typeof record.system === 'boolean') intent.system = record.system
+  return intent
+}
+
+/**
+ * Merge a stored intent onto a filter state. Only `categories.system` is resolved: absent
+ * means the documented default (hidden), explicit `true` reveals the entries, explicit
+ * `false` hides them. Every other dimension of `base` passes through untouched, and no
+ * view or checkpoint value ever comes from stored state.
+ *
+ * @param {TranscriptFilters} [base]
+ * @param {unknown} rawIntent
+ * @returns {TranscriptFilters}
+ */
+export function applyFilterIntent(base = DEFAULT_TRANSCRIPT_FILTERS, rawIntent) {
+  const { system } = normalizeFilterIntent(rawIntent)
+  return {
+    ...base,
+    categories: { ...base.categories, system: system === true },
+  }
+}
+
+/**
+ * Encode the reader's current choice as the intent a host stores. Only a deviation from
+ * the documented default is carried: the entries are revealed (`{version: 1, system: true}`)
+ * or the intent says nothing and the reader keeps following the default. Checkpoints,
+ * views, tool groups and tags are never encoded.
+ *
+ * @param {TranscriptFilters} [filters]
+ * @returns {FilterIntent}
+ */
+export function encodeFilterIntent(filters = DEFAULT_TRANSCRIPT_FILTERS) {
+  /** @type {FilterIntent} */
+  const intent = { version: FILTER_INTENT_VERSION }
+  if (filters.categories?.system === true) intent.system = true
+  return intent
+}
+
 /**
  * How many filter choices deviate from {@link DEFAULT_TRANSCRIPT_FILTERS}: the number
  * the rail's "clear (N)" badge shows. Tool groups count only while `tool calls` is on,
@@ -58,7 +145,10 @@ export function filtersActive(filters = DEFAULT_TRANSCRIPT_FILTERS) {
   const defaults = DEFAULT_TRANSCRIPT_FILTERS
   let count = 0
   for (const key of ['prompts', 'responses', 'thinking', 'toolcalls', 'system']) {
-    if ((filters.categories?.[key] !== false) !== defaults.categories[key]) count += 1
+    // `system` is the one category whose documented default is off, so absence reads as
+    // off rather than as a deviation.
+    const on = key === 'system' ? filters.categories?.system === true : filters.categories?.[key] !== false
+    if (on !== defaults.categories[key]) count += 1
   }
   if (filters.categories?.toolcalls !== false) {
     for (const id of TOOL_GROUPS) {
@@ -130,7 +220,7 @@ export function passesTags(turn, tags, annotationsByTurn) {
  * when nothing would be left to render. Tags narrow at the turn level, the
  * checkpoint anchor scopes to a prefix, and then each part is kept or dropped
  * by its own category (tool calls also by their group). System turns are governed
- * by their own category, enabled unless explicitly false.
+ * by their own category, shown only by an explicit `true`.
  *
  * The returned object keeps `index`, `role`, labels and annotations, so
  * anchors, jumps and the outline resolve against it exactly as against the
@@ -151,7 +241,7 @@ export function projectTurn(turn, filters, ctx = {}) {
   if (!passesTags(turn, tags, annotationsByTurn)) return null
 
   if (turn.role === 'user') return categories.prompts ? turn : null
-  if (turn.role === 'system') return categories.system === false ? null : turn
+  if (turn.role === 'system') return categories.system === true ? turn : null
   if (turn.role !== 'assistant') return turn
 
   const hasText = (turn.content ?? '').trim() !== ''

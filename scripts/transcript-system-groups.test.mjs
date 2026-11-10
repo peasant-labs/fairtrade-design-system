@@ -201,7 +201,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       const head = groupHead(mounted.container)
       report.check(ownerBox?.classList.contains('txn-systemgroup-owner'), `${name}: the owner must render in place in the group's inset column`)
       report.check(ownerBox?.parentElement?.classList.contains('txn-systemgroup'), `${name}: the owner's inset box must sit directly under the group`)
-      report.check(head?.nextElementSibling === ownerBox, `${name}: the group head must sit immediately above the owner`)
+      report.check(head?.closest('.txn-systemgroup-headrow')?.nextElementSibling === ownerBox, `${name}: the group head must sit immediately above the owner`)
       /* each member is mounted exactly once, inside its group */
       for (const index of [1, 2, 3]) {
         report.check(mounted.container.querySelectorAll(`article[data-turn="${index}"]`).length === 1, `${name}: turn ${index} must mount exactly once`)
@@ -244,7 +244,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(!!landed && !isInert(landed), `${name}: the landed member must be mounted and not inert`)
       /* the owner is the run's first member and sits directly under the head; the
          landed article must be the member the position named, never the owner. */
-      const ownerRow = head?.nextElementSibling?.querySelector('article[data-turn]')
+      const ownerRow = head?.closest('.txn-systemgroup-headrow')?.nextElementSibling?.querySelector('article[data-turn]')
       report.check(!!ownerRow && ownerRow !== landed, `${name}: the landed member must not be the run's owner`)
       const target = scrolls.at(-1)
       report.check(target === row.turn * 100, `${name}: the landing must scroll to the member's own anchor (turn:${row.turn}), received ${JSON.stringify(scrolls)}`)

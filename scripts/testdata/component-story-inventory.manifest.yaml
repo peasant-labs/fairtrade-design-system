@@ -9,3 +9,7 @@ requiredCaseNames:
   - access-list
   - setting-groups
   - publish-dialog
+  - images-inline
+  - images-omitted
+  - image-only-turn
+  - images-unavailable
