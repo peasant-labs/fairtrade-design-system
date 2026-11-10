@@ -40,12 +40,18 @@ requiredPhaseCaseNames:
 requiredPhaseCountCaseNames:
   - sparse phase counts conversation turns rather than indexes
 requiredRecoveryCaseNames:
+  - a host reported failure can retry without a window loader
+  - a rejected covering load names the window and retries successfully
+  - a rejected window request names the window and retries successfully
+  - a host reported covering failure names the window and retries
   - a rejected segment load enables retry
   - a void segment load remains retryable
   - clearing a failed window allows the same request again
 
 # Production mutations the gate must kill (scripts/parts-mutations.mjs).
 requiredMutationNames:
+  - a failed covering load is silently dropped
+  - a failed window request is silently dropped
   - the scrubber mounts one tick per turn
   - the boundary drops its load control
   - the window renders partly loaded
@@ -59,6 +65,16 @@ requiredMutationNames:
   - the boundary falls back to raw indexes
   - the phase count includes an extra turn
 mutations:
+  - name: a failed window request is silently dropped
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "const result = onLoadWindow(anchor)\n      if (result && typeof result.then === 'function') Promise.resolve(result).catch(fail)"
+    replace: "const result = onLoadWindow(anchor)\n      if (result && typeof result.then === 'function') Promise.resolve(result).catch(() => {})"
+    expectedDiagnostic: 'a rejected window request names the window and retries successfully: rejection or host failure must be visible, not silently dropped'
+  - name: a failed covering load is silently dropped
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "const result = onLoadSegment(index)\n        if (result && typeof result.then === 'function') Promise.resolve(result).catch(fail)"
+    replace: "const result = onLoadSegment(index)\n        if (result && typeof result.then === 'function') Promise.resolve(result).catch(() => {})"
+    expectedDiagnostic: 'a rejected covering load names the window and retries successfully: rejection or host failure must be visible, not silently dropped'
   - name: the phase range returns to one based indexes
     file: src/ui/transcript/TranscriptViewer.jsx
     find: "`${formatInteger(phase.turnCount)} ${phase.turnCount === 1 ? 'turn' : 'turns'}`"
@@ -116,6 +132,6 @@ mutations:
     expectedDiagnostic: 'a rejected segment load enables retry: failed or untracked load permits retry'
   - name: clearing a window retains its request cache
     file: src/ui/transcript/TranscriptViewer.jsx
-    find: "windowRequestRef.current = { key: '', indexes: new Set() }"
-    replace: 'void 0'
+    find: "if (!segmentMode || !windowKey) {\n      windowRequestRef.current = { key: '', indexes: new Set() }"
+    replace: "if (!segmentMode || !windowKey) {\n      void 0"
     expectedDiagnostic: 'clearing a failed window allows the same request again: the same missing segment is requested again'

@@ -32,6 +32,12 @@ import { aggregateUsage } from './usage.js'
 import { isKnownTime } from './time.js'
 import { unwrapUserQuery } from './title.js'
 
+/** @type {Readonly<Record<import('@peasant-labs/schema').EarlierHistoryState, {label: string, explanation: string}>>} */
+const EARLIER_HISTORY_COPY = Object.freeze({
+  uncertain_migrated: { label: 'migrated history', explanation: 'this earlier history was retained during migration. its ownership is uncertain, so it is separate from current turns and input submissions.' },
+  uncertain_unresolved: { label: 'ownership unresolved', explanation: 'the ownership of this earlier history could not be resolved. it is retained separately from current turns and input submissions.' },
+})
+
 /** @typedef {import('./wire-types.js').TranscriptWireInput} TranscriptWireInput */
 /** @typedef {import('./wire-types.js').SessionDetailPayload} SessionDetailPayload */
 /** @typedef {import('./wire-types.js').TurnDetail} TurnDetail */
@@ -824,7 +830,7 @@ export function adaptTranscript(payload, annotations, analytics, options) {
     const earlier = cookPartition(payload, section.turns, section.nativeMetadata, id)
     return {
       id, state: section.state,
-      explanation: 'ownership of this earlier history is uncertain. it is retained here, separate from current turns and input submissions.',
+      ...EARLIER_HISTORY_COPY[section.state],
       turns: earlier.turns,
       nativeMetadata: section.nativeMetadata,
       usageScopes: aggregateUsage(section.turns),

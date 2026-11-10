@@ -342,7 +342,14 @@ export default function TranscriptViewer({
   const EmptyHeading = headingTag(pageLevel, 1)
   const segmentMode = segmentsProp != null
   const loadedSegments = useMemo(() => (segmentMode ? normaliseSegments(segmentsProp) : []), [segmentMode, segmentsProp])
-  const coverage = useMemo(() => (segmentMode ? windowCoverage(windowProp, loadedSegments) : null), [segmentMode, windowProp, loadedSegments])
+  const windowKey = segmentMode && windowProp
+    ? `${viewModel?.session?.id ?? ''}:${windowProp.revision ?? ''}:${windowProp.anchorTurn}:${(windowProp.segments ?? []).join(',')}`
+    : ''
+  const [windowFailure, setWindowFailure] = useState(null)
+  const [windowRetry, setWindowRetry] = useState(0)
+  const activeFailure = windowFailure && windowFailure.sessionId === viewModel?.session?.id && (!windowKey || !windowFailure.key || windowFailure.key === windowKey) ? windowFailure : null
+  const rawCoverage = useMemo(() => (segmentMode ? windowCoverage(windowProp, loadedSegments) : null), [segmentMode, windowProp, loadedSegments])
+  const coverage = activeFailure ? null : rawCoverage
   /* A window renders only once every covering segment is in hand. A partly loaded
      window is held back, so the reader never meets a false boundary inside it. */
   const heldWindow = !!(segmentMode && coverage?.required && !coverage.complete)
@@ -593,28 +600,81 @@ export default function TranscriptViewer({
   const pendingJumpRef = useRef(null)
   const pendingSeekRef = useRef(null)
   const ackScrollRef = useRef(null)
+  const windowAttemptRef = useRef({ sessionId: session.id, sequence: 0 })
+  if (windowAttemptRef.current.sessionId !== session.id) windowAttemptRef.current = { sessionId: session.id, sequence: 0 }
   const [loadingSegment, setLoadingSegment] = useState(null)
   const windowRequestRef = useRef({ key: '', indexes: new Set() })
-  const windowKey = segmentMode && windowProp
-    ? `${windowProp.revision ?? ''}:${windowProp.anchorTurn}:${(windowProp.segments ?? []).join(',')}`
-    : ''
   const loadedIndexKey = loadedSegments.map((segment) => segment.index).join(',')
+  const previousWindowRef = useRef(null)
+  useEffect(() => {
+    const previous = previousWindowRef.current
+    if (windowKey && rawCoverage?.complete && activeFailure?.key === windowKey) setWindowFailure(null)
+    if (!windowKey && previous?.key && previous.incomplete && previous.sessionId === session.id) {
+      setWindowFailure(current => current ?? { ...previous, kind: 'window' })
+    }
+    if (windowKey && activeFailure?.kind === 'window' && (!previous || previous.key !== windowKey) && windowProp.anchorTurn === activeFailure.anchor) setWindowFailure(null)
+    previousWindowRef.current = windowKey ? { key: windowKey, anchor: windowProp.anchorTurn, sessionId: session.id, incomplete: !rawCoverage?.complete, missing: rawCoverage?.missing ?? [] } : null
+  }, [windowKey, rawCoverage?.complete, session.id, windowProp, activeFailure])
   useEffect(() => {
     if (!segmentMode || !windowKey) {
       windowRequestRef.current = { key: '', indexes: new Set() }
       return
     }
+    if (activeFailure) return
     if (typeof onLoadSegment !== 'function') return
     if (windowRequestRef.current.key !== windowKey) windowRequestRef.current = { key: windowKey, indexes: new Set() }
+    const request = windowRequestRef.current
     const held = new Set(loadedSegments.map((segment) => segment.index))
     for (const index of windowProp.segments ?? []) {
       if (held.has(index) || windowRequestRef.current.indexes.has(index)) continue
       windowRequestRef.current.indexes.add(index)
-      const result = onLoadSegment(index)
-      if (result && typeof result.then === 'function') Promise.resolve(result).catch(() => {})
+      const fail = () => {
+        if (windowRequestRef.current === request) setWindowFailure({ key: windowKey, anchor: windowProp.anchorTurn, sessionId: session.id, kind: 'segment' })
+      }
+      try {
+        const result = onLoadSegment(index)
+        if (result && typeof result.then === 'function') Promise.resolve(result).catch(fail)
+      } catch {
+        fail()
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [segmentMode, windowKey, loadedIndexKey, onLoadSegment])
+  }, [segmentMode, windowKey, loadedIndexKey, onLoadSegment, activeFailure, windowRetry])
+
+  function requestWindow(anchor) {
+    const attempt = ++windowAttemptRef.current.sequence
+    const fail = () => {
+      if (windowAttemptRef.current.sessionId === session.id && windowAttemptRef.current.sequence === attempt) setWindowFailure({ key: '', anchor, sessionId: session.id, kind: 'window' })
+    }
+    try {
+      const result = onLoadWindow(anchor)
+      if (result && typeof result.then === 'function') Promise.resolve(result).catch(fail)
+    } catch {
+      fail()
+    }
+  }
+
+  function retryWindow() {
+    if (!activeFailure) return
+    const failure = activeFailure
+    setWindowFailure(null)
+    if (failure.kind === 'segment' && windowKey) {
+      windowRequestRef.current = { key: '', indexes: new Set() }
+      setWindowRetry(value => value + 1)
+    } else if (typeof onLoadWindow === 'function') {
+      requestWindow(failure.anchor)
+    } else if (typeof onLoadSegment === 'function') {
+      for (const index of failure.missing ?? []) {
+        const fail = () => setWindowFailure(failure)
+        try {
+          const result = onLoadSegment(index)
+          if (result && typeof result.then === 'function') Promise.resolve(result).catch(fail)
+        } catch {
+          fail()
+        }
+      }
+    }
+  }
 
   useEffect(() => {
     setSearchMeasurements({ query: '', sections: {} })
@@ -1006,7 +1066,7 @@ export default function TranscriptViewer({
     if (position.kind === 'turn' && segmentMode && !turns.some((turn) => turn.index === position.turnIndex) && typeof onLoadWindow === 'function') {
       if (pendingJumpRef.current !== position.turnIndex) {
         pendingJumpRef.current = position.turnIndex
-        onLoadWindow(position.turnIndex)
+        requestWindow(position.turnIndex)
       }
       return 'pending'
     }
@@ -1194,7 +1254,7 @@ export default function TranscriptViewer({
     if (segmentMode && !turns.some((turn) => turn.index === idx) && typeof onLoadWindow === 'function') {
       pendingJumpRef.current = idx
       selectTurn(idx)
-      onLoadWindow(idx)
+      requestWindow(idx)
       return
     }
     const group = openGroupForTurn(idx)
@@ -1988,6 +2048,14 @@ export default function TranscriptViewer({
                       openTools={openTools}
                       toggleTool={toggleTool}
                     />
+                    {activeFailure && (
+                      <div className="txn-held-window" role="alert">
+                        <span>could not load the window around turn {formatInteger(activeFailure.anchor)}.</span>{' '}
+                        {(typeof onLoadWindow === 'function' || (typeof onLoadSegment === 'function' && (windowKey || activeFailure.missing?.length))) && (
+                          <button type="button" className="txn-segboundary-load" onClick={retryWindow}>try again</button>
+                        )}
+                      </div>
+                    )}
                     {segmentMode && (directory?.totalSegments ?? 0) === 0 && (
                       <div className="empty txn-not-indexed" data-not-indexed="true">
                         <div className="ring"><FileText size={20} aria-hidden="true" /></div>

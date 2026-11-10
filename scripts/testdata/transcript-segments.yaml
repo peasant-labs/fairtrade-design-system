@@ -388,6 +388,42 @@ phaseCountCases:
     expectedTo: 79
 
 recoveryCases:
+  - name: a host reported failure can retry without a window loader
+    mode: host-segment-only
+    directory: sparse 55 turn session
+    loaded: [1, 3]
+    requests: [2, 2]
+    restoredTurn: 18
+    failureCopy: could not load the window around turn 30.
+    retryCopy: try again
+    window: {requestedAnchor: 30, anchorTurn: 30, span: 10, firstTurn: 18, lastTurn: 43, segments: [1, 2], hasOlder: true, hasNewer: true}
+  - name: a rejected covering load names the window and retries successfully
+    mode: covering-rejected
+    directory: sparse 55 turn session
+    loaded: [1, 3]
+    requests: [2, 2]
+    restoredTurn: 18
+    failureCopy: could not load the window around turn 30.
+    retryCopy: try again
+    window: {requestedAnchor: 30, anchorTurn: 30, span: 10, firstTurn: 18, lastTurn: 43, segments: [1, 2], hasOlder: true, hasNewer: true}
+  - name: a rejected window request names the window and retries successfully
+    mode: window-rejected
+    directory: sparse 55 turn session
+    loaded: [0]
+    requests: [30, 30]
+    restoredTurn: 30
+    failureCopy: could not load the window around turn 30.
+    retryCopy: try again
+    window: {requestedAnchor: 30, anchorTurn: 30, span: 10, firstTurn: 18, lastTurn: 43, segments: [1, 2], hasOlder: true, hasNewer: true}
+  - name: a host reported covering failure names the window and retries
+    mode: host-reported
+    directory: sparse 55 turn session
+    loaded: [1, 3]
+    requests: [30]
+    restoredTurn: 18
+    failureCopy: could not load the window around turn 30.
+    retryCopy: try again
+    window: {requestedAnchor: 30, anchorTurn: 30, span: 10, firstTurn: 18, lastTurn: 43, segments: [1, 2], hasOlder: true, hasNewer: true}
   - name: a rejected segment load enables retry
     mode: rejected
     directory: sparse 55 turn session

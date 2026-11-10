@@ -69,7 +69,7 @@ for (const row of fixture.windowCases) assertFields(row, ['name', 'directory', '
 for (const row of fixture.mountCases) assertFields(row, ['name', 'directory', 'loaded', 'expect'], `${FIXTURE} ${row.name}`, ['window', 'oversizedTurn', 'noLoader'])
 for (const row of fixture.phaseCases) assertFields(row, ['name', 'directory', 'loaded', 'phase', 'caption'], `${FIXTURE} ${row.name}`)
 for (const row of fixture.phaseCountCases) assertFields(row, ['name', 'turns', 'expectedCount', 'expectedFrom', 'expectedTo'], `${FIXTURE} ${row.name}`)
-for (const row of fixture.recoveryCases) assertFields(row, ['name', 'mode', 'directory', 'loaded', 'requests'], `${FIXTURE} ${row.name}`, ['window', 'restoredTurn'])
+for (const row of fixture.recoveryCases) assertFields(row, ['name', 'mode', 'directory', 'loaded', 'requests'], `${FIXTURE} ${row.name}`, ['window', 'restoredTurn', 'failureCopy', 'retryCopy'])
 
 const DIRECTORY = new Map(fixture.directories.map((row) => [row.name, row]))
 
@@ -370,6 +370,46 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     const def = DIRECTORY.get(row.directory)
     const directory = buildDirectory(def)
     const requests = []
+    if (row.failureCopy) {
+      const segments = makeSegments(def, row.loaded)
+      const descriptor = { sessionId: dirSession(), revision: '7', ...row.window }
+      let attempts = 0
+      const onLoadSegment = (index) => {
+        if (row.mode === 'host-segment-only') { requests.push(index); return }
+        if (row.mode !== 'covering-rejected') return
+        requests.push(index)
+        if (++attempts === 1) return Promise.reject(new Error('failed covering segment'))
+      }
+      const onLoadWindow = (anchor) => {
+        requests.push(anchor)
+        if (row.mode === 'window-rejected' && ++attempts === 1) return Promise.reject(new Error('failed window request'))
+      }
+      const props = { directory, segments, onLoadSegment, onLoadWindow: row.mode === 'host-segment-only' ? undefined : onLoadWindow }
+      const initial = row.mode === 'window-rejected' ? { initialPosition: { kind: 'turn', turnIndex: row.window.anchorTurn } } : { window: descriptor }
+      const mounted = await mount(viewer({ ...props, ...initial }))
+      await mounted.settle()
+      if (row.mode === 'host-reported' || row.mode === 'host-segment-only') {
+        await mounted.rerender(viewer({ ...props, window: null }))
+        await mounted.settle()
+      }
+      const failure = mounted.container.querySelector('.txn-held-window[role="alert"]')
+      report.check(!!failure && text(failure).includes(row.failureCopy), `${row.name}: rejection or host failure must be visible, not silently dropped`)
+      const retry = failure?.querySelector('button')
+      report.check(text(retry) === row.retryCopy, `${row.name}: failure offers retry`)
+      if (row.mode !== 'window-rejected') {
+        report.check(!!mounted.container.querySelector(`#turn-${row.restoredTurn}`), `${row.name}: failure restores held turns`)
+        report.check(!!mounted.container.querySelector('[data-segment-boundary]'), `${row.name}: failure retains a boundary`)
+      }
+      if (retry) await mounted.act(() => click(window, retry))
+      await mounted.settle()
+      report.check(JSON.stringify(requests) === JSON.stringify(row.requests), `${row.name}: retry invokes the same loader`)
+      await mounted.rerender(viewer({ ...props, window: descriptor, segments: makeSegments(def, [0, 1, 2, 3]) }))
+      await mounted.settle()
+      report.check(!!mounted.container.querySelector(`#turn-${row.window.anchorTurn}`), `${row.name}: successful retry renders the window`)
+      report.check(!mounted.container.querySelector('.txn-held-window[role="alert"]'), `${row.name}: success clears the failure`)
+      await mounted.unmount()
+      continue
+    }
     if (row.mode === 'clear-window') {
       const segments = makeSegments(def, row.loaded)
       const descriptor = { sessionId: dirSession(), revision: '7', ...row.window }

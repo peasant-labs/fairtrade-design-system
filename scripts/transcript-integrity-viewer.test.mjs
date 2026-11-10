@@ -18,6 +18,7 @@ const { fixture, manifest } = loadFixturePair(FIXTURE, MANIFEST, {
   cases: 'requiredCaseNames',
   outlineCases: 'requiredOutlineCaseNames',
   interactions: 'requiredInteractionNames',
+  historyCases: 'requiredHistoryCaseNames',
 })
 if (fixture.thinkingCase?.name !== manifest.requiredThinkingCaseName) throw new Error(`${FIXTURE}: thinkingCase must be named ${JSON.stringify(manifest.requiredThinkingCaseName)}`)
 
@@ -60,6 +61,7 @@ for (const row of fixture.cases) {
 }
 for (const row of fixture.outlineCases) assertFields(row, ['name', 'kind', 'flagged', 'outlines'], `${FIXTURE} ${row.name}`)
 for (const row of fixture.interactions) assertFields(row, ['name', 'kind'], `${FIXTURE} ${row.name}`)
+for (const row of fixture.historyCases) assertFields(row, ['name', 'state', 'label', 'explanation'], `${FIXTURE} ${row.name}`)
 
 const CAPABILITIES = { canEdit: false, canLabel: false, canContribute: true, canChangeVisibility: false, canExport: true }
 const FILTERS = {
@@ -82,6 +84,16 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   const { adaptTranscript } = await load('/src/ui/transcript/adapter.js')
   const { default: TranscriptViewer } = await load('/src/ui/transcript/TranscriptViewer.jsx')
   const { INTEGRITY_COPY } = await load('/src/ui/transcript/integrity.js')
+  for (const row of fixture.historyCases) {
+    const input = structuredClone(fixture.payload)
+    input.earlierHistory[0].state = row.state
+    const cooked = adaptTranscript(input)
+    const mounted = await mount(React.createElement(TranscriptViewer, { viewModel: cooked, capabilities: CAPABILITIES, earlierHistoryOpen: { [cooked.earlierHistory[0].id]: true } }))
+    await mounted.settle()
+    report.check(text(mounted.container.querySelector('.txn-earlier .txn-context-status')) === row.label, `${row.name}: mounted label matches the cooked state`)
+    report.check(text(mounted.container.querySelector('.txn-earlier .txn-context-note')) === row.explanation, `${row.name}: mounted explanation matches the cooked state`)
+    await mounted.unmount()
+  }
   const vm = adaptTranscript(fixture.payload)
   const positions = vm.turns.map((turn) => [turn.index, turn.sourcePosition])
   if (JSON.stringify(positions) !== JSON.stringify([[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7, 7]])) {
