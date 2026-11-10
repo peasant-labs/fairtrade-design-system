@@ -740,7 +740,7 @@ function buildMockupVM() {
 
 import { piPayload } from './pi-fixture.js'
 import { readingPayload } from './reading-fixture.js'
-import { buildSegmentsModel } from './segments-fixture.js'
+import { buildLargeRunModel, buildSegmentsModel } from './segments-fixture.js'
 import nestingSource from '../../../scripts/testdata/transcript-nesting.yaml?raw'
 import { integrityBoundProps } from './integrity-fixture.js'
 import { usePublishFlow } from './PublishFlowDemo.jsx'
@@ -765,12 +765,21 @@ export default function TranscriptApp({ theme = 'dark' }) {
    descriptor when the reader jumps. The viewer itself asks for the adjacent segment
    on load-more, the scrubber sample, or a window's covering run. */
 function SegmentsTranscriptDemo({ theme }) {
-  const model = useMemo(() => buildSegmentsModel(), [])
-  const initialTurn = useMemo(() => {
-    const raw = new URLSearchParams(window.location.search).get('turn')
-    return raw != null && /^\d+$/.test(raw) ? Number(raw) : null
+  const { large, initialTurn } = useMemo(() => {
+    const params = new URLSearchParams(window.location.search)
+    const raw = params.get('turn')
+    return {
+      large: params.get('large') === '1',
+      initialTurn: raw != null && /^\d+$/.test(raw) ? Number(raw) : null,
+    }
   }, [])
-  const [loaded, setLoaded] = useState(() => (initialTurn == null ? [model.segments[0]] : []))
+  const model = useMemo(() => (large ? buildLargeRunModel({ jump: initialTurn != null }) : buildSegmentsModel()), [large, initialTurn])
+  const [loaded, setLoaded] = useState(() => {
+    if (initialTurn != null) return []
+    /* the large-run paging model opens on its short middle segment, so both dotted
+       boundaries and both load-more controls are in the first screen */
+    return [large ? model.segments[1] : model.segments[0]].filter(Boolean)
+  })
   const [windowDescriptor, setWindowDescriptor] = useState(null)
   useEffect(() => {
     if (initialTurn != null) setWindowDescriptor(model.windowFor(initialTurn))
@@ -790,6 +799,7 @@ function SegmentsTranscriptDemo({ theme }) {
       window={windowDescriptor}
       onLoadSegment={loadSegment}
       onLoadWindow={(anchor) => setWindowDescriptor(model.windowFor(anchor))}
+      initialPosition={initialTurn != null ? { kind: 'turn', turnIndex: initialTurn } : undefined}
       showOutcome={false}
     />
   )

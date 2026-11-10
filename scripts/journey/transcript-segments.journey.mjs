@@ -101,6 +101,56 @@ for (const anchor of [60]) {
   })
 }
 
+test('large run shows both load-more boundaries', async ({ page }, info) => {
+    const theme = info.project.name
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto(`${origin}/?app=transcript&transcript=segments&large=1&fb=off&theme=${theme}#inuse`, { waitUntil: 'networkidle' })
+    await page.evaluate(() => document.fonts.ready)
+    await page.locator('#inuse').scrollIntoViewIfNeeded()
+    const evidence = await provenance(page, theme, 'large run paging')
+    const stream = page.locator('#inuse .txn-stream')
+    await expect(stream).toHaveAttribute('data-segment-mode', 'true')
+    const older = page.locator('#inuse [data-segment-boundary="older"]')
+    const newer = page.locator('#inuse [data-segment-boundary="newer"]')
+    await expect(older).toHaveCount(1)
+    await expect(newer).toHaveCount(1)
+    await expect(older.locator('button.txn-segboundary-load')).toBeInViewport()
+    await expect(newer.locator('button.txn-segboundary-load')).toBeInViewport()
+    expect(Number(await stream.getAttribute('data-mounted-turn-bound'))).toBeGreaterThan(0)
+    /* the middle segment opens first: a short run of large tool calls */
+    const cards = await page.locator('#inuse .txn-turn').count()
+    expect(cards).toBeLessThanOrEqual(Number(await stream.getAttribute('data-mounted-turn-bound')))
+    mkdirSync(captureDir, { recursive: true })
+    await page.locator('#inuse').screenshot({ path: join(captureDir, `large-run-both-sides-${theme}.png`) })
+    await info.attach('large-run-both-sides-provenance', { body: JSON.stringify(evidence, null, 2), contentType: 'application/json' })
+
+    await older.locator('button.txn-segboundary-load').click()
+    await expect(page.locator('#inuse [data-segment-boundary="older"]')).toHaveCount(0)
+    await expect(page.locator('#inuse [data-segment-boundary="newer"]')).toHaveCount(1)
+    await page.locator('#inuse [data-segment-boundary="newer"] button.txn-segboundary-load').click()
+    await expect(page.locator('#inuse [data-segment-boundary="newer"]')).toHaveCount(0)
+})
+
+test('large run jumps to the post-run user turn', async ({ page }, info) => {
+  const theme = info.project.name
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto(`${origin}/?app=transcript&transcript=segments&large=1&turn=16&fb=off&theme=${theme}#inuse`, { waitUntil: 'networkidle' })
+  await page.evaluate(() => document.fonts.ready)
+  await page.locator('#inuse').scrollIntoViewIfNeeded()
+  const evidence = await provenance(page, theme, 'large run jump')
+  await expect(page.locator('#inuse #turn-16')).toBeVisible()
+  await expect(page.locator('#inuse [data-segment-boundary="older"]')).toHaveCount(1)
+  await expect(page.locator('#inuse [data-segment-boundary="newer"]')).toHaveCount(1)
+  await expect(page.locator('#inuse [data-segment-boundary="older"] button.txn-segboundary-load')).toHaveCount(1)
+  await expect(page.locator('#inuse [data-segment-boundary="newer"] button.txn-segboundary-load')).toHaveCount(1)
+  /* bring the newer edge into the same frame as the post-run user turn */
+  await page.locator('#inuse .txn-stream').evaluate((node) => { node.scrollTop += 180 })
+  await page.waitForTimeout(120)
+  mkdirSync(captureDir, { recursive: true })
+  await page.locator('#inuse').screenshot({ path: join(captureDir, `large-run-after-jump-${theme}.png`) })
+  await info.attach('large-run-after-jump-provenance', { body: JSON.stringify(evidence, null, 2), contentType: 'application/json' })
+})
+
 test('segments open at the first segment', async ({ page }, info) => {
   const theme = info.project.name
   await page.setViewportSize({ width: 1440, height: 900 })
