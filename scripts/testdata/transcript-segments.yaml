@@ -9,6 +9,16 @@
 # Turn roles follow one formula so continuation and filter cases are deterministic:
 # identity % 6 == 0 is a user turn, % 7 == 0 is a system turn, every other turn is an
 # assistant turn with one tool call. `oversizedTurn` marks a single bounded turn.
+# `wordlessCases` name which turns are action continuations: an image is content.
+
+vitestSelection:
+  heldWindow: a held window beside a disjoint region keeps its gap boundary
+  failedWindow: a rejected covering load names the window and retries successfully
+  phase: phase starting mid transcript
+typeMutations:
+  - name: a new history state is missing from the ordered inventory
+    find: "  Unresolved: closed('uncertain_unresolved'"
+    replace: "  Future: closed('future_history_state', 'future history', { explanation: 'future' }),\n  Unresolved: closed('uncertain_unresolved'"
 
 directories:
   - name: 32 mib session
@@ -47,6 +57,28 @@ directories:
     firstTurn: 0
     segmentTurns: 0
     segmentBytes: 0
+
+historyPayload: {id: history-fixture, harness: claude-code, startTime: '2026-09-20T10:00:00Z', endTime: '2026-09-20T10:01:00Z', durationMins: 1, totalTokens: 0, tokensIn: 0, tokensOut: 0, turnCount: 0, toolCallCount: 0, turns: []}
+historyCases:
+  - name: migrated earlier history
+    state: uncertain_migrated
+    label: migrated history
+    explanation: this earlier history was retained during migration. its ownership is uncertain, so it is separate from current turns and input submissions.
+  - name: earlier history with unresolved ownership
+    state: uncertain_unresolved
+    label: ownership unresolved
+    explanation: the ownership of this earlier history could not be resolved. it is retained separately from current turns and input submissions.
+  - name: future history state remains unknown
+    state: future_history_state
+    label: unknown history state
+    explanation: the ownership of this earlier history is not known. it is retained separately from current turns and input submissions.
+  - name: prototype-looking history state remains unknown
+    state: __proto__
+    label: unknown history state
+    explanation: the ownership of this earlier history is not known. it is retained separately from current turns and input submissions.
+unknownHistoryInvalidCases:
+  - name: a future state does not excuse missing turns
+    section: {state: future_history_state, turns: null}
 
 loadCases:
   - name: opening segment 0 leaves one newer boundary
@@ -176,7 +208,7 @@ mountCases:
       boundaryCount: 1
       boundarySides: [newer]
       captions:
-        - turns 82–1311, 30 segments, 30 MiB
+        - 30 segments, 30 MiB
       filesScope: derived from 82 of 1312 turns, 2 of 32 segments loaded
       continuationCount: 0
       truncation: false
@@ -198,8 +230,8 @@ mountCases:
       boundaryCount: 2
       boundarySides: [older, newer]
       captions:
-        - turns 4–17, 1 segment, 4 KiB
-        - turns 46–58, 1 segment, 4 KiB
+        - 1 segment, 4 KiB
+        - 1 segment, 4 KiB
       filesScope: derived from 28 of 55 turns, 2 of 4 segments loaded
       continuationCount: 0
       truncation: false
@@ -213,7 +245,7 @@ mountCases:
       boundaryCount: 1
       boundarySides: [newer]
       captions:
-        - turns 18–58, 3 segments, 12 KiB
+        - 3 segments, 12 KiB
       filesScope: derived from 14 of 55 turns, 1 of 4 segments loaded
       continuationCount: 0
       truncation: true
@@ -227,8 +259,8 @@ mountCases:
       boundaryCount: 2
       boundarySides: [older, newer]
       captions:
-        - turns 0–40, 1 segment, 1 MiB
-        - turns 82–1311, 30 segments, 30 MiB
+        - 1 segment, 1 MiB
+        - 30 segments, 30 MiB
       filesScope: derived from 41 of 1312 turns, 1 of 32 segments loaded
       continuationCount: 1
       truncation: false
@@ -241,7 +273,7 @@ mountCases:
       boundaryCount: 1
       boundarySides: [between]
       captions:
-        - turns 18–45, 2 segments, 8 KiB
+        - 2 segments, 8 KiB
       filesScope: derived from 27 of 55 turns, 2 of 4 segments loaded
       continuationCount: 1
       truncation: false
@@ -254,8 +286,8 @@ mountCases:
       boundaryCount: 2
       boundarySides: [older, newer]
       captions:
-        - turns 4–31, 2 segments, 8 KiB
-        - turns 46–58, 1 segment, 4 KiB
+        - 2 segments, 8 KiB
+        - 1 segment, 4 KiB
       filesScope: derived from 14 of 55 turns, 1 of 4 segments loaded
       continuationCount: 1
       truncation: false
@@ -277,10 +309,62 @@ mountCases:
       boundaryCount: 2
       boundarySides: [older, between]
       captions:
-        - turns 4–17, 1 segment, 4 KiB
-        - turns 32–45, 1 segment, 4 KiB
+        - 1 segment, 4 KiB
+        - 1 segment, 4 KiB
       filesScope: derived from 27 of 55 turns, 2 of 4 segments loaded
-      continuationCount: 2
+      heldCaptions: ['these turns are hidden because surrounding turns are not loaded']
+      heldOrder: [boundary, held, boundary]
+      continuationCount: 1
+      truncation: false
+      notIndexed: false
+  - name: separated held segments keep their own ranges around a gap
+    directory: sparse 55 turn session
+    loaded: [0, 2, 3]
+    window:
+      requestedAnchor: 30
+      anchorTurn: 30
+      span: 10
+      firstTurn: 4
+      lastTurn: 45
+      segments: [0, 1, 2]
+      hasOlder: false
+      hasNewer: true
+    expect:
+      maxCards: 41
+      boundaryCount: 1
+      boundarySides: [between]
+      captions:
+        - 1 segment, 4 KiB
+      filesScope: derived from 41 of 55 turns, 3 of 4 segments loaded
+      heldCaptions:
+        - these turns are hidden because surrounding turns are not loaded
+        - these turns are hidden because surrounding turns are not loaded
+      heldOrder: [held, boundary, held]
+      continuationCount: 1
+      truncation: false
+      notIndexed: false
+  - name: held window without a loader stays honest
+    directory: sparse 55 turn session
+    loaded: [1, 3]
+    noLoader: true
+    window:
+      requestedAnchor: 30
+      anchorTurn: 30
+      span: 10
+      firstTurn: 18
+      lastTurn: 43
+      segments: [1, 2]
+      hasOlder: true
+      hasNewer: true
+    expect:
+      maxCards: 27
+      boundaryCount: 2
+      boundarySides: [older, between]
+      captions: ['1 segment, 4 KiB', '1 segment, 4 KiB']
+      filesScope: derived from 27 of 55 turns, 2 of 4 segments loaded
+      heldCaptions: ['these turns are hidden because surrounding turns are not loaded']
+      heldOrder: [boundary, held, boundary]
+      continuationCount: 1
       truncation: false
       notIndexed: false
   - name: a single segment directory draws no boundary
@@ -307,3 +391,115 @@ mountCases:
       continuationCount: 0
       truncation: false
       notIndexed: true
+
+phaseCases:
+  - name: phase starting at turn zero
+    directory: single segment session
+    loaded: [0]
+    phase: {id: exploration, label: exploration, from: 0, to: 9, turnCount: 9}
+    caption: 9 turns
+  - name: phase starting mid transcript
+    directory: sparse 55 turn session
+    loaded: [2]
+    phase: {id: implementation, label: implementation, from: 32, to: 45, errors: 1, turnCount: 13}
+    caption: 13 turns, 1 error
+  - name: precomputed phase without a count omits it
+    directory: single segment session
+    loaded: [0]
+    phase: {id: exploration, label: exploration, from: 0, to: 9, errors: 1}
+    caption: 1 error
+
+phaseCountCases:
+  - name: sparse phase counts conversation turns rather than indexes
+    turns:
+      - {index: 10, role: user, content: hello}
+      - {index: 55, role: assistant, content: done}
+      - {index: 79, role: system, content: notice}
+    expectedCount: 2
+    expectedFrom: 10
+    expectedTo: 79
+
+recoveryCases:
+  - name: a host reported failure can retry without a window loader
+    mode: host-segment-only
+    directory: sparse 55 turn session
+    loaded: [1, 3]
+    requests: [2, 2]
+    restoredTurn: 18
+    failureCopy: could not load the window around turn 30.
+    retryCopy: try again
+    window: {requestedAnchor: 30, anchorTurn: 30, span: 10, firstTurn: 18, lastTurn: 43, segments: [1, 2], hasOlder: true, hasNewer: true}
+  - name: a rejected covering load names the window and retries successfully
+    mode: covering-rejected
+    directory: sparse 55 turn session
+    loaded: [1, 3]
+    requests: [2, 2]
+    restoredTurn: 18
+    failureCopy: could not load the window around turn 30.
+    retryCopy: try again
+    window: {requestedAnchor: 30, anchorTurn: 30, span: 10, firstTurn: 18, lastTurn: 43, segments: [1, 2], hasOlder: true, hasNewer: true}
+  - name: a rejected window request names the window and retries successfully
+    mode: window-rejected
+    directory: sparse 55 turn session
+    loaded: [0]
+    requests: [30, 30]
+    restoredTurn: 30
+    failureCopy: could not load the window around turn 30.
+    retryCopy: try again
+    window: {requestedAnchor: 30, anchorTurn: 30, span: 10, firstTurn: 18, lastTurn: 43, segments: [1, 2], hasOlder: true, hasNewer: true}
+  - name: a host reported covering failure names the window and retries
+    mode: host-reported
+    directory: sparse 55 turn session
+    loaded: [1, 3]
+    requests: [30]
+    restoredTurn: 18
+    failureCopy: could not load the window around turn 30.
+    retryCopy: try again
+    window: {requestedAnchor: 30, anchorTurn: 30, span: 10, firstTurn: 18, lastTurn: 43, segments: [1, 2], hasOlder: true, hasNewer: true}
+  - name: a rejected segment load enables retry
+    mode: rejected
+    directory: sparse 55 turn session
+    loaded: [0]
+    requests: [1, 1]
+  - name: a void segment load remains retryable
+    mode: void
+    directory: sparse 55 turn session
+    loaded: [0]
+    requests: [1, 1]
+  - name: clearing a failed window allows the same request again
+    mode: clear-window
+    directory: sparse 55 turn session
+    loaded: [1, 3]
+    restoredTurn: 18
+    requests: [2, 2]
+    window:
+      requestedAnchor: 30
+      anchorTurn: 30
+      span: 10
+      firstTurn: 18
+      lastTurn: 43
+      segments: [1, 2]
+      hasOlder: true
+      hasNewer: true
+# An empty assistant turn can continue model actions from an unloaded segment.
+# An image is content of its own, so it is not that continuation even when its text is empty.
+wordlessCases:
+  - name: an empty assistant turn continues an action run
+    turn:
+      role: assistant
+      content: ""
+    wordless: true
+  - name: an image-bearing assistant turn is content
+    turn:
+      role: assistant
+      content: ""
+      contentParts:
+        - type: image
+          image:
+            ref: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    wordless: false
+  - name: prose is not an action continuation
+    turn:
+      role: assistant
+      content: a reply
+    wordless: false

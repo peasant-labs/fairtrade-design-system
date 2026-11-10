@@ -1,5 +1,5 @@
 expectedAdapterCaseCount: 6
-expectedHarnessCount: 8
+expectedHarnessCount: 14
 expectedStopReasonCount: 5
 expectedInvalidStopReasonCount: 2
 mountedViewerCase: canonical-flat
@@ -12,6 +12,12 @@ harnessValues:
   - antigravity
   - strike
   - pi
+  - grok-build
+  - devin-desktop
+  - cline
+  - kiro
+  - kiro-cli
+  - kiro-crew
 stopReasonValues:
   - end_turn
   - cancelled

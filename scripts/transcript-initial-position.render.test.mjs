@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client'
 import { JSDOM } from 'jsdom'
 import react from '@vitejs/plugin-react'
 import { createServer } from 'vite'
+import { FAIRTRADE_VITE_CACHE_DIR } from './vite-cache-dir.mjs'
 import YAML from 'yaml'
 
 const manifestSource = readFileSync(resolve('scripts/testdata/transcript-initial-position.render.manifest.yaml'), 'utf8')
@@ -140,6 +141,7 @@ globalThis.IntersectionObserver = class { observe() {} unobserve() {} disconnect
 globalThis.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} }
 
 const server = await createServer({
+  cacheDir: FAIRTRADE_VITE_CACHE_DIR,
   appType: 'custom', configFile: false, logLevel: 'silent', plugins: [mutationPlugin, react()],
   root: process.cwd(), server: { middlewareMode: true },
 })

@@ -1,0 +1,17 @@
+requiredCaseNames:
+  - an absent system follows the hidden default
+  - explicit true reveals the entries
+  - explicit false is kept
+  - a pre-toggle saved state cannot reveal the entries
+  - an unknown version follows the default
+  - a missing version follows the default
+  - a non-object value follows the default
+  - an absent value follows the default
+  - an array value follows the default
+  - a non-boolean system is ignored
+  - checkpoint and views never enter the intent
+requiredEncodeCaseNames:
+  - the default encodes no dimension
+  - an untouched system key encodes no dimension
+  - a revealed toggle encodes true
+  - other deviations are not persisted

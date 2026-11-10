@@ -14,3 +14,6 @@ requiredRefusalNames:
   - object-wire
   - numeric-label
   - empty-label
+requiredMetadataNames:
+  - explanation-metadata
+  - metadata-cannot-override-core-fields

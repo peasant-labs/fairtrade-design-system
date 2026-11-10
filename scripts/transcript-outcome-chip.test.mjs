@@ -14,6 +14,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { createServer } from 'vite'
+import { FAIRTRADE_VITE_CACHE_DIR } from './vite-cache-dir.mjs'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { JSDOM } from 'jsdom'
@@ -26,7 +27,7 @@ const manifest = loadStrictYaml('testdata/transcript-outcome-chip.manifest.yaml'
 validateManifest(manifest)
 validateFixture(fixture, manifest)
 
-const server = await createServer({ appType: 'custom', configFile: false, logLevel: 'silent', root: ROOT })
+const server = await createServer({ cacheDir: FAIRTRADE_VITE_CACHE_DIR, appType: 'custom', configFile: false, logLevel: 'silent', root: ROOT })
 const failures = []
 let totalChecks = 0
 function check(passed, message) {

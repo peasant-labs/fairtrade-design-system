@@ -20,6 +20,7 @@
    a segment read; the truncation notice and the mounted-card bound read them. */
 
 import { buildFiles, buildToolGroupCounts } from './adapter.js'
+import { hasImageParts } from './image-parts.js'
 
 /** @typedef {import('./view-model.js').TurnVM} TurnVM */
 
@@ -282,11 +283,9 @@ export function formatByteExtent(bytes) {
 
 /** The boundary's caption: the unloaded extent on that side, in turns, segments and bytes. */
 export function boundaryCaption(boundary) {
-  const turns = boundary.firstTurn === boundary.lastTurn
-    ? `turn ${boundary.firstTurn}`
-    : `turns ${boundary.firstTurn}–${boundary.lastTurn}`
+  // The directory has no per-segment turn counts; ordinal ranges require a contract change.
   const segments = `${boundary.segmentCount} ${boundary.segmentCount === 1 ? 'segment' : 'segments'}`
-  return `${turns}, ${segments}, ${formatByteExtent(boundary.byteLength)}`
+  return `${segments}, ${formatByteExtent(boundary.byteLength)}`
 }
 
 /** The fixed scrubber sample over the directory. Never one tick per turn. */
@@ -367,5 +366,7 @@ export function loadedToolGroupCounts(turns) {
 /** Whether a turn is a wordless assistant turn: a run of model actions that may have
     started in a segment the reader has not loaded. */
 export function isWordlessAssistant(turn) {
-  return !!turn && turn.role === 'assistant' && String(turn.displayContent ?? turn.content ?? '').trim() === ''
+  // An image is content of its own. A turn that carries one is not a continuation of
+  // model actions from an unloaded segment, even when its text is empty.
+  return !!turn && turn.role === 'assistant' && !hasImageParts(turn) && String(turn.displayContent ?? turn.content ?? '').trim() === ''
 }

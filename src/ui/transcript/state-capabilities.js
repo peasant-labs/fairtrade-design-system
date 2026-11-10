@@ -74,7 +74,7 @@
  * `tags` gate semantic friction tags; `views` are display toggles; `checkpoint`
  * scopes the trace to a commit (`'all'` = unscoped).
  * @typedef {object} TranscriptFilters
- * @property {{ prompts: boolean, responses: boolean, thinking: boolean, toolcalls: boolean, system?: boolean }} categories  system defaults to true when absent from saved or host-controlled state
+ * @property {{ prompts: boolean, responses: boolean, thinking: boolean, toolcalls: boolean, system?: boolean }} categories  `system` is absent in a state saved before the category existed, and absent means HIDDEN (the documented default); only an explicit `true` reveals the entries
  * @property {Partial<Record<import('./view-model.js').ToolGroup, boolean>>} toolGroups
  * @property {{ errors: boolean, retries: boolean, revert: boolean }} tags
  * @property {{ hidden: boolean, expandAll: boolean, compact: boolean }} views
@@ -193,6 +193,7 @@
  * @property {import('react').ReactNode} [beforeHeader]                in-flow content before the session header
  * @property {(turn: import('./view-model.js').TurnVM) => unknown} [renderTurnPanel]  host per-turn extension rendered under each turn card
  * @property {(turn: import('./view-model.js').TurnVM) => unknown} [renderTurnActions]  host-owned per-turn actions; replaces the built-in label affordance (hosts with typed label models keep their own popovers)
+ * @property {(ref: string) => string | null | undefined} [attachmentUrl]  resolve one image part's content reference to a URL the browser can load (the host's local attachment route). A present image the host cannot resolve renders its unavailable placeholder instead of a broken image; omitted images never call it
  * @property {(turnIndex: number) => string} [anchorHref]              host permalink for a turn's copy-anchor action; a root-relative return is absolutized against the page origin. Omitted, the demo copies its bare '#turn-N' placeholder
  * @property {unknown} [headerActions]                                 host session-level actions rendered at the head of the hero action row (attest etc.); the composite's own actions stay the shared tail
  * @property {import('react').ReactNode} [utilityActions]                host secondary actions, in the header on desktop and the bottom bar on phones
@@ -210,8 +211,8 @@
  * @property {string | null} [contentHash]                             the bare hash of the content `viewModel` was cooked from (the content route's `Village-Content-Hash` header). Turns are marked only when it equals `transcriptContentHash` and both are non-empty
  * @property {import('./segments.js').SegmentDirectoryVM | null} [directory] the transcript's only global index (segment refs, totals, revision). Supplied with `segments`, the viewer renders loaded regions instead of a whole-session turn list
  * @property {import('./segments.js').SegmentVM[] | Map<number, import('./segments.js').SegmentVM> | Record<number, import('./segments.js').SegmentVM>} [segments] the segments the host has loaded, already cooked to `TurnVM`s; the viewer never mounts a turn it was not given
- * @property {import('./segments.js').SegmentWindowVM | null} [window] a jump descriptor: where the window is and which covering segments to load. It carries no turn content
- * @property {(segmentIndex: number) => void | Promise<unknown>} [onLoadSegment] load one segment; the boundary, the scrubber and a window all request through this one path
+ * @property {import('./segments.js').SegmentWindowVM | null} [window] a jump descriptor: where the window is and which covering segments to load. It carries no turn content. If a void covering load fails, the host reports the error and clears this prop to null; clearing restores held turns and offers the window request again
+ * @property {(segmentIndex: number) => void | Promise<unknown>} [onLoadSegment] load one segment; the boundary, the scrubber and a window all request through this one path. Return a promise that settles on success or failure to disable the boundary while pending; rejection re-enables it. A void return leaves the boundary enabled so the host can retry. The host owns error reporting
  * @property {(anchorTurn: number, span?: number) => void | Promise<unknown>} [onLoadWindow] resolve a jump's window descriptor from a turn identity
  */
 

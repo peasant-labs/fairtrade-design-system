@@ -1,6 +1,9 @@
 # Required-NAME and required-KIND manifest for transcript-integrity-viewer.yaml: deletion
 # protection. The gate (scripts/transcript-integrity-viewer.test.mjs) asserts each family's names
 # equal these lists exactly and that every row's `kind` matches its name here.
+requiredHistoryCaseNames:
+  - migrated history remains uncertain
+  - unresolved history names its unresolved ownership
 requiredCaseNames:
   - no integrity renders nothing
   - malformed integrity renders nothing
@@ -127,3 +130,4 @@ mutations:
     find: " && !isCard(turn)"
     replace: ""
     expectedDiagnostic: "a flagged prose turn with work draws one outline"
+requiredRetainedImageCaseName: retained history resolves its image through the host

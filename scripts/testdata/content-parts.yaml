@@ -1,0 +1,131 @@
+# Cases for ordered turn content parts (src/ui/transcript/adapter.js + ImageAttachment).
+#
+# The producer records a turn's blocks in source order: text and image parts. The adapter copies
+# them into the cooked model in that order, and the viewer draws them where they were recorded.
+# `content` stays the text fallback, so a payload from a producer that predates content_parts_v1
+# renders exactly as before, and an image-only turn is retained instead of being dropped as an
+# empty legacy banner.
+#
+# scripts/transcript-content-parts.test.mjs runs the real adapter for `decode` and `fallback`
+# rows, mounts the real TurnCard for `order` rows, and reads the pure alt-text rule for `alt`
+# rows. A present image resolves through the host's `attachmentUrl`; the test supplies one.
+cases:
+  - name: text and image parts round-trip in source order
+    kind: decode
+    content: 'look at this and this'
+    contentParts:
+      - {type: text, text: 'look at this'}
+      - {type: image, image: {ref: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', mediaType: 'image/png', byteSize: 2048, width: 640, height: 480}}
+      - {type: text, text: 'and this'}
+    expected:
+      - {type: text, text: 'look at this'}
+      - {type: image, image: {ref: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', mediaType: 'image/png', byteSize: 2048, width: 640, height: 480}}
+      - {type: text, text: 'and this'}
+  - name: an image-only turn is retained with no text
+    kind: decode
+    content: ''
+    contentParts:
+      - {type: image, image: {ref: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', mediaType: 'image/jpeg', byteSize: 512, width: 64, height: 64}}
+    expected:
+      - {type: image, image: {ref: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', mediaType: 'image/jpeg', byteSize: 512, width: 64, height: 64}}
+    retained: true
+  - name: an unknown part kind is dropped without inventing evidence
+    kind: decode
+    content: 'plain'
+    contentParts:
+      - {type: text, text: 'plain'}
+      - {type: video, text: 'ignored'}
+    expected:
+      - {type: text, text: 'plain'}
+  - name: a missing image object is dropped
+    kind: decode
+    content: 'plain'
+    contentParts:
+      - {type: text, text: 'plain'}
+      - {type: image}
+    expected:
+      - {type: text, text: 'plain'}
+  - name: an omitted image keeps its reason
+    kind: decode
+    content: ''
+    contentParts:
+      - {type: image, image: {omittedReason: not_published}}
+    expected:
+      - {type: image, image: {omittedReason: not_published}}
+    retained: true
+  - name: a cursor image prompt loses its user_query wrapper
+    kind: decode
+    harness: cursor
+    content: "<user_query>check this screenshot</user_query>"
+    displayContent: "check this screenshot"
+    contentParts:
+      - {type: text, text: "<user_query>check this screenshot</user_query>"}
+      - {type: image, image: {ref: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', mediaType: 'image/png', byteSize: 4096, width: 640, height: 400}}
+    expected:
+      - {type: text, text: "check this screenshot"}
+      - {type: image, image: {ref: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', mediaType: 'image/png', byteSize: 4096, width: 640, height: 400}}
+    retained: true
+  - name: a cursor wrapper spanning an image keeps both text blocks
+    kind: decode
+    harness: cursor
+    content: "<user_query>before the shot\n\nafter the shot</user_query>"
+    displayContent: "before the shot\n\nafter the shot"
+    contentParts:
+      - {type: text, text: "<user_query>before the shot\n\n"}
+      - {type: image, image: {ref: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', mediaType: 'image/jpeg', byteSize: 2048, width: 320, height: 200}}
+      - {type: text, text: "after the shot</user_query>"}
+    expected:
+      - {type: text, text: "before the shot\n\n"}
+      - {type: image, image: {ref: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', mediaType: 'image/jpeg', byteSize: 2048, width: 320, height: 200}}
+      - {type: text, text: "after the shot"}
+  - name: a cursor wrapper keeps the follow-up after its close
+    kind: decode
+    harness: cursor
+    content: "<user_query>look</user_query>\n\nand then run it"
+    displayContent: "look\n\nand then run it"
+    contentParts:
+      - {type: text, text: "<user_query>look</user_query>\n\nand then run it"}
+    expected:
+      - {type: text, text: "look\n\nand then run it"}
+  - name: a turn without parts has no cooked parts
+    kind: fallback
+    content: 'the recorded text'
+    expectedContent: 'the recorded text'
+  - name: an empty parts list falls back to the text
+    kind: fallback
+    content: 'the recorded text'
+    contentParts: []
+    expectedContent: 'the recorded text'
+  - name: rendered order follows the recorded order
+    kind: order
+    content: 'before after'
+    expected: [text, image, text]
+    contentParts:
+      - {type: text, text: 'before'}
+      - {type: image, image: {ref: 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc', mediaType: 'image/png', byteSize: 4096, width: 320, height: 200}}
+      - {type: text, text: 'after'}
+  - name: two images render in the order they were recorded
+    kind: order
+    content: ''
+    expected: [image, image]
+    contentParts:
+      - {type: image, image: {ref: 'dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd', mediaType: 'image/png', byteSize: 1024, width: 100, height: 60}}
+      - {type: image, image: {ref: 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', mediaType: 'image/jpeg', byteSize: 2048, width: 80, height: 40}}
+  - name: alt text names one image's recorded facts
+    kind: alt
+    image: {ref: 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', mediaType: 'image/png', byteSize: 2048, width: 640, height: 480}
+    position: 1
+    total: 1
+    expected: 'image 1, image/png, 640 by 480 pixels, 2 KiB'
+  - name: alt text places an image among its siblings
+    kind: alt
+    image: {ref: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', mediaType: 'image/jpeg', byteSize: 1048576, width: 1920, height: 1080}
+    position: 2
+    total: 3
+    expected: 'image 2 of 3, image/jpeg, 1920 by 1080 pixels, 1 MiB'
+  - name: alt text never comes back empty for a bare part
+    kind: alt
+    image: {}
+    position: 1
+    total: 1
+    expected: 'image 1'

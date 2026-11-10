@@ -1,4 +1,4 @@
-import { formatCount } from '../format.js'
+import { formatCount, formatInteger } from '../format.js'
 import { headingTag, pageHeadingLevel } from '../heading.js'
 import { Fragment, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -42,6 +42,8 @@ import OutlineRail from './OutlineRail.jsx'
 import FiltersRail from './FiltersRail.jsx'
 import TranscriptSystemGroup from './SystemGroup.jsx'
 import { systemGroups as groupSystemTurns } from './system-groups.js'
+import { systemGroupFacetKinds, filterSystemGroupMembers, systemGroupFacetKey, systemGroupFacetSelected, toggleSystemGroupFacet } from './system-group-facet.js'
+import { hasImageParts } from './image-parts.js'
 import TranscriptMinimap from './Minimap.jsx'
 import Scrubber from './Scrubber.jsx'
 import Scorecard from './Scorecard.jsx'
@@ -222,7 +224,7 @@ function PhaseDivider({ phase, heading: Heading = 'h3' }) {
   return (
     <div className="phase txn-phase">
       <Heading className="lbl"><Icon size={14} aria-hidden="true" /> {phase.label}</Heading>
-      <span className="rng tnum">turns {phase.from + 1}–{phase.to + 1}{phase.errors ? `, ${phase.errors} error` : ''}</span>
+      {(phase.turnCount != null || phase.errors) && <span className="rng tnum">{phase.turnCount != null ? `${formatInteger(phase.turnCount)} ${phase.turnCount === 1 ? 'turn' : 'turns'}` : ''}{phase.errors ? `${phase.turnCount != null ? ', ' : ''}${formatInteger(phase.errors)} error` : ''}</span>}
     </div>
   )
 }
@@ -310,6 +312,7 @@ export default function TranscriptViewer({
   LinkComponent,
   renderTurnPanel,
   renderTurnActions,
+  attachmentUrl,
   anchorHref,
   headerActions,
   utilityActions,
@@ -342,10 +345,19 @@ export default function TranscriptViewer({
   const EmptyHeading = headingTag(pageLevel, 1)
   const segmentMode = segmentsProp != null
   const loadedSegments = useMemo(() => (segmentMode ? normaliseSegments(segmentsProp) : []), [segmentMode, segmentsProp])
-  const coverage = useMemo(() => (segmentMode ? windowCoverage(windowProp, loadedSegments) : null), [segmentMode, windowProp, loadedSegments])
+  const windowKey = segmentMode && windowProp
+    ? `${viewModel?.session?.id ?? ''}:${windowProp.revision ?? ''}:${windowProp.anchorTurn}:${(windowProp.segments ?? []).join(',')}`
+    : ''
+  const [windowFailure, setWindowFailure] = useState(null)
+  const [windowRetry, setWindowRetry] = useState(0)
+  const activeFailure = windowFailure && windowFailure.sessionId === viewModel?.session?.id && (!windowKey || !windowFailure.key || windowFailure.key === windowKey) ? windowFailure : null
+  const rawCoverage = useMemo(() => (segmentMode ? windowCoverage(windowProp, loadedSegments) : null), [segmentMode, windowProp, loadedSegments])
+  const coverage = activeFailure ? null : rawCoverage
   /* A window renders only once every covering segment is in hand. A partly loaded
      window is held back, so the reader never meets a false boundary inside it. */
   const heldWindow = !!(segmentMode && coverage?.required && !coverage.complete)
+  const heldSegments = heldWindow ? loadedSegments.filter((segment) => coverage.indexes.includes(segment.index)) : []
+  const heldRegions = loadedRegions(directory, heldSegments)
   const renderedSegments = useMemo(
     () => (segmentMode
       ? (heldWindow ? loadedSegments.filter((segment) => !coverage.indexes.includes(segment.index)) : loadedSegments)
@@ -479,6 +491,7 @@ export default function TranscriptViewer({
     if (groupStateSessionRef.current === sessionId) return
     groupStateSessionRef.current = sessionId
     setOpenSystemGroups({})
+    setSystemFacet({})
     setSystemReveal(null)
   }, [vm?.session?.id])
   useEffect(() => {
@@ -571,6 +584,10 @@ export default function TranscriptViewer({
      or a session switch. */
   const [systemReveal, setSystemReveal] = useState(null)
   const [openSystemGroups, setOpenSystemGroups] = useState({})
+  /* Ephemeral per-kind facet selection for a system-entry group, keyed by group id. It is
+     reader state for one reading: never persisted, and a group whose id changes starts
+     unfiltered. */
+  const [systemFacet, setSystemFacet] = useState({})
   const [searchUnrendered, setSearchUnrendered] = useState(false)
   const [searchMeasurements, setSearchMeasurements] = useState({ query: '', sections: {} })
   const [selectedSearchRange, setSelectedSearchRange] = useState(null)
@@ -591,23 +608,81 @@ export default function TranscriptViewer({
   const pendingJumpRef = useRef(null)
   const pendingSeekRef = useRef(null)
   const ackScrollRef = useRef(null)
+  const windowAttemptRef = useRef({ sessionId: session.id, sequence: 0 })
+  if (windowAttemptRef.current.sessionId !== session.id) windowAttemptRef.current = { sessionId: session.id, sequence: 0 }
   const [loadingSegment, setLoadingSegment] = useState(null)
   const windowRequestRef = useRef({ key: '', indexes: new Set() })
-  const windowKey = segmentMode && windowProp
-    ? `${windowProp.revision ?? ''}:${windowProp.anchorTurn}:${(windowProp.segments ?? []).join(',')}`
-    : ''
   const loadedIndexKey = loadedSegments.map((segment) => segment.index).join(',')
+  const previousWindowRef = useRef(null)
   useEffect(() => {
-    if (!segmentMode || !windowKey || typeof onLoadSegment !== 'function') return
+    const previous = previousWindowRef.current
+    if (windowKey && rawCoverage?.complete && activeFailure?.key === windowKey) setWindowFailure(null)
+    if (!windowKey && previous?.key && previous.incomplete && previous.sessionId === session.id) {
+      setWindowFailure(current => current ?? { ...previous, kind: 'window' })
+    }
+    if (windowKey && activeFailure?.kind === 'window' && (!previous || previous.key !== windowKey) && windowProp.anchorTurn === activeFailure.anchor) setWindowFailure(null)
+    previousWindowRef.current = windowKey ? { key: windowKey, anchor: windowProp.anchorTurn, sessionId: session.id, incomplete: !rawCoverage?.complete, missing: rawCoverage?.missing ?? [] } : null
+  }, [windowKey, rawCoverage?.complete, session.id, windowProp, activeFailure])
+  useEffect(() => {
+    if (!segmentMode || !windowKey) {
+      windowRequestRef.current = { key: '', indexes: new Set() }
+      return
+    }
+    if (activeFailure) return
+    if (typeof onLoadSegment !== 'function') return
     if (windowRequestRef.current.key !== windowKey) windowRequestRef.current = { key: windowKey, indexes: new Set() }
+    const request = windowRequestRef.current
     const held = new Set(loadedSegments.map((segment) => segment.index))
     for (const index of windowProp.segments ?? []) {
       if (held.has(index) || windowRequestRef.current.indexes.has(index)) continue
       windowRequestRef.current.indexes.add(index)
-      onLoadSegment(index)
+      const fail = () => {
+        if (windowRequestRef.current === request) setWindowFailure({ key: windowKey, anchor: windowProp.anchorTurn, sessionId: session.id, kind: 'segment' })
+      }
+      try {
+        const result = onLoadSegment(index)
+        if (result && typeof result.then === 'function') Promise.resolve(result).catch(fail)
+      } catch {
+        fail()
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [segmentMode, windowKey, loadedIndexKey, onLoadSegment])
+  }, [segmentMode, windowKey, loadedIndexKey, onLoadSegment, activeFailure, windowRetry])
+
+  function requestWindow(anchor) {
+    const attempt = ++windowAttemptRef.current.sequence
+    const fail = () => {
+      if (windowAttemptRef.current.sessionId === session.id && windowAttemptRef.current.sequence === attempt) setWindowFailure({ key: '', anchor, sessionId: session.id, kind: 'window' })
+    }
+    try {
+      const result = onLoadWindow(anchor)
+      if (result && typeof result.then === 'function') Promise.resolve(result).catch(fail)
+    } catch {
+      fail()
+    }
+  }
+
+  function retryWindow() {
+    if (!activeFailure) return
+    const failure = activeFailure
+    setWindowFailure(null)
+    if (failure.kind === 'segment' && windowKey) {
+      windowRequestRef.current = { key: '', indexes: new Set() }
+      setWindowRetry(value => value + 1)
+    } else if (typeof onLoadWindow === 'function') {
+      requestWindow(failure.anchor)
+    } else if (typeof onLoadSegment === 'function') {
+      for (const index of failure.missing ?? []) {
+        const fail = () => setWindowFailure(failure)
+        try {
+          const result = onLoadSegment(index)
+          if (result && typeof result.then === 'function') Promise.resolve(result).catch(fail)
+        } catch {
+          fail()
+        }
+      }
+    }
+  }
 
   useEffect(() => {
     setSearchMeasurements({ query: '', sections: {} })
@@ -847,31 +922,42 @@ export default function TranscriptViewer({
   }, [segmentMode, boundaries, visibleTurns, systemGroups])
 
 
-  /* A model-actions block is not a turn: only a turn that draws a card (prose, or the system
-     row) owns the reading position and the keyboard step. */
+  /* A model-actions block is not a turn: only a turn that draws a card (prose, an image, or the
+     system row) owns the reading position and the keyboard step. */
   const cardTurns = useMemo(
-    () => visibleTurns.filter((t) => t.role === 'system' || String(t.displayContent ?? t.content ?? '').trim() !== ''),
+    () => visibleTurns.filter((t) => t.role === 'system' || hasImageParts(t) || String(t.displayContent ?? t.content ?? '').trim() !== ''),
     [visibleTurns],
   )
 
+  /* The kinds each group offers, derived from that group's own (unfiltered) members. A run of
+     one kind gets no facet: the head summary already names it. */
+  const systemGroupFacets = useMemo(() => {
+    /** @type {Map<string, Array<{ id: string, label: string, count: number }>>} */
+    const byGroup = new Map()
+    for (const group of new Set(systemGroups.values())) byGroup.set(group.id, systemGroupFacetKinds(group.members))
+    return byGroup
+  }, [systemGroups])
+
   /* The navigable list: the drawn cards, with a system-entry group collapsed to one stop at
-     its owner plus the members of groups the reader has opened. Progress, the keyboard step,
-     the reading line, the minimap and jump-latest all read this one list, so a closed group
-     is one stop and opening it adds its members. */
+     its owner plus the members of groups the reader has opened AND the facet still shows.
+     Progress, the keyboard step, the reading line, the minimap and jump-latest all read this
+     one list, so a closed group is one stop and opening it adds only its visible members. */
   const navigableTurns = useMemo(() => {
     if (systemGroups.size === 0) return cardTurns
     return cardTurns.filter((turn) => {
       const group = systemGroups.get(turn.index)
       if (!group) return true
-      return group.owner.index === turn.index || openSystemGroups[group.id] === true
+      if (group.owner.index === turn.index) return true
+      if (openSystemGroups[group.id] !== true) return false
+      return systemGroupFacetSelected(systemFacet[group.id], systemGroupFacetKey(turn))
     })
-  }, [cardTurns, systemGroups, openSystemGroups])
+  }, [cardTurns, systemGroups, openSystemGroups, systemFacet])
 
   /* Turns hidden ONLY by the system category: re-project with system on and every other
      filter unchanged. Search enumerates this set so a hit can never exist that no reveal can
      show, and an initial position can reveal one of these without writing the reader's filters. */
   const systemHiddenTurns = useMemo(() => {
-    if (filters.categories?.system !== false) return []
+    if (filters.categories?.system === true) return []
     const { checkpoint } = filters
     const selCommit = checkpoint !== 'all' ? commits.find((c) => c.shortHash === checkpoint || c.hash === checkpoint) : null
     const ctx = {
@@ -999,7 +1085,7 @@ export default function TranscriptViewer({
     if (position.kind === 'turn' && segmentMode && !turns.some((turn) => turn.index === position.turnIndex) && typeof onLoadWindow === 'function') {
       if (pendingJumpRef.current !== position.turnIndex) {
         pendingJumpRef.current = position.turnIndex
-        onLoadWindow(position.turnIndex)
+        requestWindow(position.turnIndex)
       }
       return 'pending'
     }
@@ -1167,12 +1253,18 @@ export default function TranscriptViewer({
     navigationTargetRef.current = null
   }
   /* A member of a system-entry group resolves to its owner for selection and readiness, but a
-     landing still targets the member's own anchor. */
+     landing still targets the member's own anchor.
+     Landing on a folded member also releases a facet that would hide it: the reader asked to
+     reach THAT record (a search hit, a copied anchor, an initial position), so a remembered
+     per-group narrowing must not make the target unreachable. */
   function openGroupForTurn(idx) {
     const group = systemGroups.get(idx)
     // The owner IS the group's one stop, so landing on it leaves the group closed; landing on
     // a folded member opens the group so that member can be reached.
-    if (group && group.owner.index !== idx) setOpenSystemGroups((previous) => (previous[group.id] ? previous : { ...previous, [group.id]: true }))
+    if (group && group.owner.index !== idx) {
+      setOpenSystemGroups((previous) => (previous[group.id] ? previous : { ...previous, [group.id]: true }))
+      setSystemFacet((previous) => (previous[group.id] ? { ...previous, [group.id]: {} } : previous))
+    }
     return group
   }
   function jumpTo(idx, { switchTab = true } = {}) {
@@ -1187,7 +1279,7 @@ export default function TranscriptViewer({
     if (segmentMode && !turns.some((turn) => turn.index === idx) && typeof onLoadWindow === 'function') {
       pendingJumpRef.current = idx
       selectTurn(idx)
-      onLoadWindow(idx)
+      requestWindow(idx)
       return
     }
     const group = openGroupForTurn(idx)
@@ -1253,10 +1345,11 @@ export default function TranscriptViewer({
       const anchor = captureReadingAnchor()
       if (anchor) ackScrollRef.current = anchor
     }
-    setLoadingSegment(index)
     const result = onLoadSegment(index)
     if (result && typeof result.then === 'function') {
-      Promise.resolve(result).finally(() => setLoadingSegment((current) => (current === index ? null : current)))
+      setLoadingSegment(index)
+      const clear = () => setLoadingSegment((current) => (current === index ? null : current))
+      Promise.resolve(result).then(clear, clear)
     }
   }
   function loadBoundary(boundary) {
@@ -1521,7 +1614,10 @@ export default function TranscriptViewer({
   useLayoutEffect(() => {
     if (!searchReveal) return
     const group = systemGroups.get(searchReveal.turn)
-    if (group && group.owner.index !== searchReveal.turn) setOpenSystemGroups((previous) => (previous[group.id] ? previous : { ...previous, [group.id]: true }))
+    if (group && group.owner.index !== searchReveal.turn) {
+      setOpenSystemGroups((previous) => (previous[group.id] ? previous : { ...previous, [group.id]: true }))
+      setSystemFacet((previous) => (previous[group.id] ? { ...previous, [group.id]: {} } : previous))
+    }
   }, [searchReveal, systemGroups])
 
   /* The matching card opens in its layout effect before this scroll action. */
@@ -1979,7 +2075,16 @@ export default function TranscriptViewer({
                       toggle={id => setEarlierHistoryOpen(previous => ({ ...previous, [id]: !previous[id] }))}
                       openTools={openTools}
                       toggleTool={toggleTool}
+                      attachmentUrl={attachmentUrl}
                     />
+                    {activeFailure && (
+                      <div className="txn-held-window" role="alert">
+                        <span>could not load the window around turn {formatInteger(activeFailure.anchor)}.</span>{' '}
+                        {(typeof onLoadWindow === 'function' || (typeof onLoadSegment === 'function' && (windowKey || activeFailure.missing?.length))) && (
+                          <button type="button" className="txn-segboundary-load" onClick={retryWindow}>try again</button>
+                        )}
+                      </div>
+                    )}
                     {segmentMode && (directory?.totalSegments ?? 0) === 0 && (
                       <div className="empty txn-not-indexed" data-not-indexed="true">
                         <div className="ring"><FileText size={20} aria-hidden="true" /></div>
@@ -1989,7 +2094,7 @@ export default function TranscriptViewer({
                     )}
                     {visibleTurns.length === 0 && !(segmentMode && (directory?.totalSegments ?? 0) === 0) && (
                       <div className="empty"><div className="ring"><FilterIcon size={20} aria-hidden="true" /></div><EmptyHeading>no turns to display</EmptyHeading>
-                        {filters.categories.system === false && counts.categories.system > 0 ? (
+                        {filters.categories.system !== true && counts.categories.system > 0 ? (
                           <>
                             <p>
                               {counts.categories.system === 1
@@ -2044,6 +2149,7 @@ export default function TranscriptViewer({
                             registerRef={registerRef}
                             onLabel={labelTurn}
                             renderActions={renderTurnActions}
+                            attachmentUrl={attachmentUrl}
                             savedLabel={savedLabels[t.index]}
                             compact={filters.views.compact}
                             expandAll={filters.views.expandAll}
@@ -2082,10 +2188,20 @@ export default function TranscriptViewer({
                           <span>actions continue {where}</span>
                         </div>
                       )
+                      let heldPosition = 0
+                      const heldBefore = (turnIndex) => {
+                        const notes = []
+                        while (heldPosition < heldRegions.length && heldRegions[heldPosition].firstTurn < turnIndex) {
+                          const region = heldRegions[heldPosition++]
+                          notes.push(<div key={region.key} className="txn-held-window" role="status">these turns are hidden because surrounding turns are not loaded</div>)
+                        }
+                        return notes
+                      }
                       return (
                         <>
+                          {leading && heldBefore(leading.firstTurn)}
                           {leading && <TranscriptBoundary boundary={leading} loading={loadingSegment === leading.loadSegment} onLoadMore={() => loadBoundary(leading)} />}
-                          {segmentMode && leading && firstRendered && isWordlessAssistant(firstRendered) && continuation('from the unloaded turn above')}
+                          {segmentMode && leading && firstRendered && !internalBefore.has(firstRendered.index) && isWordlessAssistant(firstRendered) && continuation('from the unloaded turn above')}
                           {visibleTurns.map((t, i) => {
                           const group = systemGroups.get(t.index)
                           /* members 2..N render inside the owner's fold, never as their own row */
@@ -2101,12 +2217,14 @@ export default function TranscriptViewer({
                           const internalBeforeThis = segmentMode ? internalBefore.get(t.index) ?? null : null
                           return (
                             <Fragment key={t.identity ?? t.index}>
+                              {heldBefore(internalBeforeThis?.firstTurn ?? t.index)}
                               {internalBeforeThis && (
                                 <>
                                   <TranscriptBoundary boundary={internalBeforeThis} loading={loadingSegment === internalBeforeThis.loadSegment} onLoadMore={() => loadBoundary(internalBeforeThis)} />
                                   {segmentMode && isWordlessAssistant(firstVisibleAfter(internalBeforeThis.lastTurn)) && continuation('from the unloaded turns between')}
                                 </>
                               )}
+                              {heldBefore(t.index)}
                               <div className={ledger ? 'txn-turnrow' : undefined}>
                                 {showPhase && <PhaseDivider phase={phase} heading={PhaseHeading} />}
                                 {/* in ledger a faint rule marks where the role changes; classic gains none */}
@@ -2122,8 +2240,14 @@ export default function TranscriptViewer({
                                     onToggle={(open) => setOpenSystemGroups((previous) => ({ ...previous, [group.id]: open }))}
                                     owner={renderTurn(t)}
                                     revealRequest={groupReveal}
+                                    facetKinds={systemGroupFacets.get(group.id) ?? []}
+                                    facetSelection={systemFacet[group.id]}
+                                    onFacetToggle={(id) => setSystemFacet((previous) => ({
+                                      ...previous,
+                                      [group.id]: toggleSystemGroupFacet(previous[group.id], id),
+                                    }))}
                                   >
-                                    {group.members.slice(1).map((member) => (
+                                    {filterSystemGroupMembers(group.members.slice(1), systemFacet[group.id]).map((member) => (
                                       <div key={member.identity ?? member.index}>{renderTurn(member)}</div>
                                     ))}
                                   </TranscriptSystemGroup>
@@ -2133,11 +2257,13 @@ export default function TranscriptViewer({
                                 {renderTurnPanel ? renderTurnPanel(t) : null}
                                 {turnCommits.map((c) => <CheckpointMarker key={c.hash} commit={c} />)}
                               </div>
+                              {internal && heldBefore(internal.firstTurn)}
                               {internal && <TranscriptBoundary boundary={internal} loading={loadingSegment === internal.loadSegment} onLoadMore={() => loadBoundary(internal)} />}
                               {segmentMode && internal && isWordlessAssistant(firstVisibleAfter(internal.lastTurn)) && continuation('from the unloaded turns between')}
                             </Fragment>
                           )
                         })}
+                          {heldBefore(trailing?.firstTurn ?? Infinity)}
                           {trailing && <TranscriptBoundary boundary={trailing} loading={loadingSegment === trailing.loadSegment} onLoadMore={() => loadBoundary(trailing)} />}
                         </>
                       )

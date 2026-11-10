@@ -482,6 +482,7 @@
         "Loading",
         "LightTheme",
         "OfflineBanner",
+        "OfflineBannerInteraction",
         "OfflineBannerDefault",
         "OfflineBannerChecked",
         "OfflineBannerRetrying",

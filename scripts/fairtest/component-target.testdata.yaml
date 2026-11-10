@@ -47,7 +47,7 @@
 # diagnostic; the component adapter test executes every one through
 # runComponentMutation and the component-mutations suite proves the single
 # owner of the diagnostics table.
-expectedCaseCount: 69
+expectedCaseCount: 73
 cases:
   # ---- Family A: theme rows ----
   - name: component-row-dark-absent-theme-passes
@@ -147,6 +147,38 @@ cases:
     theme: light
     url: '/iframe.html?id=components-statsstrip--many-pairs&viewMode=story&globals=theme:light'
     rowKey: component-stats-strip-light
+    expectValid: true
+    expectFrozen: true
+  - name: component-story-url-images-inline-dark-passes
+    check: component-story-url
+    story: images-inline
+    theme: dark
+    url: '/iframe.html?id=in-use-transcript-transcriptviewer--images-inline&viewMode=story'
+    rowKey: component-images-inline-dark
+    expectValid: true
+    expectFrozen: true
+  - name: component-story-url-images-omitted-light-passes
+    check: component-story-url
+    story: images-omitted
+    theme: light
+    url: '/iframe.html?id=in-use-transcript-transcriptviewer--images-omitted&viewMode=story&globals=theme:light'
+    rowKey: component-images-omitted-light
+    expectValid: true
+    expectFrozen: true
+  - name: component-story-url-image-only-turn-dark-passes
+    check: component-story-url
+    story: image-only-turn
+    theme: dark
+    url: '/iframe.html?id=in-use-transcript-transcriptviewer--image-only-turn&viewMode=story'
+    rowKey: component-image-only-turn-dark
+    expectValid: true
+    expectFrozen: true
+  - name: component-story-url-images-unavailable-light-passes
+    check: component-story-url
+    story: images-unavailable
+    theme: light
+    url: '/iframe.html?id=in-use-transcript-transcriptviewer--images-unavailable&viewMode=story&globals=theme:light'
+    rowKey: component-images-unavailable-light
     expectValid: true
     expectFrozen: true
   - name: component-story-unregistered-fails

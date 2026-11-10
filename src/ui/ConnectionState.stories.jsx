@@ -175,19 +175,24 @@ export const LightTheme = {
 const CHECKED_AT = new Date('2026-09-28T14:32:05')
 const bannerFrame = { decorators: frame('full'), parameters: { layout: 'fullscreen', controls: { include: [] } } }
 
-/* the interactive default: `try again` reports busy for a moment, then the check time moves. */
+/* Keep the simulated retry pending so its busy state survives evidence capture. */
 export const OfflineBanner = {
   ...bannerFrame,
   name: 'offline banner',
   render: function InteractiveOfflineBanner() {
     const [retrying, setRetrying] = useState(false)
-    const [checkedAt, setCheckedAt] = useState(CHECKED_AT)
     const retry = () => {
       setRetrying(true)
-      setTimeout(() => { setRetrying(false); setCheckedAt(new Date(CHECKED_AT.getTime() + 30000)) }, 1500)
     }
-    return <LocalOfflineBanner onRetry={retry} retrying={retrying} checkedAt={checkedAt} />
+    return <LocalOfflineBanner onRetry={retry} retrying={retrying} checkedAt={CHECKED_AT} />
   },
+}
+
+// Keep the interaction check on its own story: the capture journey must start idle
+// and perform the retry itself before recording the stable busy state.
+export const OfflineBannerInteraction = {
+  ...OfflineBanner,
+  name: 'offline banner, retry interaction',
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('status')).toHaveTextContent("peasant isn't running on this computer.")

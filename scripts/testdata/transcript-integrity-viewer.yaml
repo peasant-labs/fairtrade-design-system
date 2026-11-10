@@ -2,6 +2,15 @@
 # `payload` and lists each closed control once across `present` and `absent`. `props` picks the
 # integrity value, whether the rendered content hash matches the served one, the presentation,
 # and a few view switches. `stateCases` and `interactions` are driven by `kind`.
+historyCases:
+  - name: migrated history remains uncertain
+    state: uncertain_migrated
+    label: migrated history
+    explanation: this earlier history was retained during migration. its ownership is uncertain, so it is separate from current turns and input submissions.
+  - name: unresolved history names its unresolved ownership
+    state: uncertain_unresolved
+    label: ownership unresolved
+    explanation: the ownership of this earlier history could not be resolved. it is retained separately from current turns and input submissions.
 payload:
   id: integrity-viewer
   harness: claude-code
@@ -155,6 +164,38 @@ thinkingCase:
   flagged: [2]
   group: 1
   row: 2
+
+# `retainedImageCase` mounts one image-bearing turn from an earlier-history section. Earlier history
+# is a separate index domain, so the host's attachment resolver has to reach its turns too; the gate
+# opens the section and asserts the image renders from that resolver instead of a placeholder.
+retainedImageCase:
+  name: retained history resolves its image through the host
+  ref: 'abababababababababababababababababababababababababababababababab'
+  payload:
+    id: integrity-viewer-retained-image
+    harness: claude-code
+    startTime: '2026-09-20T10:00:00Z'
+    endTime: '2026-09-20T10:01:00Z'
+    durationMins: 1
+    totalTokens: 0
+    tokensIn: 0
+    tokensOut: 0
+    turnCount: 1
+    toolCallCount: 0
+    turns:
+      - {index: 0, role: user, content: 'the current prompt', timestamp: '2026-09-20T10:00:00Z', depth: 0}
+      - {index: 1, role: assistant, content: 'the current answer.', timestamp: '2026-09-20T10:01:00Z', depth: 0}
+    earlierHistory:
+      - state: uncertain_unresolved
+        turns:
+          - index: 1
+            role: user
+            content: 'an older prompt with a screenshot'
+            timestamp: '2026-09-20T09:00:00Z'
+            depth: 0
+            contentParts:
+              - {type: text, text: 'an older prompt with a screenshot'}
+              - {type: image, image: {ref: 'abababababababababababababababababababababababababababababababab', mediaType: image/png, byteSize: 2048, width: 320, height: 200}}
 
 interactions:
   - name: help click opens and closes the panel

@@ -60,13 +60,13 @@
 // repair. A failing row never writes a passing record.
 
 import { createHash } from 'node:crypto'
-import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
 import { dirname, join, resolve } from 'node:path'
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { FAIRTEST_APP_BASE_URL, FAIRTEST_APP_HOST, FAIRTEST_APP_PORT, PRODUCT_VIEWPORT } from './fairtest-runtime.mjs'
 import { fairtestPath } from './fairtest-paths.mjs'
+import { readWorktreeState } from './worktree-state.mjs'
 import {
   PRODUCT_A11Y_BASELINE,
   PRODUCT_A11Y_GATE_POINT_SLOTS,
@@ -697,32 +697,6 @@ function sha256(data) {
 }
 
 /**
- * Read the integration commit SHA and dirty state from the worktree that
- * produced dist/. Best effort git probe with fail-closed diagnostics.
- * @returns {{ commit: string, dirty: boolean }} commit and dirty state
- */
-function readWorktreeState() {
-  let commit = 'unknown'
-  let dirty = true
-  try {
-    commit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
-  } catch (error) {
-    const cause = error instanceof Error ? error.message : String(error)
-    throw new Error(
-      `product producer: cannot read the integration commit for field "commit" at path provenance.commit; caused by ${cause}; ` +
-      'repair: run the mounted row inside the fairtrade worktree so git rev-parse HEAD resolves.',
-    )
-  }
-  try {
-    const status = execFileSync('git', ['status', '--porcelain'], { encoding: 'utf8' })
-    dirty = status.trim().length > 0
-  } catch {
-    dirty = true
-  }
-  return { commit, dirty }
-}
-
-/**
  * Collect served-build provenance over real HTTP: the served index.html
  * bytes plus every served asset file the page actually references, compared
  * against the run's own built tree before anything is written.
@@ -760,7 +734,7 @@ async function collectServedProvenance({ baseUrl, servedHtml, viewport, targetId
     }
     assetDigests[ref.replace(/^\//, '')] = sha256(bytes)
   }
-  const { commit, dirty } = readWorktreeState()
+  const { commit, dirty } = readWorktreeState({ label: 'product producer' })
   const comparison = assertServedDigestsMatchRunRoot({ assetDigests, distRoot: DIST_ROOT })
   const provenance = {
     source: PRODUCT_PROVENANCE_SOURCE.source,

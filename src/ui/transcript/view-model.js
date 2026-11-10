@@ -181,6 +181,28 @@ export const TOOL_GROUPS = Object.freeze([
  */
 
 /**
+ * One cooked text block of a turn, in source order. The renderer draws it as Markdown.
+ * @typedef {object} TextPartVM
+ * @property {'text'} type
+ * @property {string} text
+ */
+
+/**
+ * One cooked image block of a turn, in source order. `image` is the producer's recorded part:
+ * a content reference plus metadata, or an omission reason that explains the missing bytes.
+ * The host resolves `image.ref` to a URL through the viewer's `attachmentUrl` prop.
+ * @typedef {object} ImagePartVM
+ * @property {'image'} type
+ * @property {import('@peasant-labs/schema').ImagePart} image
+ */
+
+/**
+ * One ordered block of a turn: the text and image blocks the producer recorded, in the order
+ * it recorded them.
+ * @typedef {TextPartVM | ImagePartVM} ContentPartVM
+ */
+
+/**
  * One cooked turn. `toolCalls` here are the same `ToolCallVM` objects indexed in
  * `toolCallsById` (shared identity — index once, reference everywhere).
  *
@@ -198,6 +220,10 @@ export const TOOL_GROUPS = Object.freeze([
  * @property {string} [displayContent]      the text the turn shows instead of `content`, present only
  *                                          when they differ (a cursor prompt's `<user_query>` wrapper
  *                                          removed); views render `displayContent ?? content`
+ * @property {ContentPartVM[]} [contentParts] the producer's ordered text/image blocks, exactly as
+ *                                          recorded. Absent on every payload before content_parts_v1,
+ *                                          and `content` remains the text fallback: a renderer draws
+ *                                          the parts in source order when present and the text otherwise
  * @property {number} depth                 subagent nesting depth (0 = top level)
  * @property {string} [effectiveModel]       sticky model effective for this assistant turn; resolved over the complete ordered wire before projection
  * @property {string} [modelChangedFrom]     prior root model when this turn carries the observation that changed it
@@ -360,6 +386,7 @@ export const TOOL_GROUPS = Object.freeze([
  * @property {string} label
  * @property {number} from                  first turn index (inclusive)
  * @property {number} to                    last turn index (inclusive)
+ * @property {number} [turnCount]           conversation turns in this phase, when known
  * @property {string} [icon]                semantic icon key
  * @property {number} [errors]              error count attributed to the phase
  */
@@ -428,8 +455,7 @@ export const TOOL_GROUPS = Object.freeze([
 /**
  * @typedef {object} EarlierHistoryVM
  * @property {string} id
- * @property {import('@peasant-labs/schema').EarlierHistoryState} state
- * @property {string} explanation
+ * @property {import('./earlier-history-state.js').ParsedEarlierHistoryState} state
  * @property {TurnVM[]} turns
  * @property {import('@peasant-labs/schema').NativeMetadataRecord[]} [nativeMetadata]
  * @property {UsageScopeVM[]} usageScopes

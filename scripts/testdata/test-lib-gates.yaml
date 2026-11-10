@@ -1,0 +1,195 @@
+# Required-name manifest for the parallel library gate. Every expanded leaf command is
+# named here; deleting a gate or adding one without updating this file fails
+# scripts/run-test-lib.test.mjs. The two counts pin the raw leaf list and the deduped gate
+# list, so a duplicate or a dropped composite is visible before the set comparison.
+expectedLeafCount: 154
+expectedGateCount: 151
+requiredGateCommands:
+  - PI_MOUNTED_TEST=1 node scripts/pi-transcript.test.mjs
+  - node --test scripts/check-generated-artifacts.test.mjs
+  - node --test scripts/release-guard.test.mjs
+  - node --test scripts/run-test-lib.test.mjs
+  - node scripts/accessibility-semantics.test.mjs
+  - node scripts/app-sections.test.mjs
+  - node scripts/app-sidebar.test.mjs
+  - node scripts/assert-pack-contents.mjs
+  - node scripts/assert-package-provenance.mjs
+  - node scripts/assert-structured-shiki.mjs
+  - node scripts/breakpoint-scale.mjs
+  - node scripts/breakpoint-scale.test.mjs
+  - node scripts/change-annotation-capabilities.test.mjs
+  - node scripts/changes-overflow.test.mjs
+  - node scripts/code-map-descent-feedback.test.mjs
+  - node scripts/code-map-disclosure.test.mjs
+  - node scripts/code-map-drag-smoothness.test.mjs
+  - node scripts/code-map-interactions.test.mjs
+  - node scripts/code-map-line-counts.test.mjs
+  - node scripts/code-map-ranking-bench.mjs
+  - node scripts/code-map-ranking.mutations.mjs
+  - node scripts/code-map-ranking.test.mjs
+  - node scripts/code-map-state.test.mjs
+  - node scripts/code-map-wheel-zoom.test.mjs
+  - node scripts/collectives-views.test.mjs
+  - node scripts/command-block.test.mjs
+  - node scripts/commons-demo-pages.test.mjs
+  - node scripts/contrast.mjs --css dist/lib/tokens.css
+  - node scripts/css-guards.test.mjs
+  - node scripts/css-token-lint.mjs
+  - node scripts/datatable-host-boundary.test.mjs
+  - node scripts/datatable.render.test.mjs
+  - node scripts/demo-truth.test.mjs
+  - node scripts/design-decisions.mjs
+  - node scripts/design-decisions.test.mjs
+  - node scripts/explore-page-intent.mutations.mjs
+  - node scripts/explore-page-intent.render.test.mjs
+  - node scripts/gates.test.mjs
+  - node scripts/graph-contract-enums.test.mjs
+  - node scripts/helper-groups.test.mjs
+  - node scripts/insight-panel.test.mjs
+  - node scripts/local-offline-banner.test.mjs
+  - node scripts/mobile-layout.test.mjs
+  - node scripts/number-format.test.mjs
+  - node scripts/package-provenance.test.mjs
+  - node scripts/packed-tarball-roundtrip.test.mjs
+  - node scripts/page-headings.test.mjs
+  - node scripts/parts-mutations.mjs scripts/accessibility-semantics.test.mjs
+    scripts/testdata/accessibility-semantics.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/app-sections.test.mjs
+    scripts/testdata/app-sections.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/app-sidebar.test.mjs
+    scripts/testdata/app-sidebar.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/code-map-disclosure.test.mjs
+    scripts/testdata/code-map-disclosure.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/code-map-line-counts.test.mjs
+    scripts/testdata/code-map-line-counts.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/collectives-views.test.mjs
+    scripts/testdata/collectives-views.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/command-block.test.mjs
+    scripts/testdata/command-block.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/commons-demo-pages.test.mjs
+    scripts/testdata/commons-demo-pages.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/demo-truth.test.mjs
+    scripts/testdata/demo-truth.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/local-offline-banner.test.mjs
+    scripts/testdata/local-offline-banner.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/number-format.test.mjs
+    scripts/testdata/number-format.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/page-headings.test.mjs
+    scripts/testdata/page-headings.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/prompt-digest-split.test.mjs
+    scripts/testdata/prompt-digest-split.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/publish-consent.test.mjs
+    scripts/testdata/publish-consent.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/publish-focus.test.mjs
+    scripts/testdata/publish-focus.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/publish-states.test.mjs
+    scripts/testdata/publish-states.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/redaction-labels.test.mjs
+    scripts/testdata/redaction-labels.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/repo-picker.test.mjs
+    scripts/testdata/repo-picker.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/setting-row.test.mjs
+    scripts/testdata/setting-row.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/settings-nav.test.mjs
+    scripts/testdata/settings-nav.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/system-group-facet.test.mjs
+    scripts/testdata/system-group-facet.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/transcript-content-parts.test.mjs
+    scripts/testdata/content-parts.manifest.yaml
+  - node scripts/parts-mutations.mjs
+    scripts/transcript-integrity-viewer.test.mjs
+    scripts/testdata/transcript-integrity-viewer.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/transcript-integrity.test.mjs
+    scripts/testdata/transcript-integrity.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/transcript-ledger-chrome.test.mjs
+    scripts/testdata/transcript-ledger-chrome.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/transcript-ledger-turns.test.mjs
+    scripts/testdata/transcript-ledger-turns.manifest.yaml
+  - node scripts/parts-mutations.mjs
+    scripts/transcript-library-table.render.test.mjs
+    scripts/testdata/transcript-library-table.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/transcript-reading-layout.test.mjs
+    scripts/testdata/transcript-reading-layout.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/transcript-segments.test.mjs
+    scripts/testdata/transcript-segments.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/transcript-session-records.test.mjs
+    scripts/testdata/transcript-session-records.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/transcript-system-groups.test.mjs
+    scripts/testdata/transcript-system-groups.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/transcript-viewer-chrome.test.mjs
+    scripts/testdata/transcript-viewer-chrome.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/transcript-viewer-format.test.mjs
+    scripts/testdata/transcript-viewer-format.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/village-observations.test.mjs
+    scripts/testdata/village-observations.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/village-parts.test.mjs
+    scripts/testdata/village-parts.manifest.yaml
+  - node scripts/pi-transcript.mutations.mjs
+  - node scripts/pi-transcript.test.mjs
+  - node scripts/port-record.test.mjs
+  - node scripts/prompt-digest-split.test.mjs
+  - node scripts/provider-harnesses.mutations.mjs
+  - node scripts/provider-harnesses.test.mjs
+  - node scripts/publish-consent.test.mjs
+  - node scripts/publish-focus.test.mjs
+  - node scripts/publish-states.test.mjs
+  - node scripts/redaction-labels.test.mjs
+  - node scripts/release-notes.mutations.mjs
+  - node scripts/release-notes.test.mjs
+  - node scripts/repo-picker.test.mjs
+  - node scripts/runtime-floor.test.mjs
+  - node scripts/setting-row.test.mjs
+  - node scripts/settings-nav.test.mjs
+  - node scripts/share-card.test.mjs
+  - node scripts/system-group-facet.test.mjs
+  - node scripts/smoke-changes.mjs
+  - node scripts/smoke-lib.mjs
+  - node scripts/smoke-map.mjs
+  - node scripts/smoke-share.mjs
+  - node scripts/smoke-transcript-ui.mjs
+  - node scripts/smoke-transcript.mjs
+  - node scripts/timeline-a11y.test.mjs
+  - node scripts/timeline-encoding-channels.test.mjs
+  - node scripts/timeline-ghosts.test.mjs
+  - node scripts/timeline-highlight.test.mjs
+  - node scripts/timeline-navigation.test.mjs
+  - node scripts/transcript-composite-width.test.mjs
+  - node scripts/transcript-content-parts.test.mjs
+  - node scripts/transcript-filters.test.mjs
+  - node scripts/transcript-header-condense.mutations.mjs
+  - node scripts/transcript-header-condense.test.mjs
+  - node scripts/transcript-helpers.mutations.mjs
+  - node scripts/transcript-helpers.test.mjs
+  - node scripts/transcript-initial-position.mutations.mjs
+  - node scripts/transcript-initial-position.render.test.mjs
+  - node scripts/transcript-initial-position.test.mjs
+  - node scripts/transcript-integrity-viewer.test.mjs
+  - node scripts/transcript-integrity.test.mjs
+  - node scripts/transcript-ledger-chrome.test.mjs
+  - node scripts/transcript-ledger-turns.test.mjs
+  - node scripts/transcript-library-table.render.test.mjs
+  - node scripts/transcript-markdown.entrypoint.test.mjs
+  - node scripts/transcript-markdown.mutations.mjs
+  - node scripts/transcript-markdown.test.mjs
+  - node scripts/transcript-outcome-chip.mutations.mjs
+  - node scripts/transcript-outcome-chip.test.mjs
+  - node scripts/transcript-provenance-retention.test.mjs
+  - node scripts/transcript-reading-layout.test.mjs
+  - node scripts/transcript-schema-adapter.mutations.mjs
+  - node scripts/transcript-schema-adapter.test.mjs
+  - node scripts/transcript-segments.test.mjs
+  - node scripts/transcript-session-records.test.mjs
+  - node scripts/transcript-system-groups.test.mjs
+  - node scripts/transcript-turn-model.mutations.mjs
+  - node scripts/transcript-turn-model.test.mjs
+  - node scripts/transcript-viewer-chrome.test.mjs
+  - node scripts/transcript-viewer-format.test.mjs
+  - node scripts/transcript-viewer-outcome.mutations.mjs
+  - node scripts/transcript-viewer-outcome.test.mjs
+  - node scripts/turns-to-flow-edges.test.mjs
+  - node scripts/village-observations.test.mjs
+  - node scripts/village-parts.test.mjs
+  - node src/ui/analytics/metrics.test.mjs
+  - tsc -p tsconfig.contract.json
+  - tsc -p tsconfig.share-types.json
+  - vitest run

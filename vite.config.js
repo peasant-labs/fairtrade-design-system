@@ -41,6 +41,9 @@ export default defineConfig({
   // root for dev/preview and the deployed site; a host serving the app under a
   // subpath can set VITE_BASE at build time instead.
   base: process.env.VITE_BASE || '/',
+  // The parallel library gate sets one cache per gate through this variable;
+  // an ordinary dev/build run keeps Vite's default node_modules/.vite.
+  cacheDir: process.env.FAIRTRADE_VITE_CACHE_DIR || undefined,
   // dev defaults to 5180 (falls through to the next free port if taken) so it matches the docs and the
   // qa/screenshot scripts, which all target http://localhost:5180.
   server: { port: 5180 },

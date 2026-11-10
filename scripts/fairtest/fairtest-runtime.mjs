@@ -6,13 +6,14 @@
 // Three families, one declaration site each:
 //
 // 1. The loopback origin. This module is the ONE declaration site for the
-//    Fairtest loopback host and port. Both consumers read these exports: the
-//    row-scoped producer binds its static driver to them, and
-//    playwright.fairtest.config.mjs builds use.baseURL from them. Neither
-//    module may re-declare a host, a port, or a base URL literal: a second
-//    declaration is a value production code does not read, so a change made
-//    there would silently do nothing (the `config-port-owner-single-declaration`
-//    case in the product fixture family proves the single owner).
+//    Fairtest loopback host and port. The row-scoped producers and the local
+//    dev/bridge driver read these exports. The Fairtest Playwright config
+//    declares no use.baseURL and imports no origin; mounted rows navigate by
+//    the running driver's baseUrl. No module may re-declare a host, a port, or
+//    a base URL literal: a second declaration is a value production code does
+//    not read, so a change made there would silently do nothing (the
+//    `config-port-owner-single-declaration` case in the product fixture family
+//    proves the single owner).
 //
 // 2. The render viewport. The viewport is a product-EVIDENCE parameter, not a
 //    cosmetic one: the rendered-root predicate intersects each active root
@@ -53,18 +54,18 @@ export const FAIRTEST_REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)
 export const FAIRTEST_APP_HOST = '127.0.0.1'
 
 /**
- * Default loopback port for the built app. The Fairtest Playwright config uses
- * it for use.baseURL, and the local dev/bridge driver uses it when no explicit
- * port is passed. Mounted rows pass port 0 so each worker gets an OS-assigned
- * port. Override with FAIRTEST_APP_PORT.
+ * Default loopback port for the built app. The local dev/bridge driver uses it
+ * when no explicit port is passed. Mounted rows pass port 0 so each worker gets
+ * an OS-assigned port, and the runner config declares no use.baseURL.
+ * Override with FAIRTEST_APP_PORT.
  * @type {number}
  */
 export const FAIRTEST_APP_PORT = Number(process.env.FAIRTEST_APP_PORT || 5189)
 
 /**
- * The one declared loopback base URL: the config's use.baseURL and the local
- * dev driver's default. A mounted row reads the running driver's baseUrl
- * instead, because each worker owns an ephemeral port.
+ * The local dev/bridge driver's default loopback base URL. A mounted row reads
+ * the running driver's baseUrl instead, because each worker owns an ephemeral
+ * port.
  * @type {string}
  */
 export const FAIRTEST_APP_BASE_URL = `http://${FAIRTEST_APP_HOST}:${FAIRTEST_APP_PORT}`
@@ -97,9 +98,10 @@ export const PRODUCT_VIEWPORT = Object.freeze({ width: 1280, height: 720 })
  * server cannot occupy a worker's port. The run root is still one immutable
  * envelope: every row writes a row-keyed producer directory, so no worker
  * overwrites another worker's subtree. Override with
- * FAIRTEST_MOUNTED_WORKERS; the runner config reads this value. The
- * config-shape fixture pins FAIRTEST_DEFAULT_MOUNTED_WORKERS, so running the
- * product contract with an override is expected to disagree with the fixture.
+ * FAIRTEST_MOUNTED_WORKERS; the runner config reads this effective value. The
+ * config-shape fixture pins FAIRTEST_DEFAULT_MOUNTED_WORKERS, so an override
+ * changes config.workers without failing the contract and the committed
+ * default stays pinned.
  * @type {number}
  */
 export const FAIRTEST_DEFAULT_MOUNTED_WORKERS = 4

@@ -16,6 +16,7 @@ import { renderToStaticMarkup as render } from 'react-dom/server'
 import { readFileSync } from 'node:fs'
 import { JSDOM } from 'jsdom'
 import YAML from 'yaml'
+import { FAIRTRADE_VITE_CACHE_DIR } from './vite-cache-dir.mjs'
 import { SessionLane, GhostGroup, SessionOverflowDisclosure, RankModeControl, ScentTag } from '../dist/lib/graph.js'
 import { LIB_EXTERNALS } from './lib-externals.mjs'
 
@@ -186,6 +187,7 @@ console.log(`timeline a11y: ${killed} mutation(s) killed (each named guard genui
 
 const server = await createServer({
   appType: 'custom',
+  cacheDir: FAIRTRADE_VITE_CACHE_DIR,
   configFile: false,
   logLevel: 'silent',
   plugins: [react()],

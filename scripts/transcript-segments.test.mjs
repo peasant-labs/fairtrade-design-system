@@ -19,6 +19,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { JSDOM } from 'jsdom'
 import { loadFixturePair, assertExactNames, assertFields, withMountedSource, click, createReport } from './mounted-parts.mjs'
+import { buildDirectory, makeSegment, makeSegments } from './transcript-segment-fixture.mjs'
 import {
   SEGMENT_SCRUBBER_TICKS,
   boundaryCaption,
@@ -58,74 +59,29 @@ const { fixture, manifest } = loadFixturePair(FIXTURE, MANIFEST, {
   loadCases: 'requiredLoadCaseNames',
   windowCases: 'requiredWindowCaseNames',
   mountCases: 'requiredMountCaseNames',
+  phaseCases: 'requiredPhaseCaseNames',
+  phaseCountCases: 'requiredPhaseCountCaseNames',
+  recoveryCases: 'requiredRecoveryCaseNames',
+  historyCases: 'requiredHistoryCaseNames',
+  typeMutations: 'requiredTypeMutationNames',
+  unknownHistoryInvalidCases: 'requiredUnknownHistoryInvalidNames',
+  wordlessCases: 'requiredWordlessCaseNames',
 })
 
 for (const row of fixture.directories) assertFields(row, ['name', 'totalTurns', 'totalSegments', 'firstTurn', 'segmentTurns', 'segmentBytes'], `${FIXTURE} ${row.name}`)
 for (const row of fixture.loadCases) assertFields(row, ['name', 'directory', 'loaded', 'expect'], `${FIXTURE} ${row.name}`)
 for (const row of fixture.windowCases) assertFields(row, ['name', 'directory', 'loaded', 'window', 'expect'], `${FIXTURE} ${row.name}`)
-for (const row of fixture.mountCases) assertFields(row, ['name', 'directory', 'loaded', 'expect'], `${FIXTURE} ${row.name}`, ['window', 'oversizedTurn'])
+for (const row of fixture.mountCases) assertFields(row, ['name', 'directory', 'loaded', 'expect'], `${FIXTURE} ${row.name}`, ['window', 'oversizedTurn', 'noLoader'])
+for (const row of fixture.wordlessCases) assertFields(row, ['name', 'turn', 'wordless'], `${FIXTURE} ${row.name}`)
+for (const row of fixture.phaseCases) assertFields(row, ['name', 'directory', 'loaded', 'phase', 'caption'], `${FIXTURE} ${row.name}`)
+for (const row of fixture.phaseCountCases) assertFields(row, ['name', 'turns', 'expectedCount', 'expectedFrom', 'expectedTo'], `${FIXTURE} ${row.name}`)
+for (const row of fixture.recoveryCases) assertFields(row, ['name', 'mode', 'directory', 'loaded', 'requests'], `${FIXTURE} ${row.name}`, ['window', 'restoredTurn', 'failureCopy', 'retryCopy'])
+for (const row of fixture.historyCases) assertFields(row, ['name', 'state', 'label', 'explanation'], `${FIXTURE} ${row.name}`)
+for (const [key, family] of [['heldWindow', fixture.mountCases], ['failedWindow', fixture.recoveryCases], ['phase', fixture.phaseCases]]) {
+  if (!family.some(row => row.name === fixture.vitestSelection[key])) throw new Error(`${FIXTURE}: selected ${key} case must exist`)
+}
 
 const DIRECTORY = new Map(fixture.directories.map((row) => [row.name, row]))
-
-/** Build the directory refs the producer would emit for a parameterised fixture. */
-function buildDirectory(def) {
-  const refs = []
-  let first = def.firstTurn
-  const lastTurn = def.firstTurn + def.totalTurns - 1
-  for (let index = 0; index < def.totalSegments; index += 1) {
-    const last = Math.min(lastTurn, first + def.segmentTurns - 1)
-    refs.push({ index, firstTurn: first, lastTurn: last, byteLength: def.segmentBytes })
-    first = last + 1
-  }
-  return {
-    sessionId: 'sess_segment_fixture',
-    revision: '7',
-    totalTurns: def.totalTurns,
-    totalSegments: def.totalSegments,
-    segments: refs,
-  }
-}
-
-const roleFor = (index) => (index % 6 === 0 ? 'user' : index % 7 === 0 ? 'system' : 'assistant')
-
-/** One cooked turn for the fixture's synthetic session. An assistant turn is wordless
-    with one tool call, so an action run crossing a window edge is observable. */
-function makeTurn(index) {
-  const role = roleFor(index)
-  const turn = { index, role, label: String(index), depth: 0, content: '', annotations: [], identity: `main:${index}`, sourceIndexUnique: true }
-  if (role === 'user') turn.content = `request ${index}`
-  else if (role === 'system') turn.content = `system note ${index}`
-  else turn.toolCalls = [{ id: `call-${index}`, name: 'Read', group: 'read', filePath: `/src/file-${index % 3}.js`, sourceIndex: 0, sourceIdUnique: true }]
-  return turn
-}
-
-function makeSegment(directory, def, index, oversizedTurn) {
-  const ref = directory.segments[index]
-  const turns = []
-  for (let turnIndex = ref.firstTurn; turnIndex <= ref.lastTurn; turnIndex += 1) {
-    const turn = makeTurn(turnIndex)
-    if (turnIndex === oversizedTurn) {
-      turn.truncated = true
-      turn.byteLength = 4 * 1024 * 1024
-      turn.content = 'an oversized assistant turn'
-    }
-    turns.push(turn)
-  }
-  return {
-    index,
-    firstTurn: ref.firstTurn,
-    lastTurn: ref.lastTurn,
-    byteLength: ref.byteLength,
-    hasOlder: index > 0,
-    hasNewer: index < def.totalSegments - 1,
-    turns,
-  }
-}
-
-function makeSegments(def, indexes, oversizedTurn) {
-  const directory = buildDirectory(def)
-  return indexes.map((index) => makeSegment(directory, def, index, oversizedTurn))
-}
 
 const report = createReport('transcript segments')
 
@@ -211,6 +167,38 @@ const text = (node) => (node?.textContent ?? '').replace(/\s+/g, ' ').trim()
 
 await withMountedSource(async ({ load, mount, window, React }) => {
   const { default: TranscriptViewer } = await load('/src/ui/transcript/TranscriptViewer.jsx')
+  const { detectPhases } = await load('/src/ui/transcript/analytics.js')
+  const { adaptTranscript } = await load('/src/ui/transcript/adapter.js')
+  const { ALL_EARLIER_HISTORY_STATES, EarlierHistoryState } = await load('/src/ui/transcript/earlier-history-state.js')
+  report.check(JSON.stringify(ALL_EARLIER_HISTORY_STATES) === JSON.stringify(Object.values(EarlierHistoryState)), 'history state inventory contains every member')
+
+  for (const row of fixture.historyCases) {
+    const payload = { ...fixture.historyPayload, earlierHistory: [{ state: row.state, turns: [] }] }
+    const cooked = adaptTranscript(payload)
+    report.check(cooked.earlierHistory[0].state.wire === row.state, `${row.name}: wire state is preserved`)
+    report.check(Object.isFrozen(cooked.earlierHistory[0].state), `${row.name}: state is immutable`)
+    const mounted = await mount(React.createElement(TranscriptViewer, { viewModel: cooked, capabilities: CAPABILITIES, earlierHistoryOpen: { [cooked.earlierHistory[0].id]: true } }))
+    report.check(text(mounted.container.querySelector('.txn-earlier .txn-context-status')) === row.label, `${row.name}: mounted history label`)
+    report.check(text(mounted.container.querySelector('.txn-earlier .txn-context-note')) === row.explanation, `${row.name}: mounted history explanation`)
+    await mounted.unmount()
+  }
+  for (const row of fixture.unknownHistoryInvalidCases) {
+    let refused = false
+    try { adaptTranscript({ ...fixture.historyPayload, earlierHistory: [row.section] }) } catch { refused = true }
+    report.check(refused, `${row.name}: canonical evidence validation still refuses the payload`)
+  }
+
+  for (const row of fixture.phaseCountCases) {
+    const phase = detectPhases(row.turns)[0]
+    report.check(phase?.turnCount === row.expectedCount, `${row.name}: phase count must equal ${row.expectedCount}`)
+    report.check(phase?.from === row.expectedFrom && phase?.to === row.expectedTo, `${row.name}: phase retains its source indexes`)
+  }
+
+  const { isWordlessAssistant } = await load('/src/ui/transcript/segments.js')
+  for (const row of fixture.wordlessCases) {
+    const wordless = isWordlessAssistant(row.turn)
+    report.check(wordless === row.wordless, `${row.name}: an image is content, not an action continuation`)
+  }
 
   const viewer = (props, extra) => React.createElement(TranscriptViewer, {
     viewModel: viewModel(props.segments ?? [], extra),
@@ -219,6 +207,16 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     callbacks: { onLoadFullTurn: () => {} },
     ...props,
   })
+
+  for (const row of fixture.phaseCases) {
+    const def = DIRECTORY.get(row.directory)
+    const mounted = await mount(viewer({ directory: buildDirectory(def), segments: makeSegments(def, row.loaded) }, { analytics: { phases: [row.phase] } }))
+    await mounted.settle()
+    const caption = text(mounted.container.querySelector('.txn-phase .rng'))
+    report.check(caption === row.caption, `${row.name}: phase caption ${JSON.stringify(caption)} must equal ${JSON.stringify(row.caption)}`)
+    if (row.phase.turnCount != null) report.check(/^\d[\d,]* turns?(?:, \d[\d,]* error)?$/.test(caption), `${row.name}: phase caption must be a turn count`)
+    await mounted.unmount()
+  }
 
   /* window requests and the no-partial rule */
   for (const row of fixture.windowCases) {
@@ -261,11 +259,13 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       directory,
       segments: loaded,
       window: row.window ? { sessionId: dirSession(), revision: '7', ...row.window } : undefined,
-      onLoadSegment: (index) => requests.push(index),
+      onLoadSegment: row.noLoader ? undefined : (index) => requests.push(index),
       onLoadWindow: () => {},
     }))
     await mounted.settle()
     const stream = mounted.container.querySelector('.txn-stream')
+    const headerCounts = mounted.container.querySelectorAll('.txn-trace-count')
+    report.check(headerCounts.length === 1 && /\b\d[\d,]*(?: of \d[\d,]*)? turns\b/.test(text(headerCounts[0])), `${row.name}: the transcript has one turn-count header`)
     const cards = mounted.container.querySelectorAll('.txn-turn').length
     report.check(cards <= row.expect.maxCards, `${row.name}: ${cards} mounted cards must not exceed ${row.expect.maxCards}`)
     report.check(Number(stream?.dataset.mountedTurnBound) === row.expect.maxCards, `${row.name}: the stream must publish its mounted-card bound`)
@@ -283,6 +283,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     for (const [index, node] of boundaryNodes.entries()) {
       const caption = text(node.querySelector('.txn-segboundary-caption'))
       report.check(caption === row.expect.captions[index], `${row.name}: boundary ${index} caption ${JSON.stringify(caption)} must equal ${JSON.stringify(row.expect.captions[index])}`)
+      report.check(!/\bturns?\s+\d|\b\d[\d,]*\s+turns?\b/i.test(caption), `${row.name}: boundary ${index} must not claim turn numbers or counts`)
     }
     const truncation = mounted.container.querySelector('.txn-truncation')
     report.check(!!truncation === row.expect.truncation, `${row.name}: the truncation notice must be ${row.expect.truncation ? 'present' : 'absent'}`)
@@ -295,6 +296,12 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     }
     const continuationCount = mounted.container.querySelectorAll('.txn-action-continuation').length
     report.check(continuationCount === row.expect.continuationCount, `${row.name}: the continuation count must equal ${row.expect.continuationCount}`)
+    if (row.expect.heldCaptions) {
+      const held = [...mounted.container.querySelectorAll('.txn-held-window')].map(text)
+      report.check(JSON.stringify(held) === JSON.stringify(row.expect.heldCaptions), `${row.name}: the held range must be named`)
+      const order = [...mounted.container.querySelectorAll('[data-segment-boundary], .txn-held-window')].map((node) => node.hasAttribute('data-segment-boundary') ? 'boundary' : 'held')
+      report.check(JSON.stringify(order) === JSON.stringify(row.expect.heldOrder), `${row.name}: held ranges and boundaries follow document order`)
+    }
     const notIndexed = mounted.container.querySelector('[data-not-indexed]')
     report.check(!!notIndexed === row.expect.notIndexed, `${row.name}: the not-indexed state must be ${row.expect.notIndexed ? 'shown' : 'absent'}`)
     if (row.expect.notIndexed) {
@@ -302,7 +309,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     }
     /* A boundary control takes the same load path the host wires. */
     const loadControl = boundaryNodes[0]?.querySelector('.txn-segboundary-load')
-    if (loadControl && expectedBoundaries[0]) {
+    if (loadControl && expectedBoundaries[0] && !row.noLoader) {
       await mounted.act(() => click(window, loadControl))
       report.check(requests[requests.length - 1] === expectedBoundaries[0].loadSegment, `${row.name}: the control loads segment ${expectedBoundaries[0].loadSegment}`)
     }
@@ -331,6 +338,85 @@ await withMountedSource(async ({ load, mount, window, React }) => {
         report.check(!listed.includes('unloaded.js'), `${row.name}: a file only in an unloaded turn is not listed`)
       }
     }
+    await mounted.unmount()
+  }
+
+  for (const row of fixture.recoveryCases) {
+    const def = DIRECTORY.get(row.directory)
+    const directory = buildDirectory(def)
+    const requests = []
+    if (row.failureCopy) {
+      const segments = makeSegments(def, row.loaded)
+      const descriptor = { sessionId: dirSession(), revision: '7', ...row.window }
+      let attempts = 0
+      const onLoadSegment = (index) => {
+        if (row.mode === 'host-segment-only') { requests.push(index); return }
+        if (row.mode !== 'covering-rejected') return
+        requests.push(index)
+        if (++attempts === 1) return Promise.reject(new Error('failed covering segment'))
+      }
+      const onLoadWindow = (anchor) => {
+        requests.push(anchor)
+        if (row.mode === 'window-rejected' && ++attempts === 1) return Promise.reject(new Error('failed window request'))
+      }
+      const props = { directory, segments, onLoadSegment, onLoadWindow: row.mode === 'host-segment-only' ? undefined : onLoadWindow }
+      const initial = row.mode === 'window-rejected' ? { initialPosition: { kind: 'turn', turnIndex: row.window.anchorTurn } } : { window: descriptor }
+      const mounted = await mount(viewer({ ...props, ...initial }))
+      await mounted.settle()
+      if (row.mode === 'host-reported' || row.mode === 'host-segment-only') {
+        await mounted.rerender(viewer({ ...props, window: null }))
+        await mounted.settle()
+      }
+      const failure = mounted.container.querySelector('.txn-held-window[role="alert"]')
+      report.check(!!failure && text(failure).includes(row.failureCopy), `${row.name}: rejection or host failure must be visible, not silently dropped`)
+      const retry = failure?.querySelector('button')
+      report.check(text(retry) === row.retryCopy, `${row.name}: failure offers retry`)
+      if (row.mode !== 'window-rejected') {
+        report.check(!!mounted.container.querySelector(`#turn-${row.restoredTurn}`), `${row.name}: failure restores held turns`)
+        report.check(!!mounted.container.querySelector('[data-segment-boundary]'), `${row.name}: failure retains a boundary`)
+      }
+      if (retry) await mounted.act(() => click(window, retry))
+      await mounted.settle()
+      report.check(JSON.stringify(requests) === JSON.stringify(row.requests), `${row.name}: retry invokes the same loader`)
+      await mounted.rerender(viewer({ ...props, window: descriptor, segments: makeSegments(def, [0, 1, 2, 3]) }))
+      await mounted.settle()
+      report.check(!!mounted.container.querySelector(`#turn-${row.window.anchorTurn}`), `${row.name}: successful retry renders the window`)
+      report.check(!mounted.container.querySelector('.txn-held-window[role="alert"]'), `${row.name}: success clears the failure`)
+      await mounted.unmount()
+      continue
+    }
+    if (row.mode === 'clear-window') {
+      const segments = makeSegments(def, row.loaded)
+      const descriptor = { sessionId: dirSession(), revision: '7', ...row.window }
+      const onLoadSegment = (index) => { requests.push(index) }
+      const props = { directory, segments, onLoadSegment }
+      const mounted = await mount(viewer({ ...props, window: descriptor }))
+      await mounted.settle()
+      await mounted.rerender(viewer({ ...props, window: null }))
+      await mounted.settle()
+      report.check(!!mounted.container.querySelector(`#turn-${row.restoredTurn}`), `${row.name}: clearing the window restores held turns`)
+      await mounted.rerender(viewer({ ...props, window: descriptor }))
+      await mounted.settle()
+      report.check(JSON.stringify(requests) === JSON.stringify(row.requests), `${row.name}: the same missing segment is requested again`)
+      await mounted.unmount()
+      continue
+    }
+    let rejectLoad
+    const onLoadSegment = (index) => {
+      requests.push(index)
+      if (row.mode === 'rejected') return new Promise((resolve, reject) => { rejectLoad = reject })
+    }
+    const mounted = await mount(viewer({ directory, segments: makeSegments(def, row.loaded), onLoadSegment }))
+    const button = mounted.container.querySelector('.txn-segboundary-load')
+    await mounted.act(() => click(window, button))
+    if (row.mode === 'rejected') {
+      report.check(button.disabled, `${row.name}: pending load disables the control`)
+      if (rejectLoad) await mounted.act(() => rejectLoad(new Error('failed fetch')))
+      await mounted.settle()
+    }
+    report.check(!button.disabled, `${row.name}: failed or untracked load permits retry`)
+    await mounted.act(() => click(window, button))
+    report.check(JSON.stringify(requests) === JSON.stringify(row.requests), `${row.name}: retry invokes the host again`)
     await mounted.unmount()
   }
 
@@ -459,4 +545,4 @@ function dirSession() {
   return 'sess_segment_fixture'
 }
 
-report.finish(`${fixture.directories.length} directories, ${fixture.loadCases.length} load cases, ${fixture.windowCases.length} window cases, ${fixture.mountCases.length} mounted cases, and ${boundaryFixture.sides.length} boundary sides.`)
+report.finish(`${fixture.directories.length} directories, ${fixture.loadCases.length} load cases, ${fixture.windowCases.length} window cases, ${fixture.mountCases.length} mounted cases, ${fixture.wordlessCases.length} wordless cases, and ${boundaryFixture.sides.length} boundary sides.`)
