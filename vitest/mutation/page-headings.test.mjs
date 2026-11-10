@@ -13,18 +13,22 @@ import YAML from 'yaml'
 // Vitest exposes a transformed import.meta.url, not always a file: URL, so the
 // repository root and fixture path come from the command's working directory.
 const ROOT = process.cwd()
-const manifest = YAML.parse(readFileSync(resolve(ROOT, 'scripts/testdata/page-headings.manifest.yaml'), 'utf8'))
+const PKG = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8'))
+const mutationScript = PKG.scripts['test:page-headings:mutations']
+if (typeof mutationScript !== 'string') throw new Error('package.json: test:page-headings:mutations must be declared')
+const command = mutationScript.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g) ?? []
+if (command[0] !== 'node' || command.length < 4) {
+  throw new Error(`package.json: test:page-headings:mutations must be a node orchestrator command; got ${JSON.stringify(mutationScript)}`)
+}
+const manifestRel = command[command.length - 1]
+const manifest = YAML.parse(readFileSync(resolve(ROOT, manifestRel), 'utf8'))
 const mutationCount = manifest.mutations.length
 
 describe('mutation orchestrator under Vitest', () => {
   it('kills every page-headings mutant for its intended diagnostic', () => {
     const result = spawnSync(
       process.execPath,
-      [
-        'scripts/parts-mutations.mjs',
-        'scripts/page-headings.test.mjs',
-        'scripts/testdata/page-headings.manifest.yaml',
-      ],
+      command.slice(1),
       { cwd: ROOT, encoding: 'utf8', timeout: 120_000 },
     )
     expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0)

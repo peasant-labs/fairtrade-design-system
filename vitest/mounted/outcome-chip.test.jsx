@@ -51,6 +51,11 @@ async function mount(outcome) {
 }
 
 describe('TranscriptOutcomeChip mounted under Vitest', () => {
+  it('carries at least one case in each fixture array', () => {
+    expect(Array.isArray(fixture.cases) && fixture.cases.length > 0).toBe(true)
+    expect(Array.isArray(fixture.renderNothingCases) && fixture.renderNothingCases.length > 0).toBe(true)
+  })
+
   for (const testCase of fixture.cases) {
     it(testCase.name, async () => {
       const mounted = await mount(testCase.outcome)

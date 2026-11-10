@@ -95,7 +95,7 @@ mutations:
     kind: trailing-document
     target: document
     expectedField: document[1]
-expectedWorkflowMutationCount: 17
+expectedWorkflowMutationCount: 18
 requiredWorkflowMutationNames:
   - workflow-upload-pin-becomes-a-tag
   - workflow-upload-drops-no-files-error
@@ -103,6 +103,7 @@ requiredWorkflowMutationNames:
   - workflow-upload-retention-unbounded
   - workflow-budget-env-drifts
   - workflow-mounted-target-drifts
+  - workflow-mounted-workers-drift
   - workflow-drops-the-verification-step
   - workflow-drops-the-journey-gates
   - workflow-journey-unbounded-workers
@@ -139,6 +140,10 @@ workflowMutations:
     find: "        run: pnpm test:fairtest:mounted -- --target=all\n"
     replace: "        run: pnpm test:fairtest:mounted -- --target=product\n"
     expectedField: run
+  - name: workflow-mounted-workers-drift
+    find: "      FAIRTEST_MOUNTED_WORKERS: \"4\"\n"
+    replace: "      FAIRTEST_MOUNTED_WORKERS: \"8\"\n"
+    expectedField: FAIRTEST_MOUNTED_WORKERS
   - name: workflow-drops-the-verification-step
     find: "      - name: Fairtest evidence verification\n        run: pnpm test:fairtest:verify\n"
     replace: ''

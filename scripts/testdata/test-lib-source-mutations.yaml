@@ -1,8 +1,60 @@
-# Required-NAME manifest for gates that rewrite a tracked file under src/.
-# The runner test scans scripts/*.test.mjs for a writeFileSync that names src/
-# and asserts this exact set, so a new mutating gate cannot be added without
-# joining the exclusive source-mutation lane.
-sourceMutationGates:
-  - timeline-a11y.test.mjs
-  - timeline-ghosts.test.mjs
-  - timeline-highlight.test.mjs
+# Fixture for the tracked-source writer scanner. Each case is a synthetic module
+# source and whether it must be classified as writing under src/. The scanner
+# resolves literals, join/resolve forms, transitive identifiers, and either path
+# argument of rename/copy; a scratch copy under mkdtemp/tmpdir must stay clean
+# even when the copied subtree contains a src/ segment.
+scannerCases:
+  - name: literal-src-path
+    source: |
+      writeFileSync('src/ui/graph/edges.js', mutation)
+    expected: true
+  - name: joined-src-segments
+    source: |
+      writeFileSync(join(ROOT, 'src', 'ui', 'graph', 'edges.js'), mutation)
+    expected: true
+  - name: resolved-src-literal
+    source: |
+      const target = resolve(ROOT, 'src/ui/graph/edges.js')
+      writeFileSync(target, mutation)
+    expected: true
+  - name: transitive-identifier
+    source: |
+      const graphDir = resolve(ROOT, '../src/ui/graph')
+      const target = resolve(graphDir, mutation.file)
+      writeFileSync(target, mutation.replace)
+    expected: true
+  - name: rename-destination
+    source: |
+      const target = join(ROOT, 'src', 'ui', 'graph', 'edges.js')
+      renameSync(tmp, target)
+    expected: true
+  - name: rename-source
+    source: |
+      const target = join(ROOT, 'src', 'ui', 'graph', 'edges.js')
+      renameSync(target, tmp)
+    expected: true
+  - name: append-alias
+    source: |
+      const target = resolve(ROOT, 'src/ui/graph/edges.js')
+      appendFileSync(target, mutation)
+    expected: true
+  - name: scratch-copy
+    source: |
+      const scratch = mkdtempSync(join(tmpdir(), 'datatable-boundary-'))
+      const entry = join(scratch, 'src/ui/DataTable.jsx')
+      writeFileSync(entry, mutation)
+    expected: false
+  - name: tmpdir-src-segment
+    source: |
+      const target = join(tmpdir(), 'src', 'edges.js')
+      writeFileSync(target, mutation)
+    expected: false
+  - name: public-write
+    source: |
+      writeFileSync('public/tokens.json', mutation)
+    expected: false
+  - name: comment-mentions-src
+    source: |
+      // writes src/ui/graph/edges.js
+      writeFileSync(target, mutation)
+    expected: false
