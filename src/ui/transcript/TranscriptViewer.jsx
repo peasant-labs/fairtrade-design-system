@@ -27,6 +27,7 @@ import OutlineRail from './OutlineRail.jsx'
 import FiltersRail from './FiltersRail.jsx'
 import TranscriptSystemGroup from './SystemGroup.jsx'
 import { systemGroups as groupSystemTurns } from './system-groups.js'
+import { systemGroupFacetKinds, filterSystemGroupMembers, systemGroupFacetKey, systemGroupFacetSelected, toggleSystemGroupFacet } from './system-group-facet.js'
 import TranscriptMinimap from './Minimap.jsx'
 import Scrubber from './Scrubber.jsx'
 import Scorecard from './Scorecard.jsx'
@@ -432,6 +433,7 @@ export default function TranscriptViewer({
     if (groupStateSessionRef.current === sessionId) return
     groupStateSessionRef.current = sessionId
     setOpenSystemGroups({})
+    setSystemFacet({})
     setSystemReveal(null)
   }, [vm?.session?.id])
   useEffect(() => {
@@ -524,6 +526,10 @@ export default function TranscriptViewer({
      or a session switch. */
   const [systemReveal, setSystemReveal] = useState(null)
   const [openSystemGroups, setOpenSystemGroups] = useState({})
+  /* Ephemeral per-kind facet selection for a system-entry group, keyed by group id. It is
+     reader state for one reading: never persisted, and a group whose id changes starts
+     unfiltered. */
+  const [systemFacet, setSystemFacet] = useState({})
   const [searchUnrendered, setSearchUnrendered] = useState(false)
   const [searchMeasurements, setSearchMeasurements] = useState({ query: '', sections: {} })
   const [selectedSearchRange, setSelectedSearchRange] = useState(null)
@@ -714,18 +720,29 @@ export default function TranscriptViewer({
     [visibleTurns],
   )
 
+  /* The kinds each group offers, derived from that group's own (unfiltered) members. A run of
+     one kind gets no facet: the head summary already names it. */
+  const systemGroupFacets = useMemo(() => {
+    /** @type {Map<string, Array<{ id: string, label: string, count: number }>>} */
+    const byGroup = new Map()
+    for (const group of new Set(systemGroups.values())) byGroup.set(group.id, systemGroupFacetKinds(group.members))
+    return byGroup
+  }, [systemGroups])
+
   /* The navigable list: the drawn cards, with a system-entry group collapsed to one stop at
-     its owner plus the members of groups the reader has opened. Progress, the keyboard step,
-     the reading line, the minimap and jump-latest all read this one list, so a closed group
-     is one stop and opening it adds its members. */
+     its owner plus the members of groups the reader has opened AND the facet still shows.
+     Progress, the keyboard step, the reading line, the minimap and jump-latest all read this
+     one list, so a closed group is one stop and opening it adds only its visible members. */
   const navigableTurns = useMemo(() => {
     if (systemGroups.size === 0) return cardTurns
     return cardTurns.filter((turn) => {
       const group = systemGroups.get(turn.index)
       if (!group) return true
-      return group.owner.index === turn.index || openSystemGroups[group.id] === true
+      if (group.owner.index === turn.index) return true
+      if (openSystemGroups[group.id] !== true) return false
+      return systemGroupFacetSelected(systemFacet[group.id], systemGroupFacetKey(turn))
     })
-  }, [cardTurns, systemGroups, openSystemGroups])
+  }, [cardTurns, systemGroups, openSystemGroups, systemFacet])
 
   /* Turns hidden ONLY by the system category: re-project with system on and every other
      filter unchanged. Search enumerates this set so a hit can never exist that no reveal can
@@ -1019,12 +1036,18 @@ export default function TranscriptViewer({
     navigationTargetRef.current = null
   }
   /* A member of a system-entry group resolves to its owner for selection and readiness, but a
-     landing still targets the member's own anchor. */
+     landing still targets the member's own anchor.
+     Landing on a folded member also releases a facet that would hide it: the reader asked to
+     reach THAT record (a search hit, a copied anchor, an initial position), so a remembered
+     per-group narrowing must not make the target unreachable. */
   function openGroupForTurn(idx) {
     const group = systemGroups.get(idx)
     // The owner IS the group's one stop, so landing on it leaves the group closed; landing on
     // a folded member opens the group so that member can be reached.
-    if (group && group.owner.index !== idx) setOpenSystemGroups((previous) => (previous[group.id] ? previous : { ...previous, [group.id]: true }))
+    if (group && group.owner.index !== idx) {
+      setOpenSystemGroups((previous) => (previous[group.id] ? previous : { ...previous, [group.id]: true }))
+      setSystemFacet((previous) => (previous[group.id] ? { ...previous, [group.id]: {} } : previous))
+    }
     return group
   }
   function jumpTo(idx, { switchTab = true } = {}) {
@@ -1296,7 +1319,10 @@ export default function TranscriptViewer({
   useLayoutEffect(() => {
     if (!searchReveal) return
     const group = systemGroups.get(searchReveal.turn)
-    if (group && group.owner.index !== searchReveal.turn) setOpenSystemGroups((previous) => (previous[group.id] ? previous : { ...previous, [group.id]: true }))
+    if (group && group.owner.index !== searchReveal.turn) {
+      setOpenSystemGroups((previous) => (previous[group.id] ? previous : { ...previous, [group.id]: true }))
+      setSystemFacet((previous) => (previous[group.id] ? { ...previous, [group.id]: {} } : previous))
+    }
   }, [searchReveal, systemGroups])
 
   /* The matching card opens in its layout effect before this scroll action. */
@@ -1816,8 +1842,14 @@ export default function TranscriptViewer({
                               onToggle={(open) => setOpenSystemGroups((previous) => ({ ...previous, [group.id]: open }))}
                               owner={renderTurn(t)}
                               revealRequest={groupReveal}
+                              facetKinds={systemGroupFacets.get(group.id) ?? []}
+                              facetSelection={systemFacet[group.id]}
+                              onFacetToggle={(id) => setSystemFacet((previous) => ({
+                                ...previous,
+                                [group.id]: toggleSystemGroupFacet(previous[group.id], id),
+                              }))}
                             >
-                              {group.members.slice(1).map((member) => (
+                              {filterSystemGroupMembers(group.members.slice(1), systemFacet[group.id]).map((member) => (
                                 <div key={member.identity ?? member.index}>{renderTurn(member)}</div>
                               ))}
                             </TranscriptSystemGroup>

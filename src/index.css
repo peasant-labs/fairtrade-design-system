@@ -4068,9 +4068,12 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
    it and members 2..N inside the disclosure, so a closed group is one laid-out row. Both the
    owner row and the folded members share one inset, so the run reads as one aligned column. */
 .txn-systemgroup { margin-top: var(--sp-3); }
+/* the disclosure and the per-kind facet share one head row; the facet is a SIBLING of the
+   disclosure button, never a descendant, so both controls stay separately reachable. */
+.txn-systemgroup-headrow { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
 .txn-systemgroup-head {
   display: flex; align-items: center; gap: var(--sp-2);
-  width: 100%; min-height: var(--target-comfortable);
+  flex: 1 1 12rem; min-width: 0; min-height: var(--target-comfortable);
   padding: 0;
   background: transparent; border: 0;
   font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-mono);
@@ -4081,6 +4084,22 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 .txn-systemgroup-head:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
 .txn-systemgroup-label { flex: none; font-weight: 700; color: var(--ink-2); }
 .txn-systemgroup-summary { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: none; }
+/* the facet: one toggle per kind present in the group. A pressed chip is the selected state;
+   its label is the recorded kind and its count ignores this facet's own selection. */
+.txn-systemgroup-facet { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-1); }
+.txn-systemgroup-chip {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  box-sizing: border-box; min-height: var(--control-h-sm);
+  padding: 0 var(--sp-2);
+  background: transparent; border: var(--bd); border-radius: 0;
+  font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-mono);
+  color: var(--ink-4); cursor: pointer;
+}
+.txn-systemgroup-chip:hover { color: var(--ink-2); }
+.txn-systemgroup-chip:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
+.txn-systemgroup-chip[aria-pressed="true"] { color: var(--ink-2); border: var(--bd-strong); }
+.txn-systemgroup-chip-label { text-transform: none; }
+.txn-systemgroup-chip-count { color: var(--ink-4); font-variant-numeric: tabular-nums; }
 /* one inset for the owner row and its folded siblings: the run is one aligned column under
    the group head, and a change to one side cannot move the other without failing the gate. */
 .txn-systemgroup-owner,

@@ -1,0 +1,18 @@
+requiredCaseNames:
+  - kinds come from the group's own members
+  - a member without a producer kind lands in the unclassified bucket
+  - narrowing leaves every count untouched
+  - toggling flips one kind and leaves its siblings
+  - toggling the same kind twice restores it
+  - no selection shows every member
+  - a narrowed selection keeps only its kind
+requiredMountedCaseNames:
+  - the head offers the kinds actually present
+  - the owner row always renders
+  - the folded members follow the facet
+  - counts ignore the facet's own selection
+  - the facet is never nested in the disclosure
+  - a toggle never writes the reader's filters
+  - a new session starts unfiltered
+  - a single-kind group offers no facet
+  - every chip is a keyboard-reachable toggle
