@@ -8,6 +8,15 @@ requiredDirectoryNames:
   - sparse 55 turn session
   - single segment session
   - empty session
+requiredHistoryCaseNames:
+  - migrated earlier history
+  - earlier history with unresolved ownership
+  - future history state remains unknown
+  - prototype-looking history state remains unknown
+requiredUnknownHistoryInvalidNames:
+  - a future state does not excuse missing turns
+requiredTypeMutationNames:
+  - a new history state is missing from the ordered inventory
 requiredLoadCaseNames:
   - opening segment 0 leaves one newer boundary
   - loading the next segment keeps one boundary and appends
@@ -33,18 +42,80 @@ requiredMountCaseNames:
   - two disjoint regions carry one gap boundary
   - a lone middle segment carries the older edge
   - a held window beside a disjoint region keeps its gap boundary
+  - separated held segments keep their own ranges around a gap
+  - held window without a loader stays honest
   - a single segment directory draws no boundary
   - an empty directory is not indexed
+requiredPhaseCaseNames:
+  - phase starting at turn zero
+  - phase starting mid transcript
+  - precomputed phase without a count omits it
+requiredPhaseCountCaseNames:
+  - sparse phase counts conversation turns rather than indexes
+requiredRecoveryCaseNames:
+  - a host reported failure can retry without a window loader
+  - a rejected covering load names the window and retries successfully
+  - a rejected window request names the window and retries successfully
+  - a host reported covering failure names the window and retries
+  - a rejected segment load enables retry
+  - a void segment load remains retryable
+  - clearing a failed window allows the same request again
 
 # Production mutations the gate must kill (scripts/parts-mutations.mjs).
 requiredMutationNames:
+  - a history label is dropped
+  - the history state inventory omits a member
+  - a failed covering load is silently dropped
+  - a failed window request is silently dropped
   - the scrubber mounts one tick per turn
   - the boundary drops its load control
   - the window renders partly loaded
   - a gap draws no continuation marker
   - the truncation notice ignores byteLength
+  - the held window loses its caption
+  - a held gap repeats its continuation marker
+  - a failed boundary load stays disabled
+  - clearing a window retains its request cache
+  - the phase range returns to one based indexes
+  - the boundary falls back to raw indexes
+  - the phase count includes an extra turn
   - an image turn is treated as a wordless continuation
 mutations:
+  - name: a history label is dropped
+    file: src/ui/transcript/earlier-history-state.js
+    find: "'migrated history'"
+    replace: "'history'"
+    expectedDiagnostic: 'migrated earlier history: mounted history label'
+  - name: the history state inventory omits a member
+    file: src/ui/transcript/earlier-history-state.js
+    find: '  EarlierHistoryState.Unresolved,'
+    replace: ''
+    expectedDiagnostic: 'history state inventory contains every member'
+  - name: a failed window request is silently dropped
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "const result = onLoadWindow(anchor)\n      if (result && typeof result.then === 'function') Promise.resolve(result).catch(fail)"
+    replace: "const result = onLoadWindow(anchor)\n      if (result && typeof result.then === 'function') Promise.resolve(result).catch(() => {})"
+    expectedDiagnostic: 'a rejected window request names the window and retries successfully: rejection or host failure must be visible, not silently dropped'
+  - name: a failed covering load is silently dropped
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "const result = onLoadSegment(index)\n        if (result && typeof result.then === 'function') Promise.resolve(result).catch(fail)"
+    replace: "const result = onLoadSegment(index)\n        if (result && typeof result.then === 'function') Promise.resolve(result).catch(() => {})"
+    expectedDiagnostic: 'a rejected covering load names the window and retries successfully: rejection or host failure must be visible, not silently dropped'
+  - name: the phase range returns to one based indexes
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "`${formatInteger(phase.turnCount)} ${phase.turnCount === 1 ? 'turn' : 'turns'}`"
+    replace: "`turns ${formatInteger(phase.from + 1)}–${formatInteger(phase.to + 1)}`"
+    expectedDiagnostic: 'phase starting at turn zero: phase caption'
+  - name: the boundary falls back to raw indexes
+    file: src/ui/transcript/segments.js
+    find: 'return `${segments}, ${formatByteExtent(boundary.byteLength)}`'
+    replace: 'return `turns ${boundary.firstTurn}–${boundary.lastTurn}, ${segments}, ${formatByteExtent(boundary.byteLength)}`'
+    expectedDiagnostic: 'boundary 0 caption'
+  - name: the phase count includes an extra turn
+    file: src/ui/transcript/analytics.js
+    find: "turns.slice(seg.startTurn, seg.endTurn + 1).filter((turn) => turn.role !== 'system').length"
+    replace: "turns.slice(seg.startTurn, seg.endTurn + 1).filter((turn) => turn.role !== 'system').length + 1"
+    expectedDiagnostic: 'sparse phase counts conversation turns rather than indexes: phase count'
   - name: the scrubber mounts one tick per turn
     file: src/ui/transcript/segments.js
     find: "const sample = Math.min(SEGMENT_SCRUBBER_TICKS, total)"
@@ -70,6 +141,26 @@ mutations:
     find: "{t.truncated && ("
     replace: "{false && ("
     expectedDiagnostic: "an oversized turn is alone, bounded and offers its full read: the truncation notice must be present"
+  - name: the held window loses its caption
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: 'while (heldPosition < heldRegions.length && heldRegions[heldPosition].firstTurn < turnIndex) {'
+    replace: 'while (false) {'
+    expectedDiagnostic: 'a held window beside a disjoint region keeps its gap boundary: the held range must be named'
+  - name: a held gap repeats its continuation marker
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: '!internalBefore.has(firstRendered.index) && '
+    replace: ''
+    expectedDiagnostic: 'a held window beside a disjoint region keeps its gap boundary: the continuation count must equal 1'
+  - name: a failed boundary load stays disabled
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: 'Promise.resolve(result).then(clear, clear)'
+    replace: 'Promise.resolve(result).then(clear, () => {})'
+    expectedDiagnostic: 'a rejected segment load enables retry: failed or untracked load permits retry'
+  - name: clearing a window retains its request cache
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "if (!segmentMode || !windowKey) {\n      windowRequestRef.current = { key: '', indexes: new Set() }"
+    replace: "if (!segmentMode || !windowKey) {\n      void 0"
+    expectedDiagnostic: 'clearing a failed window allows the same request again: the same missing segment is requested again'
   - name: an image turn is treated as a wordless continuation
     file: src/ui/transcript/segments.js
     find: "&& !hasImageParts(turn)"

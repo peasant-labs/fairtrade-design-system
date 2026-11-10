@@ -1,5 +1,5 @@
-expectedHarnessCount: 8
-expectedBrandCount: 7
+expectedHarnessCount: 14
+expectedBrandCount: 11
 expectedAliasCount: 9
 expectedInvalidHarnessCount: 3
 expectedSurfaceCount: 4
@@ -32,6 +32,14 @@ brands:
     accessibleName: Strike
   - key: pi
     accessibleName: Pi
+  - key: grok
+    accessibleName: Grok
+  - key: devin
+    accessibleName: Devin
+  - key: cline
+    accessibleName: Cline
+  - key: kiro
+    accessibleName: Kiro
 aliases:
   - name: anthropic
     brand: claude
@@ -83,6 +91,30 @@ harnesses:
   - slug: pi
     accessibleName: Pi
     brand: pi
+    accent: mauve
+  - slug: grok-build
+    accessibleName: Grok Build
+    brand: grok
+    accent: olive
+  - slug: devin-desktop
+    accessibleName: Devin Desktop
+    brand: devin
+    accent: teal
+  - slug: cline
+    accessibleName: Cline
+    brand: cline
+    accent: mauve
+  - slug: kiro
+    accessibleName: Kiro
+    brand: kiro
+    accent: mauve
+  - slug: kiro-cli
+    accessibleName: Kiro CLI
+    brand: kiro
+    accent: mauve
+  - slug: kiro-crew
+    accessibleName: Kiro Crew
+    brand: kiro
     accent: mauve
 invalidHarnesses:
   - id: company-name

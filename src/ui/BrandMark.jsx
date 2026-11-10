@@ -15,7 +15,11 @@
    (single-color theming only) and re-theme for free under [data-theme]. They are kept small,
    single-color, undistorted, and paired with the provider's name, never implying endorsement.
 
-   The path data lives in ./brand-geometry.js, a plain module the share card draws from as well.
+   Cline's mark is from Simple Icons (CC0); Grok's is from theSVG (MIT), and the
+   monochrome Devin and Kiro marks are from Devicons' brand-asset catalog. Those
+   product marks remain their owners' trademarks and identify the product only.
+   Source URLs are recorded next to the path data in ./brand-geometry.js.
+   The path data is also used by the share card.
 
    a11y: a mark next to a visible text label is decorative (default: aria-hidden, focusable=false).
    A mark that stands alone AS the identity must pass `label` to become informative
@@ -35,6 +39,10 @@ const BRAND_NAME = {
   opencode: 'opencode',
   strike: 'Strike',
   pi: 'Pi',
+  grok: 'Grok',
+  devin: 'Devin',
+  cline: 'Cline',
+  kiro: 'Kiro',
 }
 
 /**

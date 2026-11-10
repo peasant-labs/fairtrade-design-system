@@ -12,6 +12,10 @@ requiredBrandCases:
   - opencode
   - strike
   - pi
+  - grok
+  - devin
+  - cline
+  - kiro
 requiredAliasCases:
   - anthropic
   - claude-code
@@ -68,7 +72,7 @@ mutations:
     target: provider-policy
     strategy: omit-strike-inventory
     expectedFailedCheckCount: 3
-    expectedError: "mounted legend: expected 8 rows, received 7"
+    expectedError: "mounted legend: expected 14 rows, received 13"
   - name: arbitrary-string-provider-cannot-pass-validation
     target: provider-policy
     strategy: accept-arbitrary-string

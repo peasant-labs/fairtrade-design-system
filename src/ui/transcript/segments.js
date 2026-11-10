@@ -283,11 +283,9 @@ export function formatByteExtent(bytes) {
 
 /** The boundary's caption: the unloaded extent on that side, in turns, segments and bytes. */
 export function boundaryCaption(boundary) {
-  const turns = boundary.firstTurn === boundary.lastTurn
-    ? `turn ${boundary.firstTurn}`
-    : `turns ${boundary.firstTurn}–${boundary.lastTurn}`
+  // The directory has no per-segment turn counts; ordinal ranges require a contract change.
   const segments = `${boundary.segmentCount} ${boundary.segmentCount === 1 ? 'segment' : 'segments'}`
-  return `${turns}, ${segments}, ${formatByteExtent(boundary.byteLength)}`
+  return `${segments}, ${formatByteExtent(boundary.byteLength)}`
 }
 
 /** The fixed scrubber sample over the directory. Never one tick per turn. */

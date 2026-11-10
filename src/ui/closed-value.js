@@ -43,23 +43,27 @@
  *
  * @template {string | number} W
  * @template {string} L
+ * @template {Record<string, unknown>} [M={}]
  * @param {W} wire - the exact value persisted, compared, and sent on the wire.
  * @param {L} label - the human-readable text shown for the member.
- * @returns {ClosedValue<W, L>} a new frozen member for this `(wire, label)` pair.
+ * @param {M} [metadata] - additional immutable member metadata; canonical fields cannot be overridden.
+ * @returns {Readonly<ClosedValue<W, L> & Omit<M, keyof ClosedValue<W, L>>>} a new frozen member for this `(wire, label)` pair.
  */
-export function closed(wire, label) {
+export function closed(wire, label, metadata) {
   assertWire(wire)
   assertLabel(label)
+  if (metadata && Object.prototype.hasOwnProperty.call(metadata, '__proto__')) {
+    throw new TypeError('closed(wire, label, metadata) in src/ui/closed-value.js cannot accept a __proto__ metadata key; remove it before defining a member.')
+  }
 
   const text = String(wire)
-  /** @type {ClosedValue<W, L>} */
-  const value = Object.freeze({
+  const value = Object.freeze(Object.assign({}, metadata, {
     wire,
     label,
     String: () => text,
     toString: () => text,
     toJSON: () => wire,
-  })
+  }))
   return value
 }
 
