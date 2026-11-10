@@ -35,6 +35,18 @@ directories:
     firstTurn: 4
     segmentTurns: 14
     segmentBytes: 4096
+  - name: single segment session
+    totalTurns: 10
+    totalSegments: 1
+    firstTurn: 0
+    segmentTurns: 10
+    segmentBytes: 1024
+  - name: empty session
+    totalTurns: 0
+    totalSegments: 0
+    firstTurn: 0
+    segmentTurns: 0
+    segmentBytes: 0
 
 loadCases:
   - name: opening segment 0 leaves one newer boundary
@@ -162,8 +174,10 @@ mountCases:
     expect:
       maxCards: 82
       boundaryCount: 1
+      boundarySides: [newer]
+      continuationCount: 0
       truncation: false
-      continuation: false
+      notIndexed: false
   - name: a window in the middle mounts only its covering segments' turns
     directory: sparse 55 turn session
     loaded: [1, 2]
@@ -179,8 +193,10 @@ mountCases:
     expect:
       maxCards: 28
       boundaryCount: 2
+      boundarySides: [older, newer]
+      continuationCount: 0
       truncation: false
-      continuation: false
+      notIndexed: false
   - name: an oversized turn is alone, bounded and offers its full read
     directory: sparse 55 turn session
     loaded: [0]
@@ -188,14 +204,58 @@ mountCases:
     expect:
       maxCards: 14
       boundaryCount: 1
+      boundarySides: [newer]
+      continuationCount: 0
       truncation: true
       truncationCopy: 4 MiB
-      continuation: false
+      notIndexed: false
   - name: a region that starts wordless marks a continuing action run
     directory: 32 mib session
     loaded: [1]
     expect:
       maxCards: 41
       boundaryCount: 2
+      boundarySides: [older, newer]
+      continuationCount: 1
       truncation: false
-      continuation: true
+      notIndexed: false
+  - name: two disjoint regions carry one gap boundary
+    directory: sparse 55 turn session
+    loaded: [0, 3]
+    expect:
+      maxCards: 27
+      boundaryCount: 1
+      boundarySides: [between]
+      continuationCount: 1
+      truncation: false
+      notIndexed: false
+  - name: a lone middle segment carries the older edge
+    directory: sparse 55 turn session
+    loaded: [2]
+    expect:
+      maxCards: 14
+      boundaryCount: 2
+      boundarySides: [older, newer]
+      continuationCount: 1
+      truncation: false
+      notIndexed: false
+  - name: a single segment directory draws no boundary
+    directory: single segment session
+    loaded: [0]
+    expect:
+      maxCards: 10
+      boundaryCount: 0
+      boundarySides: []
+      continuationCount: 0
+      truncation: false
+      notIndexed: false
+  - name: an empty directory is not indexed
+    directory: empty session
+    loaded: []
+    expect:
+      maxCards: 0
+      boundaryCount: 0
+      boundarySides: []
+      continuationCount: 0
+      truncation: false
+      notIndexed: true

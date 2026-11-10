@@ -19,7 +19,7 @@
    `TurnVM` carries `segmentIndex`, `truncated` and `byteLength` when it came from
    a segment read; the truncation notice and the mounted-card bound read them. */
 
-import { TOOL_GROUPS } from './view-model.js'
+import { buildFiles, buildToolGroupCounts } from './adapter.js'
 
 /** @typedef {import('./view-model.js').TurnVM} TurnVM */
 
@@ -332,6 +332,9 @@ export function loadedScope(directory, regions) {
     totalTurns,
     complete,
     filtersText: complete ? segmentPart : `showing matches from ${segmentPart}`,
+    outlineText: complete
+      ? `${segmentPart}; the outline lists every user turn.`
+      : `${segmentPart}; the outline lists loaded user turns.`,
     filesText: complete
       ? `derived from all ${loadedTurns} loaded ${loadedTurns === 1 ? 'turn' : 'turns'}`
       : `derived from ${loadedTurns} of ${totalTurns} turns, ${segmentPart}`,
@@ -354,58 +357,15 @@ export function mountedCardBound(segments) {
 }
 
 /** The Files tab derived from the turns in hand: file, read/edit/write counts, churn,
-    and the first loaded turn that touched it. A file only in an unloaded segment is
-    absent by construction, which is what the tab's scope sentence says. */
+    and the first loaded turn that touched it. The one derivation lives in `adapter.js`,
+    so a segmented viewer and a whole-transcript view model cannot disagree. */
 export function loadedFiles(turns) {
-  /** @type {Map<string, {path: string, leaf: string, reads: number, writes: number, edits: number, deletes: number, adds: number, dels: number, edited: boolean, turn: number}>} */
-  const map = new Map()
-  for (const turn of turns ?? []) {
-    for (const call of turn.toolCalls ?? []) {
-      const path = call.filePath
-      if (!path) continue
-      let entry = map.get(path)
-      if (!entry) {
-        entry = {
-          path,
-          leaf: path.split('/').filter(Boolean).pop() ?? path,
-          reads: 0,
-          writes: 0,
-          edits: 0,
-          deletes: 0,
-          adds: 0,
-          dels: 0,
-          edited: false,
-          turn: turn.index,
-        }
-        map.set(path, entry)
-      }
-      const name = String(call.name ?? '').toLowerCase()
-      if (name === 'read' || name === 'notebookread') entry.reads += 1
-      else if (name === 'edit' || name === 'multiedit' || name === 'notebookedit') {
-        entry.edits += 1
-        entry.adds += call.adds ?? 0
-        entry.dels += call.dels ?? 0
-      } else if (name === 'write') {
-        entry.writes += 1
-        entry.adds += call.adds ?? 0
-      } else if (name === 'delete' || name === 'remove') entry.deletes += 1
-    }
-  }
-  const files = [...map.values()]
-  for (const entry of files) entry.edited = entry.writes + entry.edits > 0
-  return files
+  return buildFiles(turns ?? [])
 }
 
 /** Tool-group counts scoped to the turns the viewer actually holds. */
-export function loadedToolGroupCounts(turns) {  /** @type {Record<string, number>} */
-  const counts = Object.fromEntries(TOOL_GROUPS.map((id) => [id, 0]))
-  for (const turn of turns ?? []) {
-    for (const call of turn.toolCalls ?? []) {
-      const group = call.group ?? 'other'
-      counts[group] = (counts[group] ?? 0) + 1
-    }
-  }
-  return counts
+export function loadedToolGroupCounts(turns) {
+  return buildToolGroupCounts(turns ?? [])
 }
 
 /** Whether a turn is a wordless assistant turn: a run of model actions that may have

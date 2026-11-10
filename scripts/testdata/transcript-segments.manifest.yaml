@@ -6,6 +6,8 @@ requiredDirectoryNames:
   - 10000 turn directory
   - 10000 turn crowd directory
   - sparse 55 turn session
+  - single segment session
+  - empty session
 requiredLoadCaseNames:
   - opening segment 0 leaves one newer boundary
   - loading the next segment keeps one boundary and appends
@@ -24,13 +26,17 @@ requiredMountCaseNames:
   - a window in the middle mounts only its covering segments' turns
   - an oversized turn is alone, bounded and offers its full read
   - a region that starts wordless marks a continuing action run
+  - two disjoint regions carry one gap boundary
+  - a lone middle segment carries the older edge
+  - a single segment directory draws no boundary
+  - an empty directory is not indexed
 
 # Production mutations the gate must kill (scripts/parts-mutations.mjs).
 requiredMutationNames:
   - the scrubber mounts one tick per turn
   - the boundary drops its load control
   - the window renders partly loaded
-  - the truncation notice ignores byteLength
+  - a gap draws no continuation marker
 mutations:
   - name: the scrubber mounts one tick per turn
     file: src/ui/transcript/segments.js
@@ -47,8 +53,8 @@ mutations:
     find: "const heldWindow = !!(segmentMode && coverage?.required && !coverage.complete)"
     replace: "const heldWindow = false"
     expectedDiagnostic: "a window adjacent to a loaded segment merges into it: no window turn renders before its covering run is complete"
-  - name: the truncation notice ignores byteLength
+  - name: a gap draws no continuation marker
     file: src/ui/transcript/TranscriptViewer.jsx
-    find: "{t.truncated && ("
-    replace: "{false && ("
-    expectedDiagnostic: "an oversized turn is alone, bounded and offers its full read: the truncation notice must be present"
+    find: "isWordlessAssistant(firstVisibleAfter(internal.lastTurn))"
+    replace: "false"
+    expectedDiagnostic: "two disjoint regions carry one gap boundary: the continuation count must equal 1"

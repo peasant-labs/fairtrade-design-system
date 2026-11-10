@@ -19,6 +19,8 @@
 import { loadFixturePair, assertFields, withMountedSource, click, createReport } from './mounted-parts.mjs'
 import {
   SEGMENT_SCRUBBER_TICKS,
+  boundaryCaption,
+  formatByteExtent,
   loadedRegions,
   loadedScope,
   mountedCardBound,
@@ -219,10 +221,13 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     } else {
       report.check(!!mounted.container.querySelector(`#turn-${row.window.anchorTurn}`), `${row.name}: the complete window renders its anchor turn`)
     }
+    const expectedBoundaries = regionBoundaries(directory, loadedRegions(directory, loaded))
+    const mountedCounts = [...mounted.container.querySelectorAll('[data-segment-boundary]')].map((node) => Number(node.dataset.segmentCount))
+    report.check(JSON.stringify(mountedCounts) === JSON.stringify(expectedBoundaries.map((boundary) => boundary.segmentCount)), `${row.name}: a held window segment is never reported as unloaded`)
     await mounted.unmount()
   }
 
-  /* mounted card bound, boundaries, truncation and continuation */
+  /* mounted card bound, boundaries, truncation, continuation and scope */
   for (const row of fixture.mountCases) {
     const def = DIRECTORY.get(row.directory)
     const directory = buildDirectory(def)
@@ -230,11 +235,6 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     /* prove a file from a loaded turn is listed and one only elsewhere is absent */
     const firstAssistantWithTools = loaded.flatMap((segment) => segment.turns).find((turn) => turn.toolCalls?.length)
     if (firstAssistantWithTools) firstAssistantWithTools.toolCalls.push({ id: 'loaded-file', name: 'Read', group: 'read', filePath: '/src/loaded.js', sourceIndex: 1, sourceIdUnique: true })
-    const loadedTurnSet = new Set(turnsFromSegments(loaded).map((turn) => turn.index))
-    const files = [
-      { path: '/src/loaded.js', leaf: 'loaded.js', turn: [...loadedTurnSet][0] ?? 0, adds: 1, dels: 0, reads: 0, writes: 0, edits: 1, deletes: 0, edited: true },
-      { path: '/src/unloaded.js', leaf: 'unloaded.js', turn: def.firstTurn + def.totalTurns - 1, adds: 1, dels: 0, reads: 0, writes: 0, edits: 1, deletes: 0, edited: true },
-    ]
     const requests = []
     const mounted = await mount(viewer({
       directory,
@@ -242,18 +242,28 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       window: row.window ? { sessionId: dirSession(), revision: '7', ...row.window } : undefined,
       onLoadSegment: (index) => requests.push(index),
       onLoadWindow: () => {},
-    }, { files }))
+    }))
     await mounted.settle()
     const stream = mounted.container.querySelector('.txn-stream')
     const cards = mounted.container.querySelectorAll('.txn-turn').length
     report.check(cards <= row.expect.maxCards, `${row.name}: ${cards} mounted cards must not exceed ${row.expect.maxCards}`)
     report.check(Number(stream?.dataset.mountedTurnBound) === row.expect.maxCards, `${row.name}: the stream must publish its mounted-card bound`)
     report.check(mountedCardBound(loaded) === row.expect.maxCards, `${row.name}: the loaded segments bound the mount at ${row.expect.maxCards}`)
-    const boundaryNodes = mounted.container.querySelectorAll('[data-segment-boundary]')
+    const boundaryNodes = [...mounted.container.querySelectorAll('[data-segment-boundary]')]
     report.check(boundaryNodes.length === row.expect.boundaryCount, `${row.name}: ${boundaryNodes.length} boundary controls must equal ${row.expect.boundaryCount}`)
+    report.check(Number(stream?.dataset.segmentBoundaries) === boundaryNodes.length, `${row.name}: the published boundary count must match the mounted controls`)
+    const sides = boundaryNodes.map((node) => node.dataset.segmentBoundary)
+    report.check(JSON.stringify(sides) === JSON.stringify(row.expect.boundarySides), `${row.name}: boundary sides ${JSON.stringify(sides)} must equal ${JSON.stringify(row.expect.boundarySides)}`)
+    report.check(mounted.container.querySelectorAll('[data-segment-boundary="between"]').length === (row.expect.boundarySides.includes('between') ? 1 : 0), `${row.name}: a gap draws exactly one between boundary`)
     for (const node of boundaryNodes) {
       report.check(node.querySelectorAll('button.txn-segboundary-load').length === 1, `${row.name}: a boundary carries exactly one load-more control`)
-      report.check(text(node.querySelector('.txn-segboundary-caption')).length > 0, `${row.name}: a boundary names the unloaded extent`)
+    }
+    const expectedBoundaries = regionBoundaries(directory, loadedRegions(directory, loaded))
+    for (const [index, node] of boundaryNodes.entries()) {
+      const expected = expectedBoundaries[index]
+      const caption = text(node.querySelector('.txn-segboundary-caption'))
+      report.check(caption === boundaryCaption(expected), `${row.name}: boundary ${index} caption ${JSON.stringify(caption)} must equal ${JSON.stringify(boundaryCaption(expected))}`)
+      report.check(caption.includes(formatByteExtent(expected.byteLength)), `${row.name}: boundary ${index} caption must carry its byte extent`)
     }
     const truncation = mounted.container.querySelector('.txn-truncation')
     report.check(!!truncation === row.expect.truncation, `${row.name}: the truncation notice must be ${row.expect.truncation ? 'present' : 'absent'}`)
@@ -264,27 +274,95 @@ await withMountedSource(async ({ load, mount, window, React }) => {
         report.check(!!truncation.querySelector('.txn-truncation-load'), `${row.name}: the truncation notice offers the full turn read`)
       }
     }
-    const continuation = mounted.container.querySelectorAll('.txn-action-continuation').length > 0
-    report.check(continuation === row.expect.continuation, `${row.name}: the continuation marker must be ${row.expect.continuation ? 'present' : 'absent'}`)
+    const continuationCount = mounted.container.querySelectorAll('.txn-action-continuation').length
+    report.check(continuationCount === row.expect.continuationCount, `${row.name}: the continuation count must equal ${row.expect.continuationCount}`)
+    const notIndexed = mounted.container.querySelector('[data-not-indexed]')
+    report.check(!!notIndexed === row.expect.notIndexed, `${row.name}: the not-indexed state must be ${row.expect.notIndexed ? 'shown' : 'absent'}`)
+    if (row.expect.notIndexed) {
+      report.check(!text(mounted.container.querySelector('.txn-stream')).includes('every turn is filtered out'), `${row.name}: an empty session must not read as filtered out`)
+    }
     /* A boundary control takes the same load path the host wires. */
-    const expectedBoundaries = regionBoundaries(directory, loadedRegions(directory, loaded))
     const loadControl = boundaryNodes[0]?.querySelector('.txn-segboundary-load')
     if (loadControl && expectedBoundaries[0]) {
       await mounted.act(() => click(window, loadControl))
       report.check(requests[0] === expectedBoundaries[0].loadSegment, `${row.name}: the control loads segment ${expectedBoundaries[0].loadSegment}`)
     }
-    /* Files reads the loaded regions only. */
+    /* the checklist's mounted read at the middle and the end of the stream */
+    for (const scrollTop of [0, 5000, 10_000]) {
+      await mounted.act(() => {
+        stream.scrollTop = scrollTop
+        stream.dispatchEvent(new window.Event('scroll', { bubbles: true }))
+      })
+      await mounted.settle()
+      const atPosition = mounted.container.querySelectorAll('.txn-turn').length
+      report.check(atPosition <= row.expect.maxCards, `${row.name}: mounted cards at scrollTop ${scrollTop} must not exceed ${row.expect.maxCards}`)
+    }
+    /* Files, filters and outline state the exact loaded-region scope. */
+    const scope = loadedScope(directory, loadedRegions(directory, loaded))
+    report.check(text(mounted.container.querySelector('.txn-rail-right .txn-scope')).includes(scope.filtersText), `${row.name}: the filters rail must state its loaded-region scope`)
+    report.check(text(mounted.container.querySelector('.txn-rail-left .txn-scope')).includes(scope.outlineText), `${row.name}: the outline must state its loaded-region scope`)
     const filesTab = [...mounted.container.querySelectorAll('[role="tab"]')].find((node) => text(node).startsWith('files'))
     if (filesTab) {
       await mounted.act(() => click(window, filesTab))
       await mounted.settle()
+      const filesPane = mounted.container.querySelector('.txn-files')
       const table = mounted.container.querySelector('.txn-filetable')
       const listed = table ? text(table) : ''
-      report.check(listed.includes('loaded.js'), `${row.name}: a file from a loaded turn is listed`)
-      report.check(!listed.includes('unloaded.js'), `${row.name}: a file only in an unloaded turn is not listed`)
-      report.check(text(mounted.container.querySelector('.txn-files')).includes('of'), `${row.name}: the Files tab states how much it has read`)
+      report.check(text(filesPane).includes(scope.filesText), `${row.name}: the Files tab must state its loaded-region scope`)
+      if (loaded.length > 0) {
+        report.check(listed.includes('loaded.js'), `${row.name}: a file from a loaded turn is listed`)
+        report.check(!listed.includes('unloaded.js'), `${row.name}: a file only in an unloaded turn is not listed`)
+      }
     }
     await mounted.unmount()
+  }
+
+  /* A prepend keeps the reader's viewport position, not just their turn. The test
+     supplies real geometry (jsdom lays nothing out): every turn is 50px tall and
+     100px apart, and the prepended segment shifts every offset down by 280px. */
+  {
+    const def = DIRECTORY.get('sparse 55 turn session')
+    const directory = buildDirectory(def)
+    const loadedBefore = makeSegments(def, [2])
+    const loadedAfter = makeSegments(def, [1, 2])
+    let shift = 0
+    const savedTop = Object.getOwnPropertyDescriptor(window.HTMLElement.prototype, 'offsetTop')
+    const savedHeight = Object.getOwnPropertyDescriptor(window.HTMLElement.prototype, 'offsetHeight')
+    Object.defineProperty(window.HTMLElement.prototype, 'offsetTop', {
+      configurable: true,
+      get() { const match = /^turn-(\d+)$/.exec(this.id ?? ''); return match ? Number(match[1]) * 100 + shift : 0 },
+    })
+    Object.defineProperty(window.HTMLElement.prototype, 'offsetHeight', {
+      configurable: true,
+      get() { return /^turn-\d+$/.test(this.id ?? '') ? 50 : 0 },
+    })
+    try {
+      const mounted = await mount(viewer({ directory, segments: loadedBefore, onLoadSegment: () => {}, onLoadWindow: () => {} }))
+      await mounted.settle()
+      const stream = mounted.container.querySelector('.txn-stream')
+      stream.scrollTop = 137
+      const anchor = [...mounted.container.querySelectorAll('article[id^="turn-"]')]
+        .filter((turn) => turn.querySelector('.txn-turn.user, .txn-turn.system'))
+        .find((turn) => turn.offsetTop + turn.offsetHeight > stream.scrollTop)
+      report.check(!!anchor, `prepend: the loaded segment mounts a navigable turn (${mounted.container.querySelectorAll('.txn-turn').length} cards)`)
+      const beforeViewportTop = anchor ? anchor.offsetTop - stream.scrollTop : null
+      const older = mounted.container.querySelector('[data-segment-boundary="older"] .txn-segboundary-load')
+      report.check(!!older, 'prepend: the older edge offers a load control')
+      if (older) await mounted.act(() => click(window, older))
+      shift = 280
+      await mounted.rerender(viewer({ directory, segments: loadedAfter, onLoadSegment: () => {}, onLoadWindow: () => {} }))
+      await mounted.settle()
+      const sameTurn = anchor ? mounted.container.querySelector(`#${anchor.id}`) : null
+      const afterViewportTop = sameTurn ? sameTurn.offsetTop - stream.scrollTop : null
+      report.check(beforeViewportTop === afterViewportTop, `prepend: the reader's viewport position must be unchanged (${beforeViewportTop} -> ${afterViewportTop})`)
+      report.check(stream.scrollTop === 417, `prepend: the restored scrollTop must be 417, received ${stream.scrollTop}`)
+      await mounted.unmount()
+    } finally {
+      if (savedTop) Object.defineProperty(window.HTMLElement.prototype, 'offsetTop', savedTop)
+      else delete window.HTMLElement.prototype.offsetTop
+      if (savedHeight) Object.defineProperty(window.HTMLElement.prototype, 'offsetHeight', savedHeight)
+      else delete window.HTMLElement.prototype.offsetHeight
+    }
   }
 
   /* the scrubber sample: one node per sampled segment, never one per turn */

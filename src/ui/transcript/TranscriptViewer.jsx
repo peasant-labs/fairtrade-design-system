@@ -353,8 +353,13 @@ export default function TranscriptViewer({
     [segmentMode, heldWindow, loadedSegments, coverage],
   )
   const segmentTurns = useMemo(() => (segmentMode ? turnsFromSegments(renderedSegments) : null), [segmentMode, renderedSegments])
+  const allSegmentTurns = useMemo(() => (segmentMode ? turnsFromSegments(loadedSegments) : null), [segmentMode, loadedSegments])
   const vm = useMemo(() => (segmentMode ? { ...viewModel, turns: segmentTurns } : viewModel), [segmentMode, viewModel, segmentTurns])
-  const regions = useMemo(() => (segmentMode ? loadedRegions(directory, renderedSegments) : []), [segmentMode, directory, renderedSegments])
+  /* The region model is the segments in hand, including a window run that is still
+     arriving: a loaded segment is never reported as unloaded just because its window
+     is incomplete. The trace mounts only `renderedSegments`; the boundary and scope
+     describe what the host has actually loaded. */
+  const regions = useMemo(() => (segmentMode ? loadedRegions(directory, loadedSegments) : []), [segmentMode, directory, loadedSegments])
   const boundaries = useMemo(() => (segmentMode ? regionBoundaries(directory, regions) : []), [segmentMode, directory, regions])
   const scope = useMemo(() => (segmentMode ? loadedScope(directory, regions) : null), [segmentMode, directory, regions])
   const scrubTicks = useMemo(() => (segmentMode ? scrubberTicks(directory) : []), [segmentMode, directory])
@@ -582,6 +587,7 @@ export default function TranscriptViewer({
   const pendingJumpRef = useRef(null)
   const pendingSeekRef = useRef(null)
   const ackScrollRef = useRef(null)
+  const [loadingSegment, setLoadingSegment] = useState(null)
   const windowRequestRef = useRef({ key: '', indexes: new Set() })
   const windowKey = segmentMode && windowProp
     ? `${windowProp.revision ?? ''}:${windowProp.anchorTurn}:${(windowProp.segments ?? []).join(',')}`
@@ -708,7 +714,7 @@ export default function TranscriptViewer({
   /* A segmented viewer reads only what it has loaded. The VM's task/file/highlight
      slices may describe the whole session (the host supplies the header projection),
      so keep the entries whose turns are in the rendered regions. */
-  const loadedTurnIndexes = useMemo(() => new Set(segmentTurns?.map((turn) => turn.index) ?? []), [segmentTurns])
+  const loadedTurnIndexes = useMemo(() => new Set(allSegmentTurns?.map((turn) => turn.index) ?? []), [allSegmentTurns])
   const inLoadedTurns = useCallback((turnIndex) => !segmentMode || loadedTurnIndexes.has(turnIndex), [segmentMode, loadedTurnIndexes])
   const tasks = useMemo(
     () => (segmentMode
@@ -717,8 +723,8 @@ export default function TranscriptViewer({
     [segmentMode, vm?.tasks, loadedTurnIndexes],
   )
   const files = useMemo(
-    () => (segmentMode ? loadedFiles(segmentTurns ?? []) : vm?.files ?? []),
-    [segmentMode, segmentTurns, vm?.files],
+    () => (segmentMode ? loadedFiles(allSegmentTurns ?? []) : vm?.files ?? []),
+    [segmentMode, allSegmentTurns, vm?.files],
   )
   const diffs = useMemo(
     () => (segmentMode ? (vm?.diffs ?? []).filter((diff) => inLoadedTurns(diff.turn)) : vm?.diffs ?? []),
@@ -732,13 +738,13 @@ export default function TranscriptViewer({
   const commits = session?.git?.commits ?? []
   const annotations = useMemo(
     () => (segmentMode
-      ? turns.flatMap((turn) => turn.annotations ?? [])
+      ? (allSegmentTurns ?? []).flatMap((turn) => turn.annotations ?? [])
       : vm?.analytics?.patternAnnotations ?? turns.flatMap((t) => t.annotations ?? [])),
-    [segmentMode, vm?.analytics?.patternAnnotations, turns],
+    [segmentMode, vm?.analytics?.patternAnnotations, turns, allSegmentTurns],
   )
   const toolGroupCounts = useMemo(
-    () => (segmentMode ? loadedToolGroupCounts(segmentTurns ?? []) : vm?.filterIndex?.toolGroupCounts ?? {}),
-    [segmentMode, segmentTurns, vm?.filterIndex?.toolGroupCounts],
+    () => (segmentMode ? loadedToolGroupCounts(allSegmentTurns ?? []) : vm?.filterIndex?.toolGroupCounts ?? {}),
+    [segmentMode, allSegmentTurns, vm?.filterIndex?.toolGroupCounts],
   )
   const activeModel = turns.find((turn) => turn.index === activeTurn)?.effectiveModel
   /* The left rail reads the same loaded regions the trace does: its tasks, files and
@@ -1194,6 +1200,7 @@ export default function TranscriptViewer({
     sc.scrollTop = el.offsetTop - pending.offset
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadedIndexKey, turns])
+  useEffect(() => { setLoadingSegment(null) }, [loadedIndexKey])
   function captureReadingAnchor() {
     const sc = scrollRef.current
     if (!sc || typeof document === 'undefined') return null
@@ -1202,7 +1209,9 @@ export default function TranscriptViewer({
       return el && el.offsetTop + el.offsetHeight > sc.scrollTop
     }) ?? navigableTurns[0]
     const el = anchor ? turnRefs.current[anchor.index] : null
-    return el ? { turnIndex: anchor.index, offset: sc.scrollTop - el.offsetTop } : null
+    /* the anchor's distance from the viewport top; restoring `offsetTop - offset`
+       puts the same turn back at the same place after the prepend shifts the offsets */
+    return el ? { turnIndex: anchor.index, offset: el.offsetTop - sc.scrollTop } : null
   }
   function loadSegmentAt(index, { prepend = false } = {}) {
     if (typeof onLoadSegment !== 'function' || index == null || index < 0) return
@@ -1210,7 +1219,11 @@ export default function TranscriptViewer({
       const anchor = captureReadingAnchor()
       if (anchor) ackScrollRef.current = anchor
     }
-    onLoadSegment(index)
+    setLoadingSegment(index)
+    const result = onLoadSegment(index)
+    if (result && typeof result.then === 'function') {
+      Promise.resolve(result).finally(() => setLoadingSegment((current) => (current === index ? null : current)))
+    }
   }
   function loadBoundary(boundary) {
     loadSegmentAt(boundary?.loadSegment, { prepend: boundary?.side === 'older' || boundary?.side === 'between' })
@@ -1922,7 +1935,14 @@ export default function TranscriptViewer({
                       openTools={openTools}
                       toggleTool={toggleTool}
                     />
-                    {visibleTurns.length === 0 && (
+                    {segmentMode && (directory?.totalSegments ?? 0) === 0 && (
+                      <div className="empty txn-not-indexed" data-not-indexed="true">
+                        <div className="ring"><FileText size={20} aria-hidden="true" /></div>
+                        <EmptyHeading>not indexed</EmptyHeading>
+                        <p>this transcript has no segments yet. its turns are not available to read.</p>
+                      </div>
+                    )}
+                    {visibleTurns.length === 0 && !(segmentMode && (directory?.totalSegments ?? 0) === 0) && (
                       <div className="empty"><div className="ring"><FilterIcon size={20} aria-hidden="true" /></div><EmptyHeading>no turns to display</EmptyHeading>
                         {filters.categories.system === false && counts.categories.system > 0 ? (
                           <>
@@ -2001,10 +2021,21 @@ export default function TranscriptViewer({
                           )}
                         </>
                       )
-                      const boundaryAfterTurn = (region) => boundaries.find((boundary) => boundary.side === 'between' && boundary.loadSegment - 1 === region.lastSegment)
-                      const regionOf = (turnIndex) => regions.find((region) => turnIndex >= region.firstTurn && turnIndex <= region.lastTurn)
-                      const firstVisibleOfRegion = (region) => visibleTurns.find((turn) => turn.index >= region.firstTurn && turn.index <= region.lastTurn)
-                      const nextRegionAfter = (region) => regions.find((candidate) => candidate.firstSegment > region.lastSegment)
+                      /* Only rows that actually render as their own turn can carry a
+                         boundary: a folded system-group member renders inside its owner. */
+                      const renderedRows = visibleTurns.filter((turn) => {
+                        const group = systemGroups.get(turn.index)
+                        return !group || group.owner.index === turn.index
+                      })
+                      const lastVisibleBefore = (turnIndex) => [...renderedRows].reverse().find((turn) => turn.index < turnIndex)
+                      const firstVisibleAfter = (turnIndex) => renderedRows.find((turn) => turn.index > turnIndex)
+                      /* one gap boundary, placed once on the last rendered turn before it */
+                      const internalAfter = new Map()
+                      for (const boundary of boundaries) {
+                        if (boundary.side !== 'between') continue
+                        const after = lastVisibleBefore(boundary.firstTurn)
+                        if (after) internalAfter.set(after.index, boundary)
+                      }
                       const leading = boundaries.find((boundary) => boundary.side === 'older' || boundary.side === 'all')
                       const trailing = boundaries.find((boundary) => boundary.side === 'newer')
                       const continuation = (where) => (
@@ -2013,11 +2044,11 @@ export default function TranscriptViewer({
                           <span>actions continue {where}</span>
                         </div>
                       )
-                      const firstRegion = regions[0]
+                      const firstRendered = renderedRows[0]
                       return (
                         <>
-                          {leading && <TranscriptBoundary boundary={leading} onLoadMore={(index) => loadBoundary(leading)} />}
-                          {segmentMode && leading && firstRegion && isWordlessAssistant(firstVisibleOfRegion(firstRegion)) && continuation('from the unloaded turn above')}
+                          {leading && <TranscriptBoundary boundary={leading} loading={loadingSegment === leading.loadSegment} onLoadMore={() => loadBoundary(leading)} />}
+                          {segmentMode && leading && firstRendered && isWordlessAssistant(firstRendered) && continuation('from the unloaded turn above')}
                           {visibleTurns.map((t, i) => {
                           const group = systemGroups.get(t.index)
                           /* members 2..N render inside the owner's fold, never as their own row */
@@ -2029,9 +2060,7 @@ export default function TranscriptViewer({
                           const task = taskByFirstTurn.get(t.index)
                           const turnCommits = anchoredCommits.filter((c) => c.turn === t.index)
                           const groupReveal = group && searchReveal && group.owner.index !== searchReveal.turn && group.members.some((member) => member.index === searchReveal.turn) ? searchReveal.sequence : 0
-                          const region = segmentMode ? regionOf(t.index) : null
-                          const followingRegion = region ? nextRegionAfter(region) : null
-                          const internal = region ? boundaryAfterTurn(region) : null
+                          const internal = segmentMode ? internalAfter.get(t.index) ?? null : null
                           return (
                             <Fragment key={t.identity ?? t.index}>
                               <div className={ledger ? 'txn-turnrow' : undefined}>
@@ -2060,12 +2089,12 @@ export default function TranscriptViewer({
                                 {renderTurnPanel ? renderTurnPanel(t) : null}
                                 {turnCommits.map((c) => <CheckpointMarker key={c.hash} commit={c} />)}
                               </div>
-                              {internal && <TranscriptBoundary boundary={internal} onLoadMore={(index) => loadBoundary(internal)} />}
-                              {segmentMode && internal && followingRegion && isWordlessAssistant(firstVisibleOfRegion(followingRegion)) && continuation('from the unloaded turns between')}
+                              {internal && <TranscriptBoundary boundary={internal} loading={loadingSegment === internal.loadSegment} onLoadMore={() => loadBoundary(internal)} />}
+                              {segmentMode && internal && isWordlessAssistant(firstVisibleAfter(internal.lastTurn)) && continuation('from the unloaded turns between')}
                             </Fragment>
                           )
                         })}
-                          {trailing && <TranscriptBoundary boundary={trailing} onLoadMore={(index) => loadBoundary(trailing)} />}
+                          {trailing && <TranscriptBoundary boundary={trailing} loading={loadingSegment === trailing.loadSegment} onLoadMore={() => loadBoundary(trailing)} />}
                         </>
                       )
                     })()}
