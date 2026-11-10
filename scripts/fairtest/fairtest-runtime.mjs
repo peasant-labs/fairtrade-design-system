@@ -53,26 +53,30 @@ export const FAIRTEST_REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)
 export const FAIRTEST_APP_HOST = '127.0.0.1'
 
 /**
- * Fixed loopback port for the built app, shared by the mounted rows and the
- * Fairtest Playwright config. Override with FAIRTEST_APP_PORT.
+ * Default loopback port for the built app. The Fairtest Playwright config uses
+ * it for use.baseURL, and the local dev/bridge driver uses it when no explicit
+ * port is passed. Mounted rows pass port 0 so each worker gets an OS-assigned
+ * port. Override with FAIRTEST_APP_PORT.
  * @type {number}
  */
 export const FAIRTEST_APP_PORT = Number(process.env.FAIRTEST_APP_PORT || 5189)
 
 /**
- * The one loopback base URL both consumers derive: the driver's served origin
- * and the runner's use.baseURL.
+ * The one declared loopback base URL: the config's use.baseURL and the local
+ * dev driver's default. A mounted row reads the running driver's baseUrl
+ * instead, because each worker owns an ephemeral port.
  * @type {string}
  */
 export const FAIRTEST_APP_BASE_URL = `http://${FAIRTEST_APP_HOST}:${FAIRTEST_APP_PORT}`
 
 /**
- * Fixed loopback port for the built Storybook artifact, shared by the mounted
- * component rows and the component producer. Override with
- * FAIRTEST_STORYBOOK_PORT. It is deliberately distinct from the app port and
- * from the broad journey catalog's Storybook port, so the component rows can
- * never attach to an unrelated already-running server. The host is the same
- * fixed loopback host, so the component origin shares one host declaration.
+ * Default loopback port for the built Storybook artifact. The component
+ * producer uses it when no explicit port is passed; mounted component rows pass
+ * port 0 for an OS-assigned worker port. It is deliberately distinct from the
+ * app port and from the broad journey catalog's Storybook port, so a local
+ * component driver can never attach to an unrelated already-running server.
+ * The host is the same fixed loopback host, so the component origin shares one
+ * host declaration. Override with FAIRTEST_STORYBOOK_PORT.
  * @type {number}
  */
 export const FAIRTEST_STORYBOOK_PORT = Number(process.env.FAIRTEST_STORYBOOK_PORT || 6018)
@@ -86,6 +90,27 @@ export const FAIRTEST_STORYBOOK_PORT = Number(process.env.FAIRTEST_STORYBOOK_POR
  * @type {{ readonly width: number, readonly height: number }}
  */
 export const PRODUCT_VIEWPORT = Object.freeze({ width: 1280, height: 720 })
+
+/**
+ * The mounted-row worker budget. Each Playwright worker owns an ephemeral
+ * loopback listener, so parallel rows never share an origin and a foreign local
+ * server cannot occupy a worker's port. The run root is still one immutable
+ * envelope: every row writes a row-keyed producer directory, so no worker
+ * overwrites another worker's subtree. Override with
+ * FAIRTEST_MOUNTED_WORKERS; the runner config and the config-shape fixture
+ * read this one value.
+ * @type {number}
+ */
+export const FAIRTEST_MOUNTED_WORKERS = (() => {
+  const raw = Number(process.env.FAIRTEST_MOUNTED_WORKERS || 4)
+  if (!Number.isInteger(raw) || raw < 1) {
+    throw new Error(
+      `fairtest runtime: invalid worker budget ${JSON.stringify(process.env.FAIRTEST_MOUNTED_WORKERS)} for field "FAIRTEST_MOUNTED_WORKERS" at path runtime.workers; ` +
+      'repair: use a positive integer worker count, or unset the variable for the declared default.',
+    )
+  }
+  return raw
+})()
 
 /**
  * Every purpose a suite may open a throwaway loopback listener for, in a

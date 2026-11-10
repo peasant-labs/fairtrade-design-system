@@ -516,7 +516,7 @@ mutations:
     kind: bad-value
     target: runner-config-shape-pinned
     field: expectedWorkers
-    value: 4
+    value: 8
     expectedField: expectedWorkers
   - name: renaming the unrendered-mode mutation breaks the closed set
     kind: bad-value

@@ -86,7 +86,7 @@ commands:
   # REQUIRED-CI MOUNT: ENFORCED. The Fairtest required-CI job runs this cheap
   # browser-free guard in its contracts step before any service starts, so the
   # pinned upload SHA, the always-run preflight/upload, the bounded retention,
-  # and the 24-minute budget are guarded in required CI rather than merely
+  # and the 12-minute budget are guarded in required CI rather than merely
   # declared.
   - name: test:fairtest:envelope
     invocation: pnpm test:fairtest:envelope
@@ -129,9 +129,9 @@ commands:
     stage: mounted
     runner: playwright-one-project
   # REQUIRED-CI MOUNT: ENFORCED for the mounted command. The Fairtest required-CI
-  # job in .github/workflows/ci.yml invokes it twice (--target=product and
-  # --target=component) after the clean app and Storybook builds, so a green CI
-  # run proves the mounted rows ran. DEFERRED for the product-contract command,
+  # job in .github/workflows/ci.yml invokes it once with --target=all after the
+  # clean app and Storybook builds, so a green CI run proves both mounted
+  # journeys ran. DEFERRED for the product-contract command,
   # which remains the required local contract but is not yet invoked by a
   # required workflow; two of its seven suites open real browsers and throwaway
   # loopback listeners, so it runs in one node --test invocation with

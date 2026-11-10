@@ -22,6 +22,7 @@ import YAML from 'yaml'
 import { loadSingleDocument } from '../fairtest-single-document.mjs'
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { FAIRTEST_EVIDENCE_ROW_KEYS, fairtestEvidencePolicyInput, fairtestRegistryRows } from './fairtest-evidence-policy.mjs'
+import { FAIRTEST_MOUNTED_WORKERS } from './fairtest-runtime.mjs'
 import {
   CI_ROW_KEYS,
   EVIDENCE_REL,
@@ -632,8 +633,7 @@ function inspectWorkflowOrder(text) {
     'Fairtest run envelope',
     'Fairtest browser-free contracts',
     'Fairtest inventory and selection (browser-free, before services)',
-    'Fairtest mounted product producer',
-    'Fairtest mounted component producer',
+    'Fairtest mounted producer',
     'Fairtest evidence verification',
     'Fairtest evidence preflight',
   ]
@@ -645,6 +645,21 @@ function inspectWorkflowOrder(text) {
   for (let index = 1; index < indices.length; index += 1) {
     if (indices[index] <= indices[index - 1]) {
       workflowFail(names[index], `step ${JSON.stringify(names[index])} must follow ${JSON.stringify(names[index - 1])}`)
+    }
+  }
+  // One invocation mounts both journeys so product and component rows share
+  // the worker pool. A split pair would serialize the targets again, and a
+  // changed command would silently stop running one of them.
+  const mounted = stepByName(steps, 'Fairtest mounted producer')
+  if (mounted.run !== 'pnpm test:fairtest:mounted -- --target=all') {
+    workflowFail('run', `the mounted producer must run both journeys in one invocation, observed ${JSON.stringify(mounted.run)}`)
+  }
+  if (String(mounted.env?.JOURNEY_HTML ?? '') !== '0') {
+    workflowFail('JOURNEY_HTML', `the mounted producer must keep JOURNEY_HTML=0, observed ${JSON.stringify(mounted.env?.JOURNEY_HTML)}`)
+  }
+  for (const legacy of ['Fairtest mounted product producer', 'Fairtest mounted component producer']) {
+    if (steps.some((entry) => entry.name === legacy)) {
+      workflowFail('steps', `the split mounted step ${JSON.stringify(legacy)} is no longer part of the parallel contract`)
     }
   }
   // The cheap browser-free guards must actually run in the contracts step: the
@@ -687,7 +702,7 @@ function inspectWorkflowOrder(text) {
 
 /**
  * The budget guard: the job stays at 30 minutes and the workflow declares the
- * same 24-minute Fairtest budget the run envelope records.
+ * same 12-minute Fairtest budget the run envelope records.
  * @param {string} text workflow source
  * @returns {void}
  */
@@ -698,6 +713,9 @@ function inspectWorkflowBudget(text) {
   }
   if (String(job.env?.FAIRTEST_BUDGET_MINUTES) !== String(FAIRTEST_BUDGET.totalMinutes)) {
     workflowFail('FAIRTEST_BUDGET_MINUTES', `expected ${FAIRTEST_BUDGET.totalMinutes} observed ${JSON.stringify(job.env?.FAIRTEST_BUDGET_MINUTES)}`)
+  }
+  if (String(job.env?.FAIRTEST_MOUNTED_WORKERS) !== String(FAIRTEST_MOUNTED_WORKERS)) {
+    workflowFail('FAIRTEST_MOUNTED_WORKERS', `expected ${FAIRTEST_MOUNTED_WORKERS} observed ${JSON.stringify(job.env?.FAIRTEST_MOUNTED_WORKERS)}`)
   }
   if (!String(job.env?.FAIRTEST_RUN_ROOT ?? '').includes('/review-capture/fairtest/')) {
     workflowFail('FAIRTEST_RUN_ROOT', `the job must declare the one run root, observed ${JSON.stringify(job.env?.FAIRTEST_RUN_ROOT)}`)
@@ -1021,7 +1039,7 @@ function runCase(entry) {
     case 'budget-sum': {
       const sum = FAIRTEST_BUDGET.stages.reduce((total, stage) => total + stage.minutes, 0)
       assert.ok(Math.abs(sum - FAIRTEST_BUDGET.totalMinutes) < 1e-9, `${name}: stage minutes must sum to ${FAIRTEST_BUDGET.totalMinutes}, observed ${sum}`)
-      assert.equal(FAIRTEST_BUDGET.totalMinutes, 24, `${name}: the Fairtest budget must stay 24 minutes`)
+      assert.equal(FAIRTEST_BUDGET.totalMinutes, 12, `${name}: the Fairtest budget must stay 12 minutes`)
       assert.equal(FAIRTEST_BUDGET.retries, 0, `${name}: retries must stay 0`)
       assert.equal(FAIRTEST_BUDGET.journeyHtml, 0, `${name}: JOURNEY_HTML must stay 0`)
       return

@@ -24,16 +24,24 @@
  * and is read from there. The mounted row pins the page to it anyway, which is
  * why a viewport declared here could not silently drift into the evidence.
  *
+ * Parallel rows: fullyParallel is on and each Playwright worker starts its own
+ * adapter-managed static server on an OS-assigned loopback port, so two workers
+ * never bind the same origin. Rows navigate by the driver's absolute base URL;
+ * use.baseURL below stays the declared default for shape checks and must not be
+ * treated as the running worker's origin. The run root is still one immutable envelope:
+ * every row writes a row-keyed producer directory, so a worker cannot overwrite
+ * another worker's evidence subtree. The worker count and the parallel flag are
+ * read from the runtime owner, and the `runner-config` cases in the product
+ * fixture family pin them, so a second project, a webServer entry, a widened
+ * glob, or a changed retry/worker/viewport budget turns them red.
+ *
  * Scope: testDir and testMatch select ONLY the Fairtest product and component
  * journeys. The broad scripts/journey catalog never runs under this config. The
  * array form is deliberate: a glob would also collect the co-located
- * `*.test.mjs` fixtures and the broad story smoke. The `runner-config` cases in
- * the product fixture family pin this shape, so a second project, a webServer
- * entry, a widened glob, or a changed retry/worker/viewport budget turns them
- * red.
+ * `*.test.mjs` fixtures and the broad story smoke.
  */
 import { defineConfig } from '@playwright/test'
-import { FAIRTEST_APP_BASE_URL, FAIRTEST_APP_HOST, FAIRTEST_APP_PORT, PRODUCT_VIEWPORT } from './scripts/fairtest/fairtest-runtime.mjs'
+import { FAIRTEST_APP_BASE_URL, FAIRTEST_APP_HOST, FAIRTEST_APP_PORT, FAIRTEST_MOUNTED_WORKERS, PRODUCT_VIEWPORT } from './scripts/fairtest/fairtest-runtime.mjs'
 
 /* Loopback host, port, and base URL, re-exported unchanged from their single
  * owner in scripts/fairtest/fairtest-runtime.mjs. Never a second declaration. */
@@ -44,8 +52,8 @@ const RUN_ROOT = process.env.FAIRTEST_RUN_ROOT || ''
 export default defineConfig({
   testDir: './scripts/fairtest',
   testMatch: ['**/product.journey.mjs', '**/component.journey.mjs'],
-  fullyParallel: false,
-  workers: 1,
+  fullyParallel: true,
+  workers: FAIRTEST_MOUNTED_WORKERS,
   forbidOnly: !!process.env.CI,
   retries: 0,
   timeout: 120_000,

@@ -4,7 +4,7 @@
  * registered story and theme.
  *
  * Each row drives the built storybook-static/ direct iframe through the one
- * Fairtrade adapter lifecycle on the fixed loopback Storybook port, proves a
+ * Fairtrade adapter lifecycle on the worker-owned loopback Storybook port, proves a
  * real mounted component (root children, a settled render lifecycle, the
  * layout's ready-state body classes, hidden error display, empty error stack),
  * observes the normalized theme, performs the story's named action with
@@ -23,7 +23,7 @@
  */
 import { test, expect } from '@playwright/test'
 import { createAdapter } from './fairtrade-adapter.mjs'
-import { FAIRTEST_APP_HOST, FAIRTEST_STORYBOOK_PORT } from './fairtest-runtime.mjs'
+import { FAIRTEST_APP_HOST } from './fairtest-runtime.mjs'
 import { fairtestRelative } from './fairtest-paths.mjs'
 import { COMPONENT_STORIES, COMPONENT_TARGET, COMPONENT_TARGET_ID, COMPONENT_PROVENANCE_SOURCE, componentA11yPoint } from './fairtrade-component-target.mjs'
 import {
@@ -68,7 +68,9 @@ test.describe('fairtest mounted component', () => {
 
   test.beforeAll(async () => {
     runRoot = resolveComponentRunRoot()
-    driver = createComponentStaticDriver({ port: FAIRTEST_STORYBOOK_PORT, host: FAIRTEST_APP_HOST })
+    // Each worker gets its own OS-assigned loopback port, so parallel rows
+    // never share an origin and a foreign local server cannot block the run.
+    driver = createComponentStaticDriver({ port: 0, host: FAIRTEST_APP_HOST })
     adapter = await createAdapter({
       runId: sanitizeRunId(runRoot),
       driver,

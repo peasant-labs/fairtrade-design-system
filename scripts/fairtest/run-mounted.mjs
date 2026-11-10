@@ -3,26 +3,30 @@
 
 // Minimal CLI for the ratified mounted command:
 // FAIRTEST_RUN_ROOT=<absolute-root> FAIRTEST_RUN_ID=<run-id> \
+//   pnpm test:fairtest:mounted -- --target=all
+// FAIRTEST_RUN_ROOT=<absolute-root> FAIRTEST_RUN_ID=<run-id> \
 //   pnpm test:fairtest:mounted -- --target=product
 // FAIRTEST_RUN_ROOT=<absolute-root> FAIRTEST_RUN_ID=<run-id> \
 //   pnpm test:fairtest:mounted -- --target=component
 //
-// Both variables name the same run, and the run envelope must already exist for
-// that root: run `FAIRTEST_RUN_ROOT=<absolute-root> FAIRTEST_RUN_ID=<run-id>
+// All three variables name the same run, and the run envelope must already
+// exist for that root: run `FAIRTEST_RUN_ROOT=<absolute-root> FAIRTEST_RUN_ID=<run-id>
 // pnpm test:fairtest:init` first. The producer reads the envelope and refuses a
 // root whose final path segment is not the run id, so a fresh root fails closed
 // with that diagnostic rather than writing an unowned subtree.
 //
 // Playwright rejects unknown flags such as --target, so this shim consumes
 // the target flag, validates it fail-closed, and then runs the one-project
-// Fairtest config selecting exactly the matching journey with Playwright's
-// first-class --grep. Both the product and the component journey live under
-// the same config; no second config, project, or catalog is added.
+// Fairtest config. `all` runs both journeys in one invocation so product and
+// component rows share the worker pool; `product` and `component` select one
+// journey with Playwright's first-class --grep for focused local runs. Both
+// journeys live under the same config; no second config, project, or catalog is
+// added.
 //
 // REQUIRED-CI MOUNT: ENFORCED. The Fairtest required-CI job in
-// .github/workflows/ci.yml invokes this command twice (--target=product and
-// --target=component) after the clean app and Storybook builds, so the mounted
-// product and component rows are now enforced rather than merely declared.
+// .github/workflows/ci.yml invokes this command once with --target=all after
+// the clean app and Storybook builds, so every mounted row is enforced rather
+// than merely declared.
 import { spawnSync } from 'node:child_process'
 import { parseTarget } from './fairtrade-adapter.mjs'
 
@@ -39,6 +43,14 @@ export const MOUNTED_TARGET_GREPS = Object.freeze({
 })
 
 /**
+ * The one target that runs both journeys in a single Playwright invocation.
+ * It is not a grep target: `all` passes no --grep, so Playwright schedules both
+ * files through the one project and the configured worker pool.
+ * @type {string}
+ */
+export const MOUNTED_ALL_TARGET = 'all'
+
+/**
  * What this command is. `status: 'mounted'` is the observable statement that a
  * required CI workflow invokes the command; `enforcedBy` names the job that
  * mounts it, and the mounted-command fixture case requires a workflow to
@@ -47,8 +59,8 @@ export const MOUNTED_TARGET_GREPS = Object.freeze({
  */
 export const MOUNTED_REQUIRED_CI_MOUNT = Object.freeze({
   status: 'mounted',
-  enforcedBy: '"Fairtest mounted product producer" and "Fairtest mounted component producer" in .github/workflows/ci.yml',
-  reason: 'a required CI workflow invokes this command, so a green CI run proves the mounted rows ran',
+  enforcedBy: '"Fairtest mounted producer" in .github/workflows/ci.yml',
+  reason: 'a required CI workflow invokes this command with --target=all, so a green CI run proves both mounted journeys ran',
 })
 
 /**
@@ -72,31 +84,34 @@ function main() {
   if (!target) {
     console.error(
       'fairtest mounted: missing target for field "target" at path cli.target; ' +
-      'repair: run with -- --target=product or -- --target=component.',
+      'repair: run with -- --target=all, -- --target=product, or -- --target=component.',
     )
     return 2
   }
   let kind = null
   try {
-    kind = parseTarget(target, 'cli.target').kind
+    kind = target === MOUNTED_ALL_TARGET ? MOUNTED_ALL_TARGET : parseTarget(target, 'cli.target').kind
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error))
     return 2
   }
   for (const line of [
-    `fairtest mounted: running the ${kind} rows through the one-project Playwright config`,
-    kind === 'product'
-      ? '  precondition: pnpm build first, then pnpm test:fairtest:init for this FAIRTEST_RUN_ROOT and FAIRTEST_RUN_ID, so dist/ holds the exact built app'
-      : '  precondition: pnpm build-storybook first, then pnpm test:fairtest:init for this FAIRTEST_RUN_ROOT and FAIRTEST_RUN_ID, so storybook-static/ holds the exact built story',
+    `fairtest mounted: running the ${kind === MOUNTED_ALL_TARGET ? 'product and component' : kind} rows through the one-project Playwright config`,
+    kind === MOUNTED_ALL_TARGET
+      ? '  precondition: pnpm build and pnpm build-storybook first, then pnpm test:fairtest:init for this FAIRTEST_RUN_ROOT and FAIRTEST_RUN_ID, so both built trees are the exact served bytes'
+      : kind === 'product'
+        ? '  precondition: pnpm build first, then pnpm test:fairtest:init for this FAIRTEST_RUN_ROOT and FAIRTEST_RUN_ID, so dist/ holds the exact built app'
+        : '  precondition: pnpm build-storybook first, then pnpm test:fairtest:init for this FAIRTEST_RUN_ROOT and FAIRTEST_RUN_ID, so storybook-static/ holds the exact built story',
     `  required-ci mount: ${MOUNTED_REQUIRED_CI_MOUNT.status} (${MOUNTED_REQUIRED_CI_MOUNT.reason})`,
   ]) {
     console.log(line)
   }
-  const result = spawnSync(
-    'pnpm',
-    ['exec', 'playwright', 'test', '--config', 'playwright.fairtest.config.mjs', '--grep', MOUNTED_TARGET_GREPS[kind]],
-    { stdio: 'inherit' },
-  )
+  const playwrightArgs = ['exec', 'playwright', 'test', '--config', 'playwright.fairtest.config.mjs']
+  if (kind !== MOUNTED_ALL_TARGET) {
+    const grep = kind === 'product' ? MOUNTED_TARGET_GREPS.product : MOUNTED_TARGET_GREPS.component
+    playwrightArgs.push('--grep', grep)
+  }
+  const result = spawnSync('pnpm', playwrightArgs, { stdio: 'inherit' })
   return result.status ?? 1
 }
 

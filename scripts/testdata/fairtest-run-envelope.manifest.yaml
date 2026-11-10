@@ -131,7 +131,7 @@ workflowMutations:
     replace: "          retention-days: 90\n"
     expectedField: retention-days
   - name: workflow-budget-env-drifts
-    find: "      FAIRTEST_BUDGET_MINUTES: \"24\"\n"
+    find: "      FAIRTEST_BUDGET_MINUTES: \"12\"\n"
     replace: "      FAIRTEST_BUDGET_MINUTES: \"90\"\n"
     expectedField: FAIRTEST_BUDGET_MINUTES
   - name: workflow-drops-the-verification-step
