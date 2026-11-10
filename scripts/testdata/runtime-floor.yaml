@@ -1,11 +1,11 @@
 workflows:
   - path: .github/workflows/ci.yml
-    setupNodeCount: 2
+    setupNodeCount: 3
   - path: .github/workflows/npm-publish.yml
     setupNodeCount: 1
   - path: .github/workflows/release.yml
     setupNodeCount: 2
-expectedMutationCount: 10
+expectedMutationCount: 11
 mutations:
   - name: package-engine-floor
     operation: below-floor
@@ -28,6 +28,11 @@ mutations:
     operation: below-floor
     path: .github/workflows/ci.yml
     occurrence: 2
+    expectedError: below schema minimum
+  - name: workflow-ci-third-node-floor
+    operation: below-floor
+    path: .github/workflows/ci.yml
+    occurrence: 3
     expectedError: below schema minimum
   - name: workflow-npm-publish-node-floor
     operation: below-floor

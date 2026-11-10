@@ -72,40 +72,26 @@ jobs:
       - name: Test library (behavior, mutations, and built rendering)
         run: pnpm test:lib
 
-  gates:
+  fairtest:
     needs: determine-runner
     runs-on: ${{ fromJson(needs.determine-runner.outputs.runner) }}
     timeout-minutes: 40
-    # The official Playwright image carries the browsers (pinned to the same
-    # 1.63.0 the repo tests against) and their system dependencies, so jobs
-    # never apt-install at runtime and never download browsers. --ipc=host
-    # and --init are Playwright's recommended Chromium flags. The image ships
-    # Node 24, so setup-node below still provides the repo's Node 26. This is
-    # the same container village's journey job runs in.
+    # The official Playwright image carries the browsers and their system
+    # dependencies, so jobs never apt-install at runtime and never download
+    # browsers. --ipc=host and --init are Playwright's recommended flags.
     container:
-      # mcr.microsoft.com/playwright:v1.63.0-noble, linux/amd64 manifest.
       image: mcr.microsoft.com/playwright@sha256:bc6ab0d6d44ff4826e4cb8c1e6d801e185bfc42bb0753f8e2a30efc70db054c7
       options: --ipc=host --init
     env:
-      # Playwright builds its temp profiles under TMPDIR; the pool checks the
-      # repo out under a deep work path that would exceed the unix socket path
-      # limit. Point temp files at /tmp so the browser gates can launch.
       TMPDIR: /tmp
       # The one Fairtest run identity and the one run root. Every Fairtest
-      # command in this job reads exactly these; no command re-declares a root
-      # or an id. The root is absolute and its final segment is the run id, so
-      # the envelope can tell its own root apart from another run's.
+      # command in this job reads exactly these.
       FAIRTEST_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
       FAIRTEST_RUN_ROOT: ${{ github.workspace }}/review-capture/fairtest/${{ github.run_id }}-${{ github.run_attempt }}
       # The explicit Fairtest budget inside the 40-minute job. The run envelope
-      # records the same total and per-stage minutes; a drift between this
-      # declaration, the envelope, and the job timeout fails the workflow
-      # guard. The extra job headroom covers the slow ubuntu-latest fallback
-      # at four journey workers.
+      # records the same total and per-stage minutes.
       FAIRTEST_BUDGET_MINUTES: "12"
-      # The mounted-row worker budget. Each worker binds its own loopback port
-      # from the runtime owner, so the rows run in parallel without sharing an
-      # origin. Kept explicit here so CI's parallelism is reviewable.
+      # The mounted-row worker budget. Each worker binds its own loopback port.
       FAIRTEST_MOUNTED_WORKERS: "4"
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -127,43 +113,19 @@ jobs:
         run: pnpm gen:check
 
       # gate 1: contrast (pure JS, no browser) + production build -> dist/.
-      # base='/' is correct here (CI serves at the root, not the Pages subpath),
-      # so VITE_BASE is intentionally unset.
       - name: Build (contrast gate + vite build)
         run: pnpm build
 
-      # The job container already carries Playwright's own Chromium for the
-      # pinned @playwright/test. The two remaining puppeteer probes (timeline)
-      # read it from CHROME_PATH; the journeys below use it directly with no
-      # CHROME_PATH plumbing at all. Resolve the path through Playwright's own
-      # registry rather than globbing its install directory.
-      - name: Point CHROME_PATH at the container browser
-        run: |
-          CHROME="$(pnpm exec node -e "console.log(require('@playwright/test').chromium.executablePath())")"
-          test -x "$CHROME"
-          echo "CHROME_PATH=$CHROME" >> "$GITHUB_ENV"
-
-      # gate 2: the twenty interaction checks, ported from scripts/validate.mjs
-      # onto the journey harness (scripts/journey/app-validate.journey.mjs).
-      # The journey config serves dist/ on :5180 itself, so no manual
-      # vite-preview/wait-on steps that could drift from the asserted URL.
+      # gate 2: the component rows serve the built Storybook artifact.
       - name: Build Storybook
         run: pnpm build-storybook
 
       # Fairtest durable evidence: one immutable run envelope, the browser-free
-      # pre-service contracts (inventory, list, selection, selection receipt),
-      # the bounded product/component producer, then verification, an always-run
-      # preflight, and a pinned whole-root upload. The 12-minute Fairtest budget
-      # is declared in guards/run-envelope.json and enforced by the preflight;
-      # the enclosing 40-minute job leaves headroom for the fallback runner.
+      # pre-service contracts, the bounded producer, verification, an always-run
+      # preflight, and a pinned whole-root upload.
       - name: Fairtest run envelope
         run: pnpm test:fairtest:init
 
-      # The browser-free contracts run before any service starts: the type
-      # program with its coverage, path, boundary, and dispatch guards, the
-      # promotion record, the five child contract commands, the runner
-      # inventory, the run-envelope wiring guard (which pins the upload SHA and
-      # always-run steps), and the SurfaceGate compatibility gate.
       - name: Fairtest browser-free contracts
         run: |
           pnpm test:fairtest:types
@@ -188,21 +150,11 @@ jobs:
           pnpm test:fairtest:select
           pnpm test:fairtest:selection-receipt
 
-      # The sole process-only command runs after the selection receipt and
-      # before the mounted producer. It runs the four real OS process cases and
-      # writes guards/process-cleanup.json; it refuses any invocation without
-      # the explicit CI entry point. The interactive dev bridge and its
-      # optional attach hint stay local-only and never appear here.
       - name: Fairtest process lifecycle
         env:
           FAIRTEST_CI_PROCESS: "1"
         run: pnpm test:fairtest:process
 
-      # One bounded producer run mounts both journeys. Each Playwright worker
-      # starts its own adapter-managed loopback service on an OS-assigned port
-      # and writes row-keyed producer/ directories under the one immutable run
-      # root. JOURNEY_HTML=0 keeps report generation out of the budget;
-      # retries: 0 is declared by the one-project Fairtest Playwright config.
       - name: Fairtest mounted producer
         env:
           JOURNEY_HTML: "0"
@@ -211,16 +163,10 @@ jobs:
       - name: Fairtest evidence verification
         run: pnpm test:fairtest:verify
 
-      # Always runs, including after a producer failure, so the retained partial
-      # producer output is reported before the upload. It fails closed when any
-      # owned subtree is missing or inconsistent.
       - name: Fairtest evidence preflight
         if: always()
         run: pnpm test:fairtest:preflight
 
-      # Uploads the WHOLE run root, including partial producer output on
-      # failure. The action is pinned to a full commit SHA, the upload fails
-      # when no files are found, and retention is bounded.
       - name: Fairtest evidence upload
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -230,22 +176,73 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      # gate 3: element journeys (story smoke over the whole catalog, the
-      # twenty app checks, the SessionGroupDisclosure interaction) through
-      # Playwright's bundled Chromium. Real user input absorbs what
-      # check-map-pointer.mjs proved separately with a raw CDP mouse, so the
-      # puppeteer story smoke and map gate are retired from CI (the scripts
-      # stay for local use).
-      - name: Journey gates
-        run: pnpm journey:ci --workers=3
+  journeys:
+    needs: determine-runner
+    runs-on: ${{ fromJson(needs.determine-runner.outputs.runner) }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [dark, light]
+    # The same pinned Playwright image as the Fairtest job. The theme projects run
+    # on two runners, so the full catalog keeps its 3-worker cap per runner.
+    container:
+      image: mcr.microsoft.com/playwright@sha256:bc6ab0d6d44ff4826e4cb8c1e6d801e185bfc42bb0753f8e2a30efc70db054c7
+      options: --ipc=host --init
+    env:
+      TMPDIR: /tmp
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 26
+          cache: pnpm
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      # gate 1: contrast (pure JS, no browser) + production build -> dist/.
+      - name: Build (contrast gate + vite build)
+        run: pnpm build
+
+      - name: Build Storybook
+        run: pnpm build-storybook
+
+      # Each theme runs its complete catalog at the measured 3-worker optimum.
+      - name: Journey gates
+        run: pnpm journey:ci --workers=3 --project=${{ matrix.project }}
+
+      # The timeline route gate does not fan out: one project runs it so the
+      # production probe and source mutation are not duplicated.
       - name: Timeline route gate (production build + source mutation)
-        run: pnpm test:timeline-rendered && pnpm test:timeline-session-route:mutations
+        if: matrix.project == 'dark'
+        run: |
+          export CHROME_PATH="$(pnpm exec node -e "console.log(require('@playwright/test').chromium.executablePath())")"
+          test -x "$CHROME_PATH"
+          pnpm test:timeline-rendered && pnpm test:timeline-session-route:mutations
 
       - name: Upload Storybook build on failure
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: storybook-static
+          name: storybook-static-${{ matrix.project }}
           path: storybook-static
           retention-days: 7
+
+  gates:
+    # The required check stays named "gates"; it fails if either the Fairtest
+    # job or any journey shard fails. It uses the hosted runner, not the pool.
+    needs: [fairtest, journeys]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require both gate jobs
+        run: |
+          test "${{ needs.fairtest.result }}" = "success"
+          test "${{ needs.journeys.result }}" = "success"

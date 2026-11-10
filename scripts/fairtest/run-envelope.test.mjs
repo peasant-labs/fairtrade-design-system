@@ -560,19 +560,20 @@ function workflowFail(field, detail) {
 }
 
 /**
- * Parse the workflow and return the gates job.
+ * Parse the workflow and return one named job.
  * @param {string} text workflow source
- * @returns {Record<string, any>} the gates job
+ * @param {string} name job name
+ * @returns {Record<string, any>} the job
  */
-function gatesJob(text) {
+function jobByName(text, name) {
   let doc
   try {
     doc = YAML.parse(text)
   } catch (error) {
     workflowFail('yaml', `the workflow does not parse: ${error instanceof Error ? error.message : String(error)}`)
   }
-  const job = doc?.jobs?.gates
-  if (!job) workflowFail('jobs.gates', 'the gates job is missing')
+  const job = doc?.jobs?.[name]
+  if (!job) workflowFail(`jobs.${name}`, `the ${name} job is missing`)
   return job
 }
 
@@ -588,6 +589,16 @@ function stepByName(steps, name) {
   return step
 }
 
+/** @param {Parameters<typeof stepByName>[0]} steps @param {string} jobName @returns {void} */
+function inspectBuilds(steps, jobName) {
+  for (const [name, command] of [['Build (contrast gate + vite build)', 'pnpm build'], ['Build Storybook', 'pnpm build-storybook']]) {
+    const matches = steps.filter((step) => step.name === name)
+    if (matches.length !== 1 || matches[0].run !== command || matches[0].if !== undefined || matches[0]['continue-on-error'] !== undefined) {
+      workflowFail(name, `${jobName} must run ${command} exactly once and preserve failures`)
+    }
+  }
+}
+
 /**
  * The upload pin guard: the Fairtest upload step is pinned to the declared
  * commit SHA, uploads the run root, fails when no files are found, and is
@@ -596,8 +607,9 @@ function stepByName(steps, name) {
  * @returns {void}
  */
 function inspectWorkflowPin(text) {
-  const job = gatesJob(text)
+  const job = jobByName(text, 'fairtest')
   const steps = Array.isArray(job.steps) ? job.steps : []
+  inspectBuilds(steps, 'fairtest')
   const upload = steps.find((entry) => entry.name === 'Fairtest evidence upload')
   if (!upload) workflowFail('Fairtest evidence upload', 'the Fairtest evidence upload step is missing')
   if (upload.uses !== `${UPLOAD_PIN.action}@${UPLOAD_PIN.sha}`) {
@@ -626,7 +638,7 @@ function inspectWorkflowPin(text) {
  * @returns {void}
  */
 function inspectWorkflowOrder(text) {
-  const job = gatesJob(text)
+  const job = jobByName(text, 'fairtest')
   const steps = Array.isArray(job.steps) ? job.steps : []
   const names = [
     'Build Storybook',
@@ -689,14 +701,78 @@ function inspectWorkflowOrder(text) {
   if (uploadIndex < indices[indices.length - 1]) {
     workflowFail('Fairtest evidence upload', 'the upload step must follow the preflight')
   }
-  const journey = steps.find((entry) => entry.run === 'pnpm journey:ci --workers=3')
-  if (!journey) workflowFail('pnpm journey:ci', 'the full journey gate must run with exactly three workers')
-  const timeline = steps.find((entry) => typeof entry.run === 'string' && entry.run.includes('pnpm test:timeline-rendered'))
-  if (!timeline) workflowFail('pnpm test:timeline-rendered', 'the existing timeline gate is missing from the job')
-  const uploadStep = steps[uploadIndex]
-  const journeyIndex = steps.indexOf(journey)
-  if (uploadStep === undefined || uploadIndex > journeyIndex) {
-    workflowFail('Fairtest evidence upload', 'the upload must precede the existing journey gate so partial output is retained on an earlier failure')
+}
+
+/**
+ * The journey guard: the journey job is a two-project matrix, each project
+ * runs the catalog at the measured 3-worker optimum, and the timeline route
+ * gate runs only in the dark project.
+ * @param {string} text workflow source
+ * @returns {void}
+ */
+function inspectJourneyWorkflow(text) {
+  const job = jobByName(text, 'journeys')
+  const steps = Array.isArray(job.steps) ? job.steps : []
+  inspectBuilds(steps, 'journeys')
+  const projects = job.strategy?.matrix?.project
+  if (!Array.isArray(projects) || projects.length !== 2 || projects[0] !== 'dark' || projects[1] !== 'light') {
+    workflowFail('matrix.project', `the journey job must declare [dark, light], observed ${JSON.stringify(projects)}`)
+  }
+  if (Object.keys(job.strategy.matrix).some((key) => key !== 'project')) {
+    workflowFail('matrix.project', 'the journey matrix must not add, exclude, or override project combinations')
+  }
+  if (job.if !== undefined || job['continue-on-error'] !== undefined || job.strategy['fail-fast'] !== false || job.concurrency !== undefined ||
+      (job.strategy['max-parallel'] !== undefined && (!Number.isInteger(job.strategy['max-parallel']) || job.strategy['max-parallel'] < 2))) {
+    workflowFail('journeys', 'the journey job must run both projects concurrently and preserve their failures')
+  }
+  if (job['timeout-minutes'] !== 40) {
+    workflowFail('timeout-minutes', `the journeys job must stay at 40 minutes, observed ${JSON.stringify(job['timeout-minutes'])}`)
+  }
+  const journey = steps.find((entry) => entry.run === 'pnpm journey:ci --workers=3 --project=${{ matrix.project }}')
+  if (!journey) {
+    const observed = steps.find((entry) => String(entry.run ?? '').includes('pnpm journey:ci'))?.run
+    workflowFail('project', `the journey gate must run both projects at exactly three workers, observed ${JSON.stringify(observed)}`)
+  }
+  if (journey.if !== undefined || journey['continue-on-error'] !== undefined) {
+    workflowFail('project', 'the journey step must run and preserve failures in both projects')
+  }
+  for (const name of ['Build (contrast gate + vite build)', 'Build Storybook']) {
+    if (steps.indexOf(stepByName(steps, name)) > steps.indexOf(journey)) workflowFail(name, `the ${name} step must precede the journey`)
+  }
+  const artifacts = steps.filter((entry) => entry.name === 'Upload Storybook build on failure')
+  if (artifacts.length !== 1 || artifacts[0].with?.name !== 'storybook-static-${{ matrix.project }}') {
+    workflowFail('storybook-static', 'the Storybook failure artifact must be unique to each project')
+  }
+  const timelines = steps.filter((entry) => entry.name === 'Timeline route gate (production build + source mutation)' || (typeof entry.run === 'string' && entry.run.includes('pnpm test:timeline-rendered')))
+  if (timelines.length !== 1) workflowFail('pnpm test:timeline-rendered', 'the journeys job must contain exactly one timeline gate')
+  const timeline = timelines[0]
+  if (timeline.if !== "matrix.project == 'dark'") workflowFail('matrix.project', `the timeline gate must run in the dark project, observed ${JSON.stringify(timeline.if)}`)
+  const timelineCommand = 'export CHROME_PATH="$(pnpm exec node -e "console.log(require(\'@playwright/test\').chromium.executablePath())")"\ntest -x "$CHROME_PATH"\npnpm test:timeline-rendered && pnpm test:timeline-session-route:mutations'
+  if (timeline.run?.trim() !== timelineCommand || timeline['continue-on-error'] !== undefined) {
+    workflowFail('pnpm test:timeline-rendered', 'the timeline gate must run both probes and preserve failures')
+  }
+}
+
+/**
+ * The aggregator guard: the required "gates" check is a thin job that needs
+ * both the Fairtest job and the journey matrix, runs always, and fails when
+ * either side fails.
+ * @param {string} text workflow source
+ * @returns {void}
+ */
+function inspectWorkflowAggregator(text) {
+  const job = jobByName(text, 'gates')
+  const needs = Array.isArray(job.needs) ? job.needs : [job.needs]
+  if (!needs.includes('fairtest') || !needs.includes('journeys')) {
+    workflowFail('needs', `the gates aggregator must need fairtest and journeys, observed ${JSON.stringify(job.needs)}`)
+  }
+  if (job.if !== 'always()') workflowFail('if', `the gates aggregator must run always, observed ${JSON.stringify(job.if)}`)
+  const matches = Array.isArray(job.steps) ? job.steps.filter((entry) => entry.name === 'Require both gate jobs') : []
+  const step = matches[0]
+  const run = String(step?.run ?? '')
+  if (job['continue-on-error'] !== undefined || job.defaults !== undefined || matches.length !== 1 || step?.if !== undefined || step?.shell !== undefined || step?.['continue-on-error'] !== undefined ||
+      run.trim() !== 'test "${{ needs.fairtest.result }}" = "success"\ntest "${{ needs.journeys.result }}" = "success"') {
+    workflowFail('needs.result', `the gates aggregator must assert both job results, observed ${JSON.stringify(run)}`)
   }
 }
 
@@ -707,9 +783,9 @@ function inspectWorkflowOrder(text) {
  * @returns {void}
  */
 function inspectWorkflowBudget(text) {
-  const job = gatesJob(text)
+  const job = jobByName(text, 'fairtest')
   if (job['timeout-minutes'] !== 40) {
-    workflowFail('timeout-minutes', `the gates job must stay at 40 minutes, observed ${JSON.stringify(job['timeout-minutes'])}`)
+    workflowFail('timeout-minutes', `the fairtest job must stay at 40 minutes, observed ${JSON.stringify(job['timeout-minutes'])}`)
   }
   if (String(job.env?.FAIRTEST_BUDGET_MINUTES) !== String(FAIRTEST_BUDGET.totalMinutes)) {
     workflowFail('FAIRTEST_BUDGET_MINUTES', `expected ${FAIRTEST_BUDGET.totalMinutes} observed ${JSON.stringify(job.env?.FAIRTEST_BUDGET_MINUTES)}`)
@@ -732,6 +808,8 @@ function inspectWorkflow(text) {
   inspectWorkflowPin(text)
   inspectWorkflowOrder(text)
   inspectWorkflowBudget(text)
+  inspectJourneyWorkflow(text)
+  inspectWorkflowAggregator(text)
 }
 
 /* ── case dispatch ────────────────────────────────────────────────────── */
