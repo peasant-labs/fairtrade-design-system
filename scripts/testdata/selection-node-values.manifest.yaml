@@ -1,0 +1,14 @@
+requiredKindNames:
+  - Project
+  - Group
+  - Branch
+  - Session
+requiredStateNames:
+  - None
+  - Some
+  - All
+requiredUnknownNames:
+  - unknown-kind
+  - unknown-state
+  - unknown-kind-object
+  - unknown-state-label

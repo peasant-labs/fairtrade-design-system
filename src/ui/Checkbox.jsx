@@ -16,6 +16,7 @@ import { useEffect, useRef, useState } from 'react'
  *                                      accessible state while `checked` stays false (default false)
  * @property {(checked: boolean, event: import('react').ChangeEvent<HTMLInputElement>) => void} [onChange]
  * @property {boolean} [disabled]       native disabled attribute (default false)
+ * @property {string} [labelClassName] additional class on the wrapping label
  * @property {import('react').ReactNode} [children] label text (rendered as passed, not lowercased)
  */
 
@@ -29,7 +30,7 @@ import { useEffect, useRef, useState } from 'react'
  * as a plain unchecked checkbox would.
  * @param {CheckboxProps & import('react').InputHTMLAttributes<HTMLInputElement>} props
  */
-export default function Checkbox({ checked, defaultChecked = false, indeterminate = false, onChange, disabled = false, children, ...rest }) {
+export default function Checkbox({ checked, defaultChecked = false, indeterminate = false, onChange, disabled = false, children, labelClassName = '', ...rest }) {
   const isControlled = checked !== undefined
   const [internal, setInternal] = useState(defaultChecked)
   const inputRef = useRef(null)
@@ -46,7 +47,7 @@ export default function Checkbox({ checked, defaultChecked = false, indeterminat
   }
 
   return (
-    <label className="check">
+    <label className={`check ${labelClassName}`.trim()}>
       <input
         ref={inputRef}
         type="checkbox"

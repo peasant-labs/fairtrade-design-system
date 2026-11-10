@@ -13,3 +13,4 @@ cases:
   - {name: images-omitted, rowPrefix: component-images-omitted, storyId: in-use-transcript-transcriptviewer--images-omitted, layout: fullscreen, action: null, tie: omittedPlaceholders}
   - {name: image-only-turn, rowPrefix: component-image-only-turn, storyId: in-use-transcript-transcriptviewer--image-only-turn, layout: fullscreen, action: null, tie: imageOnlyCard}
   - {name: images-unavailable, rowPrefix: component-images-unavailable, storyId: in-use-transcript-transcriptviewer--images-unavailable, layout: fullscreen, action: null, tie: unavailablePlaceholders}
+  - {name: selection-tree, rowPrefix: component-selection-tree, storyId: in-use-selectiontree--keyboard-toggle, layout: centered, action: toggle-session, tie: sessionSelected}

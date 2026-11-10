@@ -13,3 +13,4 @@ requiredCaseNames:
   - images-omitted
   - image-only-turn
   - images-unavailable
+  - selection-tree

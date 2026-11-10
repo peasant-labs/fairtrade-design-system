@@ -255,6 +255,7 @@ export const COMPONENT_RENDER_PHASES = Object.freeze({
  * @property {string} [includes]
  * @property {string} [token]
  * @property {boolean} [nonEmpty]
+ * @property {boolean} [afterAction] read this probe after the interaction
  */
 
 /**
@@ -609,6 +610,39 @@ export const COMPONENT_STORIES = Object.freeze([
       Object.freeze({ name: 'unavailableNoticeBorderRadius', selector: '#turn-0 .txn-image-omitted', property: 'borderRadius', equals: '0px' }),
     ]),
     floors: Object.freeze({ descendants: 50, textLength: 80, ariaChars: 120, screenshotBytes: 2500 }),
+  }),
+  Object.freeze({
+    key: 'selection-tree',
+    rowPrefix: 'component-selection-tree',
+    targetId: 'fairtrade-selection-tree-story',
+    storyId: 'in-use-selectiontree--keyboard-toggle',
+    layout: 'centered',
+    before: Object.freeze([
+      Object.freeze({ name: 'project-label', selector: '.st-label', text: 'IngestPipeline' }),
+      Object.freeze({ name: 'session-clear', role: Object.freeze({ role: 'checkbox', name: 'Parse raw events' }), attribute: 'aria-checked', value: 'false' }),
+    ]),
+    action: Object.freeze({
+      name: 'toggle-session',
+      kind: 'key',
+      key: 'Space',
+      target: Object.freeze({ name: 'session-checkbox', role: Object.freeze({ role: 'checkbox', name: 'Parse raw events' }), count: 1 }),
+    }),
+    after: Object.freeze([
+      Object.freeze({ name: 'session-selected', role: Object.freeze({ role: 'checkbox', name: 'Parse raw events' }), attribute: 'aria-checked', value: 'true' }),
+      Object.freeze({ name: 'session-focused', role: Object.freeze({ role: 'checkbox', name: 'Parse raw events' }), focused: true }),
+    ]),
+    gateTie: Object.freeze({
+      field: 'sessionSelected',
+      expectation: Object.freeze({ name: 'session-selected', role: Object.freeze({ role: 'checkbox', name: 'Parse raw events' }), attribute: 'aria-checked', value: 'true' }),
+    }),
+    computed: Object.freeze([
+      Object.freeze({ name: 'targetFloor', selector: '.st-hit', property: 'minHeight', token: '--target-min' }),
+      Object.freeze({ name: 'focusRingWidth', selector: '.st-hit .check-box:focus-visible', property: 'outlineWidth', token: '--focus-ring-width', afterAction: true }),
+      Object.freeze({ name: 'focusRingStyle', selector: '.st-hit .check-box:focus-visible', property: 'outlineStyle', equals: 'solid', afterAction: true }),
+      Object.freeze({ name: 'square', selector: '.st', property: 'borderRadius', equals: '0px' }),
+      Object.freeze({ name: 'labelCase', selector: '.st-label', property: 'textTransform', equals: 'none' }),
+    ]),
+    floors: Object.freeze({ descendants: 8, textLength: 24, ariaChars: 40, screenshotBytes: 800 }),
   }),
 ])
 

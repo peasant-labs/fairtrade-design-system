@@ -168,6 +168,14 @@ const sampleProps = {
   SettingsLayout: { sections: [{ id: 'profile', label: 'profile', href: '#profile' }], currentId: 'profile', children: 'sections' },
   AppPage: { children: 'page' },
   RepoPicker: { open: true, onClose: () => {}, owners: [{ id: 'acme', login: 'acme', kind: 'org', repos: [{ id: 'acme/api', name: 'acme/api' }] }], initialSelected: ['acme/api'], onSave: () => {} },
+  SelectionTree: {
+    ariaLabel: 'sessions',
+    value: [],
+    nodes: [
+      { id: 'project-a', kind: 'project', state: 'some', label: 'IngestPipeline', childCount: 1 },
+      { id: 'session-a', parentId: 'project-a', kind: 'session', state: 'none', label: 'Parse raw events', harness: 'claude' },
+    ],
+  },
   ProviderIcon: { harness: 'antigravity', label: true },
   ProviderName: { harness: 'antigravity' },
   ProviderTag: { harness: 'antigravity' },
@@ -275,6 +283,10 @@ const expectedExports = [
   'SettingsLayout',
   'AppPage',
   'RepoPicker',
+  'SelectionTree',
+  'SelectionNodeKind',
+  'SelectionNodeParseError',
+  'parseNodeKind',
   'VillageObservations',
 ]
 
@@ -298,8 +310,9 @@ for (const name of expectedExports) {
 }
 
 let rendered = 0
+const notComponents = new Set(['SelectionNodeParseError'])
 for (const [name, value] of Object.entries(ui)) {
-  if (typeof value !== 'function' || !/^[A-Z]/.test(name)) continue
+  if (notComponents.has(name) || typeof value !== 'function' || !/^[A-Z]/.test(name)) continue
   try {
     const props = sampleProps[name] ?? {}
     renderToStaticMarkup(React.createElement(value, props))
