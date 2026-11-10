@@ -314,7 +314,7 @@ describe('bridge contract structural units', () => {
 
 // ── CI wiring guard ─────────────────────────────────────────────────────
 //
-// Required CI owns exactly one Fairtest process invocation: the process-only
+// The fairtest CI job owns exactly one Fairtest process invocation: the process-only
 // command, after the selection receipt and before the mounted producer. No
 // workflow may carry the interactive dev command, its attach hint, or an
 // agent-browser path. The guard reads the real workflow text; the named source
@@ -347,10 +347,10 @@ function wiringFail(field, path, detail) {
 }
 
 /** @param {unknown} doc @param {string} label @returns {Record<string, unknown>[]} */
-function gatesSteps(doc, label) {
-  const steps = /** @type {Record<string, any>} */ (doc)?.jobs?.gates?.steps
+function fairtestSteps(doc, label) {
+  const steps = /** @type {Record<string, any>} */ (doc)?.jobs?.fairtest?.steps
   if (!Array.isArray(steps) || steps.length === 0) {
-    wiringFail('steps', `${label}.jobs.gates.steps`, `${label}: the gates job steps are missing`)
+    wiringFail('steps', `${label}.jobs.fairtest.steps`, `${label}: the fairtest job steps are missing`)
   }
   return steps
 }
@@ -368,35 +368,35 @@ function stepIndex(steps, name) {
  * @returns {void}
  */
 function assertProcessWiring(doc, label = `.github/workflows/${CI_WORKFLOW}`) {
-  const steps = gatesSteps(doc, label)
+  const steps = fairtestSteps(doc, label)
   const processMatches = steps.filter((entry) => entry?.name === PROCESS_STEP_NAME)
   if (processMatches.length !== 1) {
-    wiringFail('steps', `${label}.jobs.gates.steps`, `${label}: expected exactly one process-only step ${JSON.stringify(PROCESS_STEP_NAME)} observed ${processMatches.length}`)
+    wiringFail('steps', `${label}.jobs.fairtest.steps`, `${label}: expected exactly one process-only step ${JSON.stringify(PROCESS_STEP_NAME)} observed ${processMatches.length}`)
   }
   const processIndex = stepIndex(steps, PROCESS_STEP_NAME)
   const processStep = /** @type {Record<string, any>} */ (steps[processIndex])
   if (String(processStep.run ?? '').trim() !== PROCESS_COMMAND) {
-    wiringFail('run', `${label}.jobs.gates.steps[${processIndex}].run`, `${label}: the process step must run exactly ${JSON.stringify(PROCESS_COMMAND)} with retries 0`)
+    wiringFail('run', `${label}.jobs.fairtest.steps[${processIndex}].run`, `${label}: the process step must run exactly ${JSON.stringify(PROCESS_COMMAND)} with retries 0`)
   }
   if (String(processStep.env?.[PROCESS_ENV_FIELD] ?? '') !== '1') {
-    wiringFail(PROCESS_ENV_FIELD, `${label}.jobs.gates.steps[${processIndex}].env.${PROCESS_ENV_FIELD}`, `${label}: the process step must carry the explicit CI entry point ${JSON.stringify(PROCESS_ENV_FIELD)}: 1`)
+    wiringFail(PROCESS_ENV_FIELD, `${label}.jobs.fairtest.steps[${processIndex}].env.${PROCESS_ENV_FIELD}`, `${label}: the process step must carry the explicit CI entry point ${JSON.stringify(PROCESS_ENV_FIELD)}: 1`)
   }
   const selectionIndex = stepIndex(steps, SELECTION_STEP_NAME)
   if (selectionIndex < 0) {
-    wiringFail('steps', `${label}.jobs.gates.steps`, `${label}: missing the selection receipt step ${JSON.stringify(SELECTION_STEP_NAME)}`)
+    wiringFail('steps', `${label}.jobs.fairtest.steps`, `${label}: missing the selection receipt step ${JSON.stringify(SELECTION_STEP_NAME)}`)
   }
   if (!String(/** @type {Record<string, any>} */ (steps[selectionIndex]).run ?? '').includes('pnpm test:fairtest:selection-receipt')) {
-    wiringFail('run', `${label}.jobs.gates.steps[${selectionIndex}].run`, `${label}: the process step must follow the selection receipt command`)
+    wiringFail('run', `${label}.jobs.fairtest.steps[${selectionIndex}].run`, `${label}: the process step must follow the selection receipt command`)
   }
   if (processIndex <= selectionIndex) {
-    wiringFail('steps', `${label}.jobs.gates.steps`, `${label}: the process step must run after the selection receipt`)
+    wiringFail('steps', `${label}.jobs.fairtest.steps`, `${label}: the process step must run after the selection receipt`)
   }
   const mountedIndex = stepIndex(steps, MOUNTED_STEP_NAME)
   if (mountedIndex < 0) {
-    wiringFail('steps', `${label}.jobs.gates.steps`, `${label}: missing the mounted producer step ${JSON.stringify(MOUNTED_STEP_NAME)}`)
+    wiringFail('steps', `${label}.jobs.fairtest.steps`, `${label}: missing the mounted producer step ${JSON.stringify(MOUNTED_STEP_NAME)}`)
   }
   if (processIndex >= mountedIndex) {
-    wiringFail('steps', `${label}.jobs.gates.steps`, `${label}: the process step must run before the mounted producer`)
+    wiringFail('steps', `${label}.jobs.fairtest.steps`, `${label}: the process step must run before the mounted producer`)
   }
 }
 
@@ -471,7 +471,7 @@ describe('bridge CI wiring', () => {
   /** @param {unknown} doc @returns {unknown} */
   function moveProcessBeforeSelection(doc) {
     const clone = /** @type {Record<string, any>} */ (structuredClone(doc))
-    const steps = gatesSteps(clone, 'mutation')
+    const steps = fairtestSteps(clone, 'mutation')
     const processIndex = stepIndex(steps, PROCESS_STEP_NAME)
     const selectionIndex = stepIndex(steps, SELECTION_STEP_NAME)
     const [processStep] = steps.splice(processIndex, 1)
@@ -482,7 +482,7 @@ describe('bridge CI wiring', () => {
   /** @param {unknown} doc @returns {unknown} */
   function withoutProcessEnv(doc) {
     const clone = /** @type {Record<string, any>} */ (structuredClone(doc))
-    const steps = gatesSteps(clone, 'mutation')
+    const steps = fairtestSteps(clone, 'mutation')
     const processStep = steps[stepIndex(steps, PROCESS_STEP_NAME)]
     const env = /** @type {Record<string, string> | undefined} */ (processStep?.env)
     if (env) delete env[PROCESS_ENV_FIELD]

@@ -183,8 +183,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
-    # The same pinned Playwright image as the Fairtest job. The two shards run
+        project: [dark, light]
+    # The same pinned Playwright image as the Fairtest job. The theme projects run
     # on two runners, so the full catalog keeps its 3-worker cap per runner.
     container:
       image: mcr.microsoft.com/playwright@sha256:bc6ab0d6d44ff4826e4cb8c1e6d801e185bfc42bb0753f8e2a30efc70db054c7
@@ -210,33 +210,27 @@ jobs:
       - name: Build (contrast gate + vite build)
         run: pnpm build
 
-      # The journey container carries Playwright's Chromium; the timeline
-      # probes read it from CHROME_PATH.
-      - name: Point CHROME_PATH at the container browser
-        run: |
-          CHROME="$(pnpm exec node -e "console.log(require('@playwright/test').chromium.executablePath())")"
-          test -x "$CHROME"
-          echo "CHROME_PATH=$CHROME" >> "$GITHUB_ENV"
-
       - name: Build Storybook
         run: pnpm build-storybook
 
-      # gate 3: element journeys. Each shard runs half the catalog at the
-      # measured 3-worker optimum; the two shards use two runners.
+      # Each theme runs its complete catalog at the measured 3-worker optimum.
       - name: Journey gates
-        run: pnpm journey:ci --workers=3 --shard=${{ matrix.shard }}/2
+        run: pnpm journey:ci --workers=3 --project=${{ matrix.project }}
 
-      # The timeline route gate does not fan out: one shard runs it so the
+      # The timeline route gate does not fan out: one project runs it so the
       # production probe and source mutation are not duplicated.
       - name: Timeline route gate (production build + source mutation)
-        if: matrix.shard == 1
-        run: pnpm test:timeline-rendered && pnpm test:timeline-session-route:mutations
+        if: matrix.project == 'dark'
+        run: |
+          export CHROME_PATH="$(pnpm exec node -e "console.log(require('@playwright/test').chromium.executablePath())")"
+          test -x "$CHROME_PATH"
+          pnpm test:timeline-rendered && pnpm test:timeline-session-route:mutations
 
       - name: Upload Storybook build on failure
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: storybook-static-${{ matrix.shard }}
+          name: storybook-static-${{ matrix.project }}
           path: storybook-static
           retention-days: 7
 

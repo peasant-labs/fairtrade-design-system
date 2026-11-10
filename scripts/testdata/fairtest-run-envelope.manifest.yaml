@@ -95,7 +95,7 @@ mutations:
     kind: trailing-document
     target: document
     expectedField: document[1]
-expectedWorkflowMutationCount: 26
+expectedWorkflowMutationCount: 37
 requiredWorkflowMutationNames:
   - workflow-upload-pin-becomes-a-tag
   - workflow-upload-drops-no-files-error
@@ -108,14 +108,25 @@ requiredWorkflowMutationNames:
   - workflow-drops-the-journey-gates
   - workflow-journey-unbounded-workers
   - workflow-journey-adds-filter
-  - workflow-journey-drops-shard
+  - workflow-journey-drops-project-argument
   - workflow-gates-aggregator-drops-a-need
   - workflow-gates-aggregator-ignores-failure
-  - workflow-journey-matrix-excludes-shard
+  - workflow-journey-matrix-excludes-project
   - workflow-journey-skips-step
   - workflow-timeline-drops-mutation
   - workflow-gates-aggregator-suppresses-failure
   - workflow-gates-aggregator-always-passes
+  - workflow-journey-drops-project
+  - workflow-journey-duplicates-project
+  - workflow-journey-skips-timeline
+  - workflow-journey-limits-parallelism
+  - workflow-journey-serializes-job
+  - workflow-journey-duplicates-timeline
+  - workflow-renames-fairtest-job
+  - workflow-renames-gates-job
+  - workflow-journeys-drops-build
+  - workflow-fairtest-drops-storybook-build
+  - workflow-journey-artifact-collides
   - workflow-drops-the-envelope-guard
   - workflow-drops-the-compat-gate
   - workflow-drops-the-type-program-gate
@@ -157,21 +168,21 @@ workflowMutations:
     replace: ''
     expectedField: Fairtest evidence verification
   - name: workflow-drops-the-journey-gates
-    find: "      - name: Journey gates\n        run: pnpm journey:ci --workers=3 --shard=${{ matrix.shard }}/2\n"
+    find: "      - name: Journey gates\n        run: pnpm journey:ci --workers=3 --project=${{ matrix.project }}\n"
     replace: ''
-    expectedField: shard
+    expectedField: project
   - name: workflow-journey-unbounded-workers
-    find: "        run: pnpm journey:ci --workers=3 --shard=${{ matrix.shard }}/2\n"
-    replace: "        run: pnpm journey:ci --workers=100% --shard=${{ matrix.shard }}/2\n"
-    expectedField: shard
+    find: "        run: pnpm journey:ci --workers=3 --project=${{ matrix.project }}\n"
+    replace: "        run: pnpm journey:ci --workers=100% --project=${{ matrix.project }}\n"
+    expectedField: project
   - name: workflow-journey-adds-filter
-    find: "        run: pnpm journey:ci --workers=3 --shard=${{ matrix.shard }}/2\n"
-    replace: "        run: pnpm journey:ci --workers=3 --shard=${{ matrix.shard }}/2 --grep=token\n"
-    expectedField: shard
-  - name: workflow-journey-drops-shard
-    find: "        run: pnpm journey:ci --workers=3 --shard=${{ matrix.shard }}/2\n"
-    replace: "        run: pnpm journey:ci --workers=3 --shard=1/2\n"
-    expectedField: shard
+    find: "        run: pnpm journey:ci --workers=3 --project=${{ matrix.project }}\n"
+    replace: "        run: pnpm journey:ci --workers=3 --project=${{ matrix.project }} --grep=token\n"
+    expectedField: project
+  - name: workflow-journey-drops-project-argument
+    find: "        run: pnpm journey:ci --workers=3 --project=${{ matrix.project }}\n"
+    replace: "        run: pnpm journey:ci --workers=3 --project=dark\n"
+    expectedField: project
   - name: workflow-gates-aggregator-drops-a-need
     find: "    needs: [fairtest, journeys]\n"
     replace: "    needs: [fairtest]\n"
@@ -180,14 +191,14 @@ workflowMutations:
     find: "          test \"${{ needs.journeys.result }}\" = \"success\"\n"
     replace: ''
     expectedField: needs.result
-  - name: workflow-journey-matrix-excludes-shard
-    find: "        shard: [1, 2]\n"
-    replace: "        shard: [1, 2]\n        exclude:\n          - shard: 2\n"
-    expectedField: matrix.shard
+  - name: workflow-journey-matrix-excludes-project
+    find: "        project: [dark, light]\n"
+    replace: "        project: [dark, light]\n        exclude:\n          - project: light\n"
+    expectedField: matrix.project
   - name: workflow-journey-skips-step
     find: "      - name: Journey gates\n        run:"
-    replace: "      - name: Journey gates\n        if: matrix.shard == 1\n        run:"
-    expectedField: shard
+    replace: "      - name: Journey gates\n        if: matrix.project == 'dark'\n        run:"
+    expectedField: project
   - name: workflow-timeline-drops-mutation
     find: "pnpm test:timeline-rendered && pnpm test:timeline-session-route:mutations"
     replace: "pnpm test:timeline-rendered"
@@ -200,6 +211,50 @@ workflowMutations:
     find: '          test "${{ needs.journeys.result }}" = "success"'
     replace: '          echo "${{ needs.journeys.result }}"'
     expectedField: needs.result
+  - name: workflow-journey-drops-project
+    find: '        project: [dark, light]'
+    replace: '        project: [dark]'
+    expectedField: matrix.project
+  - name: workflow-journey-duplicates-project
+    find: '        project: [dark, light]'
+    replace: '        project: [dark, dark]'
+    expectedField: matrix.project
+  - name: workflow-journey-skips-timeline
+    find: "        if: matrix.project == 'dark'\n"
+    replace: "        if: false\n"
+    expectedField: matrix.project
+  - name: workflow-journey-limits-parallelism
+    find: "      fail-fast: false\n      matrix:\n"
+    replace: "      fail-fast: false\n      max-parallel: 1\n      matrix:\n"
+    expectedField: journeys
+  - name: workflow-journey-serializes-job
+    find: "  journeys:\n    needs: determine-runner\n"
+    replace: "  journeys:\n    concurrency: journeys\n    needs: determine-runner\n"
+    expectedField: journeys
+  - name: workflow-journey-duplicates-timeline
+    find: "      - name: Timeline route gate (production build + source mutation)\n"
+    replace: "      - name: Timeline route gate (production build + source mutation)\n        run: pnpm test:timeline-rendered\n      - name: Timeline route gate (production build + source mutation)\n"
+    expectedField: pnpm test:timeline-rendered
+  - name: workflow-renames-fairtest-job
+    find: "  fairtest:\n    needs: determine-runner\n"
+    replace: "  fairtest-renamed:\n    needs: determine-runner\n"
+    expectedField: jobs.fairtest
+  - name: workflow-renames-gates-job
+    find: "  gates:\n    # The required check"
+    replace: "  gates-renamed:\n    # The required check"
+    expectedField: jobs.gates
+  - name: workflow-journeys-drops-build
+    find: "      # gate 1: contrast (pure JS, no browser) + production build -> dist/.\n      - name: Build (contrast gate + vite build)\n        run: pnpm build\n\n      - name: Build Storybook"
+    replace: "      - name: Build Storybook"
+    expectedField: Build (contrast gate + vite build)
+  - name: workflow-fairtest-drops-storybook-build
+    find: "      # gate 2: the component rows serve the built Storybook artifact.\n      - name: Build Storybook\n        run: pnpm build-storybook\n"
+    replace: ''
+    expectedField: Build Storybook
+  - name: workflow-journey-artifact-collides
+    find: '          name: storybook-static-${{ matrix.project }}'
+    replace: '          name: storybook-static'
+    expectedField: storybook-static
   - name: workflow-drops-the-envelope-guard
     find: "          pnpm test:fairtest:envelope\n"
     replace: ''

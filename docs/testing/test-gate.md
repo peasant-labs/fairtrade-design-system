@@ -61,13 +61,15 @@ runs. The required CI step uses `--target=all`; the verifier reads all 24 rows.
 The declared Fairtest budget dropped from 24 to 12 minutes, and the mounted-row
 stage from 18.5 to 6.5 minutes, after the measurements below.
 
-## Journey shards
+## Journey projects
 
-CI runs the full Playwright catalog as two shards on separate runners, each
-with three workers. The Storybook smoke divides each theme's catalog into four
-disjoint chunks so those walks can share the worker pool. The timeline route
-gate runs once, on shard 1. The required `gates` check aggregates the Fairtest
-job and the complete journey matrix and fails if either is not successful.
+CI runs the full Playwright catalog as the dark and light theme projects on
+separate runners, each with three workers. Each Storybook smoke walks the whole
+non-docs catalog once in its theme. The timeline route gate runs once, on dark.
+The required `gates` check aggregates Fairtest and the complete journey matrix
+and fails if either is not successful. Alongside `lib` and Fairtest, the two
+projects use all four pool slots. Each of the three browser jobs builds the app
+and Storybook independently, trading duplicate build time for isolation.
 
 ## Vitest pilot
 
@@ -102,15 +104,13 @@ Fairtest serial comparison was re-run on the same checkout and build.
 | Fairtest mounted, serial (1 worker, product then component) | 2m32s | 1:42 + 49s |
 | Fairtest mounted, parallel (`--target=all`, 4 workers) | 43-49s | 24/24 rows, verifier pass |
 | Journey catalog, local workstation, 4 workers | 11.6m | 502 passed, 58 skipped |
-| Journey catalog, CI microvm, 3 workers | 14m30s | 3-worker baseline recorded in the `gates` job |
+| Journey catalog, CI microvm, 3 workers | 14m30s | historical pre-split, single-job 3-worker baseline |
 | Journey catalog, CI microvm, 4 workers | 18m09s | regression on the 4-vCPU runner; the cap stays 3 |
-| Journey catalog, local workstation, two sequential shards, 3 workers each | 15m04s / 15m03s | Ryzen 9 7950X3D, 32 logical CPUs; each shard 256 passed, 29 skipped, 0 failed; shard 1 overlapped another browser run |
+| Journey catalog, local dark/light projects, sequential, 3 workers | 12m23s / 14m18s | Ryzen 9 7950X3D; each project 253 passed, 29 skipped; CI retry setting enabled |
+| Journey catalog, CI microvm, dark/light matrix | pending | record each project and matrix wall clock after the CI run |
 
-The local shards were measured sequentially, not on two CI runners. A listing
-comparison found 285 tests per shard, no overlap and no omissions across the
-570-test catalog. The increase from the earlier 560-test measurement includes
-the split Storybook walks and other catalog changes. The CI microvm timing and
-the under-10-minute target remain to be measured on the actual matrix jobs.
+The matrix wall clock and the under-10-minute target remain to be measured on
+the actual CI microvm runners; local sequential runs are not a substitute.
 
 The product rows are the long pole at roughly 25-32 seconds each; four workers
 let all four product routes overlap, while the twenty component rows fill the
