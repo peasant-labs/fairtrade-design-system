@@ -1758,6 +1758,7 @@ export default function TranscriptViewer({
                       toggle={id => setEarlierHistoryOpen(previous => ({ ...previous, [id]: !previous[id] }))}
                       openTools={openTools}
                       toggleTool={toggleTool}
+                      attachmentUrl={attachmentUrl}
                     />
                     {visibleTurns.length === 0 && (
                       <div className="empty"><div className="ring"><FilterIcon size={20} aria-hidden="true" /></div><EmptyHeading>no turns to display</EmptyHeading>
