@@ -208,7 +208,9 @@ test('required library CI selects prepack only for release pull requests', () =>
   assert.notEqual(tests['continue-on-error'], true)
   assert.ok(lib.steps.indexOf(tests) > lib.steps.indexOf(pack))
   const scripts = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).scripts
-  assert.ok(scripts['test:lib'].includes('pnpm test:pi-transcript:mounted'))
+  assert.equal(scripts['test:lib'], 'node scripts/run-test-lib.mjs')
+  assert.ok(scripts['test:lib:serial'].includes('pnpm test:pi-transcript:mounted'))
+  assert.ok(scripts['test:lib:serial'].includes('pnpm test:vitest'))
   assert.doesNotMatch(scripts.prepack, /\btest:/)
   assert.doesNotMatch(scripts['build:lib'], /\btest:|\.test\./)
   assert.equal(scripts['prebuild:lib'], undefined)
