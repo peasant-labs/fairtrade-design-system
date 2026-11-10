@@ -27,7 +27,8 @@
 
 import { spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { createInterface } from 'node:readline'
@@ -236,6 +237,10 @@ function execute(gate, lane, state) {
         // does not inherit pnpm's PATH injection, so add the workspace bin
         // directory explicitly.
         PATH: `${join(ROOT, 'node_modules', '.bin')}${process.platform === 'win32' ? ';' : ':'}${process.env.PATH ?? ''}`,
+        // Vite's default node_modules/.vite/deps is shared by every process in
+        // the worktree. A per-gate cache keeps two concurrent Vite servers from
+        // refreshing the same dependency directory.
+        FAIRTRADE_VITE_CACHE_DIR: join(tmpdir(), 'fairtrade-vite-gates', String(process.pid), createHash('sha1').update(gate.command).digest('hex').slice(0, 16)),
       },
       stdio: ['ignore', 'pipe', 'pipe'],
     })
@@ -495,6 +500,7 @@ async function main() {
   if (options.json) {
     writeFileSync(resolve(options.json), `${JSON.stringify({ durationMs, gates: state.results }, null, 2)}\n`)
   }
+  rmSync(join(tmpdir(), 'fairtrade-vite-gates', String(process.pid)), { recursive: true, force: true })
   return state.signalled ? 130 : state.failed ? 1 : 0
 }
 

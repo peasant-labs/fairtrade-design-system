@@ -11,6 +11,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { createServer } from 'vite'
+import { FAIRTRADE_VITE_CACHE_DIR } from './vite-cache-dir.mjs'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import YAML from 'yaml'
@@ -30,7 +31,7 @@ for (const mutation of manifest.mutations) {
       return { code: code.split(mutation.find).join(mutation.replace), map: null }
     },
   }
-  const server = await createServer({ appType: 'custom', configFile: false, logLevel: 'silent', root: ROOT, plugins: [plugin] })
+  const server = await createServer({ cacheDir: FAIRTRADE_VITE_CACHE_DIR, appType: 'custom', configFile: false, logLevel: 'silent', root: ROOT, plugins: [plugin] })
   try {
     const mod = await server.ssrLoadModule(`/${mutation.file}?mutation=${mutation.name}`)
     const markup = renderToStaticMarkup(React.createElement(mod.default, { outcome: mutation.probeOutcome }))

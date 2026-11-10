@@ -12,6 +12,7 @@ import { createRoot } from 'react-dom/client'
 import { JSDOM } from 'jsdom'
 import react from '@vitejs/plugin-react'
 import { createServer } from 'vite'
+import { FAIRTRADE_VITE_CACHE_DIR } from './vite-cache-dir.mjs'
 import YAML from 'yaml'
 
 const manifestSource = readFileSync(resolve('scripts/testdata/transcript-header-condense.manifest.yaml'), 'utf8')
@@ -133,7 +134,7 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true
 globalThis.IntersectionObserver = class { observe() {} unobserve() {} disconnect() {} }
 globalThis.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} }
 
-const server = await createServer({ appType: 'custom', configFile: false, logLevel: 'silent', plugins: [mutationPlugin, react()], root: process.cwd(), server: { middlewareMode: true } })
+const server = await createServer({ cacheDir: FAIRTRADE_VITE_CACHE_DIR, appType: 'custom', configFile: false, logLevel: 'silent', plugins: [mutationPlugin, react()], root: process.cwd(), server: { middlewareMode: true } })
 try {
   let loaded
   try { loaded = await server.ssrLoadModule('/src/ui/transcript/TranscriptViewer.jsx') } catch (error) {
