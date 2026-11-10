@@ -23,6 +23,9 @@ async function promptChips(page) {
   return page.$$eval('.txn-header .metaitem', nodes => nodes.map(node => node.textContent.trim().replace(/\s+/g, ' ')).filter(text => /\bprompts?$/.test(text)))
 }
 async function openVisibleDisclosures(page, selector) {
+  // A parent disclosure can mount its children on the next frame. Wait until
+  // the browser has laid those children out before deciding which are visible.
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
   for (const button of await page.$$(selector)) {
     const visible = await button.evaluate(node => node.isConnected && !node.closest('[inert], [hidden], [aria-hidden="true"]') && node.getClientRects().length > 0)
     if (visible) await button.click()
@@ -130,7 +133,15 @@ try {
             if (source.entryType === 'thinking' && domain.id !== 'main') assert.equal(await card.$eval('.txn-thinking-body', node => node.textContent), source.content)
             else if (source.entryType !== 'thinking' && !testCase.legacy && source.content) assert.ok((await card.evaluate(node => node.textContent)).includes(source.content), `${testCase.name}: literal content missing`)
             for (const tool of source.toolCalls ?? []) if (tool.result) {
-              await page.waitForFunction((target, result) => [...document.querySelectorAll(`${target} .txn-code`)].some(node => node.textContent === result && !node.closest('[inert], [hidden], [aria-hidden="true"]')), {}, selector, tool.result)
+              // Re-scan after parent disclosures settle: a tool in an earlier
+              // section can mount after the initial page-wide scan.
+              await openVisibleDisclosures(page, `${selector} .txn-tc-head[aria-expanded="false"]`)
+              try {
+                await page.waitForFunction((target, result) => [...document.querySelectorAll(`${target} .txn-code`)].some(node => node.textContent === result && !node.closest('[inert], [hidden], [aria-hidden="true"]')), {}, selector, tool.result)
+              } catch (cause) {
+                const details = await card.evaluate(node => ({ text: node.textContent, buttons: [...node.querySelectorAll('button')].map(button => ({ text: button.textContent, expanded: button.getAttribute('aria-expanded'), hidden: !!button.closest('[inert], [hidden], [aria-hidden="true"]') })) }))
+                throw new Error(`${theme}/${testCase.name}/${partition}/turn ${index}/${tool.id}: result did not become visible; ${JSON.stringify(details)}`, { cause })
+              }
               const outputs = await card.$$eval('.txn-code', nodes => nodes.map(node => node.textContent))
               assert.ok(outputs.includes(tool.result), `${testCase.name}: exact result missing`)
             }
