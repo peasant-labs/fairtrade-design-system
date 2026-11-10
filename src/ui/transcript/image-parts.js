@@ -131,19 +131,3 @@ export function imageParts(parts) {
 export function hasImageParts(turn) {
   return imageParts(turn?.contentParts).length > 0
 }
-
-/**
- * The images in a turn that can actually be loaded: a present inline image whose host supplied
- * a URL. Used to count what a reader could see, never to drop a recorded part.
- * @param {ContentPartVM[] | null | undefined} parts
- * @param {(ref: string) => string | null | undefined} [attachmentUrl]
- * @returns {number}
- */
-export function renderableImageCount(parts, attachmentUrl) {
-  if (typeof attachmentUrl !== 'function') return 0
-  return imageParts(parts).filter((part) => {
-    const image = part.image
-    const ref = typeof image?.ref === 'string' ? image.ref : ''
-    return ref !== '' && !image?.omittedReason && !!attachmentUrl(ref)
-  }).length
-}
