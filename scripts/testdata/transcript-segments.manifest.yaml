@@ -30,11 +30,15 @@ requiredMountCaseNames:
   - a lone middle segment carries the older edge
   - a held window beside a disjoint region keeps its gap boundary
   - separated held segments keep their own ranges around a gap
+  - held window without a loader stays honest
   - a single segment directory draws no boundary
   - an empty directory is not indexed
 requiredPhaseCaseNames:
   - phase starting at turn zero
   - phase starting mid transcript
+  - precomputed phase without a count omits it
+requiredPhaseCountCaseNames:
+  - sparse phase counts conversation turns rather than indexes
 requiredRecoveryCaseNames:
   - a rejected segment load enables retry
   - a void segment load remains retryable
@@ -52,12 +56,24 @@ requiredMutationNames:
   - a failed boundary load stays disabled
   - clearing a window retains its request cache
   - the phase range returns to one based indexes
+  - the boundary falls back to raw indexes
+  - the phase count includes an extra turn
 mutations:
   - name: the phase range returns to one based indexes
     file: src/ui/transcript/TranscriptViewer.jsx
-    find: 'turns {formatInteger(phase.from)}–{formatInteger(phase.to)}'
-    replace: 'turns {formatInteger(phase.from + 1)}–{formatInteger(phase.to + 1)}'
+    find: "`${formatInteger(phase.turnCount)} ${phase.turnCount === 1 ? 'turn' : 'turns'}`"
+    replace: "`turns ${formatInteger(phase.from + 1)}–${formatInteger(phase.to + 1)}`"
     expectedDiagnostic: 'phase starting at turn zero: phase caption'
+  - name: the boundary falls back to raw indexes
+    file: src/ui/transcript/segments.js
+    find: 'return `${segments}, ${formatByteExtent(boundary.byteLength)}`'
+    replace: 'return `turns ${boundary.firstTurn}–${boundary.lastTurn}, ${segments}, ${formatByteExtent(boundary.byteLength)}`'
+    expectedDiagnostic: 'boundary 0 caption'
+  - name: the phase count includes an extra turn
+    file: src/ui/transcript/analytics.js
+    find: "turns.slice(seg.startTurn, seg.endTurn + 1).filter((turn) => turn.role !== 'system').length"
+    replace: "turns.slice(seg.startTurn, seg.endTurn + 1).filter((turn) => turn.role !== 'system').length + 1"
+    expectedDiagnostic: 'sparse phase counts conversation turns rather than indexes: phase count'
   - name: the scrubber mounts one tick per turn
     file: src/ui/transcript/segments.js
     find: "const sample = Math.min(SEGMENT_SCRUBBER_TICKS, total)"

@@ -222,7 +222,7 @@ function PhaseDivider({ phase, heading: Heading = 'h3' }) {
   return (
     <div className="phase txn-phase">
       <Heading className="lbl"><Icon size={14} aria-hidden="true" /> {phase.label}</Heading>
-      <span className="rng tnum">turns {formatInteger(phase.from)}–{formatInteger(phase.to)}{phase.errors ? `, ${phase.errors} error` : ''}</span>
+      {(phase.turnCount != null || phase.errors) && <span className="rng tnum">{phase.turnCount != null ? `${formatInteger(phase.turnCount)} ${phase.turnCount === 1 ? 'turn' : 'turns'}` : ''}{phase.errors ? `${phase.turnCount != null ? ', ' : ''}${formatInteger(phase.errors)} error` : ''}</span>}
     </div>
   )
 }
@@ -2095,7 +2095,7 @@ export default function TranscriptViewer({
                         const notes = []
                         while (heldPosition < heldRegions.length && heldRegions[heldPosition].firstTurn < turnIndex) {
                           const region = heldRegions[heldPosition++]
-                          notes.push(<div key={region.key} className="txn-held-window tnum" role="status">turns {formatInteger(region.firstTurn)}–{formatInteger(region.lastTurn)}, loading window</div>)
+                          notes.push(<div key={region.key} className="txn-held-window" role="status">these turns are hidden because surrounding turns are not loaded</div>)
                         }
                         return notes
                       }

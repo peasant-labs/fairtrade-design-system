@@ -554,6 +554,7 @@ export function detectPhases(turns) {
       label: phaseLabel(seg.type),
       from: turns[seg.startTurn]?.index ?? seg.startTurn,
       to: turns[seg.endTurn]?.index ?? seg.endTurn,
+      turnCount: turns.slice(seg.startTurn, seg.endTurn + 1).filter((turn) => turn.role !== 'system').length,
       icon: seg.type,
     }
     if (errors > 0) vm.errors = errors

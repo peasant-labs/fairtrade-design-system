@@ -41,6 +41,26 @@ async function provenance(page, theme, label) {
   return { theme, assets: recorded, head: process.env.CAPTURE_HEAD ?? null }
 }
 
+async function captureCopy(page, theme, name) {
+  const root = page.locator('#inuse')
+  const visibleText = async (selector) => {
+    const nodes = root.locator(selector)
+    const result = []
+    for (let i = 0; i < await nodes.count(); i += 1) {
+      const node = nodes.nth(i)
+      if (await node.isVisible() && await node.evaluate((element) => {
+        const box = element.getBoundingClientRect()
+        const clip = element.closest('.txn-stream')?.getBoundingClientRect()
+        return box.bottom > Math.max(0, clip?.top ?? 0) && box.top < Math.min(innerHeight, clip?.bottom ?? innerHeight) && box.right > 0 && box.left < innerWidth
+      })) result.push((await node.innerText()).trim())
+    }
+    return result
+  }
+  mkdirSync(captureDir, { recursive: true })
+  await root.screenshot({ path: join(captureDir, `${name}-${theme}.png`) })
+  console.log(JSON.stringify({ capture: name, theme, header: await visibleText('.txn-trace-count'), boundary: await visibleText('.txn-segboundary-caption'), phase: await visibleText('.txn-phase .rng'), held: await visibleText('.txn-held-window') }))
+}
+
 for (const anchor of [60]) {
   test(`segments jump window ${anchor}`, async ({ page }, info) => {
     const theme = info.project.name
@@ -84,7 +104,7 @@ for (const anchor of [60]) {
     expect(await page.locator('#inuse .txn-scrub').getAttribute('aria-valuemax')).toBe('13')
 
     mkdirSync(captureDir, { recursive: true })
-    await page.locator('#inuse').screenshot({ path: join(captureDir, `jump-${anchor}-${theme}.png`) })
+    await captureCopy(page, theme, 'jump')
     await info.attach('transcript-segments-provenance', { body: JSON.stringify(evidence, null, 2), contentType: 'application/json' })
 
     /* loading the older edge walks the region up to the start; each load never grows
@@ -159,10 +179,23 @@ test('incomplete window names its held range and continuation', async ({ page },
   await page.locator('#inuse').scrollIntoViewIfNeeded()
   expect(await page.locator('html').getAttribute('data-theme') || 'dark').toBe(theme)
   await provenance(page, theme, 'held window')
-  await expect(page.locator('#inuse .txn-held-window')).toHaveText('turns 5–7, loading window')
+  await expect(page.locator('#inuse .txn-held-window')).toHaveText('these turns are hidden because surrounding turns are not loaded')
+  await captureCopy(page, theme, 'held')
   await expect(page.locator('#inuse [data-segment-boundary]')).toHaveCount(2)
   await expect(page.locator('#inuse .txn-action-continuation')).toHaveCount(1)
   await expect(page.locator('#inuse .txn-action-continuation')).toContainText('actions continue from the unloaded turns between')
+})
+
+test('phase captions name counts, not indexes', async ({ page }, info) => {
+  const theme = info.project.name
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto(`${origin}/?app=transcript&transcript=segments&turn=60&fb=off&theme=${theme}#inuse`, { waitUntil: 'networkidle' })
+  await page.evaluate(() => document.fonts.ready)
+  await provenance(page, theme, 'phase count')
+  const phase = page.locator('#inuse .txn-phase .rng').first()
+  await expect(phase).toHaveText(/^\d[\d,]* turns?(?:, \d[\d,]* error)?$/)
+  await phase.scrollIntoViewIfNeeded()
+  await captureCopy(page, theme, 'phase')
 })
 
 test('segments open at the first segment', async ({ page }, info) => {

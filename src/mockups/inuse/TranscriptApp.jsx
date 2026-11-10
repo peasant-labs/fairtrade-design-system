@@ -585,7 +585,7 @@ function buildWire() {
    adapter embeds a precomputed analytics block as-is when supplied. */
 function buildAnalytics() {
   const phases = PHASES.map((p, i) => {
-    const vm = { id: `phase-${i + 1}`, label: p.label, from: p.from, to: p.to, icon: p.id }
+    const vm = { id: `phase-${i + 1}`, label: p.label, from: p.from, to: p.to, icon: p.id, turnCount: TURNS.filter((turn) => turn.id >= p.from && turn.id <= p.to && turn.role !== 'system').length }
     if (p.errors) vm.errors = p.errors
     return vm
   })

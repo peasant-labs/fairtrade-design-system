@@ -360,6 +360,7 @@ export const TOOL_GROUPS = Object.freeze([
  * @property {string} label
  * @property {number} from                  first turn index (inclusive)
  * @property {number} to                    last turn index (inclusive)
+ * @property {number} [turnCount]           conversation turns in this phase, when known
  * @property {string} [icon]                semantic icon key
  * @property {number} [errors]              error count attributed to the phase
  */

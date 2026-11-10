@@ -59,14 +59,16 @@ const { fixture, manifest } = loadFixturePair(FIXTURE, MANIFEST, {
   windowCases: 'requiredWindowCaseNames',
   mountCases: 'requiredMountCaseNames',
   phaseCases: 'requiredPhaseCaseNames',
+  phaseCountCases: 'requiredPhaseCountCaseNames',
   recoveryCases: 'requiredRecoveryCaseNames',
 })
 
 for (const row of fixture.directories) assertFields(row, ['name', 'totalTurns', 'totalSegments', 'firstTurn', 'segmentTurns', 'segmentBytes'], `${FIXTURE} ${row.name}`)
 for (const row of fixture.loadCases) assertFields(row, ['name', 'directory', 'loaded', 'expect'], `${FIXTURE} ${row.name}`)
 for (const row of fixture.windowCases) assertFields(row, ['name', 'directory', 'loaded', 'window', 'expect'], `${FIXTURE} ${row.name}`)
-for (const row of fixture.mountCases) assertFields(row, ['name', 'directory', 'loaded', 'expect'], `${FIXTURE} ${row.name}`, ['window', 'oversizedTurn'])
+for (const row of fixture.mountCases) assertFields(row, ['name', 'directory', 'loaded', 'expect'], `${FIXTURE} ${row.name}`, ['window', 'oversizedTurn', 'noLoader'])
 for (const row of fixture.phaseCases) assertFields(row, ['name', 'directory', 'loaded', 'phase', 'caption'], `${FIXTURE} ${row.name}`)
+for (const row of fixture.phaseCountCases) assertFields(row, ['name', 'turns', 'expectedCount', 'expectedFrom', 'expectedTo'], `${FIXTURE} ${row.name}`)
 for (const row of fixture.recoveryCases) assertFields(row, ['name', 'mode', 'directory', 'loaded', 'requests'], `${FIXTURE} ${row.name}`, ['window', 'restoredTurn'])
 
 const DIRECTORY = new Map(fixture.directories.map((row) => [row.name, row]))
@@ -215,6 +217,13 @@ const text = (node) => (node?.textContent ?? '').replace(/\s+/g, ' ').trim()
 
 await withMountedSource(async ({ load, mount, window, React }) => {
   const { default: TranscriptViewer } = await load('/src/ui/transcript/TranscriptViewer.jsx')
+  const { detectPhases } = await load('/src/ui/transcript/analytics.js')
+
+  for (const row of fixture.phaseCountCases) {
+    const phase = detectPhases(row.turns)[0]
+    report.check(phase?.turnCount === row.expectedCount, `${row.name}: phase count must equal ${row.expectedCount}`)
+    report.check(phase?.from === row.expectedFrom && phase?.to === row.expectedTo, `${row.name}: phase retains its source indexes`)
+  }
 
   const viewer = (props, extra) => React.createElement(TranscriptViewer, {
     viewModel: viewModel(props.segments ?? [], extra),
@@ -230,6 +239,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     await mounted.settle()
     const caption = text(mounted.container.querySelector('.txn-phase .rng'))
     report.check(caption === row.caption, `${row.name}: phase caption ${JSON.stringify(caption)} must equal ${JSON.stringify(row.caption)}`)
+    if (row.phase.turnCount != null) report.check(/^\d[\d,]* turns?(?:, \d[\d,]* error)?$/.test(caption), `${row.name}: phase caption must be a turn count`)
     await mounted.unmount()
   }
 
@@ -274,11 +284,13 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       directory,
       segments: loaded,
       window: row.window ? { sessionId: dirSession(), revision: '7', ...row.window } : undefined,
-      onLoadSegment: (index) => requests.push(index),
+      onLoadSegment: row.noLoader ? undefined : (index) => requests.push(index),
       onLoadWindow: () => {},
     }))
     await mounted.settle()
     const stream = mounted.container.querySelector('.txn-stream')
+    const headerCounts = mounted.container.querySelectorAll('.txn-trace-count')
+    report.check(headerCounts.length === 1 && /\b\d[\d,]*(?: of \d[\d,]*)? turns\b/.test(text(headerCounts[0])), `${row.name}: the transcript has one turn-count header`)
     const cards = mounted.container.querySelectorAll('.txn-turn').length
     report.check(cards <= row.expect.maxCards, `${row.name}: ${cards} mounted cards must not exceed ${row.expect.maxCards}`)
     report.check(Number(stream?.dataset.mountedTurnBound) === row.expect.maxCards, `${row.name}: the stream must publish its mounted-card bound`)
@@ -296,6 +308,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     for (const [index, node] of boundaryNodes.entries()) {
       const caption = text(node.querySelector('.txn-segboundary-caption'))
       report.check(caption === row.expect.captions[index], `${row.name}: boundary ${index} caption ${JSON.stringify(caption)} must equal ${JSON.stringify(row.expect.captions[index])}`)
+      report.check(!/\bturns?\s+\d|\b\d[\d,]*\s+turns?\b/i.test(caption), `${row.name}: boundary ${index} must not claim turn numbers or counts`)
     }
     const truncation = mounted.container.querySelector('.txn-truncation')
     report.check(!!truncation === row.expect.truncation, `${row.name}: the truncation notice must be ${row.expect.truncation ? 'present' : 'absent'}`)
@@ -321,7 +334,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     }
     /* A boundary control takes the same load path the host wires. */
     const loadControl = boundaryNodes[0]?.querySelector('.txn-segboundary-load')
-    if (loadControl && expectedBoundaries[0]) {
+    if (loadControl && expectedBoundaries[0] && !row.noLoader) {
       await mounted.act(() => click(window, loadControl))
       report.check(requests[requests.length - 1] === expectedBoundaries[0].loadSegment, `${row.name}: the control loads segment ${expectedBoundaries[0].loadSegment}`)
     }
