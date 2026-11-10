@@ -765,16 +765,19 @@ export default function TranscriptApp({ theme = 'dark' }) {
    descriptor when the reader jumps. The viewer itself asks for the adjacent segment
    on load-more, the scrubber sample, or a window's covering run. */
 function SegmentsTranscriptDemo({ theme }) {
-  const { large, initialTurn } = useMemo(() => {
+  const { large, initialTurn, held } = useMemo(() => {
     const params = new URLSearchParams(window.location.search)
     const raw = params.get('turn')
     return {
       large: params.get('large') === '1',
       initialTurn: raw != null && /^\d+$/.test(raw) ? Number(raw) : null,
+      held: params.get('held') === '1',
     }
   }, [])
   const model = useMemo(() => (large ? buildLargeRunModel({ jump: initialTurn != null }) : buildSegmentsModel()), [large, initialTurn])
   const [loaded, setLoaded] = useState(() => {
+    /* Keep one window segment and a later run while the other reads remain pending. */
+    if (held && large && initialTurn === 16) return [model.segments[2], model.segments[10]]
     if (initialTurn != null) return []
     /* the large-run paging model opens on its short middle segment, so both dotted
        boundaries and both load-more controls are in the first screen */
@@ -784,11 +787,14 @@ function SegmentsTranscriptDemo({ theme }) {
   useEffect(() => {
     if (initialTurn != null) setWindowDescriptor(model.windowFor(initialTurn))
   }, [initialTurn, model])
-  const loadSegment = (index) => setLoaded((previous) => (
-    previous.some((segment) => segment.index === index)
-      ? previous
-      : [...previous, model.segments[index]].filter((segment) => segment != null).sort((a, b) => a.index - b.index)
-  ))
+  const loadSegment = (index) => {
+    if (held && large && initialTurn === 16) return
+    setLoaded((previous) => (
+      previous.some((segment) => segment.index === index)
+        ? previous
+        : [...previous, model.segments[index]].filter((segment) => segment != null).sort((a, b) => a.index - b.index)
+    ))
+  }
   return (
     <TranscriptViewer
       viewModel={model.vm}

@@ -151,6 +151,20 @@ test('large run jumps to the post-run user turn', async ({ page }, info) => {
   await info.attach('large-run-after-jump-provenance', { body: JSON.stringify(evidence, null, 2), contentType: 'application/json' })
 })
 
+test('incomplete window names its held range and continuation', async ({ page }, info) => {
+  const theme = info.project.name
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto(`${origin}/?app=transcript&transcript=segments&large=1&turn=16&held=1&fb=off&theme=${theme}#inuse`, { waitUntil: 'networkidle' })
+  await page.evaluate(() => document.fonts.ready)
+  await page.locator('#inuse').scrollIntoViewIfNeeded()
+  expect(await page.locator('html').getAttribute('data-theme') || 'dark').toBe(theme)
+  await provenance(page, theme, 'held window')
+  await expect(page.locator('#inuse .txn-held-window')).toHaveText('turns 5–7, loading window')
+  await expect(page.locator('#inuse [data-segment-boundary]')).toHaveCount(2)
+  await expect(page.locator('#inuse .txn-action-continuation')).toHaveCount(1)
+  await expect(page.locator('#inuse .txn-action-continuation')).toContainText('actions continue from the unloaded turns between')
+})
+
 test('segments open at the first segment', async ({ page }, info) => {
   const theme = info.project.name
   await page.setViewportSize({ width: 1440, height: 900 })
