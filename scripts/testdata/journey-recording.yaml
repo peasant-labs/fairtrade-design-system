@@ -1,0 +1,3 @@
+cases:
+  - {name: default, trace: '', video: '', screenshot: '', expectedTrace: on-first-retry, expectedVideo: on-first-retry, expectedScreenshot: on}
+  - {name: forced-recording, trace: '1', video: '1', screenshot: 'off', expectedTrace: on, expectedVideo: on, expectedScreenshot: only-on-failure}

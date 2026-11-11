@@ -62,8 +62,8 @@ export default defineConfig({
   use: {
     viewport: { ...PRODUCT_VIEWPORT },
     reducedMotion: 'reduce',
-    trace: 'retain-on-failure',
-    video: 'retain-on-failure',
+    trace: process.env.JOURNEY_TRACE === '1' ? 'on' : 'on-first-retry',
+    video: process.env.JOURNEY_VIDEO === '1' ? 'on' : 'on-first-retry',
     screenshot: 'only-on-failure',
   },
   projects: [{ name: 'fairtest' }],

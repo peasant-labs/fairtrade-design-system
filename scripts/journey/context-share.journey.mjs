@@ -7,11 +7,13 @@ const spec = loadStrictYaml('scripts/testdata/context-share.yaml')
 const manifest = loadStrictYaml('scripts/testdata/context-share.manifest.yaml')
 assertExactNames(spec.cases.map((row) => row.name), manifest.requiredCaseNames, 'context share rows')
 const appURL = `http://localhost:${process.env.JOURNEY_APP_PORT || '5180'}`
-const asset = readdirSync('dist/assets').find((file) => file.endsWith('.js') && readFileSync(join('dist/assets', file), 'utf8').includes('context-retention-demo'))
-if (!asset) throw new Error('context share journey: dist/assets lacks the context demo; rebuild this checkout before testing the mounted exit')
 
 for (const row of spec.cases) {
-  test(row.name, async ({ page, context }) => {
+  test(row.name, async ({ page, context }, testInfo) => {
+    // Each fixture already pins its theme; the other project repeats this exact row.
+    test.skip(testInfo.project.name !== row.theme, 'fixture theme runs in its matching project')
+    const asset = readdirSync('dist/assets').find((file) => file.endsWith('.js') && readFileSync(join('dist/assets', file), 'utf8').includes('context-retention-demo'))
+    if (!asset) throw new Error('context share journey: dist/assets lacks the context demo; rebuild this checkout before testing the mounted exit')
     await context.grantPermissions(['clipboard-read', 'clipboard-write'])
     const response = await page.request.get(`${appURL}/assets/${asset}`)
     expect(await response.text()).toBe(readFileSync(join('dist/assets', asset), 'utf8'))
