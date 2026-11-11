@@ -205,6 +205,7 @@ test('required library CI selects prepack only for release pull requests', () =>
   assert.ok(lib.steps.indexOf(pack) > Math.max(...builds.map(step => lib.steps.indexOf(step))))
   const tests = lib.steps.find(step => step.run === 'pnpm test:lib')
   assert.ok(tests); assert.equal(tests.if, undefined)
+  assert.equal(tests.env?.NODE_COMPILE_CACHE, '${{ runner.temp }}/node-compile-cache')
   assert.notEqual(tests['continue-on-error'], true)
   assert.ok(lib.steps.indexOf(tests) > lib.steps.indexOf(pack))
   const scripts = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).scripts

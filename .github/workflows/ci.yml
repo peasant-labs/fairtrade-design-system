@@ -71,6 +71,8 @@ jobs:
         run: pnpm pack:check
 
       - name: Test library (behavior, mutations, and built rendering)
+        env:
+          NODE_COMPILE_CACHE: ${{ runner.temp }}/node-compile-cache
         run: pnpm test:lib
 
   fairtest:

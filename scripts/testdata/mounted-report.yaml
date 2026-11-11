@@ -1,0 +1,53 @@
+cases:
+  - name: diagnostic-first
+    mutation: '{"expectedDiagnostic":"target diagnostic"}'
+    checks: [target diagnostic, later failure]
+    ran: 1
+    failures: [target diagnostic]
+  - name: unrelated-first
+    mutation: '{"expectedDiagnostic":"target diagnostic"}'
+    checks: [unrelated failure, target diagnostic, later failure]
+    ran: 2
+    failures: [unrelated failure, target diagnostic]
+  - name: base
+    mutation: null
+    checks: [unrelated failure, target diagnostic, later failure]
+    ran: 3
+    failures: [unrelated failure, target diagnostic, later failure]
+  - name: malformed
+    mutation: '{invalid'
+    checks: [unrelated failure, target diagnostic, later failure]
+    ran: 3
+    failures: [unrelated failure, target diagnostic, later failure]
+  - name: diagnostic-inside-message
+    mutation: '{"expectedDiagnostic":"target diagnostic"}'
+    checks: ['the viewer headings differ: target diagnostic reported for the viewer', later failure]
+    ran: 1
+    failures: ['the viewer headings differ: target diagnostic reported for the viewer']
+  - name: near-miss-first
+    mutation: '{"expectedDiagnostic":"target diagnostic"}'
+    checks: [target selector missing, target diagnostic, later failure]
+    ran: 2
+    failures: [target selector missing, target diagnostic]
+  - name: non-string-diagnostic
+    mutation: '{"expectedDiagnostic":42}'
+    checks: [the answer was 42, later failure]
+    ran: 2
+    failures: [the answer was 42, later failure]
+  - name: empty-diagnostic
+    mutation: '{"expectedDiagnostic":""}'
+    checks: [unrelated failure, target diagnostic, later failure]
+    ran: 3
+    failures: [unrelated failure, target diagnostic, later failure]
+  - name: pass
+    mutation: null
+    checks: [first success, second success]
+    passed: true
+    status: 0
+    ran: 2
+    failures: []
+  - name: non-string-message
+    mutation: '{"expectedDiagnostic":"42"}'
+    checks: [42, later failure]
+    ran: 1
+    failures: ['42']
