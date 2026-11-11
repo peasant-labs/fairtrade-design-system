@@ -4,6 +4,11 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.66
+
+- Pin `@peasant-labs/schema@0.49.0`, which publishes the kickstart node sets and the six additional harness identities. The provider policy and its brand marks already carried Grok Build, Devin Desktop, Cline, and Kiro; the older pin left those entries unreachable.
+- Replace the selection node-set tripwire with both-ways contract assertions: every schema member must be present on the client, every client member must be a legal schema value, and both lists stay assignable in the other direction.
+
 ## 0.0.65
 
 - Accept a detail the host has already validated from the published envelope. `adaptTranscript` takes `payloadMode: 'published'`, which trusts a payload that came through the schema's published parser and skips the local-mode re-parse; the default stays `'local'`. A published image part carries `omittedReason: 'not_published'`, which the local parser rejects, so a host reading published transcripts renders the canonical omitted card instead of rewriting those parts to text.
