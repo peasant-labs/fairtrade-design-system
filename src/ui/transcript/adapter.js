@@ -852,7 +852,7 @@ function buildFilterIndex(turnVMs, annotationsByTurn) {
  * @param {TranscriptWireInput} payload          canonical wire plus legacy git compatibility
  * @param {AnnotationSummary[]} [annotations]     separately-fetched entry annotations
  * @param {TranscriptAnalyticsVM} [analytics]     precomputed analytics; else derived on demand
- * @param {AdaptTranscriptOptions} [options]      optional post-resolution visible-turn projection
+ * @param {AdaptTranscriptOptions} [options]      payload mode, authorized navigation, and visible-turn projection
  * @returns {TranscriptViewModel}
  */
 export function adaptTranscript(payload, annotations, analytics, options) {
