@@ -4,9 +4,16 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.65
+
+- Accept a detail the host has already validated from the published envelope. `adaptTranscript` takes `payloadMode: 'published'`, which trusts a payload that came through the schema's published parser and skips the local-mode re-parse; the default stays `'local'`. A published image part carries `omittedReason: 'not_published'`, which the local parser rejects, so a host reading published transcripts renders the canonical omitted card instead of rewriting those parts to text.
+
 ## 0.0.64
 
 - Add `SelectionTree`, a server-grouped selection forest. The host supplies each node's kind, tri-state, and lock; the tree reports selected session ids and does not roll state up or regroup. Kinds and states are a frozen projection (`wire` and `label`) with boundary parsers. Unknown values are dropped and counted. Peasant /kickstart and /selection consume it after release; Village is not a consumer.
+- Own a versioned system-toggle filter intent. The host stores the reader's deviation from the default as `{version: 1, system?}` and replays it through `applyFilterIntent`; an unknown version, a non-object, or a non-boolean value degrades to the default and never throws. Checkpoints, views, tags, and tool groups are never stored.
+- Filter a system-entry group by the kinds it actually holds, so a reader can reach one recorded kind without revealing the group.
+- Render ordered image content parts inline with a larger view, in retained history as well as the root, and show each omitted part's own reason without requesting its bytes.
 
 ## 0.0.63
 
