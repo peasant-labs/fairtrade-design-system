@@ -183,22 +183,25 @@ export function createReport(gate) {
     // Invalid mutations retain the normal reporting path; the Vite plugin
     // still reports malformed input when a mounted gate actually loads it.
   }
+  function failIfAny() {
+    if (failures.length > 0) {
+      console.error(`${gate} failed:\n- ${failures.join('\n- ')}`)
+      process.exit(1)
+    }
+  }
   return {
     check(passed, message) {
       checks += 1
       if (!passed) {
-        failures.push(message)
-        if (diagnostic && message.includes(diagnostic)) this.failIfAny()
+        const text = String(message)
+        failures.push(text)
+        // Mutation exit skips withMountedSource teardown: the mutation is in-memory and the process is ending; see run-test-lib.test.mjs and testdata/mounted-report.yaml.
+        if (diagnostic && text.includes(diagnostic)) failIfAny()
       }
     },
-    failIfAny() {
-      if (failures.length > 0) {
-        console.error(`${gate} failed:\n- ${failures.join('\n- ')}`)
-        process.exit(1)
-      }
-    },
+    failIfAny,
     finish(summary) {
-      this.failIfAny()
+      failIfAny()
       console.log(`${gate}: ${checks} checks passed; ${summary}`)
     },
   }

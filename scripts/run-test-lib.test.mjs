@@ -17,6 +17,7 @@ import {
   splitCommands,
 } from './run-test-lib.mjs'
 import { scanSource, scanTestFiles } from './test-lib-source-scan.mjs'
+import { assertExactNames, loadStrictYaml } from './mounted-parts.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..')
@@ -133,21 +134,27 @@ test('lane weights stay inside the global budget', () => {
   }
 })
 
+// Tests mounted-parts.mjs here to avoid moving the library gate inventory.
 test('mounted reports stop only at the expected mutation diagnostic', () => {
-  const fixture = YAML.parse(readFileSync(join(HERE, 'testdata', 'mounted-report.yaml'), 'utf8'))
-  assert.deepEqual(fixture.cases.map((entry) => entry.name).sort(), ['base', 'diagnostic-first', 'malformed', 'unrelated-first'])
+  const fixture = loadStrictYaml('scripts/testdata/mounted-report.yaml')
+  assert.equal(fixture.cases.length, fixture.expectedCaseCount)
+  assertExactNames(fixture.cases.map((entry) => entry.name), fixture.requiredCaseNames, 'mounted report cases')
   for (const entry of fixture.cases) {
     const env = { ...process.env }
     delete env.FAIRTRADE_PARTS_MUTATION
     if (entry.mutation !== null) env.FAIRTRADE_PARTS_MUTATION = entry.mutation
     const source = `import { createReport } from './scripts/mounted-parts.mjs';
-      const report = createReport('fixture gate');
-      for (const message of ${JSON.stringify(entry.checks)}) { console.log('ran: ' + message); report.check(false, message) }
-      report.finish('done');`
-    const result = spawnSync(process.execPath, ['--input-type=module', '-e', source], { cwd: ROOT, env, encoding: 'utf8' })
-    assert.equal(result.status, 1, `${entry.name}: ${result.stderr}`)
-    assert.equal(result.stdout.trim().split('\n').length, entry.ran, entry.name)
-    assert.equal(result.stderr.trim(), `fixture gate failed:\n${entry.failures.map((message) => `- ${message}`).join('\n')}`, entry.name)
+      const { check, finish } = createReport('fixture gate');
+      for (const message of ${JSON.stringify(entry.checks)}) { console.log('ran: ' + message); check(${Boolean(entry.passed)}, message) }
+      finish('done');`
+    const result = spawnSync(process.execPath, ['--input-type=module', '-e', source], { cwd: ROOT, env, encoding: 'utf8', timeout: 60_000 })
+    assert.equal(result.error, undefined, entry.name)
+    assert.equal(result.status, entry.status ?? 1, `${entry.name}: ${result.stderr}`)
+    // The harness prints before each check: ran counts attempts, paired with exact stderr.
+    assert.equal(result.stdout.split('\n').filter((line) => line.startsWith('ran: ')).length, entry.ran, entry.name)
+    const expectedError = entry.failures.length ? `fixture gate failed:\n${entry.failures.map((message) => `- ${message}`).join('\n')}\n` : ''
+    assert.equal(result.stderr, expectedError, entry.name)
+    if (entry.status === 0) assert.match(result.stdout, new RegExp(`fixture gate: ${entry.ran} checks passed; done\\n$`), entry.name)
   }
 })
 
