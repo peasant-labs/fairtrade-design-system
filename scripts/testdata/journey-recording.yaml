@@ -1,3 +1,6 @@
 cases:
-  - {name: default, trace: '', video: '', screenshot: '', expectedTrace: on-first-retry, expectedVideo: on-first-retry, expectedScreenshot: on}
-  - {name: forced-recording, trace: '1', video: '1', screenshot: 'off', expectedTrace: on, expectedVideo: on, expectedScreenshot: only-on-failure}
+  - {name: default, trace: '', video: '', screenshot: '', expectedTrace: on-first-retry, expectedVideo: on-first-retry, fairtestTrace: retain-on-failure, fairtestVideo: retain-on-failure, expectedScreenshot: on}
+  - {name: forced-recording, trace: '1', video: '1', screenshot: 'off', expectedTrace: on, expectedVideo: on, fairtestTrace: on, fairtestVideo: on, expectedScreenshot: only-on-failure}
+mutations:
+  - {name: zero-retry-trace, trace: on-first-retry, video: retain-on-failure, expected: trace}
+  - {name: zero-retry-video, trace: retain-on-failure, video: on-first-retry, expected: video}

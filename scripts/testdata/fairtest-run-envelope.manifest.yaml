@@ -95,7 +95,7 @@ mutations:
     kind: trailing-document
     target: document
     expectedField: document[1]
-expectedWorkflowMutationCount: 47
+expectedWorkflowMutationCount: 52
 requiredWorkflowMutationNames:
   - workflow-upload-pin-becomes-a-tag
   - workflow-upload-drops-no-files-error
@@ -144,6 +144,11 @@ requiredWorkflowMutationNames:
   - workflow-router-reason-dropped
   - workflow-timing-merge-dropped
   - workflow-actions-read-dropped
+  - workflow-recording-invariant-dropped
+  - workflow-theme-fixture-guard-dropped
+  - workflow-light-transparency-proof-dropped
+  - workflow-facts-becomes-blocking
+  - workflow-timing-upload-becomes-blocking
 workflowMutations:
   - name: workflow-upload-pin-becomes-a-tag
     find: "      - name: Fairtest evidence upload\n        if: always()\n        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2\n"
@@ -333,6 +338,26 @@ workflowMutations:
     find: '  actions: read'
     replace: '  actions: none'
     expectedField: permissions.actions
+  - name: workflow-recording-invariant-dropped
+    find: 'scripts/journey/recording-policy.test.mjs'
+    replace: 'scripts/journey/other.test.mjs'
+    expectedField: catalog manifest
+  - name: workflow-theme-fixture-guard-dropped
+    find: 'scripts/journey/theme-rows.test.mjs'
+    replace: 'scripts/journey/other.test.mjs'
+    expectedField: catalog manifest
+  - name: workflow-light-transparency-proof-dropped
+    find: '        run: node scripts/journey/check-light-transparency.mjs'
+    replace: '        run: echo skip'
+    expectedField: light transparency
+  - name: workflow-facts-becomes-blocking
+    find: "      - name: Capture Fairtest runner facts\n        continue-on-error: true\n"
+    replace: "      - name: Capture Fairtest runner facts\n"
+    expectedField: Capture Fairtest runner facts
+  - name: workflow-timing-upload-becomes-blocking
+    find: "      - name: Upload Fairtest timing report\n        if: always()\n        continue-on-error: true\n"
+    replace: "      - name: Upload Fairtest timing report\n        if: always()\n"
+    expectedField: Upload Fairtest timing report
 expectedSourceMutationCount: 5
 requiredSourceMutationNames:
   - dropped-process-receipt-requirement

@@ -85,6 +85,7 @@ jobs:
       options: --ipc=host --init
     env:
       TMPDIR: /tmp
+      ROUTER_REASON: ${{ needs.determine-runner.outputs.reason }}
       # The one Fairtest run identity and the one run root. Every Fairtest
       # command in this job reads exactly these.
       FAIRTEST_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
@@ -100,6 +101,7 @@ jobs:
           persist-credentials: false
 
       - name: Capture Fairtest runner facts
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
           RUNNER_JOB_NAME: fairtest
@@ -186,17 +188,19 @@ jobs:
 
       - name: Prepare Fairtest timing report
         if: always()
+        continue-on-error: true
         run: |
           mkdir -p /tmp/fairtest-timing
           node scripts/journey/runner-facts.mjs merge /tmp/fairtest-timing/report.json
 
       - name: Upload Fairtest timing report
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: fairtest-timing
           path: /tmp/fairtest-timing/report.json
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 7
 
   journeys:
@@ -215,12 +219,14 @@ jobs:
     env:
       TMPDIR: /tmp
       JOURNEY_SCREENSHOT: "off"
+      ROUTER_REASON: ${{ needs.determine-runner.outputs.reason }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
 
       - name: Capture journey runner facts
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
           RUNNER_JOB_NAME: journeys (${{ matrix.project }})
@@ -247,11 +253,15 @@ jobs:
       - name: Journey catalog name manifest
         run: |
           node scripts/journey/catalog-gate.mjs
-          node --test scripts/journey/catalog-gate.test.mjs scripts/journey/runner-facts.test.mjs scripts/journey/recording-policy.test.mjs
+          node --test scripts/journey/catalog-gate.test.mjs scripts/journey/runner-facts.test.mjs scripts/journey/recording-policy.test.mjs scripts/journey/theme-rows.test.mjs scripts/journey/check-light-transparency.test.mjs
 
       # Each theme runs its complete catalog at the measured 3-worker optimum.
       - name: Journey gates
         run: pnpm journey:ci --workers=3 --project=${{ matrix.project }}
+
+      - name: Verify light transparency ran
+        if: matrix.project == 'light'
+        run: node scripts/journey/check-light-transparency.mjs
 
       # The timeline route gate does not fan out: one project runs it so the
       # production probe and source mutation are not duplicated.
@@ -264,17 +274,19 @@ jobs:
 
       - name: Prepare journey timing report
         if: always()
+        continue-on-error: true
         run: |
           mkdir -p scripts/journey/.artifacts
           node scripts/journey/runner-facts.mjs merge scripts/journey/.artifacts/report.json
 
       - name: Upload journey timing report
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: journey-timing-${{ matrix.project }}
           path: scripts/journey/.artifacts/report.json
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 7
 
       - name: Upload journey artifacts on failure

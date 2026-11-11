@@ -3,10 +3,12 @@ import { loadStrictYaml, assertExactNames } from '../css-source.mjs'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { scanAxe, seriousViolations } from './lib/assertions.mjs'
+import { assertThemeRows, rowRunsInProject } from './theme-rows.mjs'
 
 const spec = loadStrictYaml('scripts/testdata/publish-mounted.yaml')
 const manifest = loadStrictYaml('scripts/testdata/publish-mounted.manifest.yaml')
 assertExactNames(spec.cases.map((row) => row.name), manifest.requiredCaseNames, 'mounted publish rows')
+assertThemeRows(spec.cases)
 assertExactNames([spec.pending.name],manifest.requiredPendingNames,'host-held publication cases')
 const consent = loadStrictYaml('scripts/testdata/publish-consent.yaml')
 const appURL = `http://localhost:${process.env.JOURNEY_APP_PORT || '5180'}`
@@ -61,7 +63,7 @@ async function heldPublication(page,row) {
 for (const row of spec.cases) {
   test(`mounted publish ${row.name}`, async ({ page }, testInfo) => {
     // Each fixture already pins its theme; the other project repeats this exact row.
-    test.skip(testInfo.project.name !== row.theme, 'fixture theme runs in its matching project')
+    test.skip(!rowRunsInProject(row, testInfo.project.name), 'fixture theme runs in its matching project')
     const asset = readdirSync('dist/assets').find((file) => file.endsWith('.js') && readFileSync(join('dist/assets', file), 'utf8').includes(marker))
     if (!asset) throw new Error('publish journey: dist/assets lacks mandatory consent; rebuild this checkout before capturing the mounted path')
     await page.setViewportSize({ width: row.width, height: 900 })

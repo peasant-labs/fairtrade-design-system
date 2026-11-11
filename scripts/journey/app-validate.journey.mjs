@@ -277,6 +277,7 @@ test.describe('built app', () => {
       console.log(`reduced transparency [${theme}]: ${detail}`)
       expect(seen.matches, detail).toBe(true)
       expect(seen.theme, detail).toBe(theme)
+      if (theme === 'light') expect(seen.theme, 'light project must mount the light theme').toBe('light')
       expect(seen.blurred, detail).toEqual([])
       expect(seen.probeBlur, detail).toBe('none')
       expect(seen.navBg, detail).toBe(seen.surface)

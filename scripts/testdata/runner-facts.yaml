@@ -4,4 +4,9 @@ jobs:
 cases:
   - {name: records-queue-time, jobName: 'journeys (dark)', reason: pool, queueSeconds: 90}
   - {name: rejects-missing-job, jobName: 'journeys (light)', reason: pool, error: 'expected one job'}
-  - {name: rejects-missing-reason, jobName: 'journeys (dark)', reason: '', error: 'router reason'}
+  - {name: records-missing-reason, jobName: 'journeys (dark)', reason: '', queueSeconds: 90}
+degraded:
+  - {name: missing-token, repository: owner/repo, token: '', expectedError: 'required'}
+  - {name: api-failure, repository: owner/missing, token: test-token, expectedError: '404'}
+  - {name: missing-start, repository: owner/no-start, token: test-token, expectedError: 'started_at'}
+  - {name: truncated-page, repository: owner/full, token: test-token, expectedError: 'truncated'}

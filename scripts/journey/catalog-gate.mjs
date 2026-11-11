@@ -1,7 +1,8 @@
 // List mode loads the real Playwright catalog without launching browsers or servers.
 import { spawnSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
+import { PROJECT_THEMES } from './theme-rows.mjs'
 
 export function catalogPairs(report) {
   const pairs = []
@@ -32,7 +33,7 @@ export function checkCatalog(actual, expected) {
   const required = keys(expected, 'manifest')
   const missing = [...required].filter((value) => !observed.has(value))
   const extra = [...observed].filter((value) => !required.has(value))
-  if (missing.length || extra.length) throw new Error(`catalog membership mismatch: missing ${missing.join(', ')}; extra ${extra.join(', ')}`)
+  if (missing.length || extra.length) throw new Error(`catalog membership mismatch: missing ${missing.join(', ')}; extra ${extra.join(', ')}. For an intentional change regenerate with node scripts/journey/catalog-gate.mjs --write and review the diff.`)
 }
 
 export function listCatalog() {
@@ -43,9 +44,20 @@ export function listCatalog() {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
-    const expected = JSON.parse(readFileSync('scripts/testdata/journey-catalog.json', 'utf8'))
     const actual = listCatalog()
-    checkCatalog(actual, expected)
+    const path = 'scripts/testdata/journey-catalog.json'
+    if (process.argv[2] === '--write') {
+      if (process.argv.length !== 3) throw new Error('usage: node scripts/journey/catalog-gate.mjs [--write]')
+      checkCatalog(actual, actual)
+      const projects = new Set(actual.map((pair) => pair.project))
+      if (projects.size !== PROJECT_THEMES.length || PROJECT_THEMES.some((project) => !projects.has(project))) throw new Error('cannot regenerate: the live catalog must contain both journey projects')
+      actual.sort((a, b) => a.project.localeCompare(b.project) || a.title.localeCompare(b.title))
+      writeFileSync(path, `${JSON.stringify(actual, null, 2)}\n`)
+      console.log(`wrote ${path}; review the diff before committing`)
+    } else {
+      if (process.argv.length !== 2) throw new Error('usage: node scripts/journey/catalog-gate.mjs [--write]')
+      checkCatalog(actual, JSON.parse(readFileSync(path, 'utf8')))
+    }
     console.log('journey catalog:', Object.fromEntries([...new Set(actual.map((pair) => pair.project))].map((project) => [project, actual.filter((pair) => pair.project === project).length])))
   } catch (error) {
     console.error(error.message)

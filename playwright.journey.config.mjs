@@ -12,6 +12,7 @@
  * each journey records.
  */
 import { defineConfig } from '@playwright/test'
+import { PROJECT_THEMES } from './scripts/journey/theme-rows.mjs'
 
 const SB_PORT = Number(process.env.JOURNEY_SB_PORT || 6017)
 const SB_URL = `http://localhost:${SB_PORT}`
@@ -60,8 +61,7 @@ export default defineConfig({
     screenshot: SCREENSHOT,
   },
   projects: [
-    { name: 'dark', use: { colorScheme: 'dark' } },
-    { name: 'light', use: { colorScheme: 'light' } },
+    ...PROJECT_THEMES.map((theme) => ({ name: theme, use: { colorScheme: theme } })),
   ],
   webServer: [
     {

@@ -2,16 +2,18 @@ import { test, expect } from '@playwright/test'
 import { loadStrictYaml, assertExactNames } from '../css-source.mjs'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { assertThemeRows, rowRunsInProject } from './theme-rows.mjs'
 
 const spec = loadStrictYaml('scripts/testdata/context-share.yaml')
 const manifest = loadStrictYaml('scripts/testdata/context-share.manifest.yaml')
 assertExactNames(spec.cases.map((row) => row.name), manifest.requiredCaseNames, 'context share rows')
+assertThemeRows(spec.cases)
 const appURL = `http://localhost:${process.env.JOURNEY_APP_PORT || '5180'}`
 
 for (const row of spec.cases) {
   test(row.name, async ({ page, context }, testInfo) => {
     // Each fixture already pins its theme; the other project repeats this exact row.
-    test.skip(testInfo.project.name !== row.theme, 'fixture theme runs in its matching project')
+    test.skip(!rowRunsInProject(row, testInfo.project.name), 'fixture theme runs in its matching project')
     const asset = readdirSync('dist/assets').find((file) => file.endsWith('.js') && readFileSync(join('dist/assets', file), 'utf8').includes('context-retention-demo'))
     if (!asset) throw new Error('context share journey: dist/assets lacks the context demo; rebuild this checkout before testing the mounted exit')
     await context.grantPermissions(['clipboard-read', 'clipboard-write'])

@@ -71,20 +71,23 @@ and fails if either is not successful. Alongside `lib` and Fairtest, the two
 projects use all four pool slots. Each of the three browser jobs builds the app
 and Storybook independently, trading duplicate build time for isolation.
 
-The journey and Fairtest configs record trace and video on the first retry only;
+The journey config records trace and video on the first retry only;
 `JOURNEY_TRACE=1` and `JOURNEY_VIDEO=1` force recording on every attempt. Journey
 CI sets `JOURNEY_SCREENSHOT=off`, which means only-on-failure screenshots, not
 disabling explicitly requested evidence screenshots. Journey retries remain one,
 so failure traces and videos come from the retry attempt. Fairtest keeps its
-zero-retry contract and its row evidence; its default trace/video therefore do
-not record. CI uploads each project's Playwright artifact directory on failure,
+zero-retry contract and records trace and video on each attempt, retaining them
+on failure for forensics. CI uploads each project's Playwright artifact directory on failure,
 and its `report.json` on every run.
 
 Every browser job captures `nproc`, CPU model, memory bytes, load averages,
 router reason, run creation and job start timestamps, and their difference in
 seconds. It prints these facts and attaches them to its uploaded `report.json`.
 The job timestamps come from the Actions API; the token has actions read only.
-The Fairtest timing report is separate from its immutable evidence root.
+If the API or timestamps are unavailable, `queueSeconds` is null and `apiError`
+explains why; local machine facts are still recorded. Timing collection and
+uploads do not fail a browser gate. The Fairtest timing report is separate from
+its immutable evidence root.
 
 The browser-free `node scripts/journey/catalog-gate.mjs` lists the actual
 Playwright catalog without starting either server and compares exact
@@ -92,6 +95,12 @@ project/full-title pairs with `scripts/testdata/journey-catalog.json`. Its
 fixture-driven mutations prove dropped, duplicated and renamed tests and a
 missing project fail. The catalog retains 282 named entries per project; a
 runtime project guard eliminates duplicate fixture rows without deleting names.
+The same theme predicate is checked against both project names while listing,
+so an unknown theme or a row that runs more than once fails before browsers
+start. After an intentional catalog change, run
+`node scripts/journey/catalog-gate.mjs --write` and review the manifest diff.
+The light project's report must also prove that the reduced-transparency test
+executed and saw a mounted light theme; a skip does not satisfy that check.
 
 ### Focused duplicate measurements
 
