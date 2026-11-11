@@ -13,18 +13,24 @@ function assertRecordingRetry(config) {
   }
 }
 test('both Playwright configs honor recording policy and overrides', () => {
-  assert.deepEqual(cases.map((row) => row.name).sort(), ['default', 'forced-recording'])
+  assert.deepEqual(cases.map((row) => row.name).sort(), ['default', 'forced-recording', 'forced-trace', 'forced-video'])
+  assert.deepEqual(fixture.environments.map((row) => row.name).sort(), ['ci', 'local'])
   for (const row of cases) {
-    for (const config of ['journey', 'fairtest']) {
-      const source = `import('./playwright.${config}.config.mjs').then(({default:c})=>console.log(JSON.stringify({trace:c.use.trace,video:c.use.video,screenshot:c.use.screenshot,retries:c.retries})))`
-      const result = spawnSync(process.execPath, ['-e', source], { encoding: 'utf8', env: { ...process.env, CI: '1', JOURNEY_TRACE: row.trace, JOURNEY_VIDEO: row.video, JOURNEY_SCREENSHOT: row.screenshot } })
-      assert.equal(result.status, 0, result.stderr)
-      const observed = JSON.parse(result.stdout)
-      assertRecordingRetry(observed)
-      assert.equal(observed.trace, config === 'journey' ? row.expectedTrace : row.fairtestTrace, `${row.name}: ${config} trace`)
-      assert.equal(observed.video, config === 'journey' ? row.expectedVideo : row.fairtestVideo, `${row.name}: ${config} video`)
-      assert.equal(observed.screenshot, config === 'journey' ? row.expectedScreenshot : 'only-on-failure')
-      assert.equal(observed.retries, config === 'journey' ? 1 : 0)
+    for (const environment of fixture.environments) {
+      for (const config of ['journey', 'fairtest']) {
+        const source = `import('./playwright.${config}.config.mjs').then(({default:c})=>console.log(JSON.stringify({trace:c.use.trace,video:c.use.video,screenshot:c.use.screenshot,retries:c.retries})))`
+        const env = { ...process.env, JOURNEY_TRACE: row.trace, JOURNEY_VIDEO: row.video, JOURNEY_SCREENSHOT: row.screenshot }
+        if (environment.ci) env.CI = environment.ci
+        else delete env.CI
+        const result = spawnSync(process.execPath, ['-e', source], { encoding: 'utf8', env })
+        assert.equal(result.status, 0, result.stderr)
+        const observed = JSON.parse(result.stdout)
+        assertRecordingRetry(observed)
+        assert.equal(observed.trace, config === 'journey' ? (row.forceTrace ? 'on' : environment.expectedRecording) : row.fairtestTrace, `${row.name}: ${environment.name} ${config} trace`)
+        assert.equal(observed.video, config === 'journey' ? (row.forceVideo ? 'on' : environment.expectedRecording) : row.fairtestVideo, `${row.name}: ${environment.name} ${config} video`)
+        assert.equal(observed.screenshot, config === 'journey' ? row.expectedScreenshot : 'only-on-failure')
+        assert.equal(observed.retries, config === 'journey' ? environment.expectedRetries : 0)
+      }
     }
   }
 })

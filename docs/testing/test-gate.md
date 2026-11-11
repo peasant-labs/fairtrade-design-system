@@ -71,14 +71,16 @@ and fails if either is not successful. Alongside `lib` and Fairtest, the two
 projects use all four pool slots. Each of the three browser jobs builds the app
 and Storybook independently, trading duplicate build time for isolation.
 
-The journey config records trace and video on the first retry only;
+The journey config records trace and video on the first retry in CI and retains
+them on failure locally, where journeys have zero retries.
 `JOURNEY_TRACE=1` and `JOURNEY_VIDEO=1` force recording on every attempt. Journey
 CI sets `JOURNEY_SCREENSHOT=off`, which means only-on-failure screenshots, not
-disabling explicitly requested evidence screenshots. Journey retries remain one,
+disabling explicitly requested evidence screenshots. Journey CI retries remain one,
 so failure traces and videos come from the retry attempt. Fairtest keeps its
-zero-retry contract and records trace and video on each attempt, retaining them
-on failure for forensics. CI uploads each project's Playwright artifact directory on failure,
-and its `report.json` on every run.
+zero-retry contract and always retains trace and video on failure by default,
+in both CI and local runs. The same force-on overrides apply to Fairtest. CI
+uploads each project's Playwright artifact directory on failure, and its
+`report.json` on every run.
 
 Every browser job captures `nproc`, CPU model, memory bytes, load averages,
 router reason, run creation and job start timestamps, and their difference in
