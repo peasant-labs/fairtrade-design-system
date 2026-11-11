@@ -141,13 +141,19 @@ export const Controlled = {
    measures each label against its own rail: inside it, anchored to its marker (the first starts at
    the first marker's left edge, the last ends at the last marker's right edge, the rest are centred),
    clear of its neighbours, and not clipped. a rail too narrow for its first and last labels to hold
-   five characters hides all its labels from sight (they stay in the accessible name); the narrow frame
-   holds them up to five steps, the wide frame all ten. narrow is a phone: ten 28px markers need
-   about 280px of rail, so a narrower frame cannot hold ten steps at all. */
+   five characters hides all its labels from sight (they stay in the accessible name). the floor is
+   written in characters of the label's own face, and the face is whatever monospace the host has
+   (this story loads no font), so how many steps keep their labels differs between machines: the
+   play function measures one character and works the rule out for each frame, and two anchors hold in
+   any face (up to three steps always show, ten steps on the narrow frame never do). narrow is a phone:
+   ten 28px markers need about 280px of rail, so a narrower frame cannot hold ten steps at all. */
 const MATRIX_LABELS = ['welcome', 'projects', 'sessions', 'redaction', 'review', 'license', 'collectives', 'share', 'confirm', 'done']
 const MATRIX_COUNTS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 const MATRIX_WIDTHS = { narrow: 360, wide: FRAME_W.wide }
-const LABELS_SHOWN_UP_TO = { narrow: 5, wide: 10 }
+// true in every monospace face: three steps always have room, ten steps on the narrow frame never do
+// (a share of about 27px against a floor of at least 30px, whatever the face).
+const ALWAYS_SHOWN_UP_TO = 3
+const NARROW_NEVER_SHOWN_AT = 10
 const TOLERANCE = 0.5
 
 function matrixSteps(count) {
@@ -191,13 +197,38 @@ function placeOf(label) {
   return modifier ? modifier.slice('swz-label--'.length) : ''
 }
 
+/** One character of the label's own face in px: the `ch` the stylesheet writes its floor in. */
+function characterWidth(label) {
+  const probe = document.createElement('span')
+  probe.style.cssText = 'position: absolute; visibility: hidden; width: 1ch'
+  label.appendChild(probe)
+  const width = probe.getBoundingClientRect().width
+  probe.remove()
+  return width
+}
+
+/**
+ * Whether a rail should show its labels: true or false, or null when the share sits within half a
+ * pixel of the floor and rounding decides. A lone step always shows. The floor is the share at which
+ * the first and last labels hold five characters: ten characters less a marker.
+ */
+function labelsShown(rail, label, count, gutter) {
+  if (count === 1) return true
+  const marker = rail.querySelector('.swz-mark').getBoundingClientRect().width
+  const share = (rail.getBoundingClientRect().width - marker) / (count - 1) - gutter
+  const room = share - (10 * characterWidth(label) - marker)
+  return Math.abs(room) <= TOLERANCE ? null : room > 0
+}
+
 /** Every way the labels of one frame break the rule, as readable lines. Empty when none. */
 function labelProblems(section, width, gutter) {
   const name = section.getAttribute('aria-label')
   const problems = []
-  const rail = section.querySelector('.swz-rail').getBoundingClientRect()
+  const railElement = section.querySelector('.swz-rail')
+  const rail = railElement.getBoundingClientRect()
   const cells = [...section.querySelectorAll('.swz-step')]
-  const shown = cells.length <= LABELS_SHOWN_UP_TO[width]
+  const shown = labelsShown(railElement, cells[0].querySelector('.swz-label'), cells.length, gutter)
+  const anchored = cells.length <= ALWAYS_SHOWN_UP_TO ? true : width === 'narrow' && cells.length === NARROW_NEVER_SHOWN_AT ? false : null
   let previous = null
   cells.forEach((cell, index) => {
     const label = cell.querySelector('.swz-label')
@@ -212,8 +243,11 @@ function labelProblems(section, width, gutter) {
       problems.push(`${name}: label ${index + 1} is not anchored for its place (${place}): off by ${expected.toFixed(1)}px`)
     }
     const visible = box.width > 0 && box.height > 0
-    if (visible !== shown) {
-      problems.push(`${name}: label ${index + 1} is ${visible ? 'shown' : 'hidden'} but the ${width} frame ${shown ? 'shows' : 'hides'} labels at ${cells.length} steps`)
+    if (shown !== null && visible !== shown) {
+      problems.push(`${name}: label ${index + 1} is ${visible ? 'shown' : 'hidden'} but the rail's share ${shown ? 'holds' : 'is under'} the floor at ${cells.length} steps`)
+    }
+    if (anchored !== null && visible !== anchored) {
+      problems.push(`${name}: label ${index + 1} is ${visible ? 'shown' : 'hidden'} but ${cells.length} steps on the ${width} frame ${anchored ? 'always show' : 'never show'} their labels, in any face`)
     }
     if (visible) {
       if (label.scrollWidth > label.clientWidth + 1 || label.scrollHeight > label.clientHeight + 1) {
