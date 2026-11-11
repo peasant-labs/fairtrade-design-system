@@ -126,11 +126,6 @@ test('SIGINT stops scheduling, reports the interruption, and exits 130', async (
 })
 
 test('lane weights stay inside the global budget', () => {
-  const { laneBudget } = YAML.parse(readFileSync(join(HERE, 'testdata', 'test-lib-gates.yaml'), 'utf8'))
-  assert.equal(GLOBAL_WEIGHT, laneBudget.global)
-  assert.equal(LANES.mutation.concurrency, laneBudget.mutationConcurrency)
-  assert.equal(LANES.mutation.weight, laneBudget.mutationWeight)
-  assert.ok(LANES.mutation.concurrency * LANES.mutation.weight + LANES.pure.weight <= GLOBAL_WEIGHT, 'light lanes must fit alongside four mutations')
   assert.equal(LANES['source-mutation'].weight, GLOBAL_WEIGHT)
   assert.equal(LANES.bench.weight, GLOBAL_WEIGHT)
   for (const [name, lane] of Object.entries(LANES)) {

@@ -50,22 +50,19 @@ export const LANES = Object.freeze({
   pure: { concurrency: 6, weight: 1, timeoutMs: 600_000 },
   ssr: { concurrency: 3, weight: 1, timeoutMs: 600_000 },
   mounted: { concurrency: 2, weight: 3, timeoutMs: 600_000 },
-  // A 4-vCPU, 16 GB hosted runner can run four orchestrators, each holding
-  // one mounted-gate child. Reserve 8 of 10 units, leaving two for lighter
-  // lanes; the exclusive source writers and benchmark still hold all 10.
-  mutation: { concurrency: 4, weight: 2, timeoutMs: 900_000 },
+  mutation: { concurrency: 3, weight: 2, timeoutMs: 900_000 },
   // These gates temporarily rewrite a tracked source file and restore it.
   // They hold the whole global budget so no other reader can observe the
   // half-applied mutation; the serial chain had the same ordering by accident.
-  'source-mutation': { concurrency: 1, weight: 10, timeoutMs: 600_000 },
+  'source-mutation': { concurrency: 1, weight: 8, timeoutMs: 600_000 },
   pack: { concurrency: 1, weight: 1, timeoutMs: 300_000 },
   // The benchmark asserts absolute timing ceilings, so it holds the whole
   // budget exactly like the old serial chain ran it alone.
-  bench: { concurrency: 1, weight: 10, timeoutMs: 600_000 },
+  bench: { concurrency: 1, weight: 8, timeoutMs: 600_000 },
   vitest: { concurrency: 1, weight: 1, timeoutMs: 600_000 },
 })
 
-export const GLOBAL_WEIGHT = 10
+export const GLOBAL_WEIGHT = 8
 
 const MUTATION_RE = /parts-mutations\.mjs|\.mutations\.mjs/
 const PACK_RE = /packed-tarball|assert-pack-contents/

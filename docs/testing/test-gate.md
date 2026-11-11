@@ -28,15 +28,14 @@ without a second hand list.
 | `pure` | 6 | 1 | Node-only fixture and source tests |
 | `ssr` | 3 | 1 | built-export and static-render tests |
 | `mounted` | 2 | 3 | Vite + jsdom mounts and browser probes |
-| `mutation` | 4 | 2 | mutation orchestrators in their own child processes |
-| `source-mutation` | 1 | 10 | gates that rewrite a tracked source file and restore it |
+| `mutation` | 3 | 2 | mutation orchestrators in their own child processes |
+| `source-mutation` | 1 | 8 | gates that rewrite a tracked source file and restore it |
 | `pack` | 1 | 1 | tarball and packed-content checks (shared pnpm store) |
-| `bench` | 1 | 10 | the timing benchmark (absolute ceilings, so it runs alone) |
+| `bench` | 1 | 8 | the timing benchmark (absolute ceilings, so it runs alone) |
 | `vitest` | 1 | 1 | the Vitest pilot project |
 
-A weighted semaphore (capacity 10) bounds total memory across lanes. Four
-mutation orchestrators reserve eight units, leaving two for lighter work on
-the 4-vCPU, 16 GB hosted runner. Each holds one mounted-gate child process. The
+A weighted semaphore (capacity 8) bounds the scheduling budget across lanes.
+Weights are shares of that budget, not memory measurements. The
 `source-mutation` lane holds the whole budget, so `timeline-a11y`,
 `timeline-ghosts`, and `timeline-highlight` cannot expose a half-applied
 `src/ui/graph` mutation to a reader such as `insight-panel`. A post-run `src/`
@@ -57,12 +56,15 @@ expected diagnostic; ordinary runs still collect every failure. An interleaved
 local A/B of 36 orchestrator pairs measured 815.0s before and 639.9s after,
 with the same 360 mutants killed. The CI test step also uses a job-local Node
 compile cache, without restoring or saving it between jobs; local warm samples
-saved roughly 100–150ms per mutant. Finally, a local four-core pinned mutation
-lane measured 321s at concurrency three and 266s at four, with the same missing
-built-artifact failure in both arms. These are local measurements, not CI
-acceptance. Hosted CI wall time and the paired per-gate mutation-lane ratio
-against the 934s baseline must be measured after the PR runs; revert concurrency
-to three if the hosted result regresses.
+saved roughly 100-150ms per mutant. Local A/B measurements are one sample per
+arm, not CI acceptance. Mutation concurrency remains at three.
+
+Hosted `ubuntu-latest` runners have 4 vCPU, 16 GB and AMD EPYC processors; the
+self-hosted microVM pool has 6 vCPU and 8 GB on a Ryzen 9 7950X3D host shared
+with the maintainer's desktop, so pool timings move with host load. Same-class
+`lib` test-step baselines are 568-935s hosted and 406-577s microVM. Measure CI
+wall time and the paired per-gate mutation-lane ratio after the PR runs, always
+against a baseline on the same runner class, never across classes.
 
 ## Fairtest mounted rows
 
@@ -209,9 +211,8 @@ runs (100 per theme), 400/400 disclosure cases at 20 repeats per theme, and
 320/320 rail/shell cases at 20 repeats per theme. The job ceiling rises to 40
 minutes so the slower fallback runner has headroom.
 
-The current serial chain expands to 147 unique gates: the 146-gate row records
-the measurement taken when the lane runner landed, and the generated-artifact
-freshness test adds one more gate without changing the lane budget.
+The current serial chain expands to 155 unique gates; the 146-gate row records
+the measurement taken when the lane runner landed.
 
 ## Known limitation
 
