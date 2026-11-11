@@ -23,8 +23,8 @@ const ARTIFACTS = 'scripts/journey/.artifacts'
 const [VIEWPORT_W, VIEWPORT_H] = (process.env.JOURNEY_VIEWPORT || '1280x720').split('x').map(Number)
 
 const SCREENSHOT = process.env.JOURNEY_SCREENSHOT === 'off' ? 'only-on-failure' : 'on'
-const TRACE = process.env.JOURNEY_TRACE === '1' ? 'on' : 'on-first-retry'
-const VIDEO = process.env.JOURNEY_VIDEO === '1' ? 'on' : 'on-first-retry'
+const TRACE = process.env.JOURNEY_TRACE === '1' ? 'on' : process.env.CI ? 'on-first-retry' : 'retain-on-failure'
+const VIDEO = process.env.JOURNEY_VIDEO === '1' ? 'on' : process.env.CI ? 'on-first-retry' : 'retain-on-failure'
 const HTML = process.env.JOURNEY_HTML !== '0'
 
 /* Both servers run under scripts/journey/serve-supervised.mjs, which runs the

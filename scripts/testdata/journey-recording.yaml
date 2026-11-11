@@ -1,6 +1,11 @@
 cases:
-  - {name: default, trace: '', video: '', screenshot: '', expectedTrace: on-first-retry, expectedVideo: on-first-retry, fairtestTrace: retain-on-failure, fairtestVideo: retain-on-failure, expectedScreenshot: on}
-  - {name: forced-recording, trace: '1', video: '1', screenshot: 'off', expectedTrace: on, expectedVideo: on, fairtestTrace: on, fairtestVideo: on, expectedScreenshot: only-on-failure}
+  - {name: default, trace: '', video: '', screenshot: '', forceTrace: false, forceVideo: false, fairtestTrace: retain-on-failure, fairtestVideo: retain-on-failure, expectedScreenshot: on}
+  - {name: forced-recording, trace: '1', video: '1', screenshot: 'off', forceTrace: true, forceVideo: true, fairtestTrace: on, fairtestVideo: on, expectedScreenshot: only-on-failure}
+  - {name: forced-trace, trace: '1', video: '', screenshot: '', forceTrace: true, forceVideo: false, fairtestTrace: on, fairtestVideo: retain-on-failure, expectedScreenshot: on}
+  - {name: forced-video, trace: '', video: '1', screenshot: '', forceTrace: false, forceVideo: true, fairtestTrace: retain-on-failure, fairtestVideo: on, expectedScreenshot: on}
+environments:
+  - {name: local, ci: '', expectedRecording: retain-on-failure, expectedRetries: 0}
+  - {name: ci, ci: '1', expectedRecording: on-first-retry, expectedRetries: 1}
 mutations:
   - {name: zero-retry-trace, trace: on-first-retry, video: retain-on-failure, expected: trace}
   - {name: zero-retry-video, trace: retain-on-failure, video: on-first-retry, expected: video}
