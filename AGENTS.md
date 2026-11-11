@@ -93,7 +93,7 @@ annotated tag
 `fairtrade-vX.Y.Z[-rcN]` on the merge SHA. Do not create manual tags for future releases and
 never move or delete a release tag. A failed run can be retried with `workflow_dispatch`, whose
 only input is the number of an already-merged PR; it does not accept a SHA, version, or tag.
-Release PR CI runs canonical `pnpm prepack` in the required `lib` job instead of `build:lib`.
+Every PR runs canonical `pnpm prepack` in the required `lib` job instead of `build:lib`.
 `pnpm test:lib` runs the library tests, mutations, and built Pi rendering check in CI after building the artifact.
 **Pushing the App-authenticated tag publishes**: `.github/workflows/npm-publish.yml` runs `prepack`
 (package metadata validation, `build:lib`, and tarball-content checks) and publishes `@peasant-labs/fairtrade` via **npm

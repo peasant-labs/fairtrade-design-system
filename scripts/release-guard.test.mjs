@@ -33,6 +33,14 @@ const requiredGitMutations = new Map([
   ['a forced push moves the release tag', 'force_push'],
   ['a delete and re-push moves the release tag', 'delete_then_push'],
 ])
+const requiredWorkflowMutations = new Map([
+  ['unconditional prefix', 'tag_if'],
+  ['missing merged condition', 'tag_if'],
+  ['weakened validate condition', 'validate_if'],
+  ['re-adding edited to ci.yml is rejected', 'ci_pr_types'],
+  ['re-gating prepack on the title is rejected', 'prepack_if'],
+  ['cancelling in-progress runs on edited is rejected', 'release_concurrency'],
+])
 
 function object(value, where) { assert.ok(value && typeof value === 'object' && !Array.isArray(value), `${where} must be an object`); return value }
 function array(value, where, min) { assert.ok(Array.isArray(value) && value.length >= min, `${where} must contain at least ${min} rows`); return value }
@@ -65,9 +73,11 @@ function validateFixtures(f) {
   for (const row of f.github.native_stack.loader_invalid) { keys(row, ['name', 'operation', 'scenario', 'replacement'], 'github.native_stack.loader_invalid row'); string(row.operation, `github.native_stack.loader_invalid.${row.name}.operation`); string(row.scenario, `github.native_stack.loader_invalid.${row.name}.scenario`); assert.ok(requiredNativeStackMutations.has(row.scenario), `github.native_stack.loader_invalid.${row.name} scenario must name a required case`); assert.ok(['delete', 'replace', 'unknown_dispatch'].includes(row.operation), `github.native_stack.loader_invalid.${row.name} operation is unknown`); if (row.operation === 'delete') assert.equal(row.replacement, null, `github.native_stack.loader_invalid.${row.name}.replacement must be null`); else string(row.replacement, `github.native_stack.loader_invalid.${row.name}.replacement`) }
   named(array(f.github.pagination, 'github.pagination', 2), 'github.pagination')
   for (const row of f.github.pagination) { keys(row, ['name', 'responses', 'approved', 'expected_paths'], 'pagination row'); array(row.responses, 'pagination responses', 3); array(row.expected_paths, 'pagination expected_paths', 3); for (const response of row.responses) keys(response, response.link === undefined ? ['body'] : ['body', 'link'], 'response') }
-  keys(f.workflow, ['ci_pr_types', 'prepack_if', 'build_if', 'ci_selection', 'validate_if', 'tag_if', 'release_needles', 'publish_needles', 'mutations'], 'workflow'); string(f.workflow.validate_if, 'workflow.validate_if'); string(f.workflow.tag_if, 'workflow.tag_if'); array(f.workflow.release_needles, 'workflow.release_needles', 10); array(f.workflow.publish_needles, 'workflow.publish_needles', 2); named(array(f.workflow.mutations, 'workflow.mutations', 3), 'workflow.mutations'); for (const row of f.workflow.mutations) keys(row, ['name', 'target', 'replacement'], 'workflow mutation')
-  assert.deepEqual([...f.workflow.ci_pr_types].sort(), ['edited', 'opened', 'reopened', 'synchronize'], 'CI must preserve default PR events and recheck title edits')
-  string(f.workflow.prepack_if, 'workflow.prepack_if'); string(f.workflow.build_if, 'workflow.build_if')
+  keys(f.workflow, ['ci_pr_types', 'ci_selection', 'validate_if', 'tag_if', 'release_concurrency', 'release_needles', 'publish_needles', 'mutations'], 'workflow'); string(f.workflow.validate_if, 'workflow.validate_if'); string(f.workflow.tag_if, 'workflow.tag_if'); string(f.workflow.release_concurrency, 'workflow.release_concurrency'); array(f.workflow.release_needles, 'workflow.release_needles', 10); array(f.workflow.publish_needles, 'workflow.publish_needles', 2); named(array(f.workflow.mutations, 'workflow.mutations', 6), 'workflow.mutations'); for (const row of f.workflow.mutations) keys(row, ['name', 'target', 'replacement'], 'workflow mutation')
+  assert.deepEqual([...f.workflow.ci_pr_types].sort(), ['opened', 'reopened', 'synchronize'], 'CI runs on open, synchronize, and reopen without rechecking title edits')
+  const workflowCases = new Map()
+  for (const row of f.workflow.mutations) { string(row.name, `workflow.mutations.${row.name}.name`); string(row.target, `workflow.mutations.${row.name}.target`); assert.ok(['tag_if', 'validate_if', 'ci_pr_types', 'prepack_if', 'release_concurrency'].includes(row.target), `workflow.mutations.${row.name} has unknown target ${row.target}`); if (row.target === 'ci_pr_types') assert.ok(Array.isArray(row.replacement), `workflow.mutations.${row.name} replacement must be an array`); else if (row.target === 'release_concurrency') assert.equal(row.replacement, true, `workflow.mutations.${row.name} replacement must be true`); else string(row.replacement, `workflow.mutations.${row.name}.replacement`); workflowCases.set(row.name, row.target) }
+  for (const [name, target] of requiredWorkflowMutations) assert.equal(workflowCases.get(name), target, `workflow.mutations must retain required scenario ${name} with target ${target}`)
   named(array(f.workflow.ci_selection, 'workflow.ci_selection', 1), 'workflow.ci_selection')
   for (const name of ['final release PR', 'candidate release PR', 'release prefix still requires exact release guard', 'ordinary PR', 'embedded release title', 'push without PR metadata', 'manual run without PR metadata']) {
     assert.ok(f.workflow.ci_selection.some(row => row.name === name), `workflow.ci_selection must retain required scenario ${name}`)
@@ -75,7 +85,7 @@ function validateFixtures(f) {
   for (const row of f.workflow.ci_selection) {
     keys(row, ['name', 'event_name', 'title', 'command'], 'workflow.ci_selection row')
     string(row.event_name, 'ci event_name'); if (row.title !== null) string(row.title, 'ci title')
-    assert.ok(['pnpm prepack', 'pnpm build:lib'].includes(row.command), 'ci command must use a canonical package script')
+    assert.equal(row.command, 'pnpm prepack', 'ci command must be the canonical prepack script')
   }
   keys(f.git, ['tag', 'first_message', 'second_message', 'mutations'], 'git'); for (const field of ['tag', 'first_message', 'second_message']) string(f.git[field], `git.${field}`)
   named(array(f.git.mutations, 'git.mutations', 2), 'git.mutations')
@@ -190,14 +200,12 @@ test('paginated latest review state wins in API order', async () => {
 })
 
 function normalizeIf(value) { return value.replace(/\s+/g, ' ').trim() }
-test('required library CI selects prepack only for release pull requests', () => {
-  const ci = YAML.parse(fs.readFileSync(path.join(root, '.github/workflows/ci.yml'), 'utf8'))
+function assertLibContract(ci) {
   assert.deepEqual(ci.on.pull_request.types, fixtures.workflow.ci_pr_types)
   const lib = ci.jobs.lib
   const builds = lib.steps.filter(step => ['pnpm prepack', 'pnpm build:lib'].includes(step.run))
-  assert.deepEqual(builds.map(step => step.run).sort(), ['pnpm build:lib', 'pnpm prepack'])
-  assert.equal(normalizeIf(builds.find(step => step.run === 'pnpm prepack').if), fixtures.workflow.prepack_if)
-  assert.equal(normalizeIf(builds.find(step => step.run === 'pnpm build:lib').if), fixtures.workflow.build_if)
+  assert.deepEqual(builds.map(step => step.run), ['pnpm prepack'])
+  assert.equal(builds[0].if, undefined)
   assert.notEqual(lib['continue-on-error'], true)
   for (const step of builds) assert.notEqual(step['continue-on-error'], true)
   const pack = lib.steps.find(step => step.run === 'pnpm pack:check')
@@ -216,17 +224,19 @@ test('required library CI selects prepack only for release pull requests', () =>
   assert.doesNotMatch(scripts['build:lib'], /\btest:|\.test\./)
   assert.equal(scripts['prebuild:lib'], undefined)
   for (const row of fixtures.workflow.ci_selection) {
-    const github = { event_name: row.event_name, event: row.title === null ? {} : { pull_request: { title: row.title } } }
-    // These pinned conditions use the same boolean/string subset as JavaScript.
-    const selected = builds.filter(step => runInNewContext(step.if, { github, startsWith: (value, prefix) => value.startsWith(prefix) }))
-    assert.deepEqual(selected.map(step => step.run), [row.command], row.name)
+    assert.equal(row.command, 'pnpm prepack', row.name)
   }
+}
+test('required library CI runs canonical prepack on every pull request', () => {
+  const ci = YAML.parse(fs.readFileSync(path.join(root, '.github/workflows/ci.yml'), 'utf8'))
+  assertLibContract(ci)
 })
 
 function assertWorkflowContract(release, publish, releaseText, publishText) {
   const trigger = release.on ?? release.true; assert.deepEqual(trigger.pull_request.types, ['opened', 'edited', 'synchronize', 'reopened', 'closed']); assert.deepEqual(trigger.pull_request.branches, ['main'])
   assert.deepEqual(Object.keys(trigger.workflow_dispatch.inputs), ['pr_number']); assert.deepEqual(trigger.workflow_dispatch.inputs.pr_number, { description: 'Already-merged release PR number to retry', required: true, type: 'number' })
   assert.deepEqual(release.permissions, { contents: 'read', 'pull-requests': 'read' }); assert.equal(normalizeIf(release.jobs.validate.if), fixtures.workflow.validate_if); assert.equal(normalizeIf(release.jobs.tag.if), fixtures.workflow.tag_if)
+  assert.equal(normalizeIf(String(release.concurrency['cancel-in-progress'])), fixtures.workflow.release_concurrency)
   for (const needle of fixtures.workflow.release_needles) assert.ok(releaseText.includes(needle), `missing release workflow contract: ${needle}`)
   assert.doesNotMatch(releaseText, /git (?:push|tag)[^\n]*(?:--force|-f\b)/)
   const publishTrigger = publish.on ?? publish.true; assert.deepEqual(publishTrigger.push.tags, ['fairtrade-v*']); assert.equal(publish.jobs['npm-publish'].environment, 'npm-publish'); assert.equal(publish.jobs['npm-publish'].permissions['id-token'], 'write')
@@ -234,9 +244,17 @@ function assertWorkflowContract(release, publish, releaseText, publishText) {
 }
 
 test('workflow control flow and release invariants are exact and mutation-proven', () => {
+  const ciText = fs.readFileSync(path.join(root, '.github/workflows/ci.yml'), 'utf8'); const ci = YAML.parse(ciText)
   const releaseText = fs.readFileSync(path.join(root, '.github/workflows/release-pr.yml'), 'utf8'); const publishText = fs.readFileSync(path.join(root, '.github/workflows/npm-publish.yml'), 'utf8'); const release = YAML.parse(releaseText); const publish = YAML.parse(publishText)
+  assertLibContract(ci)
   assertWorkflowContract(release, publish, releaseText, publishText)
-  for (const mutation of fixtures.workflow.mutations) { const changed = structuredClone(release); changed.jobs[mutation.target === 'tag_if' ? 'tag' : 'validate'].if = mutation.replacement; assert.throws(() => assertWorkflowContract(changed, publish, YAML.stringify(changed), publishText), { name: 'AssertionError' }, mutation.name) }
+  for (const mutation of fixtures.workflow.mutations) {
+    if (mutation.target === 'tag_if' || mutation.target === 'validate_if') { const changed = structuredClone(release); changed.jobs[mutation.target === 'tag_if' ? 'tag' : 'validate'].if = mutation.replacement; assert.throws(() => assertWorkflowContract(changed, publish, YAML.stringify(changed), publishText), { name: 'AssertionError' }, mutation.name) }
+    else if (mutation.target === 'ci_pr_types') { const changedCi = structuredClone(ci); changedCi.on.pull_request.types = mutation.replacement; assert.throws(() => assertLibContract(changedCi), { name: 'AssertionError' }, mutation.name) }
+    else if (mutation.target === 'prepack_if') { const changedCi = structuredClone(ci); changedCi.jobs.lib.steps.find(step => step.run === 'pnpm prepack').if = mutation.replacement; assert.throws(() => assertLibContract(changedCi), { name: 'AssertionError' }, mutation.name) }
+    else if (mutation.target === 'release_concurrency') { const changed = structuredClone(release); changed.concurrency['cancel-in-progress'] = mutation.replacement; assert.throws(() => assertWorkflowContract(changed, publish, YAML.stringify(changed), publishText), { name: 'AssertionError' }, mutation.name) }
+    else throw new Error(`workflow mutation ${mutation.name} has unknown target ${mutation.target}`)
+  }
 })
 
 /** Per-command signing opt-out, so no throwaway-repository git call can reach a signing agent. */

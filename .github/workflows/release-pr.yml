@@ -15,9 +15,12 @@ permissions:
   contents: read
   pull-requests: read
 
+# A body edit (`edited`) must queue behind a running run, not cancel it;
+# otherwise an edit after merge can cancel the `tag` job that mints the
+# release tag.
 concurrency:
   group: release-pr-${{ github.event.pull_request.number || inputs.pr_number }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event.action != 'edited' }}
 
 jobs:
   validate:

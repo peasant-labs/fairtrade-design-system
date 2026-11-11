@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, 'tier-**']
   pull_request:
-    types: [opened, synchronize, reopened, edited]
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 # read-only: this workflow validates the gates, it never deploys or writes Pages
@@ -56,14 +56,11 @@ jobs:
       - name: Contract type gate (wire contract + VM leak assertions)
         run: pnpm test:contract
 
-      # Build the library and declarations before testing the built artifact.
+      # Every PR validates the same packaging path npm publication uses:
+      # prepack is assert-package-provenance + build:lib + pack:check. The
+      # provenance assertion reads no title, version, or environment, so the
+      # step runs unconditionally and needs no `edited` trigger.
       - name: Build library (publishable artifact)
-        if: "!(github.event_name == 'pull_request' && startsWith(github.event.pull_request.title, 'release('))"
-        run: pnpm build:lib
-
-      # Release PRs validate the same packaging path npm publication uses.
-      - name: Validate release package (canonical prepack)
-        if: github.event_name == 'pull_request' && startsWith(github.event.pull_request.title, 'release(')
         run: pnpm prepack
 
       # Belt-and-suspenders: assert the npm tarball file set matches exports[].
