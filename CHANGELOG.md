@@ -4,6 +4,11 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.66
+
+- Pin `@peasant-labs/schema@0.49.0`, which publishes the kickstart node sets and the six additional harness identities. The provider policy and its brand marks already carried Grok Build, Devin Desktop, Cline, and Kiro; the older pin left those entries unreachable.
+- Replace the selection node-set tripwire with both-ways contract assertions: every schema member must be present on the client, every client member must be a legal schema value, and both lists stay assignable in the other direction.
+
 ## 0.0.64
 
 - Add `SelectionTree`, a server-grouped selection forest. The host supplies each node's kind, tri-state, and lock; the tree reports selected session ids and does not roll state up or regroup. Kinds and states are a frozen projection (`wire` and `label`) with boundary parsers. Unknown values are dropped and counted. Peasant /kickstart and /selection consume it after release; Village is not a consumer.
