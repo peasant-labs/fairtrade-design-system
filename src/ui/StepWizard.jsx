@@ -143,7 +143,6 @@ export function StepIndicator({
  * @param {ReadonlySet<string>} [props.completed]   ids of finished steps
  * @param {ReadonlySet<string>} [props.reachable]   ids the user may jump to
  * @param {(id: string) => void} [props.onJump]  called with a step id when a reachable/complete marker is activated
- * @param {string} [props['aria-label']]    accessible name for the frame (default "step wizard")
  * @param {string} [props.progressLabel]    accessible name for the rail (default "<aria-label> progress")
  * @param {React.ReactNode} [props.head]    shown in the head, under the rail
  * @param {React.ReactNode} [props.footStart]  the foot's start slot (typically back)
@@ -151,6 +150,9 @@ export function StepIndicator({
  * @param {React.HTMLAttributes<HTMLDivElement>} [props.bodyProps]  attributes for the body region (id, role, aria-label, tabIndex)
  * @param {string} [props.className]        extra class on the frame, for a host that sizes it
  * @param {React.ReactNode} [props.children]  the body
+ * @param {string} [props['aria-label']]    accessible name for the frame (default "step wizard"). last in this list on purpose: the
+ *   declaration generator stops reading a destructured props list at a quoted name, so every prop after it would be lost to a TypeScript host.
+ *   a host passes `aria-label` as a JSX attribute, which TypeScript does not check against the props type.
  */
 export function StepWizardFrame({
   steps,

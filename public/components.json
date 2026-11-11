@@ -1659,13 +1659,16 @@
       "file": "src/ui/StepWizard.jsx",
       "exports": [
         "StepWizard",
-        "StepIndicator"
+        "StepIndicator",
+        "StepWizardFrame"
       ],
       "doc": "",
       "props": {},
       "stories": [
         "Default",
-        "Indicator"
+        "Indicator",
+        "Controlled",
+        "LabelsInsideFrame"
       ]
     },
     {
