@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import test from 'node:test'
@@ -126,10 +126,33 @@ test('SIGINT stops scheduling, reports the interruption, and exits 130', async (
 })
 
 test('lane weights stay inside the global budget', () => {
+  const { laneBudget } = YAML.parse(readFileSync(join(HERE, 'testdata', 'test-lib-gates.yaml'), 'utf8'))
+  assert.equal(GLOBAL_WEIGHT, laneBudget.global)
+  assert.equal(LANES.mutation.concurrency, laneBudget.mutationConcurrency)
+  assert.equal(LANES.mutation.weight, laneBudget.mutationWeight)
+  assert.ok(LANES.mutation.concurrency * LANES.mutation.weight + LANES.pure.weight <= GLOBAL_WEIGHT, 'light lanes must fit alongside four mutations')
   assert.equal(LANES['source-mutation'].weight, GLOBAL_WEIGHT)
   assert.equal(LANES.bench.weight, GLOBAL_WEIGHT)
   for (const [name, lane] of Object.entries(LANES)) {
     assert.ok(lane.weight >= 1 && lane.weight <= GLOBAL_WEIGHT, `${name} weight ${lane.weight} must be between 1 and ${GLOBAL_WEIGHT}`)
+  }
+})
+
+test('mounted reports stop only at the expected mutation diagnostic', () => {
+  const fixture = YAML.parse(readFileSync(join(HERE, 'testdata', 'mounted-report.yaml'), 'utf8'))
+  assert.deepEqual(fixture.cases.map((entry) => entry.name).sort(), ['base', 'diagnostic-first', 'malformed', 'unrelated-first'])
+  for (const entry of fixture.cases) {
+    const env = { ...process.env }
+    delete env.FAIRTRADE_PARTS_MUTATION
+    if (entry.mutation !== null) env.FAIRTRADE_PARTS_MUTATION = entry.mutation
+    const source = `import { createReport } from './scripts/mounted-parts.mjs';
+      const report = createReport('fixture gate');
+      for (const message of ${JSON.stringify(entry.checks)}) { console.log('ran: ' + message); report.check(false, message) }
+      report.finish('done');`
+    const result = spawnSync(process.execPath, ['--input-type=module', '-e', source], { cwd: ROOT, env, encoding: 'utf8' })
+    assert.equal(result.status, 1, `${entry.name}: ${result.stderr}`)
+    assert.equal(result.stdout.trim().split('\n').length, entry.ran, entry.name)
+    assert.equal(result.stderr.trim(), `fixture gate failed:\n${entry.failures.map((message) => `- ${message}`).join('\n')}`, entry.name)
   }
 })
 

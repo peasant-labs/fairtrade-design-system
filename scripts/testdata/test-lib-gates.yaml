@@ -4,6 +4,10 @@
 # list, so a duplicate or a dropped composite is visible before the set comparison.
 expectedLeafCount: 158
 expectedGateCount: 155
+laneBudget:
+  global: 10
+  mutationConcurrency: 4
+  mutationWeight: 2
 requiredGateCommands:
   - PI_MOUNTED_TEST=1 node scripts/pi-transcript.test.mjs
   - node --test scripts/check-generated-artifacts.test.mjs

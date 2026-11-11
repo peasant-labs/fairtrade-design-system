@@ -175,10 +175,21 @@ export function keydown(window, element, key, init = {}) {
 export function createReport(gate) {
   const failures = []
   let checks = 0
+  let diagnostic = ''
+  try {
+    const mutation = JSON.parse(process.env.FAIRTRADE_PARTS_MUTATION || 'null')
+    if (typeof mutation?.expectedDiagnostic === 'string') diagnostic = mutation.expectedDiagnostic
+  } catch {
+    // Invalid mutations retain the normal reporting path; the Vite plugin
+    // still reports malformed input when a mounted gate actually loads it.
+  }
   return {
     check(passed, message) {
       checks += 1
-      if (!passed) failures.push(message)
+      if (!passed) {
+        failures.push(message)
+        if (diagnostic && message.includes(diagnostic)) this.failIfAny()
+      }
     },
     failIfAny() {
       if (failures.length > 0) {
