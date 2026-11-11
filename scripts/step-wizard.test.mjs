@@ -80,11 +80,22 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(same(actual, row.expected), `${name}: the count must read ${JSON.stringify(row.expected)}, received ${JSON.stringify(actual)}`)
       await mounted.unmount()
     } else if (row.kind === 'names') {
-      const mounted = await mount(React.createElement(StepWizardFrame, frameProps(row), null))
+      // `component: wizard` mounts the uncontrolled wizard, which renders through the frame.
+      const element = row.component === 'wizard'
+        ? React.createElement(StepWizard, { steps: stepsOf(row.count), ...row.props }, stepsOf(row.count).map((step) => React.createElement('p', { key: step.id }, step.label)))
+        : React.createElement(StepWizardFrame, frameProps(row), null)
+      const mounted = await mount(element)
       const frame = mounted.container.firstElementChild
       const actual = { frame: frame.getAttribute('aria-label'), rail: frame.querySelector('nav')?.getAttribute('aria-label') }
       report.check(same(actual, row.expected), `${name}: the names must be ${JSON.stringify(row.expected)}, received ${JSON.stringify(actual)}`)
       await mounted.unmount()
+    } else if (row.kind === 'head') {
+      for (const head of row.heads) {
+        const mounted = await mount(React.createElement(StepWizardFrame, { ...frameProps(row), head }, null))
+        const slots = mounted.container.querySelectorAll('.swz-head-slot').length
+        report.check(slots === row.expected.slots, `${name}: head=${JSON.stringify(head)} must draw ${row.expected.slots} head slots, received ${slots}`)
+        await mounted.unmount()
+      }
     } else if (row.kind === 'jump') {
       const jumps = []
       const mounted = await mount(React.createElement(

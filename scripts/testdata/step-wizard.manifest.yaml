@@ -19,6 +19,9 @@ requiredCaseNames:
   - the rail is named after the frame by default
   - the rail keeps a name the host gives it
   - the frame and rail have names with no host label
+  - the wizard names its rail after itself by default
+  - the wizard names its rail after the name the host gives it
+  - an empty head draws no head slot
   - a reachable marker jumps and a locked one does not
   - the wizard walks continue and back through the frame
 
@@ -30,6 +33,8 @@ requiredMutationNames:
   - the count starts from zero
   - the frame drops the foot end slot
   - the frame drops the head slot
+  - a false head draws an empty slot
+  - the wizard names its rail apart from the frame
   - the wizard stops reporting completion
 mutations:
   - name: the first label is centred
@@ -64,9 +69,19 @@ mutations:
     expectedDiagnostic: "the frame lays out head, body and foot: the regions must be"
   - name: the frame drops the head slot
     file: src/ui/StepWizard.jsx
-    find: '{head != null && <div className="swz-head-slot">{head}</div>}'
+    find: '{hasHead && <div className="swz-head-slot">{head}</div>}'
     replace: "{null}"
     expectedDiagnostic: "the frame lays out head, body and foot: the regions must be"
+  - name: a false head draws an empty slot
+    file: src/ui/StepWizard.jsx
+    find: "head != null && typeof head !== 'boolean'"
+    replace: "head != null"
+    expectedDiagnostic: "an empty head draws no head slot: head=false must draw 0 head slots"
+  - name: the wizard names its rail apart from the frame
+    file: src/ui/StepWizard.jsx
+    find: "      aria-label={ariaLabel ?? 'step wizard'}\n"
+    replace: "      aria-label={ariaLabel ?? 'step wizard'}\n      progressLabel={ariaLabel ?? 'progress'}\n"
+    expectedDiagnostic: "the wizard names its rail after itself by default: the names must be"
   - name: the wizard stops reporting completion
     file: src/ui/StepWizard.jsx
     find: "onComplete?.({ completed: done })"

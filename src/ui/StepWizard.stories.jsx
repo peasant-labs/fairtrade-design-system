@@ -141,11 +141,12 @@ export const Controlled = {
    measures each label against its own rail: inside it, anchored to its marker (the first starts at
    the first marker's left edge, the last ends at the last marker's right edge, the rest are centred),
    clear of its neighbours, and not clipped. a rail too narrow for its first and last labels to hold
-   five characters hides all its labels from sight (they stay in the accessible name). the floor is
-   written in characters of the label's own face, and the face is whatever monospace the host has
-   (this story loads no font), so how many steps keep their labels differs between machines: the
-   play function measures one character and works the rule out for each frame, and two anchors hold in
-   any face (up to three steps always show, ten steps on the narrow frame never do). narrow is a phone:
+   five characters hides all its labels from sight, and they stay in the accessible name: the play
+   function asks for each marker by role and name, which leaves out anything hidden with `display` or
+   `visibility`. the floor is written in characters of the label's own face, and the face is whatever
+   monospace the host has (this story loads no font), so how many steps keep their labels differs
+   between machines: the play function reads the stylesheet's own floor at the label and works the rule
+   out for each frame, and two anchors hold in any face (up to three steps always show, ten steps on the narrow frame never do). narrow is a phone:
    ten 28px markers need about 280px of rail, so a narrower frame cannot hold ten steps at all. */
 const MATRIX_LABELS = ['welcome', 'projects', 'sessions', 'redaction', 'review', 'license', 'collectives', 'share', 'confirm', 'done']
 const MATRIX_COUNTS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -197,10 +198,14 @@ function placeOf(label) {
   return modifier ? modifier.slice('swz-label--'.length) : ''
 }
 
-/** One character of the label's own face in px: the `ch` the stylesheet writes its floor in. */
-function characterWidth(label) {
+/**
+ * The floor the stylesheet hides labels under, in px: its own `--swz-label-floor`, resolved at the
+ * label so `ch` is the label's own face. A probe is the only way to read it, because a custom
+ * property that holds a calc is not resolved until it is used as a length.
+ */
+function labelFloor(label) {
   const probe = document.createElement('span')
-  probe.style.cssText = 'position: absolute; visibility: hidden; width: 1ch'
+  probe.style.cssText = 'position: absolute; visibility: hidden; width: var(--swz-label-floor)'
   label.appendChild(probe)
   const width = probe.getBoundingClientRect().width
   probe.remove()
@@ -209,14 +214,14 @@ function characterWidth(label) {
 
 /**
  * Whether a rail should show its labels: true or false, or null when the share sits within half a
- * pixel of the floor and rounding decides. A lone step always shows. The floor is the share at which
- * the first and last labels hold five characters: ten characters less a marker.
+ * pixel of the floor and rounding decides. A lone step always shows. A middle label's share is the
+ * distance between neighbouring marker centres, less the gutter.
  */
 function labelsShown(rail, label, count, gutter) {
   if (count === 1) return true
   const marker = rail.querySelector('.swz-mark').getBoundingClientRect().width
   const share = (rail.getBoundingClientRect().width - marker) / (count - 1) - gutter
-  const room = share - (10 * characterWidth(label) - marker)
+  const room = share - labelFloor(label)
   return Math.abs(room) <= TOLERANCE ? null : room > 0
 }
 
@@ -229,6 +234,7 @@ function labelProblems(section, width, gutter) {
   const cells = [...section.querySelectorAll('.swz-step')]
   const shown = labelsShown(railElement, cells[0].querySelector('.swz-label'), cells.length, gutter)
   const anchored = cells.length <= ALWAYS_SHOWN_UP_TO ? true : width === 'narrow' && cells.length === NARROW_NEVER_SHOWN_AT ? false : null
+  const canvas = within(section)
   let previous = null
   cells.forEach((cell, index) => {
     const label = cell.querySelector('.swz-label')
@@ -243,6 +249,13 @@ function labelProblems(section, width, gutter) {
       problems.push(`${name}: label ${index + 1} is not anchored for its place (${place}): off by ${expected.toFixed(1)}px`)
     }
     const visible = box.width > 0 && box.height > 0
+    // shown or hidden from sight, the label stays in its marker's accessible name. the role query
+    // leaves out content hidden with display or visibility, so a label hidden that way is missing here.
+    const text = label.textContent.trim()
+    const named = canvas.queryAllByRole('button', { name: (accessibleName, element) => element === cell && accessibleName.includes(text) })
+    if (named.length !== 1) {
+      problems.push(`${name}: label ${index + 1} (${JSON.stringify(text)}) is not in its marker's accessible name`)
+    }
     if (shown !== null && visible !== shown) {
       problems.push(`${name}: label ${index + 1} is ${visible ? 'shown' : 'hidden'} but the rail's share ${shown ? 'holds' : 'is under'} the floor at ${cells.length} steps`)
     }

@@ -202,18 +202,17 @@
   flex-direction: column;
   border: var(--bd);
   background: var(--surface);
-  /* the frame is a real <section>, so on the presentation page it would inherit that page's bare
-     section rule (a width cap, auto margins, side padding). the library ships no such rule, and
-     the frame fills its host: say so here, the way the transcript's section does. */
-  max-width: none;
-  margin-inline: 0;
-  padding-inline: 0;
 }
 
 .swz-head {
   padding: var(--sp-5) var(--sp-5) var(--sp-4);
   border-bottom: var(--bd);
 }
+
+/* a host that shrinks the frame (a flex or grid item with min-width: 0) shrinks its regions with it. */
+.swz-head,
+.swz-body,
+.swz-foot { min-width: 0; }
 
 /* whatever the host puts under the rail sits one step below it. */
 .swz-head-slot { margin-top: var(--sp-3); }

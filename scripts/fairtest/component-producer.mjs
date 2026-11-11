@@ -989,10 +989,11 @@ async function requireComponentRenderSettled(page, story) {
  */
 async function readComponentFact(page, expectation) {
   const root = page.locator(COMPONENT_SELECTORS.root)
+  const scope = expectation.scope === undefined ? root : root.locator(expectation.scope)
   const role = expectation.role
   const found = role
-    ? root.getByRole(/** @type {Parameters<import('@playwright/test').Locator['getByRole']>[0]} */ (role.role), { name: role.name, exact: role.exact !== false })
-    : root.locator(/** @type {string} */ (expectation.selector))
+    ? scope.getByRole(/** @type {Parameters<import('@playwright/test').Locator['getByRole']>[0]} */ (role.role), { name: role.name, exact: role.exact !== false })
+    : scope.locator(/** @type {string} */ (expectation.selector))
   const count = await found.count()
   const first = found.first()
   /** @type {Record<string, unknown>} */
@@ -1188,10 +1189,11 @@ async function performComponentAction(page, story, action) {
     )
   }
   const root = page.locator(COMPONENT_SELECTORS.root)
+  const scope = action.target.scope === undefined ? root : root.locator(action.target.scope)
   const role = action.target.role
   const locator = (role
-    ? root.getByRole(/** @type {Parameters<import('@playwright/test').Locator['getByRole']>[0]} */ (role.role), { name: role.name, exact: role.exact !== false })
-    : root.locator(/** @type {string} */ (action.target.selector))).first()
+    ? scope.getByRole(/** @type {Parameters<import('@playwright/test').Locator['getByRole']>[0]} */ (role.role), { name: role.name, exact: role.exact !== false })
+    : scope.locator(/** @type {string} */ (action.target.selector))).first()
   try {
     if (action.kind === 'key') {
       await locator.focus({ timeout: COMPONENT_ACTION_TIMEOUT_MS })

@@ -59,6 +59,11 @@ function labelPlace(index, count) {
  * overlap. When the rail is too narrow for its first and last labels to hold five characters, the
  * labels are hidden from sight and stay in the accessible name; the numbers carry the rail.
  *
+ * The rail is the container its label shares are measured against (`container-type: inline-size`),
+ * so it needs a host with a definite inline size: a block, a grid track, or a flex item that has
+ * a width. In a shrink-to-fit host (an inline-flex box, or an absolutely positioned box with
+ * `width: auto`) it collapses to zero width.
+ *
  * @param {Object} props
  * @param {WizardStep[]} props.steps        the ordered steps
  * @param {string} props.current            id of the active step
@@ -170,6 +175,8 @@ export function StepWizardFrame({
   children,
 }) {
   const position = steps.findIndex((step) => step.id === current) + 1
+  // React draws nothing for null, undefined or a boolean, so none of them earns a slot (and its margin).
+  const hasHead = head != null && typeof head !== 'boolean'
   const { className: bodyClassName, ...bodyRest } = bodyProps ?? {}
   return (
     <section className={className ? `swz ${className}` : 'swz'} aria-label={ariaLabel}>
@@ -182,7 +189,7 @@ export function StepWizardFrame({
           onJump={onJump}
           aria-label={progressLabel ?? `${ariaLabel} progress`}
         />
-        {head != null && <div className="swz-head-slot">{head}</div>}
+        {hasHead && <div className="swz-head-slot">{head}</div>}
       </div>
 
       <div {...bodyRest} className={bodyClassName ? `swz-body ${bodyClassName}` : 'swz-body'}>
@@ -229,7 +236,7 @@ export function StepWizardFrame({
  * @param {string} [props.continueLabel='continue']  primary label for non-final steps
  * @param {string} [props.submitLabel='submit']      primary label for the final step
  * @param {string} [props.backLabel='back']          secondary (back) label
- * @param {string} [props['aria-label']]  accessible name for the rail
+ * @param {string} [props['aria-label']]  accessible name for the wizard (default "step wizard"); its rail is named "<aria-label> progress"
  */
 export default function StepWizard({
   steps,
@@ -298,7 +305,6 @@ export default function StepWizard({
       reachable={reachable}
       onJump={goTo}
       aria-label={ariaLabel ?? 'step wizard'}
-      progressLabel={ariaLabel ?? 'progress'}
       bodyProps={{
         id: panelId,
         role: 'group',
