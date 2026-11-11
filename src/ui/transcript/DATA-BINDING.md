@@ -24,6 +24,12 @@ present; nullable canonical `turns` becomes an empty list. Both data modules car
 `adaptTranscript(durablePayload, annotations, analytics, options)` validates the complete
 evidence-bearing value with schema's `parseSessionDetailPayloadValue` before filtering. Hosts
 must still use the canonical text parser at the network boundary for lexical JSON validation.
+For published content, hosts must first validate the complete envelope using schema's
+`parseTranscriptContentText`, then pass its `sessionDetail` with
+`{ payloadMode: 'published' }` as the adapter's fourth argument. Published mode trusts that
+validated detail and skips the incompatible local parser; it must not be used on unvalidated
+input. The default is `local`. `TranscriptViewer` accepts only the resulting `viewModel`, not
+wire payloads, so it needs no payload-mode prop.
 Do not pass the flat read DTO as durable content: separate `relationshipNavigation` into
 `options.relationshipNavigation`. Village supplies this option from metadata, not from `/content`.
 
