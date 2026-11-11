@@ -741,7 +741,7 @@ function inspectJourneyWorkflow(text) {
     if (steps.indexOf(stepByName(steps, name)) > steps.indexOf(journey)) workflowFail(name, `the ${name} step must precede the journey`)
   }
   const artifacts = steps.filter((entry) => entry.name === 'Upload Storybook build on failure')
-  if (artifacts.length !== 1 || artifacts[0].with?.name !== 'storybook-static-${{ matrix.project }}') {
+  if (artifacts.length !== 1 || artifacts[0].with?.name !== 'storybook-static-${{ matrix.project }}-${{ github.run_id }}-${{ github.run_attempt }}') {
     workflowFail('storybook-static', 'the Storybook failure artifact must be unique to each project')
   }
   const timelines = steps.filter((entry) => entry.name === 'Timeline route gate (production build + source mutation)' || (typeof entry.run === 'string' && entry.run.includes('pnpm test:timeline-rendered')))
@@ -757,8 +757,8 @@ function inspectJourneyWorkflow(text) {
 function inspectTimingWorkflow(text) {
   if (YAML.parse(text)?.permissions?.actions !== 'read') workflowFail('permissions.actions', 'runner timing must have read access to Actions timestamps')
   for (const [jobName, captureName, jobIdentity, reportPath, uploadName, artifactName] of [
-    ['fairtest', 'Capture Fairtest runner facts', 'fairtest', '/tmp/fairtest-timing/report.json', 'Upload Fairtest timing report', 'fairtest-timing'],
-    ['journeys', 'Capture journey runner facts', 'journeys (${{ matrix.project }})', 'scripts/journey/.artifacts/report.json', 'Upload journey timing report', 'journey-timing-${{ matrix.project }}'],
+    ['fairtest', 'Capture Fairtest runner facts', 'fairtest', '/tmp/fairtest-timing/report.json', 'Upload Fairtest timing report', 'fairtest-timing-${{ github.run_id }}-${{ github.run_attempt }}'],
+    ['journeys', 'Capture journey runner facts', 'journeys (${{ matrix.project }})', 'scripts/journey/.artifacts/report.json', 'Upload journey timing report', 'journey-timing-${{ matrix.project }}-${{ github.run_id }}-${{ github.run_attempt }}'],
   ]) {
     const job = jobByName(text, jobName)
     const steps = job.steps
@@ -776,7 +776,7 @@ function inspectTimingWorkflow(text) {
   const light = stepByName(journeySteps, 'Verify light transparency ran')
   if (light.if !== "matrix.project == 'light'" || light.run !== 'node scripts/journey/check-light-transparency.mjs' || light['continue-on-error'] !== undefined || journeySteps.indexOf(light) < journeySteps.findIndex((step) => step.name === 'Journey gates')) workflowFail('light transparency', 'the light project must prove the mounted check ran after journeys')
   const artifact = stepByName(journeySteps, 'Upload journey artifacts on failure')
-  if (artifact.if !== 'failure()' || artifact.uses !== `${UPLOAD_PIN.action}@${UPLOAD_PIN.sha}` || artifact.with?.name !== 'journey-artifacts-${{ matrix.project }}' || artifact.with?.path !== 'scripts/journey/.artifacts') workflowFail('journey artifacts', 'failure artifacts must upload the per-project Playwright directory')
+  if (artifact.if !== 'failure()' || artifact.uses !== `${UPLOAD_PIN.action}@${UPLOAD_PIN.sha}` || artifact.with?.name !== 'journey-artifacts-${{ matrix.project }}-${{ github.run_id }}-${{ github.run_attempt }}' || artifact.with?.path !== 'scripts/journey/.artifacts') workflowFail('journey artifacts', 'failure artifacts must upload the per-project Playwright directory')
 }
 
 /**

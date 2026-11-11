@@ -5,7 +5,7 @@ export function assertLightTransparency(report) {
   const matches = []
   function visit(suite) {
     for (const spec of suite.specs || []) {
-      if (spec.file === 'app-validate.journey.mjs' && spec.title === 'honors reduced transparency') {
+      if (spec.file?.endsWith('app-validate.journey.mjs') && spec.title === 'honors reduced transparency') {
         matches.push(...(spec.tests || []).filter((entry) => entry.projectName === 'light'))
       }
     }

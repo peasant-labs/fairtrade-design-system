@@ -198,7 +198,7 @@ jobs:
         continue-on-error: true
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: fairtest-timing
+          name: fairtest-timing-${{ github.run_id }}-${{ github.run_attempt }}
           path: /tmp/fairtest-timing/report.json
           if-no-files-found: warn
           retention-days: 7
@@ -284,7 +284,7 @@ jobs:
         continue-on-error: true
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: journey-timing-${{ matrix.project }}
+          name: journey-timing-${{ matrix.project }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: scripts/journey/.artifacts/report.json
           if-no-files-found: warn
           retention-days: 7
@@ -293,7 +293,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: journey-artifacts-${{ matrix.project }}
+          name: journey-artifacts-${{ matrix.project }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: scripts/journey/.artifacts
           retention-days: 7
 
@@ -301,7 +301,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: storybook-static-${{ matrix.project }}
+          name: storybook-static-${{ matrix.project }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: storybook-static
           retention-days: 7
 

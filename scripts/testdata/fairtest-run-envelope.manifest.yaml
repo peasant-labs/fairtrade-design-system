@@ -95,7 +95,7 @@ mutations:
     kind: trailing-document
     target: document
     expectedField: document[1]
-expectedWorkflowMutationCount: 52
+expectedWorkflowMutationCount: 55
 requiredWorkflowMutationNames:
   - workflow-upload-pin-becomes-a-tag
   - workflow-upload-drops-no-files-error
@@ -149,6 +149,9 @@ requiredWorkflowMutationNames:
   - workflow-light-transparency-proof-dropped
   - workflow-facts-becomes-blocking
   - workflow-timing-upload-becomes-blocking
+  - workflow-fairtest-timing-attempt-collides
+  - workflow-journey-timing-project-collides
+  - workflow-journey-artifact-project-collides
 workflowMutations:
   - name: workflow-upload-pin-becomes-a-tag
     find: "      - name: Fairtest evidence upload\n        if: always()\n        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2\n"
@@ -267,8 +270,8 @@ workflowMutations:
     replace: ''
     expectedField: Build Storybook
   - name: workflow-journey-artifact-collides
-    find: '          name: storybook-static-${{ matrix.project }}'
-    replace: '          name: storybook-static'
+    find: '          name: storybook-static-${{ matrix.project }}-${{ github.run_id }}-${{ github.run_attempt }}'
+    replace: '          name: storybook-static-${{ matrix.project }}-${{ github.run_id }}'
     expectedField: storybook-static
   - name: workflow-drops-the-envelope-guard
     find: "          pnpm test:fairtest:envelope\n"
@@ -315,12 +318,12 @@ workflowMutations:
     replace: '          echo catalog'
     expectedField: catalog manifest
   - name: workflow-journey-timing-upload-collides
-    find: '          name: journey-timing-${{ matrix.project }}'
-    replace: '          name: journey-timing'
+    find: '          name: journey-timing-${{ matrix.project }}-${{ github.run_id }}-${{ github.run_attempt }}'
+    replace: '          name: journey-timing-${{ matrix.project }}-${{ github.run_id }}'
     expectedField: Upload journey timing report
   - name: workflow-journey-artifacts-upload-collides
-    find: '          name: journey-artifacts-${{ matrix.project }}'
-    replace: '          name: journey-artifacts'
+    find: '          name: journey-artifacts-${{ matrix.project }}-${{ github.run_id }}-${{ github.run_attempt }}'
+    replace: '          name: journey-artifacts-${{ matrix.project }}-${{ github.run_id }}'
     expectedField: journey artifacts
   - name: workflow-fairtest-timing-not-always
     find: "      - name: Upload Fairtest timing report\n        if: always()\n"
@@ -358,6 +361,18 @@ workflowMutations:
     find: "      - name: Upload Fairtest timing report\n        if: always()\n        continue-on-error: true\n"
     replace: "      - name: Upload Fairtest timing report\n        if: always()\n"
     expectedField: Upload Fairtest timing report
+  - name: workflow-fairtest-timing-attempt-collides
+    find: '          name: fairtest-timing-${{ github.run_id }}-${{ github.run_attempt }}'
+    replace: '          name: fairtest-timing-${{ github.run_id }}'
+    expectedField: Upload Fairtest timing report
+  - name: workflow-journey-timing-project-collides
+    find: '          name: journey-timing-${{ matrix.project }}-${{ github.run_id }}-${{ github.run_attempt }}'
+    replace: '          name: journey-timing-${{ github.run_id }}-${{ github.run_attempt }}'
+    expectedField: Upload journey timing report
+  - name: workflow-journey-artifact-project-collides
+    find: '          name: journey-artifacts-${{ matrix.project }}-${{ github.run_id }}-${{ github.run_attempt }}'
+    replace: '          name: journey-artifacts-${{ github.run_id }}-${{ github.run_attempt }}'
+    expectedField: journey artifacts
 expectedSourceMutationCount: 5
 requiredSourceMutationNames:
   - dropped-process-receipt-requirement

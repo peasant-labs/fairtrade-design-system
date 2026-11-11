@@ -82,8 +82,11 @@ and its `report.json` on every run.
 
 Every browser job captures `nproc`, CPU model, memory bytes, load averages,
 router reason, run creation and job start timestamps, and their difference in
-seconds. It prints these facts and attaches them to its uploaded `report.json`.
-The job timestamps come from the Actions API; the token has actions read only.
+seconds. It also records the current attempt start and the interval from that
+start to the job start. On a re-run, the run-creation interval includes earlier
+attempts, while the attempt interval does not. It prints these facts and
+attaches them to its uploaded `report.json`. The job timestamps come from the
+Actions API; the job token has `actions: read` plus `contents: read`.
 If the API or timestamps are unavailable, `queueSeconds` is null and `apiError`
 explains why; local machine facts are still recorded. Timing collection and
 uploads do not fail a browser gate. The Fairtest timing report is separate from

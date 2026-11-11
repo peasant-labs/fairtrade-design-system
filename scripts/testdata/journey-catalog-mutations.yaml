@@ -3,3 +3,4 @@ cases:
   - {name: duplicated-test, operation: duplicate, expected: 'duplicate'}
   - {name: renamed-test, operation: rename, expected: 'membership mismatch'}
   - {name: missing-project, operation: project, expected: 'membership mismatch'}
+  - {name: write-missing-project, operation: project-write, expected: 'cannot regenerate'}
