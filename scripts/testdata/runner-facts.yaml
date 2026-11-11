@@ -1,0 +1,7 @@
+run: {created_at: '2026-01-01T00:00:00Z'}
+jobs:
+  - {name: 'journeys (dark)', started_at: '2026-01-01T00:01:30Z'}
+cases:
+  - {name: records-queue-time, jobName: 'journeys (dark)', reason: pool, queueSeconds: 90}
+  - {name: rejects-missing-job, jobName: 'journeys (light)', reason: pool, error: 'expected one job'}
+  - {name: rejects-missing-reason, jobName: 'journeys (dark)', reason: '', error: 'router reason'}

@@ -95,7 +95,7 @@ mutations:
     kind: trailing-document
     target: document
     expectedField: document[1]
-expectedWorkflowMutationCount: 37
+expectedWorkflowMutationCount: 47
 requiredWorkflowMutationNames:
   - workflow-upload-pin-becomes-a-tag
   - workflow-upload-drops-no-files-error
@@ -134,14 +134,24 @@ requiredWorkflowMutationNames:
   - workflow-drops-the-paths-gate
   - workflow-drops-the-boundary-gate
   - workflow-drops-the-dispatch-gate
+  - workflow-journey-screenshot-policy-drifts
+  - workflow-drops-journey-facts
+  - workflow-drops-fairtest-facts
+  - workflow-drops-catalog-gate
+  - workflow-journey-timing-upload-collides
+  - workflow-journey-artifacts-upload-collides
+  - workflow-fairtest-timing-not-always
+  - workflow-router-reason-dropped
+  - workflow-timing-merge-dropped
+  - workflow-actions-read-dropped
 workflowMutations:
   - name: workflow-upload-pin-becomes-a-tag
     find: "      - name: Fairtest evidence upload\n        if: always()\n        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2\n"
     replace: "      - name: Fairtest evidence upload\n        if: always()\n        uses: actions/upload-artifact@v4 # v4.6.2\n"
     expectedField: upload-artifact
   - name: workflow-upload-drops-no-files-error
-    find: "          if-no-files-found: error\n"
-    replace: ''
+    find: "          path: ${{ env.FAIRTEST_RUN_ROOT }}\n          if-no-files-found: error\n"
+    replace: "          path: ${{ env.FAIRTEST_RUN_ROOT }}\n"
     expectedField: if-no-files-found
   - name: workflow-upload-drops-always
     find: "      - name: Fairtest evidence preflight\n        if: always()\n"
@@ -283,6 +293,46 @@ workflowMutations:
     find: "          pnpm test:fairtest:dispatch\n"
     replace: ''
     expectedField: test:fairtest:dispatch
+  - name: workflow-journey-screenshot-policy-drifts
+    find: '      JOURNEY_SCREENSHOT: "off"'
+    replace: '      JOURNEY_SCREENSHOT: "on"'
+    expectedField: JOURNEY_SCREENSHOT
+  - name: workflow-drops-journey-facts
+    find: '          RUNNER_JOB_NAME: journeys (${{ matrix.project }})'
+    replace: '          RUNNER_JOB_NAME: journeys'
+    expectedField: Capture journey runner facts
+  - name: workflow-drops-fairtest-facts
+    find: '          RUNNER_JOB_NAME: fairtest'
+    replace: '          RUNNER_JOB_NAME: wrong'
+    expectedField: Capture Fairtest runner facts
+  - name: workflow-drops-catalog-gate
+    find: '          node scripts/journey/catalog-gate.mjs'
+    replace: '          echo catalog'
+    expectedField: catalog manifest
+  - name: workflow-journey-timing-upload-collides
+    find: '          name: journey-timing-${{ matrix.project }}'
+    replace: '          name: journey-timing'
+    expectedField: Upload journey timing report
+  - name: workflow-journey-artifacts-upload-collides
+    find: '          name: journey-artifacts-${{ matrix.project }}'
+    replace: '          name: journey-artifacts'
+    expectedField: journey artifacts
+  - name: workflow-fairtest-timing-not-always
+    find: "      - name: Upload Fairtest timing report\n        if: always()\n"
+    replace: "      - name: Upload Fairtest timing report\n"
+    expectedField: Upload Fairtest timing report
+  - name: workflow-router-reason-dropped
+    find: "          RUNNER_JOB_NAME: fairtest\n          ROUTER_REASON: ${{ needs.determine-runner.outputs.reason }}"
+    replace: "          RUNNER_JOB_NAME: fairtest\n          ROUTER_REASON: unknown"
+    expectedField: Capture Fairtest runner facts
+  - name: workflow-timing-merge-dropped
+    find: '          node scripts/journey/runner-facts.mjs merge scripts/journey/.artifacts/report.json'
+    replace: '          echo missing'
+    expectedField: timing merge
+  - name: workflow-actions-read-dropped
+    find: '  actions: read'
+    replace: '  actions: none'
+    expectedField: permissions.actions
 expectedSourceMutationCount: 5
 requiredSourceMutationNames:
   - dropped-process-receipt-requirement

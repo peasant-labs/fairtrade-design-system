@@ -10,6 +10,7 @@ on:
 # read-only: this workflow validates the gates, it never deploys or writes Pages
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -98,6 +99,13 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Capture Fairtest runner facts
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RUNNER_JOB_NAME: fairtest
+          ROUTER_REASON: ${{ needs.determine-runner.outputs.reason }}
+        run: node scripts/journey/runner-facts.mjs capture
+
       - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -176,6 +184,21 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      - name: Prepare Fairtest timing report
+        if: always()
+        run: |
+          mkdir -p /tmp/fairtest-timing
+          node scripts/journey/runner-facts.mjs merge /tmp/fairtest-timing/report.json
+
+      - name: Upload Fairtest timing report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: fairtest-timing
+          path: /tmp/fairtest-timing/report.json
+          if-no-files-found: error
+          retention-days: 7
+
   journeys:
     needs: determine-runner
     runs-on: ${{ fromJson(needs.determine-runner.outputs.runner) }}
@@ -191,10 +214,18 @@ jobs:
       options: --ipc=host --init
     env:
       TMPDIR: /tmp
+      JOURNEY_SCREENSHOT: "off"
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
+
+      - name: Capture journey runner facts
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RUNNER_JOB_NAME: journeys (${{ matrix.project }})
+          ROUTER_REASON: ${{ needs.determine-runner.outputs.reason }}
+        run: node scripts/journey/runner-facts.mjs capture
 
       - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
 
@@ -213,6 +244,11 @@ jobs:
       - name: Build Storybook
         run: pnpm build-storybook
 
+      - name: Journey catalog name manifest
+        run: |
+          node scripts/journey/catalog-gate.mjs
+          node --test scripts/journey/catalog-gate.test.mjs scripts/journey/runner-facts.test.mjs scripts/journey/recording-policy.test.mjs
+
       # Each theme runs its complete catalog at the measured 3-worker optimum.
       - name: Journey gates
         run: pnpm journey:ci --workers=3 --project=${{ matrix.project }}
@@ -225,6 +261,29 @@ jobs:
           export CHROME_PATH="$(pnpm exec node -e "console.log(require('@playwright/test').chromium.executablePath())")"
           test -x "$CHROME_PATH"
           pnpm test:timeline-rendered && pnpm test:timeline-session-route:mutations
+
+      - name: Prepare journey timing report
+        if: always()
+        run: |
+          mkdir -p scripts/journey/.artifacts
+          node scripts/journey/runner-facts.mjs merge scripts/journey/.artifacts/report.json
+
+      - name: Upload journey timing report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: journey-timing-${{ matrix.project }}
+          path: scripts/journey/.artifacts/report.json
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload journey artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: journey-artifacts-${{ matrix.project }}
+          path: scripts/journey/.artifacts
+          retention-days: 7
 
       - name: Upload Storybook build on failure
         if: failure()

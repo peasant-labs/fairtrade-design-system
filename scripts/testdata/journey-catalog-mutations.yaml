@@ -1,0 +1,5 @@
+cases:
+  - {name: dropped-test, operation: drop, expected: 'membership mismatch'}
+  - {name: duplicated-test, operation: duplicate, expected: 'duplicate'}
+  - {name: renamed-test, operation: rename, expected: 'membership mismatch'}
+  - {name: missing-project, operation: project, expected: 'membership mismatch'}
