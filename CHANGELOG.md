@@ -4,6 +4,13 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.67
+
+- Add `StepWizardFrame`, the controlled step-wizard shell. The host owns the current step and the footer actions; the frame draws the rail, a body, and a foot with a start slot, the "step n / m" count (spoken as "step n of m"), and an end slot. `StepWizard` is now built on the frame, so its footer count is spoken too. Peasant /kickstart and /selection consume it after release and drop their local copy of the frame.
+- `StepIndicator` keeps every label inside its rail at any width and step count. The first label starts at the first marker's left edge, the last ends at the last marker's right edge, and the rest are centred; a lone step starts at its marker and may take the whole rail. Each label wraps inside its share of the rail and breaks a word longer than that share, so neighbours never overlap. A rail too narrow to give every label about six characters hides the labels from sight and keeps them in the accessible name.
+- A rail of many steps shrinks until its markers touch instead of overflowing: the connector paints its own gap to its marker rather than reserving one in the layout.
+- The frame fills its host on the presentation page too, instead of inheriting that page's `section` width cap and side padding.
+
 ## 0.0.66
 
 - Pin `@peasant-labs/schema@0.49.0`, which publishes the kickstart node sets and the six additional harness identities. The provider policy and its brand marks already carried Grok Build, Devin Desktop, Cline, and Kiro; the older pin left those entries unreachable.
