@@ -56,7 +56,7 @@ function labelPlace(index, count) {
  * Labels stay inside the rail at any width and step count. The first label starts at the first
  * marker's left edge, the last ends at the last marker's right edge, and the others are centred
  * on their markers. Each label wraps inside its own share of the rail, so neighbours never
- * overlap. When the rail is too narrow to give every label room for about six characters, the
+ * overlap. When the rail is too narrow for its first and last labels to hold five characters, the
  * labels are hidden from sight and stay in the accessible name; the numbers carry the rail.
  *
  * @param {Object} props

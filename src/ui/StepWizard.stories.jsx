@@ -140,8 +140,8 @@ export const Controlled = {
    one frame for every step count from 1 to 10, at a narrow and a wide width. the play function
    measures each label against its own rail: inside it, anchored to its marker (the first starts at
    the first marker's left edge, the last ends at the last marker's right edge, the rest are centred),
-   clear of its neighbours, and not clipped. a rail too narrow to give every label room for about six
-   characters hides all its labels from sight (they stay in the accessible name); the narrow frame
+   clear of its neighbours, and not clipped. a rail too narrow for its first and last labels to hold
+   five characters hides all its labels from sight (they stay in the accessible name); the narrow frame
    holds them up to five steps, the wide frame all ten. narrow is a phone: ten 28px markers need
    about 280px of rail, so a narrower frame cannot hold ten steps at all. */
 const MATRIX_LABELS = ['welcome', 'projects', 'sessions', 'redaction', 'review', 'license', 'collectives', 'share', 'confirm', 'done']
@@ -234,7 +234,8 @@ export const LabelsInsideFrame = {
   play: async ({ canvasElement }) => {
     // the label shares depend on the mono face, so measure after it has loaded.
     await document.fonts.ready
-    const gutter = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sp-2'))
+    const gutter = parseFloat(getComputedStyle(canvasElement.querySelector('.swz-rail')).getPropertyValue('--swz-label-gutter'))
+    await expect(gutter).toBeGreaterThan(0)
     const frames = [...canvasElement.querySelectorAll('[data-case-width]')]
     await expect(frames).toHaveLength(MATRIX_COUNTS.length * Object.keys(MATRIX_WIDTHS).length)
     const problems = frames.flatMap((holder) => labelProblems(holder.querySelector('.swz'), holder.getAttribute('data-case-width'), gutter))

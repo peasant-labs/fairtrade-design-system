@@ -13,11 +13,13 @@
      offset derive from it, so they can never drift out of alignment. */
   --swz-mark-size: 28px;
   /* the space kept between two neighbouring labels, so wrapped text never touches. */
-  --swz-label-gutter: var(--sp-2);
-  /* the narrowest share a label may wrap into and still be read: about six characters of the
-     label's own mono face. a rail that cannot give every label this much hides the labels from
-     sight (they stay in the accessible name) and lets the numbers carry the rail. */
-  --swz-label-floor: 6ch;
+  --swz-label-gutter: var(--sp-1);
+  /* the narrowest share a label may wrap into and still be read: the share at which the tightest
+     labels, the first and the last, can still hold five characters of the label's own mono face
+     (an edge label's room is half a marker plus half the share). a rail that cannot give its edge
+     labels that much hides the labels from sight (they stay in the accessible name) and lets the
+     numbers carry the rail. */
+  --swz-label-floor: calc(10ch - var(--swz-mark-size));
   /* the rail is the container the label shares are measured against (100cqi is the rail's width).
      the rail is already a full-width block, so inline-size containment changes nothing else. */
   container-type: inline-size;
