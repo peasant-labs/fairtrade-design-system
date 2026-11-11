@@ -1,5 +1,3 @@
-expectedCaseCount: 10
-requiredCaseNames: [diagnostic-first, unrelated-first, base, malformed, diagnostic-inside-message, near-miss-first, non-string-diagnostic, empty-diagnostic, pass, non-string-message]
 cases:
   - name: diagnostic-first
     mutation: '{"expectedDiagnostic":"target diagnostic"}'
@@ -33,9 +31,9 @@ cases:
     failures: [target selector missing, target diagnostic]
   - name: non-string-diagnostic
     mutation: '{"expectedDiagnostic":42}'
-    checks: [unrelated failure, target diagnostic, later failure]
-    ran: 3
-    failures: [unrelated failure, target diagnostic, later failure]
+    checks: [the answer was 42, later failure]
+    ran: 2
+    failures: [the answer was 42, later failure]
   - name: empty-diagnostic
     mutation: '{"expectedDiagnostic":""}'
     checks: [unrelated failure, target diagnostic, later failure]

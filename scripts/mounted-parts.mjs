@@ -190,12 +190,14 @@ export function createReport(gate) {
     }
   }
   return {
+    // Mutation exit skips teardown safely: the Vite transform is in-memory and
+    // the process is ending. The contract test lives in scripts/run-test-lib.test.mjs
+    // so the gate inventory does not move.
     check(passed, message) {
       checks += 1
       if (!passed) {
         const text = String(message)
         failures.push(text)
-        // Mutation exit skips withMountedSource teardown: the mutation is in-memory and the process is ending; see run-test-lib.test.mjs and testdata/mounted-report.yaml.
         if (diagnostic && text.includes(diagnostic)) failIfAny()
       }
     },
