@@ -1,0 +1,80 @@
+# Cases for the step wizard (src/ui/StepWizard.jsx). scripts/step-wizard.test.mjs mounts the REAL
+# components for each case and checks what a reader and a host reach: the place each step's label
+# is given under its marker (the geometry that follows from a place is measured in a browser, in the
+# LabelsInsideFrame story and its Fairtest row), the controlled frame's regions and count, and the
+# uncontrolled wizard that is built on the frame.
+#
+# `steps` is the pool a case draws its first `count` steps from.
+steps:
+  - {id: welcome, label: welcome}
+  - {id: projects, label: projects}
+  - {id: sessions, label: sessions}
+  - {id: redaction, label: redaction}
+  - {id: review, label: review}
+  - {id: license, label: license}
+  - {id: collectives, label: collectives}
+  - {id: share, label: share}
+  - {id: confirm, label: confirm}
+  - {id: done, label: done}
+
+cases:
+  # kind places: StepIndicator over the first `count` steps; `expected.places` is the place of each
+  # label in order, `expected.gaps` the gap count the rail hands the stylesheet for the label shares.
+  - {name: label places for 1 step, kind: places, count: 1, expected: {places: [only], gaps: '1'}}
+  - {name: label places for 2 steps, kind: places, count: 2, expected: {places: [start, end], gaps: '1'}}
+  - {name: label places for 3 steps, kind: places, count: 3, expected: {places: [start, middle, end], gaps: '2'}}
+  - {name: label places for 4 steps, kind: places, count: 4, expected: {places: [start, middle, middle, end], gaps: '3'}}
+  - {name: label places for 5 steps, kind: places, count: 5, expected: {places: [start, middle, middle, middle, end], gaps: '4'}}
+  - {name: label places for 6 steps, kind: places, count: 6, expected: {places: [start, middle, middle, middle, middle, end], gaps: '5'}}
+  - {name: label places for 7 steps, kind: places, count: 7, expected: {places: [start, middle, middle, middle, middle, middle, end], gaps: '6'}}
+  - {name: label places for 8 steps, kind: places, count: 8, expected: {places: [start, middle, middle, middle, middle, middle, middle, end], gaps: '7'}}
+  - {name: label places for 9 steps, kind: places, count: 9, expected: {places: [start, middle, middle, middle, middle, middle, middle, middle, end], gaps: '8'}}
+  - {name: label places for 10 steps, kind: places, count: 10, expected: {places: [start, middle, middle, middle, middle, middle, middle, middle, middle, end], gaps: '9'}}
+
+  # kind regions: the controlled frame with every slot filled.
+  - name: the frame lays out head, body and foot
+    kind: regions
+    count: 3
+    current: projects
+    props: {aria-label: set up the commons, className: host-frame}
+    bodyProps: {id: host-body, role: group, aria-label: 'step 2', className: host-body}
+    expected:
+      order: [swz-head, swz-body, swz-foot]
+      frame: {tag: SECTION, label: set up the commons, classes: [swz, host-frame]}
+      rail: {tag: NAV, label: set up the commons progress}
+      head: head note
+      body: the body
+      footStart: back slot
+      footEnd: continue slot
+      bodyAttributes: {id: host-body, role: group, label: 'step 2', classes: [swz-body, host-body]}
+
+  # kind count: the count under each position, as words for assistive technology and as drawn.
+  - {name: the count reads the current step, kind: count, count: 4, current: welcome, expected: {words: step 1 of 4, drawn: step 1 / 4, currentMarkers: 1}}
+  - {name: the count follows the current step, kind: count, count: 4, current: redaction, expected: {words: step 4 of 4, drawn: step 4 / 4, currentMarkers: 1}}
+  - {name: a current step that names no step counts as step 0, kind: count, count: 3, current: nowhere, expected: {words: step 0 of 3, drawn: step 0 / 3, currentMarkers: 0}}
+
+  # kind names: the accessible names the frame hands its regions.
+  - {name: the rail is named after the frame by default, kind: names, count: 2, current: welcome, props: {aria-label: contribute}, expected: {frame: contribute, rail: contribute progress}}
+  - {name: the rail keeps a name the host gives it, kind: names, count: 2, current: welcome, props: {aria-label: contribute, progressLabel: where you are}, expected: {frame: contribute, rail: where you are}}
+  - {name: the frame and rail have names with no host label, kind: names, count: 2, current: welcome, props: {}, expected: {frame: step wizard, rail: step wizard progress}}
+
+  # kind jump: a completed or reachable marker reports its id, a locked one does not.
+  - name: a reachable marker jumps and a locked one does not
+    kind: jump
+    count: 4
+    current: projects
+    completed: [welcome]
+    reachable: [welcome, projects, sessions]
+    clicks: [sessions, redaction, welcome]
+    expected: {jumps: [sessions, welcome], locked: [redaction]}
+
+  # kind wizard: the uncontrolled wizard, built on the frame, walks its steps.
+  - name: the wizard walks continue and back through the frame
+    kind: wizard
+    count: 3
+    expected:
+      first: {words: step 1 of 3, primary: continue, backDisabled: true}
+      second: {words: step 2 of 3, primary: continue, backDisabled: false}
+      last: {words: step 3 of 3, primary: submit, backDisabled: false}
+      backTo: {words: step 2 of 3}
+      completed: [welcome, projects, sessions]

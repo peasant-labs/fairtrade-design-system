@@ -1,0 +1,74 @@
+# Required-NAME manifest for step-wizard.yaml: deletion protection. The gate asserts the case names
+# equal this list exactly, as a set, and parts-mutations.mjs proves each production mutation below
+# turns the gate red for the named reason.
+requiredCaseNames:
+  - label places for 1 step
+  - label places for 2 steps
+  - label places for 3 steps
+  - label places for 4 steps
+  - label places for 5 steps
+  - label places for 6 steps
+  - label places for 7 steps
+  - label places for 8 steps
+  - label places for 9 steps
+  - label places for 10 steps
+  - the frame lays out head, body and foot
+  - the count reads the current step
+  - the count follows the current step
+  - a current step that names no step counts as step 0
+  - the rail is named after the frame by default
+  - the rail keeps a name the host gives it
+  - the frame and rail have names with no host label
+  - a reachable marker jumps and a locked one does not
+  - the wizard walks continue and back through the frame
+
+requiredMutationNames:
+  - the first label is centred
+  - the last label is centred
+  - a lone step is not anchored
+  - the rail drops its gap count
+  - the count starts from zero
+  - the frame drops the foot end slot
+  - the frame drops the head slot
+  - the wizard stops reporting completion
+mutations:
+  - name: the first label is centred
+    file: src/ui/StepWizard.jsx
+    find: "if (index === 0) return LABEL_PLACE.start"
+    replace: "if (index === 0) return LABEL_PLACE.middle"
+    expectedDiagnostic: "label places for 3 steps: places must be"
+  - name: the last label is centred
+    file: src/ui/StepWizard.jsx
+    find: "if (index === count - 1) return LABEL_PLACE.end"
+    replace: "if (index === count - 1) return LABEL_PLACE.middle"
+    expectedDiagnostic: "label places for 3 steps: places must be"
+  - name: a lone step is not anchored
+    file: src/ui/StepWizard.jsx
+    find: "if (count <= 1) return LABEL_PLACE.only"
+    replace: "if (count <= 0) return LABEL_PLACE.only"
+    expectedDiagnostic: "label places for 1 step: places must be"
+  - name: the rail drops its gap count
+    file: src/ui/StepWizard.jsx
+    find: "{ '--swz-gaps': Math.max(steps.length - 1, 1) }"
+    replace: "{}"
+    expectedDiagnostic: "label places for 4 steps: the rail must hand the stylesheet 3 gaps"
+  - name: the count starts from zero
+    file: src/ui/StepWizard.jsx
+    find: "steps.findIndex((step) => step.id === current) + 1"
+    replace: "steps.findIndex((step) => step.id === current)"
+    expectedDiagnostic: "the count reads the current step: the count must read"
+  - name: the frame drops the foot end slot
+    file: src/ui/StepWizard.jsx
+    find: '<div className="swz-foot-end">{footEnd}</div>'
+    replace: '<div className="swz-foot-end" />'
+    expectedDiagnostic: "the frame lays out head, body and foot: the regions must be"
+  - name: the frame drops the head slot
+    file: src/ui/StepWizard.jsx
+    find: '{head != null && <div className="swz-head-slot">{head}</div>}'
+    replace: "{null}"
+    expectedDiagnostic: "the frame lays out head, body and foot: the regions must be"
+  - name: the wizard stops reporting completion
+    file: src/ui/StepWizard.jsx
+    find: "onComplete?.({ completed: done })"
+    replace: "void done"
+    expectedDiagnostic: "the wizard walks continue and back through the frame: the last step must report"

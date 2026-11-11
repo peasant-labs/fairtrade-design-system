@@ -1,5 +1,6 @@
-/* StepWizard — a horizontal step indicator rail + a reachability-gated linear flow.
-   self-contained: this file owns every `sw-` rule; it leans on src/index.css only for the
+/* StepWizard — a horizontal step indicator rail + a reachability-gated linear flow, and the
+   controlled frame (StepWizardFrame) both the wizard and a host-driven flow render into.
+   self-contained: this file owns every `swz-` rule; it leans on src/index.css only for the
    shared design tokens (--sp-*, --ink-*, --amber*, --olive/--success, --rule*, --control-h,
    --font-mono/-display, --focus-ring). square, hairline, amber-scarce, lowercase chrome.
    step state never rides on color alone: current = amber fill + bold near-black number,
@@ -11,6 +12,15 @@
   /* one source of truth for the marker side; both the marker box and the connector's vertical
      offset derive from it, so they can never drift out of alignment. */
   --swz-mark-size: 28px;
+  /* the space kept between two neighbouring labels, so wrapped text never touches. */
+  --swz-label-gutter: var(--sp-2);
+  /* the narrowest share a label may wrap into and still be read: about six characters of the
+     label's own mono face. a rail that cannot give every label this much hides the labels from
+     sight (they stay in the accessible name) and lets the numbers carry the rail. */
+  --swz-label-floor: 6ch;
+  /* the rail is the container the label shares are measured against (100cqi is the rail's width).
+     the rail is already a full-width block, so inline-size containment changes nothing else. */
+  container-type: inline-size;
   display: flex;
   align-items: flex-start;
   width: 100%;
@@ -19,12 +29,13 @@
 /* one cell = [connector line | a marker+label stack], laid out as a ROW so the line lies
    horizontally to the LEFT of the marker (bridging from the previous marker) while the label
    still hangs under its own marker. the connector is flex:1 so cells share the rail width; the
-   first cell carries no leading line and hugs its marker (inline style flex on the cell). */
+   first cell carries no leading line and hugs its marker (inline style flex on the cell). a cell
+   has no gap of its own: the space between a connector and its marker is painted inside the
+   connector (see .swz-line), so a dense rail can shrink a cell to its marker's width. */
 .swz-cell {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-  gap: var(--sp-2);
   min-width: 0;
 }
 
@@ -99,15 +110,66 @@
 
 .swz-mark-check { width: var(--ic-sm); height: var(--ic-sm); }
 
-/* label under each number — lowercase chrome, mono, dims with the step. */
+/* label under each number — lowercase chrome, mono, dims with the step.
+
+   a label is wider than its 28px marker, so it can hang past the marker; where it hangs and how
+   wide it may be follow from the rail's width and its step count (--swz-gaps, set by the rail).
+   markers are evenly spaced: the first marker hugs the rail's left edge, the last hugs its right
+   edge, and every pair of neighbours is one `pitch` apart, centre to centre. the labels tile the
+   rail exactly:
+
+     middle label   centred on its marker, one pitch wide (less the gutter)
+     first / last   anchored to the rail's outer edge, from that edge to the middle of the gap
+                    to the neighbour: (marker + pitch) / 2, less half the gutter
+     lone step      anchored left, may take the whole rail
+
+   each label wraps inside that share and breaks a word that is longer than it, so it can never
+   cross into a neighbour or past the rail. the shift that anchors the first and last label uses
+   `translate`, whose percentages are the label's own width: half its width, less half a marker,
+   puts its edge on the marker's edge at any text length. */
 .swz-label {
+  /* centre-to-centre distance between neighbouring markers. */
+  --swz-pitch: calc((100cqi - var(--swz-mark-size)) / var(--swz-gaps, 1));
+  /* what a middle label may take. the rail hides every label together or none, and it decides
+     on this one share, so a rail never shows some labels and hides others. */
+  --swz-share: calc(var(--swz-pitch) - var(--swz-label-gutter));
+  /* what this label may take. the edge labels override it below. */
+  --swz-cap: var(--swz-share);
+  /* positive while the share holds the floor, otherwise zero or less; scaled so the first pixel
+     of room already counts as room. */
+  --swz-room: calc((var(--swz-share) - var(--swz-label-floor)) * 1000);
+  display: block;
+  width: max-content;
+  max-width: min(var(--swz-cap), max(0px, var(--swz-room)));
+  /* a hidden label collapses to nothing but stays in the accessibility tree. */
+  max-height: max(0px, var(--swz-room));
+  overflow: hidden;
+  overflow-wrap: anywhere;
   font-family: var(--font-mono);
   font-size: var(--fs-label);
   line-height: 1.2;
   text-transform: lowercase;
   text-align: center;
   color: var(--ink-4);
-  white-space: nowrap;
+  white-space: normal;
+}
+.swz-label--start,
+.swz-label--end {
+  --swz-cap: calc((var(--swz-mark-size) + var(--swz-share)) / 2);
+}
+.swz-label--start {
+  translate: calc(50% - var(--swz-mark-size) / 2) 0;
+  text-align: left;
+}
+.swz-label--end {
+  translate: calc(var(--swz-mark-size) / 2 - 50%) 0;
+  text-align: right;
+}
+.swz-label--only {
+  --swz-cap: 100cqi;
+  --swz-room: 100cqi;
+  translate: calc(50% - var(--swz-mark-size) / 2) 0;
+  text-align: left;
 }
 .swz-step--current .swz-label { color: var(--ink); }
 .swz-step--complete .swz-label,
@@ -115,16 +177,21 @@
 
 /* connector line between two markers. olive once the step behind it is complete. it's the row
    sibling LEFT of its marker stack: flex:1 so it bridges to the previous marker, offset down by
-   half the marker side so it meets each marker's vertical centre (a rail, not an underline). */
+   half the marker side so it meets each marker's vertical centre (a rail, not an underline).
+   the box runs all the way to its marker, but the line is painted only up to --sp-2 short of it,
+   so the same space stays between the line and the marker at any rail width. the box may shrink
+   to nothing, which lets a rail of many steps shrink until its markers touch; a box narrower than
+   the space paints no line. */
 .swz-line {
+  --swz-line-color: var(--rule);
   flex: 1 1 auto;
   align-self: flex-start;
   height: 1px;
-  min-width: var(--sp-4);
+  min-width: 0;
   margin-top: calc(var(--swz-mark-size) / 2);
-  background: var(--rule);
+  background: linear-gradient(to right, var(--swz-line-color) calc(100% - var(--sp-2)), transparent 0);
 }
-.swz-line--done { background: var(--success); }
+.swz-line--done { --swz-line-color: var(--success); }
 
 /* ── wizard shell ──────────────────────────────────────────────────────────── */
 
@@ -133,12 +200,21 @@
   flex-direction: column;
   border: var(--bd);
   background: var(--surface);
+  /* the frame is a real <section>, so on the presentation page it would inherit that page's bare
+     section rule (a width cap, auto margins, side padding). the library ships no such rule, and
+     the frame fills its host: say so here, the way the transcript's section does. */
+  max-width: none;
+  margin-inline: 0;
+  padding-inline: 0;
 }
 
 .swz-head {
   padding: var(--sp-5) var(--sp-5) var(--sp-4);
   border-bottom: var(--bd);
 }
+
+/* whatever the host puts under the rail sits one step below it. */
+.swz-head-slot { margin-top: var(--sp-3); }
 
 /* per-step body slot. min-height keeps the footer from jumping as bodies change size. */
 .swz-body {
@@ -176,9 +252,18 @@
   border-top: var(--bd);
   background: var(--surface);
 }
-/* back hugs the left edge of its track; the primary hugs the right edge of its track. */
+/* back hugs the left edge of its track; the primary hugs the right edge of its track. each slot
+   lays out whatever the host puts in it (one button, or a few) in a row that wraps. */
 .swz-foot > :first-child { justify-self: start; }
 .swz-foot > :last-child { justify-self: end; }
+.swz-foot-start,
+.swz-foot-end {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+.swz-foot-end { justify-content: flex-end; }
 
 /* a quiet "step n / m" counter on the footer's centre line — the wizard's mate to <Pager>'s
    "page n / m". mono, tabular, lowercase; the slash-separated count matches the rail's "1 / 4". */
@@ -190,4 +275,18 @@
   text-transform: lowercase;
   white-space: nowrap;
   color: var(--ink-3);
+}
+
+/* the count read as words ("step 2 of 4") for assistive technology; the glyph form beside it is
+   hidden from them so the count is announced once. */
+.swz-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }

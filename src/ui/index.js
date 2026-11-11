@@ -69,7 +69,7 @@ export { default as Treemap, squarify } from './Treemap.jsx'
 export { default as CommitGraph } from './CommitGraph.jsx'
 /** @typedef {import('./graph/timelineNavigation.js').TimelineNavigationAction} TimelineNavigationAction */
 export { default as DiffView } from './DiffView.jsx'
-export { default as StepWizard, StepIndicator } from './StepWizard.jsx'
+export { default as StepWizard, StepIndicator, StepWizardFrame } from './StepWizard.jsx'
 export { default as TimeStrip } from './TimeStrip.jsx'
 export { default as Explainer, Term } from './Explainer.jsx'
 export { default as RedactionReview, WhereDoesThisGo } from './Redaction.jsx'
