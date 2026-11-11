@@ -146,7 +146,8 @@ export const Controlled = {
    `visibility`. the floor is written in characters of the label's own face, and the face is whatever
    monospace the host has (this story loads no font), so how many steps keep their labels differs
    between machines: the play function reads the stylesheet's own floor at the label and works the rule
-   out for each frame, and two anchors hold in any face (up to three steps always show, ten steps on the narrow frame never do). narrow is a phone:
+   out for each frame, checks that floor against the rule as stated (an edge label's room against five
+   characters), and two anchors hold in any face (up to three steps always show, ten steps on the narrow frame never do). narrow is a phone:
    ten 28px markers need about 280px of rail, so a narrower frame cannot hold ten steps at all. */
 const MATRIX_LABELS = ['welcome', 'projects', 'sessions', 'redaction', 'review', 'license', 'collectives', 'share', 'confirm', 'done']
 const MATRIX_COUNTS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -199,30 +200,44 @@ function placeOf(label) {
 }
 
 /**
- * The floor the stylesheet hides labels under, in px: its own `--swz-label-floor`, resolved at the
- * label so `ch` is the label's own face. A probe is the only way to read it, because a custom
- * property that holds a calc is not resolved until it is used as a length.
+ * A length as the label sees it, in px. A probe is the only way to read one: a custom property that
+ * holds a calc (the label floor) is not resolved until it is used as a length, and `ch` is the width
+ * of a character of the label's own face.
  */
-function labelFloor(label) {
+function measure(label, length) {
   const probe = document.createElement('span')
-  probe.style.cssText = 'position: absolute; visibility: hidden; width: var(--swz-label-floor)'
+  probe.style.cssText = `position: absolute; visibility: hidden; width: ${length}`
   label.appendChild(probe)
   const width = probe.getBoundingClientRect().width
   probe.remove()
   return width
 }
 
+// the rule as the stylesheet states it: a rail shows its labels when its first and last labels, the
+// tightest, can hold this many characters of the label's own face.
+const EDGE_CHARACTERS = 5
+
 /**
- * Whether a rail should show its labels: true or false, or null when the share sits within half a
- * pixel of the floor and rounding decides. A lone step always shows. A middle label's share is the
- * distance between neighbouring marker centres, less the gutter.
+ * Whether a rail should show its labels, worked out two ways. `shown` follows the stylesheet's own
+ * floor (`--swz-label-floor`, read at the label): the middle label's share against that floor.
+ * `documented` follows the rule as stated: an edge label's room, half a marker plus half the share,
+ * against five characters (one `ch`, read the same way). The two must agree, so a floor that drifts
+ * from the stated rule fails here. Each is true, false, or null when it sits within half a pixel of
+ * its line and rounding decides. A lone step always shows. A middle label's share is the distance
+ * between neighbouring marker centres, less the gutter.
  */
 function labelsShown(rail, label, count, gutter) {
-  if (count === 1) return true
+  if (count === 1) return { shown: true, documented: true }
   const marker = rail.querySelector('.swz-mark').getBoundingClientRect().width
   const share = (rail.getBoundingClientRect().width - marker) / (count - 1) - gutter
-  const room = share - labelFloor(label)
-  return Math.abs(room) <= TOLERANCE ? null : room > 0
+  const edgeRoom = (marker + share) / 2
+  const decide = (room) => (Math.abs(room) <= TOLERANCE ? null : room > 0)
+  return {
+    shown: decide(share - measure(label, 'var(--swz-label-floor)')),
+    documented: decide(edgeRoom - EDGE_CHARACTERS * measure(label, '1ch')),
+    edgeRoom,
+    share,
+  }
 }
 
 /** Every way the labels of one frame break the rule, as readable lines. Empty when none. */
@@ -232,9 +247,12 @@ function labelProblems(section, width, gutter) {
   const railElement = section.querySelector('.swz-rail')
   const rail = railElement.getBoundingClientRect()
   const cells = [...section.querySelectorAll('.swz-step')]
-  const shown = labelsShown(railElement, cells[0].querySelector('.swz-label'), cells.length, gutter)
+  const { shown, documented, edgeRoom } = labelsShown(railElement, cells[0].querySelector('.swz-label'), cells.length, gutter)
   const anchored = cells.length <= ALWAYS_SHOWN_UP_TO ? true : width === 'narrow' && cells.length === NARROW_NEVER_SHOWN_AT ? false : null
   const canvas = within(section)
+  if (shown !== null && documented !== null && shown !== documented) {
+    problems.push(`${name}: the stylesheet's floor ${shown ? 'shows' : 'hides'} the labels, but the stated rule ${documented ? 'shows' : 'hides'} them (edge labels have ${edgeRoom.toFixed(1)}px against ${EDGE_CHARACTERS} characters)`)
+  }
   let previous = null
   cells.forEach((cell, index) => {
     const label = cell.querySelector('.swz-label')

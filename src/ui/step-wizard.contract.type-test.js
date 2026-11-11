@@ -21,7 +21,6 @@ const frame = {
     const jumped = id
     void jumped
   },
-  progressLabel: 'where you are',
   head: 'a note under the rail',
   footStart: 'back',
   footEnd: 'continue',

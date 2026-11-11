@@ -17,7 +17,6 @@ requiredCaseNames:
   - the count follows the current step
   - a current step that names no step counts as step 0
   - the rail is named after the frame by default
-  - the rail keeps a name the host gives it
   - the frame and rail have names with no host label
   - the wizard names its rail after itself by default
   - the wizard names its rail after the name the host gives it
@@ -34,7 +33,8 @@ requiredMutationNames:
   - the frame drops the foot end slot
   - the frame drops the head slot
   - a false head draws an empty slot
-  - the wizard names its rail apart from the frame
+  - the rail loses the frame's name
+  - the wizard names itself apart from the frame
   - the wizard stops reporting completion
 mutations:
   - name: the first label is centred
@@ -77,10 +77,15 @@ mutations:
     find: "head != null && typeof head !== 'boolean'"
     replace: "head != null"
     expectedDiagnostic: "an empty head draws no head slot: head=false must draw 0 head slots"
-  - name: the wizard names its rail apart from the frame
+  - name: the rail loses the frame's name
     file: src/ui/StepWizard.jsx
-    find: "      aria-label={ariaLabel ?? 'step wizard'}\n"
-    replace: "      aria-label={ariaLabel ?? 'step wizard'}\n      progressLabel={ariaLabel ?? 'progress'}\n"
+    find: "aria-label={`${ariaLabel} progress`}"
+    replace: 'aria-label="progress"'
+    expectedDiagnostic: "the rail is named after the frame by default: the names must be"
+  - name: the wizard names itself apart from the frame
+    file: src/ui/StepWizard.jsx
+    find: "aria-label={ariaLabel ?? 'step wizard'}"
+    replace: "aria-label={ariaLabel ?? 'wizard'}"
     expectedDiagnostic: "the wizard names its rail after itself by default: the names must be"
   - name: the wizard stops reporting completion
     file: src/ui/StepWizard.jsx

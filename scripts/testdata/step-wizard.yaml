@@ -55,7 +55,6 @@ cases:
 
   # kind names: the accessible names the frame hands its regions.
   - {name: the rail is named after the frame by default, kind: names, count: 2, current: welcome, props: {aria-label: contribute}, expected: {frame: contribute, rail: contribute progress}}
-  - {name: the rail keeps a name the host gives it, kind: names, count: 2, current: welcome, props: {aria-label: contribute, progressLabel: where you are}, expected: {frame: contribute, rail: where you are}}
   - {name: the frame and rail have names with no host label, kind: names, count: 2, current: welcome, props: {}, expected: {frame: step wizard, rail: step wizard progress}}
 
   # kind names with `component: wizard`: the uncontrolled wizard names its regions the way the frame

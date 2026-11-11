@@ -209,11 +209,6 @@
   border-bottom: var(--bd);
 }
 
-/* a host that shrinks the frame (a flex or grid item with min-width: 0) shrinks its regions with it. */
-.swz-head,
-.swz-body,
-.swz-foot { min-width: 0; }
-
 /* whatever the host puts under the rail sits one step below it. */
 .swz-head-slot { margin-top: var(--sp-3); }
 
