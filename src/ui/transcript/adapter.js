@@ -376,6 +376,7 @@ function resolveStickyModels(turns, seed) {
  * @typedef {object} AdaptTranscriptOptions
  * @property {readonly number[]} [visibleTurnIndices] post-resolution projection by canonical turn index
  * @property {import('@peasant-labs/schema').SessionRelationshipNavigation[]} [relationshipNavigation] separately authorized read metadata; never durable content
+ * @property {'local' | 'published'} [payloadMode] published requires a detail already validated by schema's published envelope parser; defaults to local
  */
 
 /* ── Tool-call cooking ───────────────────────────────────────────────────────── */
@@ -851,10 +852,14 @@ function buildFilterIndex(turnVMs, annotationsByTurn) {
  * @param {TranscriptWireInput} payload          canonical wire plus legacy git compatibility
  * @param {AnnotationSummary[]} [annotations]     separately-fetched entry annotations
  * @param {TranscriptAnalyticsVM} [analytics]     precomputed analytics; else derived on demand
- * @param {AdaptTranscriptOptions} [options]      optional post-resolution visible-turn projection
+ * @param {AdaptTranscriptOptions} [options]      payload mode, authorized navigation, and visible-turn projection
  * @returns {TranscriptViewModel}
  */
 export function adaptTranscript(payload, annotations, analytics, options) {
+  const payloadMode = options?.payloadMode ?? 'local'
+  if (payloadMode !== 'local' && payloadMode !== 'published') {
+    throw new TypeError('Fairtrade adaptTranscript refused payloadMode: select local or published; use published only after validating the envelope with parseTranscriptContentText.')
+  }
   const hasEvidence = hasNormalizedEvidence(payload)
   // A future string state is preserved, while canonical validation still checks
   // every other field and every cross-partition evidence invariant.
@@ -862,7 +867,7 @@ export function adaptTranscript(payload, annotations, analytics, options) {
   const historyStates = Array.isArray(originalHistory) ? originalHistory.map(section => parseEarlierHistoryState(section?.state)) : []
   // Validate the ORIGINAL complete durable value, including all earlier sections,
   // before filtering. Never project away an invalid duplicate owner or attachment.
-  if (hasEvidence) {
+  if (hasEvidence && payloadMode === 'local') {
     try {
       // Cook the canonical normalized value, not the original evidence object.
       // Only the explicitly supported legacy git extension stays outside schema.
