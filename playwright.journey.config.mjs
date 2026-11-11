@@ -12,6 +12,7 @@
  * each journey records.
  */
 import { defineConfig } from '@playwright/test'
+import { PROJECT_THEMES } from './scripts/journey/theme-rows.mjs'
 
 const SB_PORT = Number(process.env.JOURNEY_SB_PORT || 6017)
 const SB_URL = `http://localhost:${SB_PORT}`
@@ -22,8 +23,8 @@ const ARTIFACTS = 'scripts/journey/.artifacts'
 const [VIEWPORT_W, VIEWPORT_H] = (process.env.JOURNEY_VIEWPORT || '1280x720').split('x').map(Number)
 
 const SCREENSHOT = process.env.JOURNEY_SCREENSHOT === 'off' ? 'only-on-failure' : 'on'
-const TRACE = process.env.JOURNEY_TRACE === '1' ? 'on' : 'retain-on-failure'
-const VIDEO = process.env.JOURNEY_VIDEO === '1' ? 'on' : 'retain-on-failure'
+const TRACE = process.env.JOURNEY_TRACE === '1' ? 'on' : 'on-first-retry'
+const VIDEO = process.env.JOURNEY_VIDEO === '1' ? 'on' : 'on-first-retry'
 const HTML = process.env.JOURNEY_HTML !== '0'
 
 /* Both servers run under scripts/journey/serve-supervised.mjs, which runs the
@@ -60,8 +61,7 @@ export default defineConfig({
     screenshot: SCREENSHOT,
   },
   projects: [
-    { name: 'dark', use: { colorScheme: 'dark' } },
-    { name: 'light', use: { colorScheme: 'light' } },
+    ...PROJECT_THEMES.map((theme) => ({ name: theme, use: { colorScheme: theme } })),
   ],
   webServer: [
     {

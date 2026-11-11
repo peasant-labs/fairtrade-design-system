@@ -23,7 +23,9 @@ const URL = `http://localhost:${process.env.JOURNEY_APP_PORT || '5180'}/?fb=off`
 test.describe('built app', () => {
   // One serial pass holds every check; the overflow sweep reloads per width.
   test.setTimeout(300_000)
-  test('passes the twenty interaction checks', async ({ page, context, browser }) => {
+  test('passes the twenty interaction checks', async ({ page, context, browser }, testInfo) => {
+    // This unthemed URL renders dark in both projects; the light run is identical.
+    test.skip(testInfo.project.name === 'light', 'un-themed app interaction sweep runs in dark')
     const errors = []
     page.on('console', (m) => {
       if (m.type() === 'error' && !/favicon/.test(m.text())) errors.push(m.text())

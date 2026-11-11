@@ -71,6 +71,65 @@ and fails if either is not successful. Alongside `lib` and Fairtest, the two
 projects use all four pool slots. Each of the three browser jobs builds the app
 and Storybook independently, trading duplicate build time for isolation.
 
+The journey config records trace and video on the first retry only;
+`JOURNEY_TRACE=1` and `JOURNEY_VIDEO=1` force recording on every attempt. Journey
+CI sets `JOURNEY_SCREENSHOT=off`, which means only-on-failure screenshots, not
+disabling explicitly requested evidence screenshots. Journey retries remain one,
+so failure traces and videos come from the retry attempt. Fairtest keeps its
+zero-retry contract and records trace and video on each attempt, retaining them
+on failure for forensics. CI uploads each project's Playwright artifact directory on failure,
+and its `report.json` on every run.
+
+Every browser job captures `nproc`, CPU model, memory bytes, load averages,
+router reason, run creation and job start timestamps, and their difference in
+seconds. It also records the current attempt start and the interval from that
+start to the job start. On a re-run, the run-creation interval includes earlier
+attempts, while the attempt interval does not. It prints these facts and
+attaches them to its uploaded `report.json`. The job timestamps come from the
+Actions API; the job token has `actions: read` plus `contents: read`.
+If the API or timestamps are unavailable, `queueSeconds` is null and `apiError`
+explains why; local machine facts are still recorded. Timing collection and
+uploads do not fail a browser gate. The Fairtest timing report is separate from
+its immutable evidence root.
+
+The browser-free `node scripts/journey/catalog-gate.mjs` lists the actual
+Playwright catalog without starting either server and compares exact
+project/full-title pairs with `scripts/testdata/journey-catalog.json`. Its
+fixture-driven mutations prove dropped, duplicated and renamed tests and a
+missing project fail. The catalog retains 282 named entries per project; a
+runtime project guard eliminates duplicate fixture rows without deleting names.
+The same theme predicate is checked against both project names while listing,
+so an unknown theme or a row that runs more than once fails before browsers
+start. After an intentional catalog change, run
+`node scripts/journey/catalog-gate.mjs --write` and review the manifest diff.
+The light project's report must also prove that the reduced-transparency test
+executed and saw a mounted light theme; a skip does not satisfy that check.
+
+### Focused duplicate measurements
+
+On this Linux workstation, single-worker focused runs on 2026-11-11 used the
+same built artifacts, isolated ports 26017/25180 and CI retries. Times below are
+whole-command wall seconds, one sample per cell, not a CI performance claim.
+The baseline's retain-on-failure policy recorded every first attempt; the after
+run forced trace and video on to keep first-attempt recording comparable. The
+envelope guard also ran during part of the after run, so the samples are noisy.
+
+| file | project | before (passed) | after (passed, duplicate skips) |
+| --- | --- | --- | --- |
+| publish | dark | 58s (6) | 33s (3, 3) |
+| publish | light | 57s (6) | 33s (3, 3) |
+| context-share | dark | 6s (2) | 5s (1, 1) |
+| context-share | light | 6s (2) | 5s (1, 1) |
+| app-validate | dark | 46s (2) | 48s (2, 0) |
+| app-validate | light | 45s (2) | 4s (1, 1) |
+
+Publish and context-share fixtures explicitly set each row's theme; each row now
+runs in its matching project instead of in both. The twenty-check interaction
+sweep opens the same unthemed dark app in either project and runs once on dark;
+the separate reduced-transparency assertion still runs in both pinned themes.
+The paired per-test CI duration ratio is measured **after merge**, separately for
+hosted and pool runners. No local number is presented as that acceptance result.
+
 ## Vitest pilot
 
 `vitest.config.mjs` runs three files:
