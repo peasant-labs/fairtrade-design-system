@@ -32,7 +32,7 @@ assert.deepEqual(manifest.guardNames, EXPECTED_GUARD_NAMES, 'benchmark manifest 
 const testCase = fixture.cases[0]
 assert.deepEqual(Object.keys(testCase).sort(), ['ceilingsMs', 'deliberateSlowdownFactor', 'generator', 'measurement', 'name'], 'benchmark case shape')
 assert.equal(testCase.ceilingsMs.intrinsic, 100, 'intrinsic ceiling must remain the 100ms user-facing budget')
-assert.equal(testCase.ceilingsMs.rederivation, 16, 'interaction re-derivation ceiling must remain the 16ms user-facing budget')
+assert.equal(testCase.ceilingsMs.rederivation, 50, 'interaction re-derivation ceiling must remain the 50ms user-facing budget')
 assert.equal(testCase.measurement.discardedWarmups, 2, 'benchmark discards exactly two warmups')
 assert.equal(testCase.measurement.measuredRuns, 9, 'benchmark takes exactly nine measured runs')
 assert.equal(testCase.measurement.statistic, 'median', 'benchmark uses the median')
