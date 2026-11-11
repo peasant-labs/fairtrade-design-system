@@ -981,7 +981,8 @@ async function requireComponentRenderSettled(page, story) {
  * Read one declared fact inside the story root through the runner's own
  * locators: the element a selector finds, or the element an accessible role
  * and name finds, then the declared count, selector match, attribute value,
- * text, texts, or focus. The fact holds when every declared part matches.
+ * text, texts, focus, containment (`inside`), or edge alignment (`flush`). The
+ * fact holds when every declared part matches.
  * @param {import('@playwright/test').Page} page live page
  * @param {import('./fairtrade-component-target.mjs').ComponentExpectation} expectation declared fact
  * @returns {Promise<ComponentFactObservation>} the observation
@@ -1020,6 +1021,50 @@ async function readComponentFact(page, expectation) {
   if (expectation.focused !== undefined) {
     observed.focused = await first.evaluate((element) => element === element.ownerDocument.activeElement)
     holds = holds && observed.focused === expectation.focused
+  }
+  // Geometry facts read the laid-out boxes in the real browser, to half a pixel. A geometry fact
+  // over no element would hold for nothing, so it needs at least one match.
+  if (expectation.inside !== undefined) {
+    observed.escapes = await found.evaluateAll((elements, ancestor) => {
+      /** @type {{ index: number, over: number | null }[]} */
+      const escapes = []
+      elements.forEach((element, index) => {
+        const frame = element.closest(ancestor)
+        if (!frame) {
+          escapes.push({ index, over: null })
+          return
+        }
+        const box = element.getBoundingClientRect()
+        const bounds = frame.getBoundingClientRect()
+        const over = Math.max(bounds.left - box.left, box.right - bounds.right, bounds.top - box.top, box.bottom - bounds.bottom)
+        if (over > 0.5) escapes.push({ index, over: Math.round(over * 10) / 10 })
+      })
+      return escapes
+    }, expectation.inside)
+    holds = holds && count > 0 && /** @type {unknown[]} */ (observed.escapes).length === 0
+  }
+  if (expectation.flush !== undefined) {
+    observed.off = await found.evaluateAll((elements, flush) => {
+      /** @type {{ index: number, gap: number | null }[]} */
+      const off = []
+      elements.forEach((element, index) => {
+        const anchor = element.closest(flush.to)
+        if (!anchor) {
+          off.push({ index, gap: null })
+          return
+        }
+        const box = element.getBoundingClientRect()
+        const bounds = anchor.getBoundingClientRect()
+        const gap = flush.edge === 'left'
+          ? box.left - bounds.left
+          : flush.edge === 'right'
+            ? box.right - bounds.right
+            : (box.left + box.right) / 2 - (bounds.left + bounds.right) / 2
+        if (Math.abs(gap) > 0.5) off.push({ index, gap: Math.round(gap * 10) / 10 })
+      })
+      return off
+    }, expectation.flush)
+    holds = holds && count > 0 && /** @type {unknown[]} */ (observed.off).length === 0
   }
   return { name: expectation.name, holds, observed }
 }
