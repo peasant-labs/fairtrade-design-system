@@ -45,7 +45,8 @@ async function provenance(page, theme, label) {
 
 /* The position copy a reader is shown, checked before every capture. Each caption is a
    range against the total (or the no-turn copy), and the comparison parses the header
-   total and the upper bound of every named range: a string match alone is not enough. */
+   total the upper bound of every named range, and the total each range is stated against,
+   which must equal the header total: a string match alone is not enough. */
 const RANGE = /^turns? \d[\d,]*(?:–\d[\d,]*)? of \d[\d,]*$/
 const NO_TURNS = /^no conversation turns, \d[\d,]* segments?, \d[\d.]* (?:bytes|KiB|MiB|GiB)$/
 const integer = (digits) => Number(digits.replaceAll(',', ''))
@@ -67,6 +68,9 @@ async function expectPositions(page, label) {
     for (const match of copy.matchAll(/\bturns? (\d[\d,]*)(?:–(\d[\d,]*))?/g)) {
       const upper = integer(match[2] ?? match[1])
       expect(upper, `${label}: ${JSON.stringify(copy)} names a turn past the header total ${total}`).toBeLessThanOrEqual(total)
+    }
+    for (const match of copy.matchAll(/\bturns? \d[\d,]*(?:–\d[\d,]*)? of (\d[\d,]*)/g)) {
+      expect(integer(match[1]), `${label}: ${JSON.stringify(copy)} states a total other than the header total ${total}`).toBe(total)
     }
   }
   return { header, captions, titles, valueText }

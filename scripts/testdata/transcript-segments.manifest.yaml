@@ -121,12 +121,18 @@ requiredMutationNames:
   - the header ignores hidden turns
   - a tool row is counted
   - the header without a total prints raw digits
+  - a caption states a total other than the header's
 mutations:
   - name: the header without a total prints raw digits
     file: src/ui/transcript/TranscriptViewer.jsx
     find: "? `${formatInteger(conversationTurns.length)} turns`"
     replace: "? `${conversationTurns.length} turns`"
     expectedDiagnostic: 'a thousand held turns group their digits: header'
+  - name: a caption states a total other than the header's
+    file: src/ui/transcript/segments.js
+    find: "return `${positionRange(position)} of ${formatInteger(position.total)}`"
+    replace: "return `${positionRange(position)} of ${formatInteger(position.total + 3)}`"
+    expectedDiagnostic: 'states a total of'
   - name: a history label is dropped
     file: src/ui/transcript/earlier-history-state.js
     find: "'migrated history'"

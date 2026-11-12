@@ -123,12 +123,19 @@ function headerTotal(header) {
 function namedUpperBounds(copy) {
   return [...copy.matchAll(/\bturns? (\d[\d,]*)(?:–(\d[\d,]*))?/g)].map((match) => integer(match[2] ?? match[1]))
 }
+/* The total a position copy states after its range: "turns 54–76 of 77" states 77. */
+function statedTotals(copy) {
+  return [...copy.matchAll(/\bturns? \d[\d,]*(?:–\d[\d,]*)? of (\d[\d,]*)/g)].map((match) => integer(match[1]))
+}
 function checkWithinTotal(label, header, copies) {
   const total = headerTotal(header)
   report.check(total != null, `${label}: the header ${JSON.stringify(header)} must state a total`)
   for (const copy of copies) {
     for (const upper of namedUpperBounds(copy)) {
       report.check(upper <= total, `${label}: ${JSON.stringify(copy)} names turn ${upper}, past the header total ${total}`)
+    }
+    for (const stated of statedTotals(copy)) {
+      report.check(stated === total, `${label}: ${JSON.stringify(copy)} states a total of ${stated}, which must equal the header total ${total}`)
     }
   }
 }
