@@ -62,6 +62,11 @@ cases:
   - {name: the wizard names its rail after itself by default, kind: names, component: wizard, count: 2, current: welcome, props: {}, expected: {frame: step wizard, rail: step wizard progress}}
   - {name: the wizard names its rail after the name the host gives it, kind: names, component: wizard, count: 2, current: welcome, props: {aria-label: contribute}, expected: {frame: contribute, rail: contribute progress}}
 
+  # kind names with `component: indicator`: the rail on its own has no frame to take a name from, so it
+  # is named `progress` unless the host gives it one.
+  - {name: a standalone rail is named progress by default, kind: names, component: indicator, count: 2, current: welcome, props: {}, expected: {rail: progress}}
+  - {name: a standalone rail keeps the name the host gives it, kind: names, component: indicator, count: 2, current: welcome, props: {aria-label: contribute}, expected: {rail: contribute}}
+
   # kind head: a head the host leaves empty (null, false or true, which React draws as nothing) draws
   # no head slot, so no margin is left under the rail.
   - {name: an empty head draws no head slot, kind: head, count: 2, current: welcome, heads: [null, false, true], expected: {slots: 0}}

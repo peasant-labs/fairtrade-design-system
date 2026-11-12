@@ -80,13 +80,19 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(same(actual, row.expected), `${name}: the count must read ${JSON.stringify(row.expected)}, received ${JSON.stringify(actual)}`)
       await mounted.unmount()
     } else if (row.kind === 'names') {
-      // `component: wizard` mounts the uncontrolled wizard, which renders through the frame.
+      // `component: wizard` mounts the uncontrolled wizard, which renders through the frame; `component:
+      // indicator` mounts the rail alone, which has no frame around it.
       const element = row.component === 'wizard'
         ? React.createElement(StepWizard, { steps: stepsOf(row.count), ...row.props }, stepsOf(row.count).map((step) => React.createElement('p', { key: step.id }, step.label)))
-        : React.createElement(StepWizardFrame, frameProps(row), null)
+        : row.component === 'indicator'
+          ? React.createElement(StepIndicator, { steps: stepsOf(row.count), current: row.current, ...row.props })
+          : React.createElement(StepWizardFrame, frameProps(row), null)
       const mounted = await mount(element)
-      const frame = mounted.container.firstElementChild
-      const actual = { frame: frame.getAttribute('aria-label'), rail: frame.querySelector('nav')?.getAttribute('aria-label') }
+      const root = mounted.container.firstElementChild
+      const rail = root.matches('nav') ? root : root.querySelector('nav')
+      const actual = row.component === 'indicator'
+        ? { rail: rail?.getAttribute('aria-label') }
+        : { frame: root.getAttribute('aria-label'), rail: rail?.getAttribute('aria-label') }
       report.check(same(actual, row.expected), `${name}: the names must be ${JSON.stringify(row.expected)}, received ${JSON.stringify(actual)}`)
       await mounted.unmount()
     } else if (row.kind === 'head') {

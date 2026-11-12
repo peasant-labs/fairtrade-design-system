@@ -47,3 +47,19 @@ void rail
 /** @type {Parameters<typeof StepWizard>[0]} */
 const wizard = { steps: [{ id: 'choose', label: 'choose' }], onComplete: ({ completed }) => void completed.size }
 void wizard
+
+// a host that keeps its steps in a readonly array (peasant's `readonly FrameStep[]`) passes them to all three.
+/** @type {readonly { id: string, label: string }[]} */
+const readonlySteps = [{ id: 'choose', label: 'choose' }, { id: 'review', label: 'review' }]
+
+/** @type {Parameters<typeof StepWizardFrame>[0]} */
+const readonlyFrame = { steps: readonlySteps, current: 'choose' }
+void readonlyFrame
+
+/** @type {Parameters<typeof StepIndicator>[0]} */
+const readonlyRail = { steps: readonlySteps, current: 'choose' }
+void readonlyRail
+
+/** @type {Parameters<typeof StepWizard>[0]} */
+const readonlyWizard = { steps: readonlySteps }
+void readonlyWizard

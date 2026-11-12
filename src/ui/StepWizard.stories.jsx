@@ -227,7 +227,7 @@ const EDGE_CHARACTERS = 5
  * between neighbouring marker centres, less the gutter.
  */
 function labelsShown(rail, label, count, gutter) {
-  if (count === 1) return { shown: true, documented: true }
+  if (count === 1) return { shown: true, documented: true, edgeRoom: null }
   const marker = rail.querySelector('.swz-mark').getBoundingClientRect().width
   const share = (rail.getBoundingClientRect().width - marker) / (count - 1) - gutter
   const edgeRoom = (marker + share) / 2
@@ -236,7 +236,6 @@ function labelsShown(rail, label, count, gutter) {
     shown: decide(share - measure(label, 'var(--swz-label-floor)')),
     documented: decide(edgeRoom - EDGE_CHARACTERS * measure(label, '1ch')),
     edgeRoom,
-    share,
   }
 }
 

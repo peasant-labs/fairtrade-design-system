@@ -65,7 +65,7 @@ function labelPlace(index, count) {
  * `width: auto`) it collapses to zero width.
  *
  * @param {Object} props
- * @param {WizardStep[]} props.steps        the ordered steps
+ * @param {ReadonlyArray<WizardStep>} props.steps        the ordered steps
  * @param {string} props.current            id of the active step
  * @param {ReadonlySet<string>} [props.completed]   ids of finished steps (olive + check, jump-back enabled)
  * @param {ReadonlySet<string>} [props.reachable]   ids the user may jump to (the gate). current + completed are implicitly reachable
@@ -143,7 +143,7 @@ export function StepIndicator({
  * count reads "step 0 / m" and no marker is current.
  *
  * @param {Object} props
- * @param {WizardStep[]} props.steps        the ordered steps (>= 1)
+ * @param {ReadonlyArray<WizardStep>} props.steps        the ordered steps (>= 1)
  * @param {string} props.current            id of the active step
  * @param {ReadonlySet<string>} [props.completed]   ids of finished steps
  * @param {ReadonlySet<string>} [props.reachable]   ids the user may jump to
@@ -227,7 +227,7 @@ export function StepWizardFrame({
  * unless its render-prop has reported setValid(false); plain-children bodies are always valid.
  *
  * @param {Object} props
- * @param {WizardStep[]} props.steps   the ordered steps (>= 1)
+ * @param {ReadonlyArray<WizardStep>} props.steps   the ordered steps (>= 1)
  * @param {(args: { completed: Set<string> }) => void} [props.onComplete]  fired when the last step's submit is activated
  * @param {(args: WizardBodyArgs) => React.ReactNode} [props.renderStep]   render-prop for the active step's body
  * @param {React.ReactNode[]} [props.children]  index-aligned step bodies (alternative to renderStep)
@@ -302,7 +302,7 @@ export default function StepWizard({
       completed={completed}
       reachable={reachable}
       onJump={goTo}
-      aria-label={ariaLabel ?? 'step wizard'}
+      aria-label={ariaLabel}
       bodyProps={{
         id: panelId,
         role: 'group',

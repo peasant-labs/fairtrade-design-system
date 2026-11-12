@@ -20,6 +20,8 @@ requiredCaseNames:
   - the frame and rail have names with no host label
   - the wizard names its rail after itself by default
   - the wizard names its rail after the name the host gives it
+  - a standalone rail is named progress by default
+  - a standalone rail keeps the name the host gives it
   - an empty head draws no head slot
   - a reachable marker jumps and a locked one does not
   - the wizard walks continue and back through the frame
@@ -34,7 +36,9 @@ requiredMutationNames:
   - the frame drops the head slot
   - a false head draws an empty slot
   - the rail loses the frame's name
-  - the wizard names itself apart from the frame
+  - the frame's default name moves
+  - the wizard drops the name the host gives it
+  - the standalone rail changes its default name
   - the wizard stops reporting completion
 mutations:
   - name: the first label is centred
@@ -82,11 +86,21 @@ mutations:
     find: "aria-label={`${ariaLabel} progress`}"
     replace: 'aria-label="progress"'
     expectedDiagnostic: "the rail is named after the frame by default: the names must be"
-  - name: the wizard names itself apart from the frame
+  - name: the frame's default name moves
     file: src/ui/StepWizard.jsx
-    find: "aria-label={ariaLabel ?? 'step wizard'}"
-    replace: "aria-label={ariaLabel ?? 'wizard'}"
-    expectedDiagnostic: "the wizard names its rail after itself by default: the names must be"
+    find: "'aria-label': ariaLabel = 'step wizard',"
+    replace: "'aria-label': ariaLabel = 'wizard',"
+    expectedDiagnostic: "the frame and rail have names with no host label: the names must be"
+  - name: the wizard drops the name the host gives it
+    file: src/ui/StepWizard.jsx
+    find: "      aria-label={ariaLabel}\n      bodyProps={{"
+    replace: "      bodyProps={{"
+    expectedDiagnostic: "the wizard names its rail after the name the host gives it: the names must be"
+  - name: the standalone rail changes its default name
+    file: src/ui/StepWizard.jsx
+    find: "'aria-label': ariaLabel = 'progress',"
+    replace: "'aria-label': ariaLabel = 'steps',"
+    expectedDiagnostic: "a standalone rail is named progress by default: the names must be"
   - name: the wizard stops reporting completion
     file: src/ui/StepWizard.jsx
     find: "onComplete?.({ completed: done })"
