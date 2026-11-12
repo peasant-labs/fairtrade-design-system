@@ -4,6 +4,16 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.68
+
+- Count conversation turns with the contract's `isConversationTurn` from `@peasant-labs/schema@0.51.0`. The trace header, the full trace tab, and each phase chip count top-level user and assistant entries of text or image. System entries, tool rows, thinking rows, and nested helper turns are not counted. A turn with no `entryType` is not counted, so a host that builds turns by hand must set it.
+- Name conversation-turn positions on a segmented transcript when the directory carries them. `SegmentDirectoryVM` gains `totalConversationTurns` and `SegmentRefVM` gains `conversationTurns` (`before`, `count`). A boundary caption reads `turns 20–43 of 77`, `turn 20 of 77` for one turn, and `no conversation turns, 1 segment, 12 KiB` for a gap that holds none. A gap that reaches into a directory page not yet received, or holds a ref with no span, keeps the segment and byte caption. The viewer checks that a span is present and does no arithmetic check on it: a host passes a directory its server validated.
+- The trace header stays in one unit while segments load: `40 of 77 turns`, then `77 turns` once every segment is held and no filter hides a held conversation turn. The Files tab sentence uses the same unit.
+- A scrubber tick is titled with its conversation turns (`turns 36–60`), or with `segment 3 of 12` when its ref carries no position. The slider's value text follows the active tick. `ScrubberTick` gains `position` and `valueText`.
+- The jump-failure alert names the conversation turns it could not load (`could not load the window around turns 36–60.`). Without a position it reads `could not load that part of the transcript.` and no longer prints a turn identity.
+- `SessionVM` gains `conversationTurnCount`, copied by `adaptTranscript`. The hero prints it, and prints `turnCount` when the producer measured none.
+- Export the `ConversationTurnSpanVM`, `ConversationPositionVM` and `ScrubberTick` types. `SegmentBoundaryVM` gains `position`. A directory without the new fields renders exactly as before.
+
 ## 0.0.67
 
 - Add `StepWizardFrame`, the controlled step-wizard shell. The host owns the current step and the footer actions; the frame draws the rail, a body, and a foot with a start slot, the "step n / m" count (spoken as "step n of m"), and an end slot. `StepWizard` is now built on the frame, so its footer count is spoken too. Peasant /kickstart and /selection consume it after release and drop their local copy of the frame.

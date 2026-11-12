@@ -192,6 +192,9 @@ export { default as useTranscriptInitialPosition } from './useTranscriptInitialP
 /** @typedef {import('./segments.js').SegmentWindowVM} SegmentWindowVM */
 /** @typedef {import('./segments.js').SegmentRegionVM} SegmentRegionVM */
 /** @typedef {import('./segments.js').SegmentBoundaryVM} SegmentBoundaryVM */
+/** @typedef {import('./segments.js').ConversationTurnSpanVM} ConversationTurnSpanVM */
+/** @typedef {import('./segments.js').ConversationPositionVM} ConversationPositionVM */
+/** @typedef {import('./segments.js').ScrubberTick} ScrubberTick */
 /** @typedef {import('./view-model.js').RelationshipVM} RelationshipVM */
 /** @typedef {import('./view-model.js').EarlierHistoryVM} EarlierHistoryVM */
 /** @typedef {import('./adapter.js').AdaptTranscriptOptions} AdaptTranscriptOptions */

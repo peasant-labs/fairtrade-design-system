@@ -6,10 +6,10 @@ export const readingUnverifiedPull = spec.unverified
 export function readingPayload({ short = false, taskCount = short ? spec.shortTaskCount : spec.taskCount, disclosure = false } = {}) {
   const tool = (id, durationMs = 1000) => ({ id, name: 'Bash', arguments: JSON.stringify({ command: `printf ${id}` }), result: `${id}-output`, durationMs })
   const turns = [
-    { index: 0, role: 'user', content: 'Reading request 0' },
-    { index: 1, role: 'assistant', content: `First response owns the action list.\n\n\`\`\`text\n${spec.longCode}_${spec.searchHorizontal}\n\`\`\``, toolCalls: Array.from({ length: short ? spec.shortLeadingActions : spec.leadingActions }, (_, n) => tool(`leading-${n}`, spec.toolDurations[n % spec.toolDurations.length].ms)) },
-    { index: 2, role: 'assistant', content: `Later distinct prose target\n\n${spec.searchSourceOnly}\n\n${spec.searchMixed.text}`, toolCalls: [tool('target-beta')] },
-    { index: 3, role: 'assistant', content: '', toolCalls: [tool('target-gamma'), { ...tool(spec.searchNested.id), result: `${'output line\n'.repeat(spec.searchNested.lines)}${'long_prefix_'.repeat(spec.searchNested.prefixRepeat)}${spec.searchNested.query}` }] },
+    { index: 0, role: 'user', entryType: 'text', content: 'Reading request 0' },
+    { index: 1, role: 'assistant', entryType: 'text', content: `First response owns the action list.\n\n\`\`\`text\n${spec.longCode}_${spec.searchHorizontal}\n\`\`\``, toolCalls: Array.from({ length: short ? spec.shortLeadingActions : spec.leadingActions }, (_, n) => tool(`leading-${n}`, spec.toolDurations[n % spec.toolDurations.length].ms)) },
+    { index: 2, role: 'assistant', entryType: 'text', content: `Later distinct prose target\n\n${spec.searchSourceOnly}\n\n${spec.searchMixed.text}`, toolCalls: [tool('target-beta')] },
+    { index: 3, role: 'assistant', entryType: 'tool_use', content: '', toolCalls: [tool('target-gamma'), { ...tool(spec.searchNested.id), result: `${'output line\n'.repeat(spec.searchNested.lines)}${'long_prefix_'.repeat(spec.searchNested.prefixRepeat)}${spec.searchNested.query}` }] },
     { index: 4, role: 'assistant', entryType: 'thinking', content: 'target thinking evidence, kept with its original source identity.' },
   ]
   if (disclosure) {
@@ -20,10 +20,11 @@ export function readingPayload({ short = false, taskCount = short ? spec.shortTa
     ]
   }
   for (let task = 1; task < taskCount; task++) {
-    turns.push({ index: turns.length, role: 'user', content: `Reading request ${task}` })
+    turns.push({ index: turns.length, role: 'user', entryType: 'text', content: `Reading request ${task}` })
     const paragraphs = task === taskCount - 1 ? spec.lastResponseParagraphs : 1
-    turns.push({ index: turns.length, role: 'assistant', content: Array.from({ length: paragraphs }, (_, paragraph) => `Response for reading request ${task}, paragraph ${paragraph + 1}. This distinct response keeps the real transcript long enough to read and navigate in both directions.${task === taskCount - 1 && spec.searchRepeated.paragraphs.includes(paragraph + 1) ? ` ${spec.searchRepeated.query}` : ''}${task === taskCount - 1 && paragraph === paragraphs - 1 ? ` ${(spec.searchFrequent.query + ' ').repeat(spec.searchFrequent.repeat)}` : ''}`).join('\n\n') })
+    turns.push({ index: turns.length, role: 'assistant', entryType: 'text', content: Array.from({ length: paragraphs }, (_, paragraph) => `Response for reading request ${task}, paragraph ${paragraph + 1}. This distinct response keeps the real transcript long enough to read and navigate in both directions.${task === taskCount - 1 && spec.searchRepeated.paragraphs.includes(paragraph + 1) ? ` ${spec.searchRepeated.query}` : ''}${task === taskCount - 1 && paragraph === paragraphs - 1 ? ` ${(spec.searchFrequent.query + ' ').repeat(spec.searchFrequent.repeat)}` : ''}`).join('\n\n') })
   }
-  return { id: 'reading-destinations', title: spec.longTitle, harness: 'claude-code', turns }
+  // every row is a top-level entry, stated as the wire states it
+  return { id: 'reading-destinations', title: spec.longTitle, harness: 'claude-code', turns: turns.map((turn) => ({ depth: 0, ...turn })) }
 }
 export function longReadingPayload() { return readingPayload({ taskCount: spec.longTaskCount }) }
