@@ -4,7 +4,10 @@
    Fixtures describe directories by parameters (a 10,000-turn / 200-segment directory,
    the 32 MiB session's 1,312 turns in 32 segments, and a sparse 55-turn session), the
    loaded-segment combinations and their expected boundaries, the window descriptors a
-   jump produces, and the mounted card / truncation / continuation outcomes. Everything
+   jump produces, the mounted card / truncation / continuation outcomes, and the
+   directories that carry conversation-turn positions with the literal copy a reader
+   sees for them (boundary captions, the header count, scrubber ticks, the slider's
+   value text, the jump-failure sentence and the Files tab sentence). Everything
    is read from scripts/testdata/transcript-segments.yaml and its required-NAME manifest;
    no case table lives here.
 
@@ -19,7 +22,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { JSDOM } from 'jsdom'
 import { loadFixturePair, assertExactNames, assertFields, withMountedSource, click, createReport } from './mounted-parts.mjs'
-import { buildDirectory, makeSegment, makeSegments } from './transcript-segment-fixture.mjs'
+import { buildDirectory, buildPositionDirectory, makePositionSegments, makeSegment, makeSegments } from './transcript-segment-fixture.mjs'
 import {
   SEGMENT_SCRUBBER_TICKS,
   boundaryCaption,
@@ -66,6 +69,10 @@ const { fixture, manifest } = loadFixturePair(FIXTURE, MANIFEST, {
   typeMutations: 'requiredTypeMutationNames',
   unknownHistoryInvalidCases: 'requiredUnknownHistoryInvalidNames',
   wordlessCases: 'requiredWordlessCaseNames',
+  positionDirectories: 'requiredPositionDirectoryNames',
+  positionCases: 'requiredPositionCaseNames',
+  countCases: 'requiredCountCaseNames',
+  heroCases: 'requiredHeroCaseNames',
 })
 
 for (const row of fixture.directories) assertFields(row, ['name', 'totalTurns', 'totalSegments', 'firstTurn', 'segmentTurns', 'segmentBytes'], `${FIXTURE} ${row.name}`)
@@ -77,13 +84,74 @@ for (const row of fixture.phaseCases) assertFields(row, ['name', 'directory', 'l
 for (const row of fixture.phaseCountCases) assertFields(row, ['name', 'turns', 'expectedCount', 'expectedFrom', 'expectedTo'], `${FIXTURE} ${row.name}`)
 for (const row of fixture.recoveryCases) assertFields(row, ['name', 'mode', 'directory', 'loaded', 'requests'], `${FIXTURE} ${row.name}`, ['window', 'restoredTurn', 'failureCopy', 'retryCopy'])
 for (const row of fixture.historyCases) assertFields(row, ['name', 'state', 'label', 'explanation'], `${FIXTURE} ${row.name}`)
-for (const [key, family] of [['heldWindow', fixture.mountCases], ['failedWindow', fixture.recoveryCases], ['phase', fixture.phaseCases]]) {
+for (const row of fixture.positionDirectories) {
+  assertFields(row, ['name', 'totalTurns', 'totalConversationTurns', 'segments'], `${FIXTURE} ${row.name}`, ['userTurns', 'systemTurns', 'toolTurns', 'thinkingTurns'])
+  for (const segment of row.segments) {
+    assertFields(segment, ['index', 'firstTurn', 'lastTurn', 'byteLength', 'conversationTurns'], `${FIXTURE} ${row.name} segment ${segment.index}`)
+    assertFields(segment.conversationTurns, ['before', 'count'], `${FIXTURE} ${row.name} segment ${segment.index} span`)
+  }
+}
+for (const row of fixture.positionCases) {
+  assertFields(row, ['name', 'directory', 'loaded', 'expect'], `${FIXTURE} ${row.name}`, ['refs', 'withoutPositions', 'dropSpans', 'dropTurns', 'hiddenCategories', 'thenLoaded', 'jump'])
+  assertFields(row.expect, ['header', 'captions', 'labels', 'filesScope'], `${FIXTURE} ${row.name} expect`, ['thenHeader', 'tickTitles', 'valueText', 'sliderAt', 'failure', 'loads', 'absent', 'silent'])
+  if (('jump' in row) !== ('failure' in row.expect)) throw new Error(`${FIXTURE} ${row.name}: a jump and its failure copy are stated together`)
+  if (('thenLoaded' in row) !== ('thenHeader' in row.expect)) throw new Error(`${FIXTURE} ${row.name}: a second load and its header are stated together`)
+}
+for (const row of fixture.countCases) assertFields(row, ['name', 'turns', 'header'], `${FIXTURE} ${row.name}`)
+for (const row of fixture.heroCases) assertFields(row, ['name', 'turnCount', 'hero'], `${FIXTURE} ${row.name}`, ['conversationTurnCount'])
+for (const [key, family] of [['heldWindow', fixture.mountCases], ['failedWindow', fixture.recoveryCases], ['phase', fixture.phaseCases], ['positions', fixture.positionCases]]) {
   if (!family.some(row => row.name === fixture.vitestSelection[key])) throw new Error(`${FIXTURE}: selected ${key} case must exist`)
 }
 
 const DIRECTORY = new Map(fixture.directories.map((row) => [row.name, row]))
+const POSITION_DIRECTORY = new Map(fixture.positionDirectories.map((row) => [row.name, row]))
+for (const row of fixture.positionCases) {
+  if (!POSITION_DIRECTORY.has(row.directory)) throw new Error(`${FIXTURE} ${row.name}: unknown position directory ${row.directory}`)
+}
 
 const report = createReport('transcript segments')
+
+/* ── the inequality ─────────────────────────────────────────────────────────────
+   No surface may name a conversation turn past the session total. The check parses
+   what a reader is shown: the header's total, and the upper bound of every range a
+   caption, tick, slider or alert names. It is a comparison, never a string match. */
+const integer = (digits) => Number(digits.replaceAll(',', ''))
+function headerTotal(header) {
+  const match = /(\d[\d,]*) turns?$/.exec(header)
+  return match ? integer(match[1]) : null
+}
+function namedUpperBounds(copy) {
+  return [...copy.matchAll(/\bturns? (\d[\d,]*)(?:–(\d[\d,]*))?/g)].map((match) => integer(match[2] ?? match[1]))
+}
+function checkWithinTotal(label, header, copies) {
+  const total = headerTotal(header)
+  report.check(total != null, `${label}: the header ${JSON.stringify(header)} must state a total`)
+  for (const copy of copies) {
+    for (const upper of namedUpperBounds(copy)) {
+      report.check(upper <= total, `${label}: ${JSON.stringify(copy)} names turn ${upper}, past the header total ${total}`)
+    }
+  }
+}
+
+/* ── positions in the loaded-region model ───────────────────────────────────── */
+for (const row of fixture.positionCases) {
+  const def = POSITION_DIRECTORY.get(row.directory)
+  const directory = buildPositionDirectory(def, row)
+  for (const loaded of [row.loaded, row.thenLoaded].filter(Boolean)) {
+    const regions = loadedRegions(directory, makePositionSegments(def, loaded, row))
+    const boundaries = regionBoundaries(directory, regions)
+    for (const boundary of boundaries) {
+      if (row.withoutPositions) report.check(boundary.position === null, `${row.name}: a directory without positions gives its boundaries none`)
+      if (boundary.position) report.check(boundary.position.before + boundary.position.count <= def.totalConversationTurns, `${row.name}: model boundary ${boundary.key} ends at ${boundary.position.before + boundary.position.count}, past the total ${def.totalConversationTurns}`)
+    }
+    for (const tick of scrubberTicks(directory)) {
+      if (row.withoutPositions) report.check(tick.position === null, `${row.name}: a directory without positions gives its ticks none`)
+      if (tick.position) report.check(tick.position.before + tick.position.count <= def.totalConversationTurns, `${row.name}: model tick ${tick.key} ends at ${tick.position.before + tick.position.count}, past the total ${def.totalConversationTurns}`)
+    }
+    const captions = boundaries.map(boundaryCaption)
+    if (loaded === row.loaded) report.check(JSON.stringify(captions) === JSON.stringify(row.expect.captions), `${row.name}: model captions ${JSON.stringify(captions)} must equal ${JSON.stringify(row.expect.captions)}`)
+  }
+}
 
 /* ── the loaded-region model ────────────────────────────────────────────────── */
 for (const row of fixture.loadCases) {
@@ -265,7 +333,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     await mounted.settle()
     const stream = mounted.container.querySelector('.txn-stream')
     const headerCounts = mounted.container.querySelectorAll('.txn-trace-count')
-    report.check(headerCounts.length === 1 && /\b\d[\d,]*(?: of \d[\d,]*)? turns\b/.test(text(headerCounts[0])), `${row.name}: the transcript has one turn-count header`)
+    report.check(headerCounts.length === 1 && /\b\d[\d,]*(?: of \d[\d,]*)? turns?\b/.test(text(headerCounts[0])), `${row.name}: the transcript has one turn-count header`)
     const cards = mounted.container.querySelectorAll('.txn-turn').length
     report.check(cards <= row.expect.maxCards, `${row.name}: ${cards} mounted cards must not exceed ${row.expect.maxCards}`)
     report.check(Number(stream?.dataset.mountedTurnBound) === row.expect.maxCards, `${row.name}: the stream must publish its mounted-card bound`)
@@ -283,7 +351,6 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     for (const [index, node] of boundaryNodes.entries()) {
       const caption = text(node.querySelector('.txn-segboundary-caption'))
       report.check(caption === row.expect.captions[index], `${row.name}: boundary ${index} caption ${JSON.stringify(caption)} must equal ${JSON.stringify(row.expect.captions[index])}`)
-      report.check(!/\bturns?\s+\d|\b\d[\d,]*\s+turns?\b/i.test(caption), `${row.name}: boundary ${index} must not claim turn numbers or counts`)
     }
     const truncation = mounted.container.querySelector('.txn-truncation')
     report.check(!!truncation === row.expect.truncation, `${row.name}: the truncation notice must be ${row.expect.truncation ? 'present' : 'absent'}`)
@@ -338,6 +405,127 @@ await withMountedSource(async ({ load, mount, window, React }) => {
         report.check(!listed.includes('unloaded.js'), `${row.name}: a file only in an unloaded turn is not listed`)
       }
     }
+    await mounted.unmount()
+  }
+
+  /* positions: the copy a reader sees, and the inequality over all of it */
+  const { DEFAULT_TRANSCRIPT_FILTERS } = await load('/src/ui/transcript/filters.js')
+  const { default: Scrubber } = await load('/src/ui/transcript/Scrubber.jsx')
+  for (const row of fixture.positionCases) {
+    const def = POSITION_DIRECTORY.get(row.directory)
+    const directory = buildPositionDirectory(def, row)
+    const requests = []
+    const noise = []
+    const saved = { warn: console.warn, error: console.error }
+    /* record and forward: the report's own failure output still reaches the terminal */
+    console.warn = (...args) => { noise.push(args.join(' ')); saved.warn(...args) }
+    console.error = (...args) => { noise.push(args.join(' ')); saved.error(...args) }
+    const categories = { ...DEFAULT_TRANSCRIPT_FILTERS.categories }
+    for (const category of row.hiddenCategories ?? []) categories[category] = false
+    const props = (loaded) => ({
+      directory,
+      segments: makePositionSegments(def, loaded, row),
+      filters: { ...DEFAULT_TRANSCRIPT_FILTERS, categories },
+      onFiltersChange: () => {},
+      onLoadSegment: (index) => { requests.push(index) },
+      onLoadWindow: row.jump ? () => Promise.reject(new Error('failed window request')) : () => {},
+      initialPosition: row.jump ? { kind: 'turn', turnIndex: row.jump.turn } : undefined,
+    })
+    let mounted
+    try {
+      mounted = await mount(viewer(props(row.loaded)))
+      await mounted.settle()
+      const stream = mounted.container.querySelector('.txn-stream')
+      const header = text(mounted.container.querySelector('.txn-trace-count'))
+      report.check(header === row.expect.header, `${row.name}: header ${JSON.stringify(header)} must equal ${JSON.stringify(row.expect.header)}`)
+      const boundaryNodes = [...mounted.container.querySelectorAll('[data-segment-boundary]')]
+      const captions = boundaryNodes.map((node) => text(node.querySelector('.txn-segboundary-caption')))
+      report.check(JSON.stringify(captions) === JSON.stringify(row.expect.captions), `${row.name}: boundary captions ${JSON.stringify(captions)} must equal ${JSON.stringify(row.expect.captions)}`)
+      const labels = boundaryNodes.map((node) => node.querySelector('.txn-segboundary-load')?.getAttribute('aria-label'))
+      report.check(JSON.stringify(labels) === JSON.stringify(row.expect.labels), `${row.name}: boundary labels ${JSON.stringify(labels)} must equal ${JSON.stringify(row.expect.labels)}`)
+      const copies = [...captions, ...labels]
+      let failure = null
+      if (row.jump) {
+        failure = text(mounted.container.querySelector('.txn-held-window[role="alert"] span'))
+        report.check(failure === row.expect.failure, `${row.name}: jump failure ${JSON.stringify(failure)} must equal ${JSON.stringify(row.expect.failure)}`)
+        copies.push(failure)
+      }
+      /* the pinned header carries the scrubber once the reader has scrolled */
+      await mounted.act(() => {
+        stream.scrollTop = 200
+        stream.dispatchEvent(new window.Event('scroll', { bubbles: true }))
+      })
+      await mounted.settle()
+      const scrubber = mounted.container.querySelector('.txn-scrub')
+      const tickTitles = [...mounted.container.querySelectorAll('.txn-scrub-segment-tick')].map((node) => node.getAttribute('title'))
+      const valueText = scrubber?.getAttribute('aria-valuetext') ?? null
+      report.check(tickTitles.length > 0 && valueText != null, `${row.name}: the scrubber must be mounted with its ticks`)
+      if (row.expect.tickTitles) report.check(JSON.stringify(tickTitles) === JSON.stringify(row.expect.tickTitles), `${row.name}: tick titles ${JSON.stringify(tickTitles)} must equal ${JSON.stringify(row.expect.tickTitles)}`)
+      if (row.expect.valueText) report.check(valueText === row.expect.valueText, `${row.name}: slider value text ${JSON.stringify(valueText)} must equal ${JSON.stringify(row.expect.valueText)}`)
+      copies.push(...tickTitles, valueText ?? '')
+      /* the slider with a stated segment active: the production scrubber over the same sample */
+      if (row.expect.sliderAt) {
+        const slider = await mount(React.createElement(Scrubber, { ticks: scrubberTicks(directory), activeTick: row.expect.sliderAt.segment }))
+        const sliderText = slider.container.querySelector('.txn-scrub')?.getAttribute('aria-valuetext')
+        report.check(sliderText === row.expect.sliderAt.valueText, `${row.name}: slider value text at segment ${row.expect.sliderAt.segment} ${JSON.stringify(sliderText)} must equal ${JSON.stringify(row.expect.sliderAt.valueText)}`)
+        copies.push(sliderText ?? '')
+        await slider.unmount()
+      }
+      checkWithinTotal(row.name, header, copies)
+      for (const number of row.expect.absent ?? []) {
+        report.check(![header, ...copies].some((copy) => new RegExp(`(?<![\\d,])${number}(?![\\d,])`).test(copy)), `${row.name}: no surface may print ${number}`)
+      }
+      if (row.expect.loads != null) {
+        await mounted.act(() => click(window, boundaryNodes[0].querySelector('.txn-segboundary-load')))
+        report.check(requests[requests.length - 1] === row.expect.loads, `${row.name}: the control loads segment ${row.expect.loads}, received ${JSON.stringify(requests)}`)
+      }
+      const filesTab = [...mounted.container.querySelectorAll('[role="tab"]')].find((node) => text(node).startsWith('files'))
+      await mounted.act(() => click(window, filesTab))
+      await mounted.settle()
+      const scopeLine = text(mounted.container.querySelector('.txn-files .txn-scope'))
+      report.check(scopeLine === `${row.expect.filesScope}. a file that appears only in an unloaded segment is not listed.`, `${row.name}: files sentence ${JSON.stringify(scopeLine)} must start ${JSON.stringify(row.expect.filesScope)}`)
+      checkWithinTotal(`${row.name} files sentence`, header, row.withoutPositions ? [] : [scopeLine.replace(/^derived from (?:all )?/, 'turn ')])
+      if (row.thenLoaded) {
+        const traceTab = [...mounted.container.querySelectorAll('[role="tab"]')].find((node) => text(node).startsWith('full trace'))
+        await mounted.act(() => click(window, traceTab))
+        await mounted.rerender(viewer(props(row.thenLoaded)))
+        await mounted.settle()
+        const then = text(mounted.container.querySelector('.txn-trace-count'))
+        report.check(then === row.expect.thenHeader, `${row.name}: header after loading ${JSON.stringify(then)} must equal ${JSON.stringify(row.expect.thenHeader)}`)
+        report.check(headerTotal(then) === headerTotal(header), `${row.name}: the header total must not change while segments load`)
+      }
+      if (row.expect.silent) report.check(noise.length === 0, `${row.name}: absent position fields must not log or warn, received ${JSON.stringify(noise)}`)
+    } finally {
+      console.warn = saved.warn
+      console.error = saved.error
+      if (mounted) await mounted.unmount()
+    }
+  }
+
+  /* a whole transcript: the header counts the conversation turns it holds */
+  for (const row of fixture.countCases) {
+    const turns = row.turns.map(({ tool, ...turn }) => ({
+      label: String(turn.index), annotations: [], identity: `main:${turn.index}`, sourceIndexUnique: true,
+      toolCalls: tool ? [{ id: `call-${turn.index}`, name: 'Read', group: 'read', filePath: '/src/file.js', sourceIndex: 0, sourceIdUnique: true }] : [],
+      ...turn,
+    }))
+    const mounted = await mount(React.createElement(TranscriptViewer, { viewModel: viewModel([], { turns }), capabilities: CAPABILITIES, presentation: 'ledger' }))
+    await mounted.settle()
+    const header = text(mounted.container.querySelector('.txn-trace-count'))
+    report.check(header === row.header, `${row.name}: header ${JSON.stringify(header)} must equal ${JSON.stringify(row.header)}`)
+    await mounted.unmount()
+  }
+
+  /* the hero prints the conversation count, and the folded count only without one */
+  for (const row of fixture.heroCases) {
+    const payload = { ...fixture.historyPayload, turnCount: row.turnCount }
+    if (row.conversationTurnCount != null) payload.conversationTurnCount = row.conversationTurnCount
+    const cooked = adaptTranscript(payload)
+    report.check(cooked.session.conversationTurnCount === row.conversationTurnCount, `${row.name}: the adapter carries conversationTurnCount ${row.conversationTurnCount}`)
+    const mounted = await mount(React.createElement(TranscriptViewer, { viewModel: cooked, capabilities: CAPABILITIES }))
+    await mounted.settle()
+    const hero = [...mounted.container.querySelectorAll('.txn-meta .metaitem')].map(text).filter((item) => /\bturns$/.test(item))
+    report.check(JSON.stringify(hero) === JSON.stringify([row.hero]), `${row.name}: hero ${JSON.stringify(hero)} must equal ${JSON.stringify([row.hero])}`)
     await mounted.unmount()
   }
 
@@ -545,4 +733,4 @@ function dirSession() {
   return 'sess_segment_fixture'
 }
 
-report.finish(`${fixture.directories.length} directories, ${fixture.loadCases.length} load cases, ${fixture.windowCases.length} window cases, ${fixture.mountCases.length} mounted cases, ${fixture.wordlessCases.length} wordless cases, and ${boundaryFixture.sides.length} boundary sides.`)
+report.finish(`${fixture.directories.length} directories, ${fixture.positionDirectories.length} position directories, ${fixture.positionCases.length} position cases, ${fixture.loadCases.length} load cases, ${fixture.windowCases.length} window cases, ${fixture.mountCases.length} mounted cases, ${fixture.wordlessCases.length} wordless cases, and ${boundaryFixture.sides.length} boundary sides.`)

@@ -99,8 +99,8 @@ mutations:
     expectedDiagnostic: settings describes enabled and blocked rules
   - name: wrong turn total
     file: src/mockups/inuse/TranscriptApp.jsx
-    find: 'turnCount: TURNS.length'
-    replace: 'turnCount: 8'
+    find: 'conversationTurnCount: turns.filter(isConversationTurn).length,'
+    replace: 'conversationTurnCount: 9,'
     expectedDiagnostic: transcript turn totals and phases agree
   - name: metaphorical changes legend
     file: src/ui/graph/Changes.jsx

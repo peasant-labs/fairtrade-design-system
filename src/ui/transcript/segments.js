@@ -6,8 +6,9 @@
    what it has read:
 
      • the loaded turn ranges (regions), with adjacent segments merged;
-     • one boundary per unloaded edge, naming the turns, segments and bytes it
-       stands in front of;
+     • one boundary per unloaded edge, naming the conversation turns it stands in
+       front of when the directory carries positions, and its segments and bytes
+       when it does not;
      • a bounded scrubber sample of `min(200, totalSegments)` ticks;
      • the scope sentence the filters rail and the Files tab state;
      • the covering-segment set a window descriptor still needs.
@@ -19,7 +20,9 @@
    `TurnVM` carries `segmentIndex`, `truncated` and `byteLength` when it came from
    a segment read; the truncation notice and the mounted-card bound read them. */
 
+import { isConversationTurn } from '@peasant-labs/schema'
 import { buildFiles, buildToolGroupCounts } from './adapter.js'
+import { formatInteger } from '../format.js'
 import { hasImageParts } from './image-parts.js'
 
 /** @typedef {import('./view-model.js').TurnVM} TurnVM */
@@ -33,12 +36,29 @@ export const SEGMENT_SCRUBBER_TICKS = 200
 export const SEGMENT_OVERSCAN_TURNS = 0
 
 /**
+ * Where one segment sits in the session's conversation turns. Counts, never identities.
+ * @typedef {object} ConversationTurnSpanVM
+ * @property {number} before   conversation turns in every earlier segment of the session
+ * @property {number} count    conversation turns in this segment; may be 0
+ */
+
+/**
+ * A run of conversation turns stated against the session total. A reader's range is
+ * `before + 1` through `before + count`.
+ * @typedef {object} ConversationPositionVM
+ * @property {number} before
+ * @property {number} count
+ * @property {number} total
+ */
+
+/**
  * One segment reference from the directory.
  * @typedef {object} SegmentRefVM
  * @property {number} index
  * @property {number} firstTurn
  * @property {number} lastTurn
  * @property {number} byteLength
+ * @property {ConversationTurnSpanVM} [conversationTurns]
  */
 
 /**
@@ -48,6 +68,7 @@ export const SEGMENT_OVERSCAN_TURNS = 0
  * @property {string} [revision]
  * @property {number} totalTurns
  * @property {number} totalSegments
+ * @property {number} [totalConversationTurns]  the total a position is stated against. A host passes a directory its server validated; absent means no position is shown
  * @property {SegmentRefVM[]} [segments]
  * @property {number} [directoryPage]
  * @property {number} [directoryPerPage]
@@ -104,9 +125,46 @@ export const SEGMENT_OVERSCAN_TURNS = 0
  * @property {number} segmentCount
  * @property {number} byteLength
  * @property {number} loadSegment   the segment a load-more on this edge appends/prepends
+ * @property {ConversationPositionVM | null} position   the conversation turns behind this edge, or null when the directory does not carry them for every segment of the gap
+ */
+
+/**
+ * One entry of the scrubber's segment sample.
+ * @typedef {object} ScrubberTick
+ * @property {string} key
+ * @property {number} index
+ * @property {number} firstTurn
+ * @property {number} lastTurn
+ * @property {string} label       the tick's title: its conversation turns, or its segment ordinal
+ * @property {string} valueText   the slider's value text while this tick is active
+ * @property {number} leftPct
+ * @property {ConversationPositionVM | null} position
  */
 
 const isFiniteNumber = (value) => typeof value === 'number' && Number.isFinite(value)
+
+/** The directory's conversation-turn total, or null when it sent none. Every position
+    is stated against it, so without it no surface names a position. */
+const conversationTotal = (directory) => (isFiniteNumber(directory?.totalConversationTurns) ? directory.totalConversationTurns : null)
+
+/** Whether a ref carries its span. Presence only: the counts are the producer's, and
+    are trusted exactly as `index` and `byteLength` are. */
+const hasSpan = (ref) => isFiniteNumber(ref?.conversationTurns?.before) && isFiniteNumber(ref?.conversationTurns?.count)
+
+/** The conversation turns a run of refs covers, from its first and last span. No count
+    is summed. The caller has already checked that every ref of the run carries a span. */
+function positionOf(total, refs) {
+  const first = refs[0].conversationTurns
+  const last = refs[refs.length - 1].conversationTurns
+  return { before: first.before, count: last.before + last.count - first.before, total }
+}
+
+/** A position's range in a reader's one-based numbering, without its total. */
+function positionRange(position) {
+  if (position.count === 0) return 'no conversation turns'
+  const first = formatInteger(position.before + 1)
+  return position.count === 1 ? `turn ${first}` : `turns ${first}–${formatInteger(position.before + position.count)}`
+}
 
 /** Turn a host's loaded segments into a sorted list. Accepts an array, a record keyed by
     segment index, or a `Map`; each segment keeps all of its own fields. */
@@ -219,15 +277,21 @@ export function regionBoundaries(directory, regions) {
   const refs = [...byIndex.values()].sort((a, b) => a.index - b.index)
   const total = Math.max(0, isFiniteNumber(directory?.totalSegments) ? directory.totalSegments : refs.length)
   if (total === 0) return []
+  const conversationTurns = conversationTotal(directory)
+  /* One pass over the gap: the refs the directory has received for it, and whether every
+     segment of the gap has one that carries a span. A gap that reaches into a directory
+     page not yet received, or a ref without a span, names no position. */
   const gapRefs = (from, to) => {
     const list = []
+    let positioned = conversationTurns != null
     for (let index = from; index <= to; index += 1) {
       const ref = byIndex.get(index)
       if (ref) list.push(ref)
+      if (!hasSpan(ref)) positioned = false
     }
-    return list
+    return { list, positioned }
   }
-  const make = (side, list, loadSegment) => {
+  const make = (side, { list, positioned }, loadSegment) => {
     const first = list[0]
     const last = list[list.length - 1]
     if (!first || !last) return null
@@ -240,11 +304,12 @@ export function regionBoundaries(directory, regions) {
       segmentCount: list.length,
       byteLength: list.reduce((sum, ref) => sum + (isFiniteNumber(ref.byteLength) ? ref.byteLength : 0), 0),
       loadSegment,
+      position: positioned ? positionOf(conversationTurns, list) : null,
     }
   }
   if (regions.length === 0) {
     const all = gapRefs(0, total - 1)
-    const boundary = make('all', all, all[0]?.index ?? 0)
+    const boundary = make('all', all, all.list[0]?.index ?? 0)
     return boundary ? [boundary] : []
   }
   /** @type {SegmentBoundaryVM[]} */
@@ -281,14 +346,38 @@ export function formatByteExtent(bytes) {
   return `${rounded} ${units[unit]}`
 }
 
-/** The boundary's caption: the unloaded extent on that side, in turns, segments and bytes. */
+/** The boundary's caption: the conversation turns behind that edge against the session
+    total. A gap that holds none, and a directory that sent no positions, name the
+    unloaded extent in segments and bytes. */
 export function boundaryCaption(boundary) {
-  // The directory has no per-segment turn counts; ordinal ranges require a contract change.
   const segments = `${boundary.segmentCount} ${boundary.segmentCount === 1 ? 'segment' : 'segments'}`
-  return `${segments}, ${formatByteExtent(boundary.byteLength)}`
+  const extent = `${segments}, ${formatByteExtent(boundary.byteLength)}`
+  const position = boundary.position
+  if (position == null) return extent
+  if (position.count === 0) return `${positionRange(position)}, ${extent}`
+  return `${positionRange(position)} of ${formatInteger(position.total)}`
 }
 
-/** The fixed scrubber sample over the directory. Never one tick per turn. */
+/** The jump-failure sentence. It names the conversation turns of the segments the failed
+    window covers, or of the segment that holds the anchor when no descriptor arrived.
+    Without a position it names no number: a turn identity is not a reader's position. */
+export function windowFailureCaption(directory, failure) {
+  const refs = refsOf(directory, [])
+  const covering = Array.isArray(failure?.segments) && failure.segments.length > 0
+    ? failure.segments.map((index) => refs.find((ref) => ref.index === index))
+    : [refs.find((ref) => isFiniteNumber(failure?.anchor) && ref.firstTurn <= failure.anchor && failure.anchor <= ref.lastTurn)]
+  const total = conversationTotal(directory)
+  const position = total != null && covering.every(hasSpan) ? positionOf(total, covering) : null
+  return position != null && position.count > 0
+    ? `could not load the window around ${positionRange(position)}.`
+    : 'could not load that part of the transcript.'
+}
+
+/**
+ * The fixed scrubber sample over the directory. Never one tick per turn.
+ * @param {SegmentDirectoryVM | null | undefined} directory
+ * @returns {ScrubberTick[]}
+ */
 export function scrubberTicks(directory) {
   const refs = refsOf(directory, [])
   const total = Math.max(refs.length, isFiniteNumber(directory?.totalSegments) ? directory.totalSegments : refs.length)
@@ -301,15 +390,23 @@ export function scrubberTicks(directory) {
     const last = total - 1
     for (let i = 0; i < sample; i += 1) indexes.add(Math.round((i / (sample - 1)) * last))
   }
+  const conversationTurns = conversationTotal(directory)
+  const byIndex = new Map(refs.map((ref) => [ref.index, ref]))
   return [...indexes].sort((a, b) => a - b).map((index) => {
-    const ref = refs.find((candidate) => candidate.index === index) ?? { index, firstTurn: index, lastTurn: index, byteLength: 0 }
+    const ref = byIndex.get(index) ?? { index, firstTurn: index, lastTurn: index, byteLength: 0 }
+    const position = conversationTurns != null && hasSpan(ref) ? positionOf(conversationTurns, [ref]) : null
+    const ordinal = `segment ${formatInteger(index + 1)} of ${formatInteger(total)}`
     return {
       key: `segment-tick-${index}`,
       index,
       firstTurn: ref.firstTurn,
       lastTurn: ref.lastTurn,
-      label: ref.firstTurn === ref.lastTurn ? `turn ${ref.firstTurn}` : `turns ${ref.firstTurn}–${ref.lastTurn}`,
+      label: position ? positionRange(position) : ordinal,
+      valueText: position == null
+        ? ordinal
+        : position.count === 0 ? `${positionRange(position)}, ${ordinal}` : `${positionRange(position)} of ${formatInteger(position.total)}`,
       leftPct: total > 1 ? (index / (total - 1)) * 100 : 0,
+      position,
     }
   })
 }
@@ -321,6 +418,10 @@ export function loadedScope(directory, regions) {
   const loadedTurns = regions.reduce((sum, region) => sum + region.turns.length, 0)
   const totalTurns = Math.max(loadedTurns, isFiniteNumber(directory?.totalTurns) ? directory.totalTurns : loadedTurns)
   const complete = totalSegments > 0 && loadedSegments >= totalSegments
+  /* With a directory total the sentence is in conversation turns, the unit the header
+     and every boundary use. The held count is never compared with the total. */
+  const totalConversationTurns = conversationTotal(directory)
+  const loadedConversationTurns = regions.reduce((sum, region) => sum + region.turns.filter(isConversationTurn).length, 0)
   const segmentPart = complete
     ? `all ${totalSegments} ${totalSegments === 1 ? 'segment' : 'segments'} loaded`
     : `${loadedSegments} of ${totalSegments} ${totalSegments === 1 ? 'segment' : 'segments'} loaded`
@@ -330,9 +431,15 @@ export function loadedScope(directory, regions) {
     loadedTurns,
     totalTurns,
     complete,
-    filesText: complete
-      ? `derived from all ${loadedTurns} loaded ${loadedTurns === 1 ? 'turn' : 'turns'}`
-      : `derived from ${loadedTurns} of ${totalTurns} turns, ${segmentPart}`,
+    loadedConversationTurns,
+    totalConversationTurns,
+    filesText: totalConversationTurns == null
+      ? complete
+        ? `derived from all ${loadedTurns} loaded ${loadedTurns === 1 ? 'turn' : 'turns'}`
+        : `derived from ${loadedTurns} of ${totalTurns} turns, ${segmentPart}`
+      : complete
+        ? `derived from all ${formatInteger(totalConversationTurns)} loaded ${totalConversationTurns === 1 ? 'turn' : 'turns'}`
+        : `derived from ${formatInteger(loadedConversationTurns)} of ${formatInteger(totalConversationTurns)} turns, ${segmentPart}`,
   }
 }
 

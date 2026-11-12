@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { isConversationTurn } from '@peasant-labs/schema'
 import separatorsRaw from '../../../scripts/testdata/transcript-ledger-turns-separators.yaml?raw'
 const separators = JSON.parse(separatorsRaw)
 import mermaidGlyphsRaw from '../../../scripts/testdata/transcript-mermaid-glyphs.yaml?raw'
@@ -531,6 +532,9 @@ function turnToWire(t) {
     timestamp: turnTimestamp(t.id),
     depth: t.depth ?? 0,
   }
+  // The demo stands in for the producer, which types a record by what it holds: prose is
+  // text, tool calls without prose are tool_use, thinking alone is thinking.
+  if (t.role !== 'system') wire.entryType = t.body ? 'text' : t.tools ? 'tool_use' : t.thinking ? 'thinking' : 'text'
   if (t.observedModel) wire.observedModel = t.observedModel
   if (t.thinking) wire.hasThinking = true
   if (t.tools) wire.toolCalls = t.tools.map(toolToWire)
@@ -542,6 +546,7 @@ function turnToWire(t) {
 /* the canonical wire payload (folded turns + nested gitContext for the checkpoint). */
 function buildWire() {
   const checkpoint = TURNS.find((t) => t.checkpoint)?.checkpoint
+  const turns = TURNS.map(turnToWire)
   const payload = {
     id: 'sess_dem',
     harness: HARNESS,
@@ -552,11 +557,12 @@ function buildWire() {
     tokensIn: 12200,
     tokensOut: 6200,
     turnCount: TURNS.length,
+    conversationTurnCount: turns.filter(isConversationTurn).length,
     toolCallCount: 5,
     project: 'fairtrade-design-system',
     model: ROOT_MODEL,
     outcome: 'resolved',
-    turns: TURNS.map(turnToWire),
+    turns,
     scorecard: { outcome: 'resolved' },
   }
   if (checkpoint) {
@@ -585,7 +591,7 @@ function buildWire() {
    adapter embeds a precomputed analytics block as-is when supplied. */
 function buildAnalytics() {
   const phases = PHASES.map((p, i) => {
-    const vm = { id: `phase-${i + 1}`, label: p.label, from: p.from, to: p.to, icon: p.id, turnCount: TURNS.filter((turn) => turn.id >= p.from && turn.id <= p.to && turn.role !== 'system').length }
+    const vm = { id: `phase-${i + 1}`, label: p.label, from: p.from, to: p.to, icon: p.id, turnCount: TURNS.filter((turn) => turn.id >= p.from && turn.id <= p.to).map(turnToWire).filter(isConversationTurn).length }
     if (p.errors) vm.errors = p.errors
     return vm
   })
@@ -1022,8 +1028,8 @@ ${mermaidGlyphs.source}
     return {
       ...base,
       turns,
-      // system entries are not conversation: the header counts the real turns only
-      session: { ...base.session, turnCount: turns.filter((turn) => turn.role !== 'system').length },
+      // system entries are not conversation: the hero counts the conversation turns only
+      session: { ...base.session, turnCount: turns.length, conversationTurnCount: turns.filter(isConversationTurn).length },
     }
   }, [search])
   // Tool details start collapsed; the reader opens them on demand.

@@ -23,6 +23,7 @@
    (`adapter.parse.js`) — never the adapter — so there is no import cycle.
    ─────────────────────────────────────────────────────────────────────────── */
 
+import { isConversationTurn } from '@peasant-labs/schema'
 import { extractPath, countDiff } from './adapter.parse.js'
 
 /** @typedef {import('./wire-types.js').TurnDetail} TurnDetail */
@@ -554,7 +555,7 @@ export function detectPhases(turns) {
       label: phaseLabel(seg.type),
       from: turns[seg.startTurn]?.index ?? seg.startTurn,
       to: turns[seg.endTurn]?.index ?? seg.endTurn,
-      turnCount: turns.slice(seg.startTurn, seg.endTurn + 1).filter((turn) => turn.role !== 'system').length,
+      turnCount: turns.slice(seg.startTurn, seg.endTurn + 1).filter(isConversationTurn).length,
       icon: seg.type,
     }
     if (errors > 0) vm.errors = errors

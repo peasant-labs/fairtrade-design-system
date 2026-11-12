@@ -52,6 +52,38 @@ requiredPhaseCaseNames:
   - precomputed phase without a count omits it
 requiredPhaseCountCaseNames:
   - sparse phase counts conversation turns rather than indexes
+requiredPositionDirectoryNames:
+  - golden eighty rows
+  - golden rows with identities from 500
+  - one turn middle segment
+  - no turn middle segment
+  - empty third of five
+  - six segments in two pages
+  - five segments of seventy seven
+  - twelve segments of seventy seven
+requiredPositionCaseNames:
+  - eighty rows with three system rows
+  - a gap with one conversation turn
+  - a gap with no conversation turns
+  - a three segment gap with an empty middle
+  - a directory holding only its second page
+  - a gap that reaches into a page not received names no position
+  - an older server sends no positions
+  - the header keeps one unit while loading and when complete
+  - a fully loaded session whose adapter dropped a duplicate
+  - a fully loaded session with a filter on
+  - scrubber ticks and the jump failure name positions
+  - the slider names the active position
+  - a tick without a span names its segment
+  - the slider on a segment with no conversation turns names the segment
+  - the files sentence counts conversation turns
+  - a sparse directory never prints a turn id as a position
+requiredCountCaseNames:
+  - tool and thinking rows are not counted
+  - a reply with prose and tool calls is counted
+requiredHeroCaseNames:
+  - the hero prints the conversation count
+  - the hero falls back to turnCount
 requiredRecoveryCaseNames:
   - a host reported failure can retry without a window loader
   - a rejected covering load names the window and retries successfully
@@ -80,6 +112,12 @@ requiredMutationNames:
   - the boundary falls back to raw indexes
   - the phase count includes an extra turn
   - an image turn is treated as a wordless continuation
+  - a caption prints turn identities
+  - a tick prints turn identities
+  - a boundary with a missing span still names a position
+  - the header compares its count with the total
+  - the header ignores hidden turns
+  - a tool row is counted
 mutations:
   - name: a history label is dropped
     file: src/ui/transcript/earlier-history-state.js
@@ -108,13 +146,13 @@ mutations:
     expectedDiagnostic: 'phase starting at turn zero: phase caption'
   - name: the boundary falls back to raw indexes
     file: src/ui/transcript/segments.js
-    find: 'return `${segments}, ${formatByteExtent(boundary.byteLength)}`'
-    replace: 'return `turns ${boundary.firstTurn}–${boundary.lastTurn}, ${segments}, ${formatByteExtent(boundary.byteLength)}`'
+    find: 'if (position == null) return extent'
+    replace: 'if (position == null) return `turns ${boundary.firstTurn}–${boundary.lastTurn}, ${extent}`'
     expectedDiagnostic: 'boundary 0 caption'
   - name: the phase count includes an extra turn
     file: src/ui/transcript/analytics.js
-    find: "turns.slice(seg.startTurn, seg.endTurn + 1).filter((turn) => turn.role !== 'system').length"
-    replace: "turns.slice(seg.startTurn, seg.endTurn + 1).filter((turn) => turn.role !== 'system').length + 1"
+    find: "turns.slice(seg.startTurn, seg.endTurn + 1).filter(isConversationTurn).length"
+    replace: "turns.slice(seg.startTurn, seg.endTurn + 1).filter(isConversationTurn).length + 1"
     expectedDiagnostic: 'sparse phase counts conversation turns rather than indexes: phase count'
   - name: the scrubber mounts one tick per turn
     file: src/ui/transcript/segments.js
@@ -166,3 +204,33 @@ mutations:
     find: "&& !hasImageParts(turn)"
     replace: ""
     expectedDiagnostic: "an image-bearing assistant turn is content: an image is content, not an action continuation"
+  - name: a caption prints turn identities
+    file: src/ui/transcript/segments.js
+    find: 'position: positioned ? positionOf(conversationTurns, list) : null,'
+    replace: 'position: positioned ? { before: first.firstTurn, count: last.lastTurn - first.firstTurn + 1, total: conversationTurns } : null,'
+    expectedDiagnostic: 'a sparse directory never prints a turn id as a position: boundary captions'
+  - name: a tick prints turn identities
+    file: src/ui/transcript/segments.js
+    find: 'hasSpan(ref) ? positionOf(conversationTurns, [ref]) : null'
+    replace: 'hasSpan(ref) ? { before: ref.firstTurn, count: ref.lastTurn - ref.firstTurn + 1, total: conversationTurns } : null'
+    expectedDiagnostic: 'a sparse directory never prints a turn id as a position: tick titles'
+  - name: a boundary with a missing span still names a position
+    file: src/ui/transcript/segments.js
+    find: "      if (!hasSpan(ref)) positioned = false\n"
+    replace: ''
+    expectedDiagnostic: 'a tick without a span names its segment: boundary captions'
+  - name: the header compares its count with the total
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: 'scope.complete && visibleConversationCount === conversationTurns.length'
+    replace: 'visibleConversationCount === total'
+    expectedDiagnostic: 'a fully loaded session whose adapter dropped a duplicate: header'
+  - name: the header ignores hidden turns
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: 'scope.complete && visibleConversationCount === conversationTurns.length'
+    replace: 'scope.complete'
+    expectedDiagnostic: 'a fully loaded session with a filter on: header'
+  - name: a tool row is counted
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: 'const conversationTurns = useMemo(() => turns.filter(isConversationTurn), [turns])'
+    replace: "const conversationTurns = useMemo(() => turns.filter((turn) => turn.role !== 'system'), [turns])"
+    expectedDiagnostic: 'tool and thinking rows are not counted: header'

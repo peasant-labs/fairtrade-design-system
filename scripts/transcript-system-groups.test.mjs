@@ -14,6 +14,7 @@
    mutations: node scripts/parts-mutations.mjs scripts/transcript-system-groups.test.mjs
    scripts/testdata/transcript-system-groups.manifest.yaml */
 import { readFileSync } from 'node:fs'
+import { isConversationTurn } from '@peasant-labs/schema'
 import { ROOT, loadFixturePair, assertExactNames, assertFields, withMountedSource, click, keydown, createReport } from './mounted-parts.mjs'
 
 const FIXTURE = 'scripts/testdata/transcript-system-groups.yaml'
@@ -317,7 +318,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     } else if (row.kind === 'counts') {
       const tabText = (container) => text([...container.querySelectorAll('[role="tab"]')].find((button) => text(button).startsWith('full trace')))
       const traceText = (container) => text(container.querySelector('.txn-trace-count'))
-      const conversation = vm.turns.filter((turn) => turn.role !== 'system').length
+      const conversation = vm.turns.filter(isConversationTurn).length
       const expectedTab = `full trace ${conversation}`
       const expectedTrace = `${conversation} turns`
       /* the ratified rule: system entries are not turns. With the system filter off (the
@@ -333,7 +334,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       await on.unmount()
       /* a narrowed reading still states its share of the CONVERSATION, never of every entry */
       const narrowed = await mountCase(vm, { filters: filtersWith({ categories: { prompts: false } }) })
-      const visibleConversation = vm.turns.filter((turn) => turn.role !== 'system' && turn.role !== 'user').length
+      const visibleConversation = vm.turns.filter((turn) => isConversationTurn(turn) && turn.role !== 'user').length
       const expectedNarrowed = `${visibleConversation} of ${conversation} turns`
       report.check(traceText(narrowed.container) === expectedNarrowed, `${name}: a narrowed reading must state its share of the conversation, expected ${JSON.stringify(expectedNarrowed)}, received ${JSON.stringify(traceText(narrowed.container))}`)
       await narrowed.unmount()
