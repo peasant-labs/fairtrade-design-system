@@ -1,0 +1,36 @@
+# Release-guard policy for the fairtrade repo.
+#
+# `jobs:` declares the tag-triggered publish pipeline's job graph, so the
+# shared checker keeps validating the tag path. `queue:` declares the
+# merge-queue contract: the required checks the queue waits on (compared
+# against the `Merge queue` ruleset), the release job that carries out the one
+# action the planner prints, and the bot jobs that may push their own branch.
+# The release branch is named here and nowhere else: workflows decide which PR
+# is the release PR with `release-intent classify`, never with a literal.
+jobs:
+  # The tag guard (parse-tag and rc/final classification): the entry gate.
+  - name: guard
+  # The GitHub-Release publish job sits behind the tag guard.
+  - name: release
+    needs: [guard]
+  # The npm publish job (@peasant-labs/fairtrade) runs independently of the
+  # GitHub-Release publish job. It carries its own tag-grammar guard step and
+  # authenticates via npm OIDC trusted publishing, so it must carry its own
+  # `id-token: write` permission and stay bound to the GitHub Actions
+  # environment its npm Trusted Publisher registration is scoped to.
+  - name: npm-publish
+    permissions:
+      idToken: true
+    environment: npm-publish
+queue:
+  required:
+    - {context: lib, workflow: ci.yml, job: lib}
+    - {context: gates, workflow: ci.yml, job: gates, aggregator: true}
+    - {context: title-guard, workflow: title-guard.yml, job: title-guard, guard: true}
+  release_job:
+    workflow: release-batch.yml
+    job: release
+    branch: automation/release
+    pre_tag_steps: []
+  bot_jobs:
+    - {workflow: cut-release.yml, job: cut, branch: automation/cut-release}

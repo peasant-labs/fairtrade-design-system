@@ -1,0 +1,21 @@
+# Release-intent config for @peasant-labs/fairtrade.
+#
+# Titles carry intent only (`type(scope)[level]: subject`); this file is the
+# contract every check compares against. `release-intent check-config`
+# validates it. The release config and the protected set are always read from
+# the base branch, so a PR cannot unprotect a path and edit it in one step.
+# Only the standing bot release PR (head branch `automation/release`) may
+# change the changelog as a whole file or the protected field of a version
+# file; version files stay protected by field, not by file, so ordinary PRs
+# keep editing `package.json` scripts, dependencies, and the schema pin.
+releases: true
+tag_prefix: fairtrade-v
+automation_author: peasant-labs-releaser[bot]
+changelog: CHANGELOG.md
+version_files:
+  - {path: package.json, field: version}
+protected_paths: []
+surfaces: {}
+bot_branches:
+  release: automation/release
+  cut-release: automation/cut-release
