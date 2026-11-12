@@ -19,7 +19,7 @@
 #         guard  (scripts/release-guard.mjs parse-tag; fails closed on a
 #           |     non-matching tag)
 #           v
-#        release  (CHANGELOG.md section -> notes.md -> gh release create/edit)
+#        release  (changelog section -> notes.md -> gh release create/edit)
 #
 # Mirrors peasant-labs/schema's release.yml guard -> publish shape, without
 # the CLI/contract-gate stages this repo does not have.
@@ -44,26 +44,47 @@ jobs:
     env:
       TAG: ${{ github.ref_name }}
     # The tag's parsed version and release kind ("rc" | "final"), derived
-    # once here by the tested `release-guard parse-tag` (parseFairtradeTag ->
-    # releaseKind over the anchored tag grammar). Downstream steps consume
-    # these outputs rather than re-deriving them with an untested shell
-    # substring match.
+    # once here by the tested `release-guard parse-tag` (parseReleaseTag over
+    # the anchored tag grammar under the release config's tag prefix), and the
+    # changelog path the release config names. Downstream steps consume these
+    # outputs rather than re-deriving them with an untested shell substring
+    # match or restating a path.
     outputs:
       version: ${{ steps.parse.outputs.version }}
       kind: ${{ steps.parse.outputs.kind }}
+      changelog: ${{ steps.config.outputs.changelog }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
-          sparse-checkout: scripts/release-guard.mjs
+          sparse-checkout: |
+            scripts/release-guard.mjs
+            src/ui/closed-value.js
+            .github/release-intent.yaml
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 26
 
+      # The release config is the one place the tag prefix and the changelog
+      # path are written. yq ships on the GitHub-hosted Ubuntu runner; -e fails
+      # the step on a missing key instead of passing on "null".
+      - name: Read the release config
+        id: config
+        run: |
+          set -euo pipefail
+          tag_prefix="$(yq -e '.tag_prefix' .github/release-intent.yaml)"
+          changelog="$(yq -e '.changelog' .github/release-intent.yaml)"
+          {
+            echo "tag_prefix=${tag_prefix}"
+            echo "changelog=${changelog}"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Parse + classify the tag
         id: parse
-        run: node scripts/release-guard.mjs parse-tag "$TAG"
+        env:
+          TAG_PREFIX: ${{ steps.config.outputs.tag_prefix }}
+        run: node scripts/release-guard.mjs parse-tag "$TAG" "$TAG_PREFIX"
 
   release:
     name: publish GitHub Release
@@ -74,6 +95,7 @@ jobs:
       TAG: ${{ github.ref_name }}
       VERSION: ${{ needs.guard.outputs.version }}
       KIND: ${{ needs.guard.outputs.kind }}
+      CHANGELOG: ${{ needs.guard.outputs.changelog }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -84,8 +106,8 @@ jobs:
         with:
           node-version: 26
 
-      - name: Extract the CHANGELOG section for this version
-        run: node scripts/release-notes.mjs "$VERSION" CHANGELOG.md > notes.md
+      - name: Extract the changelog section for this version
+        run: node scripts/release-notes.mjs "$VERSION" "$CHANGELOG" > notes.md
 
       - name: Append the npm publication line
         run: |

@@ -32,3 +32,26 @@ mutations:
     replace: "if (false) {"
     probeGroup: invalid
     probeCaseName: a section header present but with an empty body fails closed
+
+requiredWorkflowTextNames:
+  - the job looks the release up first
+  - a re-run updates the existing release
+  - the notes come from the extracted section
+  - a candidate is published as a prerelease
+  - a final release is published as the latest
+
+requiredWorkflowCommandNames:
+  - the release is created once, for the triggering tag, and never makes a tag
+
+requiredForbiddenWorkflowTextNames:
+  - the workflow pushes nothing
+  - the workflow makes no tag
+  - the workflow names no tag ref
+  - the workflow writes no pull request
+
+requiredWorkflowMutationNames:
+  - a hard-coded changelog path is rejected
+  - a hard-coded tag prefix is rejected
+  - a trigger off the configured tag prefix is rejected
+  - a release created without --verify-tag is rejected
+  - a guard that cannot load the parser's imports is rejected

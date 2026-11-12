@@ -143,9 +143,11 @@ missing attestation while this repository is private, and hard-fails after publi
 a public-source release lacks the SLSA provenance predicate.
 
 **The same App-authenticated tag also runs `.github/workflows/release.yml`**, independently of
-`npm-publish.yml`: a `guard` job classifies the tag with `release-guard.mjs parse-tag` (version +
-`kind`, `rc` or `final`), then a `release` job extracts the matching `## X.Y.Z[-rcN]` CHANGELOG.md
-section with `scripts/release-notes.mjs`, appends a line naming the published npm package version,
+`npm-publish.yml`: a `guard` job reads `tag_prefix` and `changelog` from
+`.github/release-intent.yaml` (the one place they are written) and classifies the tag with
+`release-guard.mjs parse-tag` under that prefix (version + `kind`, `rc` or `final`), then a
+`release` job extracts the matching `## X.Y.Z[-rcN]` section from that changelog with
+`scripts/release-notes.mjs`, appends a line naming the published npm package version,
 and creates the GitHub Release with `gh release create --verify-tag` for the triggering tag, or
 updates its notes with `gh release edit` on a re-run. A tag without a matching CHANGELOG section fails this job with an actionable error;
 only the bot release PR writes that section, so fix the release content forward

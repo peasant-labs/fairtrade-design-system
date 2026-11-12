@@ -1,19 +1,23 @@
-# Fixture inventory for scripts/release-guard.test.mjs.
+# Fixture inventory for scripts/release-guard.test.mjs. The required-name
+# manifest is scripts/testdata/release-guard.manifest.yaml: every list below
+# must carry exactly the names it records (deletion protection by name set,
+# never by count).
 #
-# The tag section pins the tag parser this script keeps for the tag-triggered
-# workflows. The git section pins tag immutability, which release-batch.yml
-# relies on when it pushes the computed tag. The workflow section pins the
-# merge-queue contract of the four live workflows: exact triggers, the
-# per-ref concurrency, the classify-only release-PR decision, the fail-closed
-# group resolution, the gated release-batch write chain, and the dispatch-only
-# cut-release button. The mutations section is the required-name inventory:
-# each row breaks one contract row, and the test proves the matching assertion
-# catches it. Deletion protection is by exact name set, never by count.
+# Nothing here restates the release contract. The tag prefix, the changelog
+# path, the bot kinds, and the workflow files come from the release config and
+# the queue policy; the release-intent tool's own vocabulary (commands, flags,
+# output keys, gates, verdicts) is judged by the tool itself, through the
+# policy check title-guard runs. Literal text appears only as the input of a
+# row that must fail.
+
 tags:
+  # A valid row is a version under the release config's tag prefix and the
+  # release kind the parser must report for it.
   valid:
-    - {name: final, input: "fairtrade-v1.2.3"}
-    - {name: candidate, input: "fairtrade-v1.2.3-rc4"}
-    - {name: zero core, input: "fairtrade-v0.0.0"}
+    - {name: final, version: "1.2.3", kind: final}
+    - {name: candidate, version: "1.2.3-rc4", kind: rc}
+    - {name: zero core, version: "0.0.0", kind: final}
+  # An invalid row is a whole tag the parser must refuse.
   invalid:
     - {name: missing namespace, input: "v1.2.3"}
     - {name: missing v, input: "fairtrade-1.2.3"}
@@ -23,32 +27,85 @@ tags:
     - {name: leading zero patch, input: "fairtrade-v1.2.03"}
     - {name: rc zero, input: "fairtrade-v1.2.3-rc0"}
     - {name: rc padded, input: "fairtrade-v1.2.3-rc01"}
+    - {name: unknown kind, input: "fairtrade-v1.2.3-final1"}
+
+package:
+  # The library build split in CI: the release PR runs the canonical publish
+  # build, every other PR runs the plain library build, and the tests run after
+  # either one. These are this package's own script names.
+  release_build: prepack
+  content_build: build:lib
+  test: test:lib
+  test_env: {NODE_COMPILE_CACHE: "${{ runner.temp }}/node-compile-cache"}
+  # Each row checks one package script: exactly one of includes, excludes,
+  # equals, or absent.
+  scripts:
+    - {name: prepack asserts the package provenance, script: prepack, includes: assert-package-provenance}
+    - {name: prepack builds the library, script: prepack, includes: pnpm build:lib}
+    - {name: prepack checks the packed contents, script: prepack, includes: pnpm pack:check}
+    - {name: prepack runs no tests, script: prepack, excludes: "test:"}
+    - {name: build:lib runs no test script, script: build:lib, excludes: "test:"}
+    - {name: build:lib runs no test file, script: build:lib, excludes: ".test."}
+    - {name: build:lib has no pre-hook, script: "prebuild:lib", absent: true}
+    - {name: test:lib runs the lane runner, script: test:lib, equals: node scripts/run-test-lib.mjs}
+    - {name: the serial lane renders the mounted pi transcript, script: "test:lib:serial", includes: pnpm test:pi-transcript:mounted}
+    - {name: the serial lane runs vitest, script: "test:lib:serial", includes: pnpm test:vitest}
+
 workflow:
-  ci_pr_types: [opened, synchronize, reopened]
-  ci_cancel: "${{ github.event_name == 'pull_request' }}"
-  guard_pr_types: [opened, edited, synchronize, reopened]
-  cut_levels: [patch, minor]
-  mutations:
+  # CI must not restart on a title or body edit: a re-run there cancels the
+  # library gate and the release jobs (see the ci.yml trigger comment).
+  ci_skipped_activity_types: [edited]
+  # Text a workflow must never contain.
+  forbidden_text:
+    - {name: the hold rule never dequeues a queued release PR, file: release-batch.yml, text: dequeuePullRequest}
+    - {name: the release job leaves the GitHub Release to the tag-triggered workflow, file: release-batch.yml, text: gh release}
+  # Each row breaks one fairtrade-owned contract; the test proves the matching
+  # assertion in release-guard.test.mjs catches it.
+  contract_mutations:
     - name: re-adding edited to ci.yml is rejected
       file: ci.yml
       find: "types: [opened, synchronize, reopened]"
       replace: "types: [opened, edited, synchronize, reopened]"
-    - name: cancelling ci on every event is rejected
-      file: ci.yml
-      find: "cancel-in-progress: ${{ github.event_name == 'pull_request' }}"
-      replace: "cancel-in-progress: true"
     - name: unconditional prepack is rejected
       file: ci.yml
       find: "        if: steps.kind.outputs.kind == 'release'\n        run: pnpm prepack"
       replace: "        run: pnpm prepack"
-    - name: a branch literal in ci classify is rejected
+    - name: prepack on a bot PR that is not the release PR is rejected
       file: ci.yml
-      find: "          echo \"kind=${kind}\" >> \"${GITHUB_OUTPUT}\""
-      replace: "          # fallback automation/release\n          echo \"kind=${kind}\" >> \"${GITHUB_OUTPUT}\""
-    - name: classify without its base revision is rejected
+      find: "        if: steps.kind.outputs.kind == 'release'\n        run: pnpm prepack"
+      replace: "        if: steps.kind.outputs.kind == 'cut-release'\n        run: pnpm prepack"
+    - name: a content build that also runs on the release PR is rejected
       file: ci.yml
-      find: " --rev"
-      replace: ""
+      find: "        if: steps.kind.outputs.kind != 'release'\n        run: pnpm run build:lib"
+      replace: "        run: pnpm run build:lib"
+    - name: warn-and-pass group resolution is rejected
+      file: title-guard.yml
+      find: "failing closed so an unidentified entry never lands unchecked.\"\n            exit 1"
+      replace: "failing closed so an unidentified entry never lands unchecked.\"\n            exit 0"
+    - name: a cancellable release run is rejected
+      file: release-batch.yml
+      find: "  cancel-in-progress: false"
+      replace: "  cancel-in-progress: true"
+    - name: a Go cache keyed on another module is rejected
+      file: ci.yml
+      find: "cache-dependency-path: infra-tool/tools/release/go.sum"
+      replace: "cache-dependency-path: go.sum"
+  # Each row breaks one rule the release-intent tool owns. The test runs the
+  # policy check title-guard runs over a copy of the workflows with the row
+  # applied and proves the tool refuses it, naming the mutated file.
+  policy_mutations:
+    - name: cancelling ci on every event is rejected
+      file: ci.yml
+      find: "cancel-in-progress: ${{ github.event_name == 'pull_request' }}"
+      replace: "cancel-in-progress: true"
+    - name: dropping merge_group from ci is rejected
+      file: ci.yml
+      find: "  merge_group:\n  workflow_dispatch:"
+      replace: "  workflow_dispatch:"
+    - name: comparing a bot branch literally is rejected
+      file: ci.yml
+      find: "if: steps.kind.outputs.kind == 'release'"
+      replace: "if: github.head_ref == 'automation/release'"
     - name: dropping edited from title-guard is rejected
       file: title-guard.yml
       find: "types: [opened, edited, synchronize, reopened]"
@@ -57,10 +114,14 @@ workflow:
       file: title-guard.yml
       find: "  title-guard:\n    runs-on: ubuntu-latest"
       replace: "  title-guard:\n    if: github.event_name == 'pull_request'\n    runs-on: ubuntu-latest"
-    - name: warn-and-pass group resolution is rejected
+    - name: interpolating a title is rejected
       file: title-guard.yml
-      find: "failing closed so an unidentified entry never lands unchecked.\"\n            exit 1"
-      replace: "failing closed so an unidentified entry never lands unchecked.\"\n            exit 0"
+      find: "PR_TITLE: ${{ steps.pr.outputs.title }}"
+      replace: "PR_TITLE: ${{ github.event.pull_request.title }}"
+    - name: a range reader without the floor is rejected
+      file: title-guard.yml
+      find: " --floor \"${{ vars.RELEASE_BATCH_FLOOR }}\""
+      replace: ""
     - name: a weakened release-batch verdict is rejected
       file: release-batch.yml
       find: "--verdict taggable"
@@ -69,6 +130,10 @@ workflow:
       file: release-batch.yml
       find: "steps.gate.outputs.gate == 'arm'"
       replace: "steps.replan.outputs.action == 'open-pr'"
+    - name: an ungated tag is rejected
+      file: release-batch.yml
+      find: "if: steps.precheck.outputs.proceed == 'true' && steps.plan.outputs.action == 'tag'"
+      replace: "if: steps.precheck.outputs.proceed == 'true'"
     - name: a major cut-release level is rejected
       file: cut-release.yml
       find: "options: [patch, minor]"
@@ -89,14 +154,20 @@ workflow:
       file: cut-release.yml
       find: "gh pr merge --auto --squash automation/cut-release;"
       replace: "gh pr merge --auto --squash automation/release;"
+    - name: a cut-release tag push is rejected
+      file: cut-release.yml
+      find: "push --force-with-lease origin HEAD:automation/cut-release"
+      replace: "push --force-with-lease origin HEAD:automation/cut-release\n          git push origin refs/tags/v0.0.0"
+
 git:
   # The release-tag invariant stated in AGENTS.md: never move or delete a
   # release tag. A plain push of an existing tag is refused by the receiver, so
-  # the exact command the release job runs cannot rewrite a published tag.
-  # The rows below are the controls that make that refusal specific: git moves
-  # the very same tag the moment the guard is dropped, so a passing case is
-  # observing immutability rather than an incidental push failure.
-  tag: fairtrade-v1.2.3
+  # the exact command the release job runs cannot rewrite a published tag. The
+  # tag is this version under the release config's tag prefix. The mutation
+  # rows are the controls that make that refusal specific: git moves the very
+  # same tag the moment the guard is dropped, so a passing case is observing
+  # immutability rather than an incidental push failure.
+  version: "1.2.3"
   first_message: first release
   second_message: attempted replacement
   mutations:

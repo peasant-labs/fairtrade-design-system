@@ -213,7 +213,7 @@ invalidCases:
       ### Added
 
       - the prior entry.
-    errorMatch: 'the "## 0\.2\.0" section in CHANGELOG\.md is empty'
+    errorMatch: 'the "## 0\.2\.0" section in the changelog is empty'
 
   - name: a section header present but with only blank lines in its body fails closed
     version: "0.2.0"
@@ -228,4 +228,45 @@ invalidCases:
       ### Added
 
       - the prior entry.
-    errorMatch: 'the "## 0\.2\.0" section in CHANGELOG\.md is empty'
+    errorMatch: 'the "## 0\.2\.0" section in the changelog is empty'
+
+# The release.yml contract text the GitHub CLI and Actions own. Everything the
+# repository owns (the tag prefix, the changelog path, the parser's command,
+# outputs, and kinds, the script paths, the package name) is read from its
+# owner by release-notes.test.mjs instead.
+releaseWorkflow:
+  permissions: {contents: write}
+  triggeringTag: "${{ github.ref_name }}"
+  requiredText:
+    - {name: the job looks the release up first, text: gh release view}
+    - {name: a re-run updates the existing release, text: gh release edit}
+    - {name: the notes come from the extracted section, text: --notes-file notes.md}
+    - {name: a candidate is published as a prerelease, text: --prerelease}
+    - {name: a final release is published as the latest, text: --latest}
+  commands:
+    - name: the release is created once, for the triggering tag, and never makes a tag
+      head: gh release create
+      count: 1
+      includes: ['"$TAG"', --verify-tag]
+  forbiddenText:
+    - {name: the workflow pushes nothing, text: git push}
+    - {name: the workflow makes no tag, text: git tag}
+    - {name: the workflow names no tag ref, text: refs/tags/}
+    - {name: the workflow writes no pull request, text: "gh pr "}
+  # Each row breaks one contract row; the test proves it is caught.
+  mutations:
+    - name: a hard-coded changelog path is rejected
+      find: '"$VERSION" "$CHANGELOG"'
+      replace: '"$VERSION" CHANGELOG.md'
+    - name: a hard-coded tag prefix is rejected
+      find: 'parse-tag "$TAG" "$TAG_PREFIX"'
+      replace: 'parse-tag "$TAG" fairtrade-v'
+    - name: a trigger off the configured tag prefix is rejected
+      find: "tags: ['fairtrade-v*']"
+      replace: "tags: ['v*']"
+    - name: a release created without --verify-tag is rejected
+      find: "              --verify-tag \\\n"
+      replace: ""
+    - name: a guard that cannot load the parser's imports is rejected
+      find: "            src/ui/closed-value.js\n"
+      replace: ""

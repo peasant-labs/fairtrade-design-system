@@ -65,13 +65,27 @@ jobs:
       - name: Install (frozen lockfile)
         run: pnpm install --frozen-lockfile
 
-      - name: Guard canonical Fairtrade release tag grammar
-        run: node scripts/release-guard.mjs parse-tag "$TAG"
-
-      - name: Guard tag <-> package.json version consistency
+      # The release config is the one place the tag prefix is written; the
+      # parsed version below is the only version the later steps read.
+      - name: Read the release config
+        id: config
         run: |
           set -euo pipefail
-          tag_version="${TAG#fairtrade-v}"
+          tag_prefix="$(yq -e '.tag_prefix' .github/release-intent.yaml)"
+          echo "tag_prefix=${tag_prefix}" >> "$GITHUB_OUTPUT"
+
+      - name: Guard canonical Fairtrade release tag grammar
+        id: tag
+        env:
+          TAG_PREFIX: ${{ steps.config.outputs.tag_prefix }}
+        run: node scripts/release-guard.mjs parse-tag "$TAG" "$TAG_PREFIX"
+
+      - name: Guard tag <-> package.json version consistency
+        env:
+          VERSION: ${{ steps.tag.outputs.version }}
+        run: |
+          set -euo pipefail
+          tag_version="${VERSION}"
           pkg_version="$(node -p "require('./package.json').version")"
           if [ "${tag_version}" != "${pkg_version}" ]; then
             echo "::error::tag ${TAG} names version ${tag_version} but package.json is ${pkg_version}; tags are append-only, so do not move the tag: land a fix-forward change and let the release job tag the corrected commit"
@@ -80,11 +94,13 @@ jobs:
 
       - name: Determine the npm dist-tag from the version kind
         id: disttag
+        env:
+          VERSION: ${{ steps.tag.outputs.version }}
         run: |
           set -euo pipefail
           # A prerelease version (any -suffix, e.g. 0.1.0-rc1) publishes under
           # `next`; a final X.Y.Z takes `latest`.
-          version="${TAG#fairtrade-v}"
+          version="${VERSION}"
           case "${version}" in
             *-*) echo "tag=next"    >> "$GITHUB_OUTPUT" ;;
             *)   echo "tag=latest"  >> "$GITHUB_OUTPUT" ;;
@@ -93,18 +109,21 @@ jobs:
       # npm (not pnpm) for the publish step only — see the header comment.
       # prepack builds and checks the package; CI owns the library test suite.
       - name: Publish @peasant-labs/fairtrade to npm (OIDC trusted publishing)
+        env:
+          VERSION: ${{ steps.tag.outputs.version }}
         run: |
           set -euo pipefail
           npm publish --access public --tag "${{ steps.disttag.outputs.tag }}"
-          echo "::notice::published @peasant-labs/fairtrade@${TAG#fairtrade-v} under dist-tag ${{ steps.disttag.outputs.tag }} via OIDC trusted publishing"
+          echo "::notice::published @peasant-labs/fairtrade@${VERSION} under dist-tag ${{ steps.disttag.outputs.tag }} via OIDC trusted publishing"
 
       - name: Verify the published provenance result
         env:
           PROVENANCE_ERROR_FILE: ${{ runner.temp }}/fairtrade-provenance-npm-view-error
           REPOSITORY_VISIBILITY: ${{ github.repository_visibility }}
+          VERSION: ${{ steps.tag.outputs.version }}
         run: |
           set -euo pipefail
-          package="@peasant-labs/fairtrade@${TAG#fairtrade-v}"
+          package="@peasant-labs/fairtrade@${VERSION}"
           case "${REPOSITORY_VISIBILITY}" in
             # Accepted uploads can remain unavailable while npm processes them.
             # Keep provenance required, allowing up to ten minutes within this job.

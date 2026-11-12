@@ -1,0 +1,59 @@
+# Required-NAME manifest for release-guard.yaml: deletion protection. The test
+# (scripts/release-guard.test.mjs) asserts each list's names equal these lists
+# exactly, as sets. Membership is asserted, never a bare count.
+requiredValidTagNames:
+  - final
+  - candidate
+  - zero core
+requiredInvalidTagNames:
+  - missing namespace
+  - missing v
+  - beta
+  - leading zero major
+  - leading zero minor
+  - leading zero patch
+  - rc zero
+  - rc padded
+  - unknown kind
+requiredPackageScriptNames:
+  - prepack asserts the package provenance
+  - prepack builds the library
+  - prepack checks the packed contents
+  - prepack runs no tests
+  - build:lib runs no test script
+  - build:lib runs no test file
+  - build:lib has no pre-hook
+  - test:lib runs the lane runner
+  - the serial lane renders the mounted pi transcript
+  - the serial lane runs vitest
+requiredForbiddenTextNames:
+  - the hold rule never dequeues a queued release PR
+  - the release job leaves the GitHub Release to the tag-triggered workflow
+requiredContractMutationNames:
+  - re-adding edited to ci.yml is rejected
+  - unconditional prepack is rejected
+  - prepack on a bot PR that is not the release PR is rejected
+  - a content build that also runs on the release PR is rejected
+  - warn-and-pass group resolution is rejected
+  - a cancellable release run is rejected
+  - a Go cache keyed on another module is rejected
+requiredPolicyMutationNames:
+  - cancelling ci on every event is rejected
+  - dropping merge_group from ci is rejected
+  - comparing a bot branch literally is rejected
+  - dropping edited from title-guard is rejected
+  - a job-level if on the guard job is rejected
+  - interpolating a title is rejected
+  - a range reader without the floor is rejected
+  - a weakened release-batch verdict is rejected
+  - arming without the gate is rejected
+  - an ungated tag is rejected
+  - a major cut-release level is rejected
+  - a cut-release on any branch is rejected
+  - a cut-release write without tag mode is rejected
+  - editing the cut-release PR is rejected
+  - arming another branch is rejected
+  - a cut-release tag push is rejected
+requiredGitMutationNames:
+  - a forced push moves the release tag
+  - a delete and re-push moves the release tag
