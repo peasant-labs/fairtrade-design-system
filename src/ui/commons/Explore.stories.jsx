@@ -51,6 +51,20 @@ const pagedPayload = {
   ],
 }
 
+const suppliedFacetPayload = {
+  ...pagedPayload,
+  // The current result set is filtered to 24 Codex transcripts. Corpus facets
+  // remain authoritative and include three Claude Code transcripts outside it.
+  transcripts: {
+    ...pagedPayload.transcripts,
+    transcripts: pagedRows.slice(0, 2).map((row) => ({ ...row, modelProvider: 'codex', modelName: 'Codex' })),
+  },
+  harnessFacets: [
+    { harness: 'codex', count: 24 },
+    { harness: 'claude-code', count: 3 },
+  ],
+}
+
 const Surface = (Story) => (
   <div style={{ width: 1024, maxWidth: '100%' }}>
     <Story />
@@ -72,5 +86,17 @@ export const Browse = {}
 /* A multi-page dataset: the numbered pager renders and reflects the requested
    page. Later stale response metadata cannot rewrite a newer requested page. */
 export const Paged = {
+  args: { data: pagedPayload },
+}
+
+export const SuppliedHarnessFacets = {
+  args: { data: suppliedFacetPayload },
+}
+
+export const EmptyHarnessFacets = {
+  args: { data: { ...pagedPayload, harnessFacets: [] } },
+}
+
+export const DerivedHarnessFacets = {
   args: { data: pagedPayload },
 }
