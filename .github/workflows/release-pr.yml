@@ -15,16 +15,19 @@ permissions:
   contents: read
   pull-requests: read
 
-# A body edit (`edited`) must queue behind a running run, not cancel it;
-# otherwise an edit after merge can cancel the `tag` job that mints the
-# release tag.
+# The merge path (a `closed` merge or a `workflow_dispatch` retry) has its own
+# `merge` group and is never cancelled. Gate runs share the `gates` group: a
+# body edit (`edited`) queues behind running gates instead of cancelling them,
+# and a push (`synchronize`) still supersedes them. A displaced pending gates
+# run loses only `validate`, and the edit run re-validates the same head with
+# the latest title, so nothing is lost.
 concurrency:
-  group: release-pr-${{ github.event.pull_request.number || inputs.pr_number }}
-  cancel-in-progress: ${{ github.event.action != 'edited' }}
+  group: release-pr-${{ github.event.pull_request.number || inputs.pr_number }}-${{ (github.event_name == 'workflow_dispatch' || github.event.action == 'closed') && 'merge' || 'gates' }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' && github.event.action != 'closed' && github.event.action != 'edited' }}
 
 jobs:
   validate:
-    if: github.event_name == 'pull_request' && github.event.action != 'closed' && startsWith(github.event.pull_request.title, 'release(')
+    if: github.event_name == 'pull_request' && github.event.action != 'closed' && github.event.pull_request.state == 'open' && startsWith(github.event.pull_request.title, 'release(')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:

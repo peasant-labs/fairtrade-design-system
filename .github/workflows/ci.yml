@@ -56,16 +56,12 @@ jobs:
       - name: Contract type gate (wire contract + VM leak assertions)
         run: pnpm test:contract
 
-      # Every PR validates the same packaging path npm publication uses:
+      # Every PR and push validates the same packaging path npm publication uses:
       # prepack is assert-package-provenance + build:lib + pack:check. The
       # provenance assertion reads no title, version, or environment, so the
       # step runs unconditionally and needs no `edited` trigger.
       - name: Build library (publishable artifact)
         run: pnpm prepack
-
-      # Belt-and-suspenders: assert the npm tarball file set matches exports[].
-      - name: Assert pack contents (exports <-> tarball)
-        run: pnpm pack:check
 
       - name: Test library (behavior, mutations, and built rendering)
         env:
