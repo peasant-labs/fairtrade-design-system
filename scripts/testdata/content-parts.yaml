@@ -8,7 +8,7 @@
 #
 # scripts/transcript-content-parts.test.mjs runs the real adapter for `decode` and `fallback`
 # rows, mounts the real TurnCard for `order` rows, and reads the pure alt-text rule for `alt`
-# rows. A present image resolves through the host's `attachmentUrl`; the test supplies one.
+# rows. A present image resolves through the host's `imageUrl`; the test supplies one.
 cases:
   - name: text and image parts round-trip in source order
     kind: decode
@@ -129,3 +129,22 @@ cases:
     position: 1
     total: 1
     expected: 'image 1'
+
+# Exercise the resolver on the viewer and on its standalone exported primitives.
+resolverInput:
+  content: ''
+  contentParts:
+    - {type: image, image: {ref: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', mediaType: 'image/png', byteSize: 2048, width: 640, height: 480}}
+resolverCases:
+  - {name: image-url-resolves-a-present-image, component: viewer, imageUrl: true, attachmentUrl: false, expected: image, warnings: 0}
+  - {name: deprecated-attachment-url-still-resolves, component: viewer, imageUrl: false, attachmentUrl: true, expected: attachment, warnings: 0}
+  - {name: null-image-prop-uses-the-deprecated-resolver, component: viewer, imageUrl: false, imagePropNull: true, attachmentUrl: true, expected: attachment, warnings: 0}
+  - {name: neither-resolver-fetches-an-image, component: viewer, imageUrl: false, attachmentUrl: false, expected: unavailable, warnings: 0}
+  - {name: undefined-image-url-renders-unavailable, component: viewer, imageUrl: true, attachmentUrl: false, imageResult: undefined, expected: unavailable, warnings: 0}
+  - {name: conflict-is-silent-in-production, component: viewer, imageUrl: true, attachmentUrl: true, environment: production, expected: image, warnings: 0}
+  - {name: image-url-wins-when-both-are-passed, component: viewer, imageUrl: true, attachmentUrl: true, expected: image, warnings: 1}
+  - {name: unresolved-image-url-does-not-fall-back, component: viewer, imageUrl: true, attachmentUrl: true, imageResult: null, expected: unavailable, warnings: 0}
+  - {name: standalone-turn-card-accepts-the-deprecated-resolver, component: turn, imageUrl: false, attachmentUrl: true, expected: attachment, warnings: 0}
+  - {name: standalone-image-accepts-the-deprecated-resolver, component: image, imageUrl: false, attachmentUrl: true, expected: attachment, warnings: 0}
+  - {name: standalone-turn-card-accepts-image-url, component: turn, imageUrl: true, attachmentUrl: false, expected: image, warnings: 0}
+  - {name: standalone-image-accepts-image-url, component: image, imageUrl: true, attachmentUrl: false, expected: image, warnings: 0}
