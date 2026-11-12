@@ -270,7 +270,7 @@
     "test:step-wizard:mutations": "node scripts/parts-mutations.mjs scripts/step-wizard.test.mjs scripts/testdata/step-wizard.manifest.yaml"
   },
   "dependencies": {
-    "@peasant-labs/schema": "0.49.0",
+    "@peasant-labs/schema": "0.51.0",
     "@tanstack/react-table": "^8.21.3",
     "lucide-react": "^1.18.0",
     "mermaid": "12.2.0",
