@@ -85,7 +85,8 @@
  * @property {number} totalTokens
  * @property {number} tokensIn
  * @property {number} tokensOut
- * @property {number} turnCount
+ * @property {number} turnCount             folded turns of the main partition, system and tool rows included; not the count a reader is shown
+ * @property {number} [conversationTurnCount] the count a reader is shown; absent means unmeasured, and the hero then prints `turnCount`
  * @property {number} [inputSubmissionCount] absent means unmeasured, never inferred from turns
  * @property {boolean} [hasNormalizedEvidence] prevents legacy prompt-derived title inference
  * @property {import('@peasant-labs/schema').SessionPurpose} [purpose]

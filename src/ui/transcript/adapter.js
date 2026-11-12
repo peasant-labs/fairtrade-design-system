@@ -627,6 +627,7 @@ function cookSession(payload, git) {
   }
   if (payload.project) session.project = payload.project
   if (payload.model) session.model = payload.model
+  if (payload.conversationTurnCount !== undefined) session.conversationTurnCount = payload.conversationTurnCount
   if (payload.inputSubmissionCount !== undefined) session.inputSubmissionCount = payload.inputSubmissionCount
   if (payload.purpose) session.purpose = payload.purpose
   if (payload.rootSessionId) session.rootSessionId = payload.rootSessionId

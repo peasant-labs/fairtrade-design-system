@@ -15,6 +15,7 @@ vitestSelection:
   heldWindow: a held window beside a disjoint region keeps its gap boundary
   failedWindow: a rejected covering load names the window and retries successfully
   phase: phase starting mid transcript
+  positions: eighty rows with three system rows
 typeMutations:
   - name: a new history state is missing from the ordered inventory
     find: "  Unresolved: closed('uncertain_unresolved'"
@@ -209,7 +210,7 @@ mountCases:
       boundarySides: [newer]
       captions:
         - 30 segments, 30 MiB
-      filesScope: derived from 82 of 1312 turns, 2 of 32 segments loaded
+      filesScope: derived from 82 of 1,312 turns, 2 of 32 segments loaded
       continuationCount: 0
       truncation: false
       notIndexed: false
@@ -261,7 +262,7 @@ mountCases:
       captions:
         - 1 segment, 1 MiB
         - 30 segments, 30 MiB
-      filesScope: derived from 41 of 1312 turns, 1 of 32 segments loaded
+      filesScope: derived from 41 of 1,312 turns, 1 of 32 segments loaded
       continuationCount: 1
       truncation: false
       notIndexed: false
@@ -412,9 +413,11 @@ phaseCases:
 phaseCountCases:
   - name: sparse phase counts conversation turns rather than indexes
     turns:
-      - {index: 10, role: user, content: hello}
-      - {index: 55, role: assistant, content: done}
-      - {index: 79, role: system, content: notice}
+      - {index: 10, role: user, entryType: text, depth: 0, content: hello}
+      - {index: 31, role: assistant, entryType: thinking, depth: 0, content: ''}
+      - {index: 40, role: assistant, entryType: tool_use, depth: 0, content: ''}
+      - {index: 55, role: assistant, entryType: text, depth: 0, content: done}
+      - {index: 79, role: system, depth: 0, content: notice}
     expectedCount: 2
     expectedFrom: 10
     expectedTo: 79
@@ -426,7 +429,7 @@ recoveryCases:
     loaded: [1, 3]
     requests: [2, 2]
     restoredTurn: 18
-    failureCopy: could not load the window around turn 30.
+    failureCopy: could not load that part of the transcript.
     retryCopy: try again
     window: {requestedAnchor: 30, anchorTurn: 30, span: 10, firstTurn: 18, lastTurn: 43, segments: [1, 2], hasOlder: true, hasNewer: true}
   - name: a rejected covering load names the window and retries successfully
@@ -435,7 +438,7 @@ recoveryCases:
     loaded: [1, 3]
     requests: [2, 2]
     restoredTurn: 18
-    failureCopy: could not load the window around turn 30.
+    failureCopy: could not load that part of the transcript.
     retryCopy: try again
     window: {requestedAnchor: 30, anchorTurn: 30, span: 10, firstTurn: 18, lastTurn: 43, segments: [1, 2], hasOlder: true, hasNewer: true}
   - name: a rejected window request names the window and retries successfully
@@ -444,7 +447,7 @@ recoveryCases:
     loaded: [0]
     requests: [30, 30]
     restoredTurn: 30
-    failureCopy: could not load the window around turn 30.
+    failureCopy: could not load that part of the transcript.
     retryCopy: try again
     window: {requestedAnchor: 30, anchorTurn: 30, span: 10, firstTurn: 18, lastTurn: 43, segments: [1, 2], hasOlder: true, hasNewer: true}
   - name: a host reported covering failure names the window and retries
@@ -453,7 +456,7 @@ recoveryCases:
     loaded: [1, 3]
     requests: [30]
     restoredTurn: 18
-    failureCopy: could not load the window around turn 30.
+    failureCopy: could not load that part of the transcript.
     retryCopy: try again
     window: {requestedAnchor: 30, anchorTurn: 30, span: 10, firstTurn: 18, lastTurn: 43, segments: [1, 2], hasOlder: true, hasNewer: true}
   - name: a rejected segment load enables retry
@@ -503,3 +506,365 @@ wordlessCases:
       role: assistant
       content: a reply
     wordless: false
+
+# Directories that carry conversation-turn positions. Every ref, span and total is a
+# literal, as a producer sends them; nothing in the gate computes one. A row is a plain
+# assistant reply unless it is listed: `userTurns` are prompts, `systemTurns` harness
+# notices, `toolTurns` assistant rows holding only a tool call, `thinkingTurns` rows
+# holding only thinking. Only prompts and replies are conversation turns.
+positionDirectories:
+  # 80 folded rows, 3 of them system rows: 77 conversation turns in 4 segments.
+  - name: golden eighty rows
+    totalTurns: 80
+    totalConversationTurns: 77
+    userTurns: [0, 20, 45, 62, 70]
+    systemTurns: [5, 30, 66]
+    segments:
+      - {index: 0, firstTurn: 0, lastTurn: 19, byteLength: 1048576, conversationTurns: {before: 0, count: 19}}
+      - {index: 1, firstTurn: 20, lastTurn: 44, byteLength: 1048576, conversationTurns: {before: 19, count: 24}}
+      - {index: 2, firstTurn: 45, lastTurn: 61, byteLength: 1048576, conversationTurns: {before: 43, count: 17}}
+      - {index: 3, firstTurn: 62, lastTurn: 79, byteLength: 1048576, conversationTurns: {before: 60, count: 17}}
+  # The same session with turn identities that start at 500.
+  - name: golden rows with identities from 500
+    totalTurns: 80
+    totalConversationTurns: 77
+    userTurns: [500, 520, 545, 562, 570]
+    systemTurns: [505, 530, 566]
+    segments:
+      - {index: 0, firstTurn: 500, lastTurn: 519, byteLength: 1048576, conversationTurns: {before: 0, count: 19}}
+      - {index: 1, firstTurn: 520, lastTurn: 544, byteLength: 1048576, conversationTurns: {before: 19, count: 24}}
+      - {index: 2, firstTurn: 545, lastTurn: 561, byteLength: 1048576, conversationTurns: {before: 43, count: 17}}
+      - {index: 3, firstTurn: 562, lastTurn: 579, byteLength: 1048576, conversationTurns: {before: 60, count: 17}}
+  # The middle segment holds one reply and one tool row.
+  - name: one turn middle segment
+    totalTurns: 80
+    totalConversationTurns: 77
+    userTurns: [0, 22]
+    systemTurns: [5, 40]
+    toolTurns: [21]
+    segments:
+      - {index: 0, firstTurn: 0, lastTurn: 19, byteLength: 1048576, conversationTurns: {before: 0, count: 19}}
+      - {index: 1, firstTurn: 20, lastTurn: 21, byteLength: 4096, conversationTurns: {before: 19, count: 1}}
+      - {index: 2, firstTurn: 22, lastTurn: 79, byteLength: 1048576, conversationTurns: {before: 20, count: 57}}
+  # The middle segment holds two tool rows and one thinking row: no conversation turn.
+  - name: no turn middle segment
+    totalTurns: 82
+    totalConversationTurns: 77
+    userTurns: [0, 23]
+    systemTurns: [5, 40]
+    toolTurns: [20, 21]
+    thinkingTurns: [22]
+    segments:
+      - {index: 0, firstTurn: 0, lastTurn: 19, byteLength: 1048576, conversationTurns: {before: 0, count: 19}}
+      - {index: 1, firstTurn: 20, lastTurn: 22, byteLength: 12288, conversationTurns: {before: 19, count: 0}}
+      - {index: 2, firstTurn: 23, lastTurn: 81, byteLength: 1048576, conversationTurns: {before: 19, count: 58}}
+  # Five segments; the third holds two tool rows and no conversation turn.
+  - name: empty third of five
+    totalTurns: 32
+    totalConversationTurns: 30
+    userTurns: [0, 24]
+    toolTurns: [15, 16]
+    segments:
+      - {index: 0, firstTurn: 0, lastTurn: 9, byteLength: 4096, conversationTurns: {before: 0, count: 10}}
+      - {index: 1, firstTurn: 10, lastTurn: 14, byteLength: 4096, conversationTurns: {before: 10, count: 5}}
+      - {index: 2, firstTurn: 15, lastTurn: 16, byteLength: 4096, conversationTurns: {before: 15, count: 0}}
+      - {index: 3, firstTurn: 17, lastTurn: 23, byteLength: 4096, conversationTurns: {before: 15, count: 7}}
+      - {index: 4, firstTurn: 24, lastTurn: 31, byteLength: 4096, conversationTurns: {before: 22, count: 8}}
+  # One request, then two tool rows in a second segment: one conversation turn.
+  - name: one conversation turn then tool rows
+    totalTurns: 3
+    totalConversationTurns: 1
+    userTurns: [0]
+    toolTurns: [1, 2]
+    segments:
+      - {index: 0, firstTurn: 0, lastTurn: 0, byteLength: 4096, conversationTurns: {before: 0, count: 1}}
+      - {index: 1, firstTurn: 1, lastTurn: 2, byteLength: 4096, conversationTurns: {before: 1, count: 0}}
+  # 1,200 folded rows, read without positions by the case that uses it.
+  - name: twelve hundred rows in two segments
+    totalTurns: 1200
+    totalConversationTurns: 1200
+    userTurns: [0]
+    segments:
+      - {index: 0, firstTurn: 0, lastTurn: 9, byteLength: 4096, conversationTurns: {before: 0, count: 10}}
+      - {index: 1, firstTurn: 10, lastTurn: 1199, byteLength: 1048576, conversationTurns: {before: 10, count: 1190}}
+  # Six segments read three refs to a page.
+  - name: six segments in two pages
+    totalTurns: 77
+    totalConversationTurns: 77
+    userTurns: [0, 43]
+    segments:
+      - {index: 0, firstTurn: 0, lastTurn: 11, byteLength: 1048576, conversationTurns: {before: 0, count: 12}}
+      - {index: 1, firstTurn: 12, lastTurn: 24, byteLength: 1048576, conversationTurns: {before: 12, count: 13}}
+      - {index: 2, firstTurn: 25, lastTurn: 42, byteLength: 1048576, conversationTurns: {before: 25, count: 18}}
+      - {index: 3, firstTurn: 43, lastTurn: 52, byteLength: 1048576, conversationTurns: {before: 43, count: 10}}
+      - {index: 4, firstTurn: 53, lastTurn: 64, byteLength: 1048576, conversationTurns: {before: 53, count: 12}}
+      - {index: 5, firstTurn: 65, lastTurn: 76, byteLength: 1048576, conversationTurns: {before: 65, count: 12}}
+  - name: five segments of seventy seven
+    totalTurns: 77
+    totalConversationTurns: 77
+    userTurns: [0, 19, 40, 52, 65]
+    segments:
+      - {index: 0, firstTurn: 0, lastTurn: 18, byteLength: 4096, conversationTurns: {before: 0, count: 19}}
+      - {index: 1, firstTurn: 19, lastTurn: 39, byteLength: 4096, conversationTurns: {before: 19, count: 21}}
+      - {index: 2, firstTurn: 40, lastTurn: 51, byteLength: 4096, conversationTurns: {before: 40, count: 12}}
+      - {index: 3, firstTurn: 52, lastTurn: 64, byteLength: 4096, conversationTurns: {before: 52, count: 13}}
+      - {index: 4, firstTurn: 65, lastTurn: 76, byteLength: 4096, conversationTurns: {before: 65, count: 12}}
+  - name: twelve segments of seventy seven
+    totalTurns: 77
+    totalConversationTurns: 77
+    userTurns: [0, 35]
+    segments:
+      - {index: 0, firstTurn: 0, lastTurn: 19, byteLength: 4096, conversationTurns: {before: 0, count: 20}}
+      - {index: 1, firstTurn: 20, lastTurn: 34, byteLength: 4096, conversationTurns: {before: 20, count: 15}}
+      - {index: 2, firstTurn: 35, lastTurn: 59, byteLength: 4096, conversationTurns: {before: 35, count: 25}}
+      - {index: 3, firstTurn: 60, lastTurn: 61, byteLength: 4096, conversationTurns: {before: 60, count: 2}}
+      - {index: 4, firstTurn: 62, lastTurn: 63, byteLength: 4096, conversationTurns: {before: 62, count: 2}}
+      - {index: 5, firstTurn: 64, lastTurn: 65, byteLength: 4096, conversationTurns: {before: 64, count: 2}}
+      - {index: 6, firstTurn: 66, lastTurn: 67, byteLength: 4096, conversationTurns: {before: 66, count: 2}}
+      - {index: 7, firstTurn: 68, lastTurn: 69, byteLength: 4096, conversationTurns: {before: 68, count: 2}}
+      - {index: 8, firstTurn: 70, lastTurn: 71, byteLength: 4096, conversationTurns: {before: 70, count: 2}}
+      - {index: 9, firstTurn: 72, lastTurn: 73, byteLength: 4096, conversationTurns: {before: 72, count: 2}}
+      - {index: 10, firstTurn: 74, lastTurn: 75, byteLength: 4096, conversationTurns: {before: 74, count: 2}}
+      - {index: 11, firstTurn: 76, lastTurn: 76, byteLength: 4096, conversationTurns: {before: 76, count: 1}}
+
+# What a reader sees for a position directory and a set of loaded segments. Optional
+# inputs: `refs` keeps one received directory page, `withoutPositions` is a server older
+# than the position fields, `dropSpans` removes single spans, `dropTurns` removes turns
+# the adapter merged away, `hiddenCategories` turns filter categories off, `thenLoaded`
+# rerenders with more segments, and `jump` rejects a window request for a turn that is
+# not held. `sliderAt` states the slider's value text with a given segment active.
+# Every expected string is the literal copy; `absent` lists numbers that must not appear.
+positionCases:
+  - name: eighty rows with three system rows
+    directory: golden eighty rows
+    loaded: [0, 2, 3]
+    expect:
+      header: 53 of 77 turns
+      captions: ['turns 20–43 of 77']
+      labels: ['load more, segment, turns 20–43 of 77']
+      filesScope: derived from 53 of 77 turns, 3 of 4 segments loaded
+      tickTitles: ['turns 1–19', 'turns 20–43', 'turns 44–60', 'turns 61–77']
+      absent: ['55', '79']
+  - name: a gap with one conversation turn
+    directory: one turn middle segment
+    loaded: [0, 2]
+    expect:
+      header: 76 of 77 turns
+      captions: ['turn 20 of 77']
+      labels: ['load more, segment, turn 20 of 77']
+      filesScope: derived from 76 of 77 turns, 2 of 3 segments loaded
+      tickTitles: ['turns 1–19', 'turn 20', 'turns 21–77']
+  - name: a gap with no conversation turns
+    directory: no turn middle segment
+    loaded: [0, 2]
+    expect:
+      header: 77 of 77 turns
+      captions: ['no conversation turns, 1 segment, 12 KiB']
+      labels: ['load more, segment, no conversation turns, 1 segment, 12 KiB']
+      loads: 1
+      filesScope: derived from 77 of 77 turns, 2 of 3 segments loaded
+      tickTitles: ['turns 1–19', 'no conversation turns', 'turns 20–77']
+  - name: a three segment gap with an empty middle
+    directory: empty third of five
+    loaded: [0, 4]
+    expect:
+      header: 18 of 30 turns
+      captions: ['turns 11–22 of 30']
+      labels: ['load more, 3 segments, turns 11–22 of 30']
+      filesScope: derived from 18 of 30 turns, 2 of 5 segments loaded
+      tickTitles: ['turns 1–10', 'turns 11–15', 'no conversation turns', 'turns 16–22', 'turns 23–30']
+  - name: a directory holding only its second page
+    directory: six segments in two pages
+    refs: [3, 4, 5]
+    loaded: [3]
+    expect:
+      header: 10 of 77 turns
+      captions: ['turns 54–77 of 77']
+      labels: ['load more, 2 segments, turns 54–77 of 77']
+      filesScope: derived from 10 of 77 turns, 1 of 6 segments loaded
+  - name: a gap that reaches into a page not received names no position
+    directory: six segments in two pages
+    refs: [3, 4, 5]
+    loaded: [4]
+    expect:
+      header: 12 of 77 turns
+      captions: ['1 segment, 1 MiB', 'turns 66–77 of 77']
+      labels: ['load more, segment, 1 segment, 1 MiB', 'load more, segment, turns 66–77 of 77']
+      filesScope: derived from 12 of 77 turns, 1 of 6 segments loaded
+  - name: an older server sends no positions
+    directory: golden eighty rows
+    withoutPositions: true
+    loaded: [0, 2, 3]
+    jump: {turn: 30}
+    expect:
+      header: 53 of 80 turns
+      captions: ['1 segment, 1 MiB']
+      labels: ['load more, segment, 1 segment, 1 MiB']
+      filesScope: derived from 55 of 80 turns, 3 of 4 segments loaded
+      tickTitles: ['segment 1 of 4', 'segment 2 of 4', 'segment 3 of 4', 'segment 4 of 4']
+      valueText: segment 3 of 4
+      failure: could not load that part of the transcript.
+      silent: true
+  - name: the header keeps one unit while loading and when complete
+    directory: five segments of seventy seven
+    loaded: [0, 1]
+    thenLoaded: [0, 1, 2, 3, 4]
+    expect:
+      header: 40 of 77 turns
+      thenHeader: 77 turns
+      captions: ['turns 41–77 of 77']
+      labels: ['load more, 3 segments, turns 41–77 of 77']
+      filesScope: derived from 40 of 77 turns, 2 of 5 segments loaded
+  - name: a fully loaded session whose adapter dropped a duplicate
+    directory: golden eighty rows
+    loaded: [0, 1, 2, 3]
+    dropTurns: [10]
+    expect:
+      header: 77 turns
+      captions: []
+      labels: []
+      filesScope: derived from all 77 loaded turns
+  - name: a fully loaded session with a filter on
+    directory: golden eighty rows
+    loaded: [0, 1, 2, 3]
+    hiddenCategories: [prompts]
+    expect:
+      header: 72 of 77 turns
+      captions: []
+      labels: []
+      filesScope: derived from all 77 loaded turns
+  - name: scrubber ticks and the jump failure name positions
+    directory: twelve segments of seventy seven
+    loaded: [0]
+    jump: {turn: 40}
+    expect:
+      header: 20 of 77 turns
+      captions: ['turns 21–77 of 77']
+      labels: ['load more, 11 segments, turns 21–77 of 77']
+      filesScope: derived from 20 of 77 turns, 1 of 12 segments loaded
+      tickTitles: ['turns 1–20', 'turns 21–35', 'turns 36–60', 'turns 61–62', 'turns 63–64', 'turns 65–66', 'turns 67–68', 'turns 69–70', 'turns 71–72', 'turns 73–74', 'turns 75–76', 'turn 77']
+      valueText: turns 1–20 of 77
+      failure: could not load the window around turns 36–60.
+  - name: the slider names the active position
+    directory: twelve segments of seventy seven
+    loaded: [2]
+    expect:
+      header: 25 of 77 turns
+      captions: ['turns 1–35 of 77', 'turns 61–77 of 77']
+      labels: ['load more, 2 segments, turns 1–35 of 77', 'load more, 9 segments, turns 61–77 of 77']
+      filesScope: derived from 25 of 77 turns, 1 of 12 segments loaded
+      valueText: turns 36–60 of 77
+      sliderAt: {segment: 11, valueText: turn 77 of 77}
+  - name: a tick without a span names its segment
+    directory: twelve segments of seventy seven
+    dropSpans: [2]
+    loaded: [0]
+    jump: {turn: 40}
+    expect:
+      header: 20 of 77 turns
+      captions: ['11 segments, 44 KiB']
+      labels: ['load more, 11 segments, 11 segments, 44 KiB']
+      filesScope: derived from 20 of 77 turns, 1 of 12 segments loaded
+      tickTitles: ['turns 1–20', 'turns 21–35', 'segment 3 of 12', 'turns 61–62', 'turns 63–64', 'turns 65–66', 'turns 67–68', 'turns 69–70', 'turns 71–72', 'turns 73–74', 'turns 75–76', 'turn 77']
+      valueText: turns 1–20 of 77
+      failure: could not load that part of the transcript.
+  - name: the slider on a segment with no conversation turns names the segment
+    directory: no turn middle segment
+    loaded: [1]
+    expect:
+      header: 0 of 77 turns
+      captions: ['turns 1–19 of 77', 'turns 20–77 of 77']
+      labels: ['load more, segment, turns 1–19 of 77', 'load more, segment, turns 20–77 of 77']
+      filesScope: derived from 0 of 77 turns, 1 of 3 segments loaded
+      sliderAt: {segment: 1, valueText: 'no conversation turns, segment 2 of 3'}
+  - name: the files sentence counts conversation turns
+    directory: five segments of seventy seven
+    loaded: [0, 1]
+    expect:
+      header: 40 of 77 turns
+      captions: ['turns 41–77 of 77']
+      labels: ['load more, 3 segments, turns 41–77 of 77']
+      filesScope: derived from 40 of 77 turns, 2 of 5 segments loaded
+  - name: a sparse directory never prints a turn id as a position
+    directory: golden rows with identities from 500
+    loaded: [0, 2, 3]
+    jump: {turn: 530}
+    expect:
+      header: 53 of 77 turns
+      captions: ['turns 20–43 of 77']
+      labels: ['load more, segment, turns 20–43 of 77']
+      filesScope: derived from 53 of 77 turns, 3 of 4 segments loaded
+      tickTitles: ['turns 1–19', 'turns 20–43', 'turns 44–60', 'turns 61–77']
+      failure: could not load the window around turns 20–43.
+      absent: ['500', '520', '544', '579']
+  # The unit agrees with the number beside it: the total in an "of" pair.
+  - name: a single conversation turn reads in the singular
+    directory: one conversation turn then tool rows
+    loaded: [0]
+    thenLoaded: [0, 1]
+    expect:
+      header: 1 of 1 turn
+      thenHeader: 1 turn
+      captions: ['no conversation turns, 1 segment, 4 KiB']
+      labels: ['load more, segment, no conversation turns, 1 segment, 4 KiB']
+      filesScope: derived from 1 of 1 turn, 1 of 2 segments loaded
+  - name: an older server with a thousand rows groups its digits
+    directory: twelve hundred rows in two segments
+    withoutPositions: true
+    loaded: [0]
+    expect:
+      header: 10 of 1,200 turns
+      captions: ['1 segment, 1 MiB']
+      labels: ['load more, segment, 1 segment, 1 MiB']
+      filesScope: derived from 10 of 1,200 turns, 1 of 2 segments loaded
+      silent: true
+
+# A whole transcript, with no directory: the header counts conversation turns among the
+# turns it holds. Each row lists cooked turns and the literal header.
+countCases:
+  - name: tool and thinking rows are not counted
+    turns:
+      - {index: 0, role: user, entryType: text, depth: 0, content: fix the build}
+      - {index: 1, role: assistant, entryType: thinking, depth: 0, content: '', thinking: {text: read the log first, words: 4}}
+      - {index: 2, role: assistant, entryType: tool_use, depth: 0, content: '', tool: true}
+      - {index: 3, role: system, depth: 0, content: mode changed}
+      - {index: 4, role: assistant, entryType: text, depth: 1, content: a helper reply}
+      - {index: 5, role: assistant, entryType: text, depth: 0, content: the build passes}
+    header: 2 turns
+  - name: a reply with prose and tool calls is counted
+    turns:
+      - {index: 0, role: user, entryType: text, depth: 0, content: fix the build}
+      - {index: 1, role: assistant, entryType: text, depth: 0, content: reading the log, tool: true}
+      - {index: 2, role: user, entryType: image, depth: 0, content: ''}
+    header: 3 turns
+  # No directory total: the header still groups digits. `generated` appends that many
+  # alternating user and assistant text turns after `turns`.
+  - name: a thousand held turns group their digits
+    turns: []
+    generated: 1200
+    header: 1,200 turns
+  - name: a filtered thousand groups both counts
+    turns: []
+    generated: 2400
+    hiddenCategories: [prompts]
+    header: 1,200 of 2,400 turns
+  - name: one held turn reads in the singular
+    turns:
+      - {index: 0, role: user, entryType: text, depth: 0, content: fix the build}
+    header: 1 turn
+  - name: a hidden only turn keeps the singular
+    turns:
+      - {index: 0, role: user, entryType: text, depth: 0, content: fix the build}
+    hiddenCategories: [prompts]
+    header: 0 of 1 turn
+
+# The hero prints the count a reader is shown, and the folded count only when the
+# producer measured no conversation count.
+heroCases:
+  - name: the hero prints the conversation count
+    turnCount: 80
+    conversationTurnCount: 77
+    hero: 77 turns
+  - name: the hero falls back to turnCount
+    turnCount: 80
+    hero: 80 turns

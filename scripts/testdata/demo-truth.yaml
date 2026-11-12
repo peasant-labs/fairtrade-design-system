@@ -81,7 +81,7 @@ cases:
     component: default
     query: '?transcript=classic'
     probes:
-      - {selector: '.txn-app', text: 9 turns, absent: 8 turns}
+      - {selector: '.txn-app', text: 8 turns, absent: 9 turns}
       - {selector: '.rng', text: 3 turns, absent: turns 0–2}
       - {selector: '.txn-app .subtask-foot', text: returned to claude}
       - {selector: '.txn-app .subtask-foot [data-brand="claude"]', count: 1}

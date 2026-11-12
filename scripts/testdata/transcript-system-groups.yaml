@@ -18,15 +18,15 @@ payload:
   turnCount: 4
   toolCallCount: 0
   turns:
-    - {index: 0, role: user, content: 'run the checks', timestamp: '2026-10-06T12:00:00Z', depth: 0}
+    - {index: 0, role: user, entryType: text, content: 'run the checks', timestamp: '2026-10-06T12:00:00Z', depth: 0}
     - {index: 1, role: system, content: 'mode: normal', controlKind: mode, timestamp: '2026-10-06T12:01:00Z', depth: 0}
     - {index: 2, role: system, content: 'permission mode: auto', controlKind: permission-mode, timestamp: '2026-10-06T12:02:00Z', depth: 0}
     - {index: 3, role: system, content: 'session title: Peasant Session', controlKind: custom-title, timestamp: '2026-10-06T12:03:00Z', depth: 0}
-    - {index: 4, role: assistant, content: 'checks are running', timestamp: '2026-10-06T12:04:00Z', depth: 0}
+    - {index: 4, role: assistant, entryType: text, content: 'checks are running', timestamp: '2026-10-06T12:04:00Z', depth: 0}
     - {index: 5, role: system, content: 'the ordinary system message is long enough to keep', timestamp: '2026-10-06T12:05:00Z', depth: 0}
-    - {index: 6, role: user, content: 'run them again', timestamp: '2026-10-06T12:06:00Z', depth: 0}
+    - {index: 6, role: user, entryType: text, content: 'run them again', timestamp: '2026-10-06T12:06:00Z', depth: 0}
     - {index: 7, role: system, content: 'agent name: Explorer', controlKind: agent-name, timestamp: '2026-10-06T12:07:00Z', depth: 0}
-    - {index: 8, role: assistant, content: 'done', timestamp: '2026-10-06T12:08:00Z', depth: 0}
+    - {index: 8, role: assistant, entryType: text, content: 'done', timestamp: '2026-10-06T12:08:00Z', depth: 0}
 # a payload from a producer that predates controlKind: every system turn is ordinary
 unclassifiedPayload:
   id: system-groups-unclassified
