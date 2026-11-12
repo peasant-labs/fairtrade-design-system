@@ -1,0 +1,87 @@
+# Cut release: the maintainer's button for forcing a release with nothing to
+# change. A dispatch with a level makes the bot open an empty-commit PR titled
+# `release[<level>]: cut a release` with auto-merge on; that PR then lands
+# through the queue like any releasing PR and the release job builds the
+# release PR from it. The level rides in the landed commit, never in a number,
+# so a rebuild can always reproduce the request. The job does nothing while
+# tag mode is off, and only on the default branch.
+name: cut-release
+
+on:
+  workflow_dispatch:
+    inputs:
+      level:
+        description: Bump level for the forced release
+        required: true
+        type: choice
+        options: [patch, minor]
+
+concurrency:
+  group: cut-release
+  cancel-in-progress: false
+
+# read-only at the job level: the branch push and the PR write below use the
+# minted releaser App token.
+permissions:
+  contents: read
+
+# The bot branch this job owns, defined once here. The policy file names the
+# same branch for the `cut` job so two jobs can never push it.
+env:
+  CUT_BRANCH: automation/cut-release
+
+jobs:
+  cut:
+    # A dispatch on any other branch would run that branch's copy of this file
+    # with the App key, and a run while tag mode is off must change nothing.
+    if: github.ref == 'refs/heads/main' && vars.RELEASE_BATCH_MODE == 'tag'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Mint the releaser App token
+        id: mint
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.PEASANT_RELEASER_APP_ID }}
+          private-key: ${{ secrets.PEASANT_RELEASER_APP_PRIVATE_KEY }}
+          owner: peasant-labs
+          repositories: fairtrade-design-system
+
+      - name: Cut an empty release commit on the bot branch
+        env:
+          APP_TOKEN: ${{ steps.mint.outputs.token }}
+          LEVEL: ${{ inputs.level }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main
+          git checkout -B "${CUT_BRANCH}" origin/main
+          git config user.name peasant-release-bot
+          git config user.email bots@peasant-labs.invalid
+          git commit --allow-empty -m "release[${LEVEL}]: cut a release"
+          git -c http.extraheader="AUTHORIZATION: bearer ${APP_TOKEN}" push --force-with-lease origin "${CUT_BRANCH}"
+
+      # An already-open cut-release PR is updated, never duplicated: the branch
+      # was just rebuilt from the tip, so the PR carries the newest request.
+      - name: Open or update the cut-release PR with auto-merge
+        env:
+          GH_TOKEN: ${{ steps.mint.outputs.token }}
+          LEVEL: ${{ inputs.level }}
+          REQUESTED_BY: ${{ github.triggering_actor }}
+        run: |
+          set -euo pipefail
+          title="release[${LEVEL}]: cut a release"
+          body="Forced ${LEVEL} release requested by @${REQUESTED_BY} through the cut-release button. Landing this empty commit makes the release job build the release PR."
+          number="$(gh pr list --head "${CUT_BRANCH}" --state open --json number --jq '.[0].number // empty')"
+          if [ -z "${number}" ]; then
+            gh pr create --head "${CUT_BRANCH}" --base main --title "${title}" --body "${body}"
+            number="$(gh pr list --head "${CUT_BRANCH}" --state open --json number --jq '.[0].number')"
+          else
+            gh pr edit "${number}" --title "${title}" --body "${body}"
+          fi
+          gh pr merge --auto --squash "${number}"
