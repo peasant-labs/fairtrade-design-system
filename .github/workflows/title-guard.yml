@@ -8,8 +8,9 @@
 # and SHAs are read from the API: a re-run reuses an old payload, and group
 # commits are never parsed as squash subjects.
 #
-# On the release PR (the bot PR on `automation/release`, decided with
-# `release-intent classify`, never with a branch literal) the generated
+# Which PR is the release PR is decided with `release-intent classify`,
+# never by comparing a branch literal: the release config's `bot_branches`
+# is the one source the classifier reads. On the release PR the generated
 # content is also compared with `release-pr --check`, which fails closed with
 # `release-content-stale`. If the entry PR of a merge group cannot be
 # resolved, the job fails closed: the PR-time check stays authoritative, but
@@ -32,10 +33,8 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # The one release-intent pin in this file: the schema commit the tool builds
-# from. Every checkout of the tool in this file uses it. The integration
-# supervisor re-pins it to the landed schema tool commit before merge.
-env:
-  SCHEMA_SHA: f01a3d8420ef1dcfe86eef5a96bd80c414b8ae0b
+# from, written once in the tool checkout below. The integration supervisor
+# re-pins it to the landed schema tool commit before merge.
 
 jobs:
   title-guard:
@@ -54,7 +53,7 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           repository: peasant-labs/schema
-          ref: ${{ env.SCHEMA_SHA }}
+          ref: a6ea5c7f8bc851e83080f6d45a9ed0755550e9a1
           path: schema-tool
           sparse-checkout: |
             cmd/release-intent
@@ -70,13 +69,15 @@ jobs:
 
       - name: Build release-intent
         working-directory: schema-tool
-        run: go build -o "${RUNNER_TEMP}/release-intent" ./cmd/release-intent
+        run: |
+          go build -o "${RUNNER_TEMP}/release-intent" ./cmd/release-intent
+          echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
 
       - name: Check the release config
-        run: '"${RUNNER_TEMP}/release-intent" check-config --config .github/release-intent.yaml'
+        run: release-intent check-config --config .github/release-intent.yaml
 
       - name: Check the workflows against the policy
-        run: '"${RUNNER_TEMP}/release-intent" check-workflows --policy .github/release-guard.policy.yml --dir .github/workflows'
+        run: release-intent check-workflows --policy .github/release-guard.policy.yml --dir .github/workflows
 
       # The entry PR is resolved first: from the merge-group ref on a group
       # build, from the event otherwise. The title, author, and SHAs then come
@@ -93,7 +94,7 @@ jobs:
           GROUP_REF: ${{ github.ref }}
         run: |
           set -euo pipefail
-          resolved="$("${RUNNER_TEMP}/release-intent" group-pr --ref "${GROUP_REF}")"
+          resolved="$(release-intent group-pr --ref "${GROUP_REF}")"
           number="${resolved#pr=}"
           if [ -z "${number}" ]; then
             echo "::error::title-guard cannot resolve the merge-group entry PR from ${GROUP_REF}; failing closed so an unidentified entry never lands unchecked."
@@ -146,9 +147,10 @@ jobs:
         env:
           PR_AUTHOR: ${{ steps.pr.outputs.author }}
           PR_BRANCH: ${{ steps.pr.outputs.head_branch }}
+          PR_BASE: ${{ steps.pr.outputs.base_sha }}
         run: |
           set -euo pipefail
-          "${RUNNER_TEMP}/release-intent" classify --author "${PR_AUTHOR}" --head-branch "${PR_BRANCH}"
+          release-intent classify --author "${PR_AUTHOR}" --head-branch "${PR_BRANCH}" --rev "${PR_BASE}"
 
       - name: Check the pull request title
         env:
@@ -159,7 +161,7 @@ jobs:
           PR_BRANCH: ${{ steps.pr.outputs.head_branch }}
         run: |
           set -euo pipefail
-          printf '%s' "${PR_TITLE}" | "${RUNNER_TEMP}/release-intent" check-title --base "${PR_BASE}" --head "${PR_HEAD}" --author "${PR_AUTHOR}" --head-branch "${PR_BRANCH}"
+          printf '%s' "${PR_TITLE}" | release-intent check-title --base "${PR_BASE}" --head "${PR_HEAD}" --author "${PR_AUTHOR}" --head-branch "${PR_BRANCH}"
 
       - name: Check out the entry head (pull request events)
         if: steps.pr.outputs.group != 'true' && steps.classify.outputs.kind == 'release'
@@ -180,4 +182,4 @@ jobs:
           CHECK_BRANCH: ${{ steps.pr.outputs.check_branch }}
         run: |
           set -euo pipefail
-          "${RUNNER_TEMP}/release-intent" release-pr --check --branch "${CHECK_BRANCH}" --floor "${{ vars.RELEASE_BATCH_FLOOR }}"
+          release-intent release-pr --check --branch "${CHECK_BRANCH}" --floor "${{ vars.RELEASE_BATCH_FLOOR }}"

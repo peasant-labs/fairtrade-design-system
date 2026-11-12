@@ -22,6 +22,7 @@ const requiredWorkflowMutations = new Map([
   ['cancelling ci on every event is rejected', 'ci.yml'],
   ['unconditional prepack is rejected', 'ci.yml'],
   ['a branch literal in ci classify is rejected', 'ci.yml'],
+  ['classify without its base revision is rejected', 'ci.yml'],
   ['dropping edited from title-guard is rejected', 'title-guard.yml'],
   ['a job-level if on the guard job is rejected', 'title-guard.yml'],
   ['warn-and-pass group resolution is rejected', 'title-guard.yml'],
@@ -29,10 +30,12 @@ const requiredWorkflowMutations = new Map([
   ['arming without the gate is rejected', 'release-batch.yml'],
   ['a major cut-release level is rejected', 'cut-release.yml'],
   ['a cut-release on any branch is rejected', 'cut-release.yml'],
+  ['a cut-release write without tag mode is rejected', 'cut-release.yml'],
+  ['editing the cut-release PR is rejected', 'cut-release.yml'],
+  ['arming another branch is rejected', 'cut-release.yml'],
 ])
 const requiredTagValid = new Set(['final', 'candidate', 'zero core'])
 const requiredTagInvalid = new Set(['missing namespace', 'missing v', 'beta', 'leading zero major', 'leading zero minor', 'leading zero patch', 'rc zero', 'rc padded'])
-const SHA40 = /^[0-9a-f]{40}$/
 
 function object(value, where) { assert.ok(value && typeof value === 'object' && !Array.isArray(value), `${where} must be an object`); return value }
 function array(value, where, min) { assert.ok(Array.isArray(value) && value.length >= min, `${where} must contain at least ${min} rows`); return value }
@@ -88,12 +91,13 @@ function parseWorkflow(relative) {
 
 function normalizeIf(value) { return value.replace(/\s+/g, ' ').trim() }
 
-/** The single release-intent pin in a workflow file, defined once and 40-hex. */
+/** The one release-intent pin in a workflow file: the literal 40-hex commit
+ * in the tool checkout's `ref:`. An env reference or anchor name is not a
+ * pin: the policy checker reads the ref value itself. */
 function workflowSha(relative, text) {
-  const definitions = [...text.matchAll(/^  SCHEMA_SHA: ([0-9a-f]+)$/gm)]
-  assert.equal(definitions.length, 1, `${relative} must define SCHEMA_SHA exactly once`)
-  assert.match(definitions[0][1], SHA40, `${relative} SCHEMA_SHA must be a 40-hex commit SHA`)
-  return definitions[0][1]
+  const pins = [...text.matchAll(/^\s*ref: ([0-9a-f]{40})$/gm)]
+  assert.equal(pins.length, 1, `${relative} must pin the tool checkout once, with a literal 40-hex commit SHA`)
+  return pins[0][1]
 }
 
 function assertPrepackComposition(scripts) {
@@ -123,10 +127,11 @@ function assertCIContract(ci, text) {
 
 function assertLibContract(ci, text) {
   const lib = object(ci.jobs?.lib, 'ci job lib')
-  const classify = lib.steps.find((step) => typeof step.run === 'string' && step.run.includes('classify --author'))
-  assert.ok(classify, 'ci lib must classify the pull request with `release-intent classify`')
+  const classify = lib.steps.find((step) => typeof step.run === 'string' && step.run.includes('release-intent classify'))
+  assert.ok(classify, 'ci lib must classify the pull request with the `release-intent classify` command, not a wrapper path')
   assert.match(classify.run, /--author/, 'classify must pass the PR author')
   assert.match(classify.run, /--head-branch/, 'classify must pass the PR head branch')
+  assert.match(classify.run, /--rev/, 'classify must judge the base revision release config, never the working tree')
   assert.doesNotMatch(text, /automation\//, 'no workflow decides from a branch literal; the release-PR decision is `classify` output only')
   const prepack = lib.steps.find((step) => step.run === 'pnpm prepack')
   assert.ok(prepack, 'ci lib must keep a canonical prepack step for the release PR')
@@ -157,17 +162,18 @@ function assertGuardContract(guard, text) {
   assert.doesNotMatch(text, /github\.event\.changes/, 'the guard workflow must never read the changed-file list')
   assert.doesNotMatch(text, /GITHUB_EVENT_PATH/, 'the guard workflow must never read the event file; titles and SHAs come from the live API')
   for (const needle of [
-    'group-pr --ref',
+    'release-intent group-pr --ref',
     'failing closed so an unidentified entry never lands unchecked.',
     'gh pr view',
     "printf '%s'",
-    'check-title --base',
-    'classify --author',
-    'release-pr --check',
+    'release-intent check-title --base',
+    'release-intent classify --author',
+    '--rev "${PR_BASE}"',
+    'release-intent release-pr --check',
     '--floor',
     'RELEASE_BATCH_FLOOR',
-    'check-config --config',
-    'check-workflows --policy',
+    'release-intent check-config --config',
+    'release-intent check-workflows --policy',
   ]) assert.ok(text.includes(needle), `title-guard is missing expected contract text: ${needle}`)
   assert.match(text, /failing closed so an unidentified entry never lands unchecked\."\s*\n\s*exit 1/, 'an unresolvable group entry must fail the job closed, never warn and pass')
   const check = job.steps.find((step) => typeof step.run === 'string' && step.run.includes('release-pr --check'))
@@ -184,6 +190,7 @@ function assertBatchContract(batch, text) {
   assert.equal(batch.concurrency['cancel-in-progress'], false, 'a release run is never cancelled by a later one')
   const job = object(batch.jobs?.release, 'release-batch job release')
   assert.equal(normalizeIf(String(job.if)), "github.ref == 'refs/heads/main'", 'the App key is minted only on the default branch')
+  assert.equal(normalizeIf(String(job.steps.find((step) => step.id === 'mint').if)), "vars.RELEASE_BATCH_MODE == 'tag'", 'the mint step runs only in tag mode, as a single comparison with no disjunction')
   for (const needle of [
     '--mode "${RELEASE_BATCH_MODE}"',
     'RELEASE_BATCH_MODE: ${{ vars.RELEASE_BATCH_MODE }}',
@@ -205,15 +212,20 @@ function assertBatchContract(batch, text) {
     'PEASANT_RELEASER_APP_ID',
     'merge --auto --squash',
     'queue.json',
+    'gh release create',
+    '--current origin/automation/release',
   ]) assert.ok(text.includes(needle), `release-batch is missing expected contract text: ${needle}`)
   assert.doesNotMatch(text, /dequeuePullRequest/, 'on hold the job only turns auto-merge off; a queued release PR is never dequeued')
-  assert.doesNotMatch(text, /gh release create/, 'only the tag-triggered release.yml creates the GitHub Release')
+  assert.ok(text.includes('gh release create'), 'the tag step creates the GitHub Release where it pushes the tag, and nowhere else may')
   assert.equal(text.match(/git tag -a/g)?.length ?? 0, 1, 'exactly one step pushes the tag')
   const tag = job.steps.find((step) => typeof step.run === 'string' && step.run.includes('git tag -a'))
   assert.match(normalizeIf(String(tag.if)), /steps\.plan\.outputs\.action == 'tag'/, 'the tag goes out once, on the verdict plan step tag action')
-  const releaseBranch = [...text.matchAll(/^  RELEASE_BRANCH: (\S+)$/gm)]
-  assert.equal(releaseBranch.length, 1, 'release-batch must define RELEASE_BRANCH exactly once')
-  assert.equal(releaseBranch[0][1], 'automation/release')
+  for (const spelling of [
+    'push --force-with-lease origin automation/release',
+    'gh pr create --head automation/release',
+    'gh pr list --head automation/release',
+    '--current origin/automation/release',
+  ]) assert.ok(text.includes(spelling), `release-batch must name the release branch explicitly in its push target: ${spelling}`)
 }
 
 function assertCutContract(cut, text) {
@@ -222,20 +234,28 @@ function assertCutContract(cut, text) {
   assert.deepEqual(inputs.level, { description: 'Bump level for the forced release', required: true, type: 'choice', options: fixtures.workflow.cut_levels })
   const job = object(cut.jobs?.cut, 'cut-release job cut')
   assert.equal(normalizeIf(String(job.if)), "github.ref == 'refs/heads/main' && vars.RELEASE_BATCH_MODE == 'tag'", 'the button acts only on the default branch while tag mode is on')
+  const tagModeSteps = job.steps.filter((step) => typeof step.run === 'string' && /push --force-with-lease|gh pr (create|merge|close)/.test(step.run))
+  assert.ok(tagModeSteps.length >= 3, 'cut-release must push, open, and arm through gated write steps')
+  for (const step of tagModeSteps) assert.equal(normalizeIf(String(step.if)), "vars.RELEASE_BATCH_MODE == 'tag'", `cut-release step ${step.name ?? step.id} must test tag mode in its own if, as a single comparison`)
   for (const needle of [
     '--allow-empty',
-    'gh pr merge --auto',
-    'gh pr create',
-    'gh pr edit',
+    'gh pr merge --auto --squash automation/cut-release;',
+    'gh pr create --head automation/cut-release',
+    'gh pr close automation/cut-release;',
     'PEASANT_RELEASER_APP_ID',
     'RELEASE_BATCH_MODE',
     'push --force-with-lease',
   ]) assert.ok(text.includes(needle), `cut-release is missing expected contract text: ${needle}`)
+  assert.doesNotMatch(text, /gh pr edit/, 'only the release job edits a PR; the cut button updates its own by pushing its branch')
   assert.doesNotMatch(text, /release-intent/, 'cut-release carries no tool call: the empty commit under a release title is the whole request')
   assert.doesNotMatch(text, /refs\/tags\/|\bgit tag\b/, 'cut-release never tags')
-  const cutBranch = [...text.matchAll(/^  CUT_BRANCH: (\S+)$/gm)]
-  assert.equal(cutBranch.length, 1, 'cut-release must define CUT_BRANCH exactly once')
-  assert.equal(cutBranch[0][1], 'automation/cut-release')
+  for (const spelling of [
+    'HEAD:automation/cut-release',
+    'gh pr create --head automation/cut-release',
+    'gh pr close automation/cut-release;',
+    'gh pr merge --auto --squash automation/cut-release;',
+    'gh pr list --head automation/cut-release',
+  ]) assert.ok(text.includes(spelling), `cut-release must name its own branch explicitly in each push target: ${spelling}`)
 }
 
 test('fixture loader is strict and rejects unknown keys', () => { assert.throws(() => loadFixtures(`${fs.readFileSync(fixturePath, 'utf8')}\nunknown: true\n`), /keys drifted/) })
@@ -277,8 +297,8 @@ test('policy, config, and workflows name the same contract', () => {
     { context: 'gates', workflow: 'ci.yml', job: 'gates', aggregator: true },
     { context: 'title-guard', workflow: 'title-guard.yml', job: 'title-guard', guard: true },
   ], 'the required contexts must equal the queue ruleset the operator compares them against')
-  assert.deepEqual(policy.queue.release_job, { workflow: 'release-batch.yml', job: 'release', branch: 'automation/release', pre_tag_steps: [] })
-  assert.deepEqual(policy.queue.bot_jobs, [{ workflow: 'cut-release.yml', job: 'cut', branch: 'automation/cut-release' }])
+  assert.deepEqual(policy.queue.release_job, { workflow: 'release-batch.yml', job: 'release', pre_tag_steps: [] })
+  assert.deepEqual(policy.queue.bot_jobs, [{ workflow: 'cut-release.yml', job: 'cut', kind: 'cut-release' }])
   assert.equal(config.releases, true)
   assert.equal(config.tag_prefix, 'fairtrade-v')
   assert.equal(config.automation_author, 'peasant-labs-releaser[bot]')
@@ -289,18 +309,28 @@ test('policy, config, and workflows name the same contract', () => {
   const guard = parseWorkflow('title-guard.yml')
   const batch = parseWorkflow('release-batch.yml')
   const cut = parseWorkflow('cut-release.yml')
-  // The tool pin is one named constant per workflow, and every workflow pins
-  // the same commit: the integration supervisor re-pins it once.
+  // The tool pin is one literal per workflow, and every workflow pins the
+  // same commit: the integration supervisor re-pins it once.
   const shas = new Set([workflowSha('ci.yml', ci.text), workflowSha('title-guard.yml', guard.text), workflowSha('release-batch.yml', batch.text)])
   assert.equal(shas.size, 1, 'every workflow that builds the tool must pin the same schema commit')
   assert.ok(!cut.text.includes('SCHEMA_SHA'), 'cut-release needs no tool pin: it carries no tool call')
-  // The bot branches live in the policy and config; each workflow repeats its
-  // own branch exactly once as a named env constant, never as a decision literal.
-  assert.equal(policy.queue.release_job.branch, 'automation/release')
-  assert.equal(batch.text.match(/^  RELEASE_BRANCH: (\S+)$/m)[1], policy.queue.release_job.branch)
-  assert.equal(config.bot_branches.release, policy.queue.release_job.branch)
-  assert.equal(cut.text.match(/^  CUT_BRANCH: (\S+)$/m)[1], policy.queue.bot_jobs[0].branch)
-  assert.equal(config.bot_branches['cut-release'], policy.queue.bot_jobs[0].branch)
+  assert.doesNotMatch(ci.text + guard.text + batch.text + cut.text, /\$\{\{ env\.SCHEMA_SHA \}\}/, 'the pin is the literal commit in each tool checkout, never an env reference the checker cannot resolve')
+  // The push targets name the release config's branches explicitly so the
+  // checker can resolve them; the config stays the one source and this test
+  // pins the equality. No workflow compares a branch literally: every
+  // decision reads the tool's outputs.
+  assert.equal(config.bot_branches.release, 'automation/release')
+  assert.equal(config.bot_branches['cut-release'], 'automation/cut-release')
+  assert.ok(batch.text.includes('automation/release'), 'release-batch must push and open on the release branch')
+  assert.ok(!batch.text.includes('automation/cut-release'), 'release-batch must never touch the cut-release branch')
+  assert.ok(cut.text.includes('automation/cut-release'), 'cut-release must push, open, close, and arm on its own branch')
+  assert.ok(!cut.text.includes('automation/release'), 'cut-release must never touch the release branch')
+  assert.ok(!/==\s*['"]?automation\//.test(batch.text + cut.text + ci.text + guard.text), 'no workflow compares a bot branch with ==')
+  for (const [relative, workflowText] of [['release-batch.yml', batch.text], ['cut-release.yml', cut.text], ['ci.yml', ci.text], ['title-guard.yml', guard.text]]) {
+    for (const line of workflowText.split('\n')) {
+      assert.ok(!(line.includes('automation/') && (line.includes('==') || line.includes('!='))), `${relative} compares a bot branch literally: ${line.trim()}`)
+    }
+  }
 })
 
 test('each workflow mutation is caught by its contract assertion', () => {

@@ -69,12 +69,12 @@ function assertReleaseWorkflowContract(workflow, text) {
     'gh release view',
     'gh release edit',
     '--notes-file notes.md',
-    '--verify-tag',
     '--prerelease',
     '--latest',
   ]) {
     assert(text.includes(needle), `release.yml is missing expected contract text: ${needle}`)
   }
+  assert(!text.includes('gh release create'), 'release.yml must not create the GitHub Release: the release job tag step creates it when it pushes the tag, and this workflow only refreshes notes')
 }
 
 function assert(condition, message) {

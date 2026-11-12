@@ -45,6 +45,10 @@ workflow:
       file: ci.yml
       find: "          echo \"kind=${kind}\" >> \"${GITHUB_OUTPUT}\""
       replace: "          # fallback automation/release\n          echo \"kind=${kind}\" >> \"${GITHUB_OUTPUT}\""
+    - name: classify without its base revision is rejected
+      file: ci.yml
+      find: " --rev"
+      replace: ""
     - name: dropping edited from title-guard is rejected
       file: title-guard.yml
       find: "types: [opened, edited, synchronize, reopened]"
@@ -73,6 +77,18 @@ workflow:
       file: cut-release.yml
       find: "if: github.ref == 'refs/heads/main' && vars.RELEASE_BATCH_MODE == 'tag'"
       replace: "if: vars.RELEASE_BATCH_MODE == 'tag'"
+    - name: a cut-release write without tag mode is rejected
+      file: cut-release.yml
+      find: "        if: vars.RELEASE_BATCH_MODE == 'tag'"
+      replace: "        if: github.ref == 'refs/heads/main'"
+    - name: editing the cut-release PR is rejected
+      file: cut-release.yml
+      find: "gh pr close automation/cut-release;"
+      replace: "gh pr edit automation/cut-release --title \"x\";"
+    - name: arming another branch is rejected
+      file: cut-release.yml
+      find: "gh pr merge --auto --squash automation/cut-release;"
+      replace: "gh pr merge --auto --squash automation/release;"
 git:
   # The release-tag invariant stated in AGENTS.md: never move or delete a
   # release tag. A plain push of an existing tag is refused by the receiver, so

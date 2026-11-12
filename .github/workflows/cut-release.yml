@@ -1,10 +1,13 @@
 # Cut release: the maintainer's button for forcing a release with nothing to
-# change. A dispatch with a level makes the bot open an empty-commit PR titled
-# `release[<level>]: cut a release` with auto-merge on; that PR then lands
-# through the queue like any releasing PR and the release job builds the
-# release PR from it. The level rides in the landed commit, never in a number,
-# so a rebuild can always reproduce the request. The job does nothing while
-# tag mode is off, and only on the default branch.
+# change. A dispatch with a level makes the bot push an empty commit to its
+# own branch and open the cut-release PR with auto-merge on; that PR then
+# lands through the queue like any releasing PR and the release job builds
+# the release PR from it. The level rides in the landed commit, never in a
+# number, so a rebuild can always reproduce the request. The button decides
+# nothing by branch literal: its branch below is the push target the release
+# config names for the cut-release kind, and every write step runs only while
+# tag mode is on. The title travels through environment variables, never
+# through `${{ }}` interpolation into a script.
 name: cut-release
 
 on:
@@ -20,15 +23,10 @@ concurrency:
   group: cut-release
   cancel-in-progress: false
 
-# read-only at the job level: the branch push and the PR write below use the
+# read-only at the job level: the branch push and the PR writes below use the
 # minted releaser App token.
 permissions:
   contents: read
-
-# The bot branch this job owns, defined once here. The policy file names the
-# same branch for the `cut` job so two jobs can never push it.
-env:
-  CUT_BRANCH: automation/cut-release
 
 jobs:
   cut:
@@ -53,22 +51,26 @@ jobs:
           owner: peasant-labs
           repositories: fairtrade-design-system
 
-      - name: Cut an empty release commit on the bot branch
+      - name: Push an empty release commit to the bot branch
+        if: vars.RELEASE_BATCH_MODE == 'tag'
         env:
           APP_TOKEN: ${{ steps.mint.outputs.token }}
           LEVEL: ${{ inputs.level }}
         run: |
           set -euo pipefail
           git fetch --no-tags origin main
-          git checkout -B "${CUT_BRANCH}" origin/main
+          git checkout -B automation/cut-release origin/main
           git config user.name peasant-release-bot
           git config user.email bots@peasant-labs.invalid
           git commit --allow-empty -m "release[${LEVEL}]: cut a release"
-          git -c http.extraheader="AUTHORIZATION: bearer ${APP_TOKEN}" push --force-with-lease origin "${CUT_BRANCH}"
+          git -c http.extraheader="AUTHORIZATION: bearer ${APP_TOKEN}" push --force-with-lease origin HEAD:automation/cut-release
 
-      # An already-open cut-release PR is updated, never duplicated: the branch
-      # was just rebuilt from the tip, so the PR carries the newest request.
-      - name: Open or update the cut-release PR with auto-merge
+      # An already-open cut-release PR with this title is left open: the push
+      # above updated it. One with another level is closed by branch and
+      # recreated, so the title always names the requested level. A bot job
+      # never edits a PR; it updates its own by pushing its branch.
+      - name: Open the cut-release PR
+        if: vars.RELEASE_BATCH_MODE == 'tag'
         env:
           GH_TOKEN: ${{ steps.mint.outputs.token }}
           LEVEL: ${{ inputs.level }}
@@ -77,11 +79,25 @@ jobs:
           set -euo pipefail
           title="release[${LEVEL}]: cut a release"
           body="Forced ${LEVEL} release requested by @${REQUESTED_BY} through the cut-release button. Landing this empty commit makes the release job build the release PR."
-          number="$(gh pr list --head "${CUT_BRANCH}" --state open --json number --jq '.[0].number // empty')"
-          if [ -z "${number}" ]; then
-            gh pr create --head "${CUT_BRANCH}" --base main --title "${title}" --body "${body}"
-            number="$(gh pr list --head "${CUT_BRANCH}" --state open --json number --jq '.[0].number')"
-          else
-            gh pr edit "${number}" --title "${title}" --body "${body}"
+          open="$(gh pr list --head automation/cut-release --state open --json number,title --jq '.[0] // empty | [.number, .title] | @tsv')"
+          number="${open%%$'\t'*}"
+          open_title="${open#*$'\t'}"
+          if [ -n "${number}" ] && [ "${open_title}" != "${title}" ]; then
+            # A `;`-terminated segment: the checker resolves the closed and
+            # opened PR to the bot branch named on this line.
+            gh pr close automation/cut-release;
+            number=""
           fi
-          gh pr merge --auto --squash "${number}"
+          if [ -z "${number}" ]; then
+            gh pr create --head automation/cut-release --base main --title "${title}" --body "${body}";
+          fi
+
+      - name: Arm auto-merge on the cut-release PR
+        if: vars.RELEASE_BATCH_MODE == 'tag'
+        env:
+          GH_TOKEN: ${{ steps.mint.outputs.token }}
+        run: |
+          set -euo pipefail
+          # A `;`-terminated segment, like the open step: the checker resolves
+          # the merged PR to the bot branch named on this line.
+          gh pr merge --auto --squash automation/cut-release;

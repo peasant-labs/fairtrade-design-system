@@ -19,10 +19,8 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # The one release-intent pin in this file: the schema commit the classifier
-# builds from. The integration supervisor re-pins it to the landed schema
-# tool commit before merge.
-env:
-  SCHEMA_SHA: f01a3d8420ef1dcfe86eef5a96bd80c414b8ae0b
+# builds from, written once in the tool checkout below. The integration
+# supervisor re-pins it to the landed schema tool commit before merge.
 
 jobs:
   # The run places four pool jobs at once (lib, fairtest, two journeys).
@@ -78,20 +76,20 @@ jobs:
       # base, since `edited` no longer triggers CI.
       #
       # Which PR is the release PR is decided by `release-intent classify`
-      # from the PR's author and head branch, never by a branch literal and
-      # never by the title (authors may now use the `release` type). A group
-      # build has no pull-request event; it resolves its entry PR with
-      # `group-pr` and reads that PR's author and head branch through the API.
-      # A push to main is not a PR, so it builds like any content PR. The
-      # release PR's PR events and its group build run canonical `pnpm
-      # prepack`; every other PR runs `build:lib` (the same compile, minus the
-      # provenance and tarball assertions, which only the release content must
-      # satisfy).
+      # from the PR's author and head branch against the base revision's
+      # release config, never by a branch literal and never by the title
+      # (authors may now use the `release` type). A group build has no
+      # pull-request event; it resolves its entry PR with `group-pr` and reads
+      # that PR's author and head branch through the API. A push to main is
+      # not a PR, so it builds like any content PR. The release PR's PR events
+      # and its group build run canonical `pnpm prepack`; every other PR runs
+      # `build:lib` (the same compile, minus the provenance and tarball
+      # assertions, which only the release content must satisfy).
       - name: Check out the release-intent tool
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           repository: peasant-labs/schema
-          ref: ${{ env.SCHEMA_SHA }}
+          ref: a6ea5c7f8bc851e83080f6d45a9ed0755550e9a1
           path: schema-tool
           sparse-checkout: |
             cmd/release-intent
@@ -107,7 +105,9 @@ jobs:
 
       - name: Build release-intent
         working-directory: schema-tool
-        run: go build -o "${RUNNER_TEMP}/release-intent" ./cmd/release-intent
+        run: |
+          go build -o "${RUNNER_TEMP}/release-intent" ./cmd/release-intent
+          echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
 
       - name: Classify the pull request
         id: kind
@@ -115,21 +115,22 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           EVENT_NAME: ${{ github.event_name }}
           GROUP_REF: ${{ github.ref }}
+          GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
           EVENT_PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           EVENT_PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+          EVENT_PR_BASE: ${{ github.event.pull_request.base.sha }}
         run: |
           set -euo pipefail
-          tool="${RUNNER_TEMP}/release-intent"
           kind=ordinary
           if [ "${EVENT_NAME}" = "pull_request" ]; then
-            classified="$("${tool}" classify --author "${EVENT_PR_AUTHOR}" --head-branch "${EVENT_PR_BRANCH}")"
+            classified="$(release-intent classify --author "${EVENT_PR_AUTHOR}" --head-branch "${EVENT_PR_BRANCH}" --rev "${EVENT_PR_BASE}")"
             kind="${classified#kind=}"
           elif [ "${EVENT_NAME}" = "merge_group" ]; then
-            resolved="$("${tool}" group-pr --ref "${GROUP_REF}")"
+            resolved="$(release-intent group-pr --ref "${GROUP_REF}")"
             number="${resolved#pr=}"
             if [ -n "${number}" ]; then
               payload="$(gh pr view "${number}" --repo "${GITHUB_REPOSITORY}" --json author,headRefName)"
-              classified="$("${tool}" classify --author "$(printf '%s' "${payload}" | jq -r .author.login)" --head-branch "$(printf '%s' "${payload}" | jq -r .headRefName)")"
+              classified="$(release-intent classify --author "$(printf '%s' "${payload}" | jq -r .author.login)" --head-branch "$(printf '%s' "${payload}" | jq -r .headRefName)" --rev "${GROUP_BASE_SHA}")"
               kind="${classified#kind=}"
             fi
           fi

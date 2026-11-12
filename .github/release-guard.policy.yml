@@ -4,9 +4,10 @@
 # shared checker keeps validating the tag path. `queue:` declares the
 # merge-queue contract: the required checks the queue waits on (compared
 # against the `Merge queue` ruleset), the release job that carries out the one
-# action the planner prints, and the bot jobs that may push their own branch.
-# The release branch is named here and nowhere else: workflows decide which PR
-# is the release PR with `release-intent classify`, never with a literal.
+# action the planner prints, and the bot jobs that may push a branch. Bot
+# branches live in `.github/release-intent.yaml` under `bot_branches`, the one
+# source: the policy names the release job and each bot job's kind, and the
+# checker resolves the branch from the release config.
 jobs:
   # The tag guard (parse-tag and rc/final classification): the entry gate.
   - name: guard
@@ -30,7 +31,6 @@ queue:
   release_job:
     workflow: release-batch.yml
     job: release
-    branch: automation/release
     pre_tag_steps: []
   bot_jobs:
-    - {workflow: cut-release.yml, job: cut, branch: automation/cut-release}
+    - {workflow: cut-release.yml, job: cut, kind: cut-release}
