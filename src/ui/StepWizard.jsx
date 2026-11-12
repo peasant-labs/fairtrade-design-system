@@ -8,7 +8,12 @@ import './StepWizard.css'
    the redaction-style gate is enforced by `reachable`, never by hiding steps: a future step stays
    visible but carries aria-disabled until it's been unlocked. step state never rides on color
    alone — current = amber fill + bold number, complete = olive + check glyph, future/locked =
-   hairline + dim. lowercase chrome throughout; the scarce amber marks the one current step. */
+   hairline + dim. lowercase chrome throughout; the scarce amber marks the one current step.
+
+   three exports share one shell: StepIndicator is the rail alone, StepWizardFrame is the shell a
+   host drives (the host owns the current step and the actions), and StepWizard is the shell with
+   its own state (continue / back / submit). StepWizard is built on StepWizardFrame, so there is
+   one set of shell markup. */
 
 /**
  * @typedef {Object} WizardStep
@@ -16,17 +21,54 @@ import './StepWizard.css'
  * @property {React.ReactNode} label  the step's lowercase chrome label, shown under its number
  */
 
+/* where a step's label hangs under its marker. a label is wider than the 28px marker, so a label
+   centred on the marker spills past it on both sides: the first label would leave the rail on the
+   left and the last on the right. the first label therefore starts at its marker's left edge, the
+   last ends at its marker's right edge, and the rest stay centred. a lone step has no neighbour
+   to share with, so it starts at its marker and may take the whole rail. the geometry for each
+   place is in StepWizard.css on the modifier class named here. */
+const LABEL_PLACE = Object.freeze({
+  only: 'only',
+  start: 'start',
+  middle: 'middle',
+  end: 'end',
+})
+
+/**
+ * The place of the step at `index` among `count` steps.
+ * @param {number} index zero-based position of the step
+ * @param {number} count how many steps the rail holds
+ * @returns {string} one of the LABEL_PLACE values
+ */
+function labelPlace(index, count) {
+  if (count <= 1) return LABEL_PLACE.only
+  if (index === 0) return LABEL_PLACE.start
+  if (index === count - 1) return LABEL_PLACE.end
+  return LABEL_PLACE.middle
+}
+
 /**
  * The rail alone: numbered square markers joined by connector lines. Pure/controlled — it owns no
  * state. current = amber fill + bold near-black number + aria-current="step"; completed = olive +
  * check glyph (clickable to jump back); future/unreachable = hairline + --ink-4 + aria-disabled
  * (not clickable). Completed steps are always reachable.
  *
+ * Labels stay inside the rail at any width and step count. The first label starts at the first
+ * marker's left edge, the last ends at the last marker's right edge, and the others are centred
+ * on their markers. Each label wraps inside its own share of the rail, so neighbours never
+ * overlap. When the rail is too narrow for its first and last labels to hold five characters, the
+ * labels are hidden from sight and stay in the accessible name; the numbers carry the rail.
+ *
+ * The rail is the container its label shares are measured against (`container-type: inline-size`),
+ * so it needs a host with a definite inline size: a block, a grid track, or a flex item that has
+ * a width. In a shrink-to-fit host (an inline-flex box, or an absolutely positioned box with
+ * `width: auto`) it collapses to zero width.
+ *
  * @param {Object} props
- * @param {WizardStep[]} props.steps        the ordered steps
+ * @param {ReadonlyArray<WizardStep>} props.steps        the ordered steps
  * @param {string} props.current            id of the active step
- * @param {Set<string>} [props.completed]   ids of finished steps (olive + check, jump-back enabled)
- * @param {Set<string>} [props.reachable]   ids the user may jump to (the gate). current + completed are implicitly reachable
+ * @param {ReadonlySet<string>} [props.completed]   ids of finished steps (olive + check, jump-back enabled)
+ * @param {ReadonlySet<string>} [props.reachable]   ids the user may jump to (the gate). current + completed are implicitly reachable
  * @param {(id: string) => void} [props.onJump]  called with a step id when a reachable/complete marker is activated
  * @param {string} [props['aria-label']]    accessible name for the rail (default "progress")
  */
@@ -38,8 +80,12 @@ export function StepIndicator({
   onJump,
   'aria-label': ariaLabel = 'progress',
 }) {
+  // the label shares are arithmetic on the rail's width and its gap count; the rail carries the
+  // count so the stylesheet can do that arithmetic (a lone step has no gap, but the share maths
+  // never divides by zero).
+  const railStyle = { '--swz-gaps': Math.max(steps.length - 1, 1) }
   return (
-    <nav className="swz-rail" aria-label={ariaLabel}>
+    <nav className="swz-rail" style={railStyle} aria-label={ariaLabel}>
       {steps.map((step, idx) => {
         const isCurrent = step.id === current
         const isComplete = completed.has(step.id)
@@ -74,7 +120,7 @@ export function StepIndicator({
                   ? <Check className="swz-mark-check" size={14} aria-hidden="true" />
                   : idx + 1}
               </span>
-              <span className="swz-label">{step.label}</span>
+              <span className={`swz-label swz-label--${labelPlace(idx, steps.length)}`}>{step.label}</span>
             </button>
           </div>
         )
@@ -85,6 +131,82 @@ export function StepIndicator({
 
 /* this `swz-cell` only needs flex on the connectors; the first cell hugs its marker (no leading
    line), the rest share the remaining width so the rail spans its container evenly. */
+
+/**
+ * The shell a host drives. Controlled: the host decides the current step and what the footer's
+ * actions do, so a server-driven flow renders the step the server chose without re-creating the
+ * shell's markup. The frame is a head (the rail, plus anything the host adds under it), a body
+ * (the children), and a foot with the host's start action, the "step n / m" count on the foot's
+ * centre line, and the host's end action.
+ *
+ * The count names the current step by its position in `steps`. When `current` names no step the
+ * count reads "step 0 / m" and no marker is current.
+ *
+ * @param {Object} props
+ * @param {ReadonlyArray<WizardStep>} props.steps        the ordered steps (>= 1)
+ * @param {string} props.current            id of the active step
+ * @param {ReadonlySet<string>} [props.completed]   ids of finished steps
+ * @param {ReadonlySet<string>} [props.reachable]   ids the user may jump to
+ * @param {(id: string) => void} [props.onJump]  called with a step id when a reachable/complete marker is activated
+ * @param {React.ReactNode} [props.head]    shown in the head, under the rail
+ * @param {React.ReactNode} [props.footStart]  the foot's start slot (typically back)
+ * @param {React.ReactNode} [props.footEnd]    the foot's end slot (typically the one primary action)
+ * @param {React.HTMLAttributes<HTMLDivElement>} [props.bodyProps]  attributes for the body region (id, role, aria-label, tabIndex)
+ * @param {string} [props.className]        extra class on the frame, for a host that sizes it
+ * @param {React.ReactNode} [props.children]  the body
+ * @param {string} [props['aria-label']]    accessible name for the frame (default "step wizard"); its rail is named "<aria-label> progress". last in this list on purpose: the
+ *   declaration generator stops reading a destructured props list at a quoted name, so every prop after it would be lost to a TypeScript host.
+ *   a host passes `aria-label` as a JSX attribute, which TypeScript does not check against the props type.
+ */
+export function StepWizardFrame({
+  steps,
+  current,
+  completed,
+  reachable,
+  onJump,
+  'aria-label': ariaLabel = 'step wizard',
+  head,
+  footStart,
+  footEnd,
+  bodyProps,
+  className,
+  children,
+}) {
+  const position = steps.findIndex((step) => step.id === current) + 1
+  // React draws nothing for null, undefined or a boolean, so none of them earns a slot (and its margin).
+  const hasHead = head != null && typeof head !== 'boolean'
+  const { className: bodyClassName, ...bodyRest } = bodyProps ?? {}
+  return (
+    <section className={className ? `swz ${className}` : 'swz'} aria-label={ariaLabel}>
+      <div className="swz-head">
+        <StepIndicator
+          steps={steps}
+          current={current}
+          completed={completed}
+          reachable={reachable}
+          onJump={onJump}
+          aria-label={`${ariaLabel} progress`}
+        />
+        {hasHead && <div className="swz-head-slot">{head}</div>}
+      </div>
+
+      <div {...bodyRest} className={bodyClassName ? `swz-body ${bodyClassName}` : 'swz-body'}>
+        {children}
+      </div>
+
+      <div className="swz-foot">
+        <div className="swz-foot-start">{footStart}</div>
+        <span className="swz-count">
+          <span className="swz-sr-only">step {position} of {steps.length}</span>
+          <span aria-hidden="true">
+            step <span className="tnum">{position}</span> / <span className="tnum">{steps.length}</span>
+          </span>
+        </span>
+        <div className="swz-foot-end">{footEnd}</div>
+      </div>
+    </section>
+  )
+}
 
 /**
  * @typedef {Object} WizardBodyArgs
@@ -105,14 +227,14 @@ export function StepIndicator({
  * unless its render-prop has reported setValid(false); plain-children bodies are always valid.
  *
  * @param {Object} props
- * @param {WizardStep[]} props.steps   the ordered steps (>= 1)
+ * @param {ReadonlyArray<WizardStep>} props.steps   the ordered steps (>= 1)
  * @param {(args: { completed: Set<string> }) => void} [props.onComplete]  fired when the last step's submit is activated
  * @param {(args: WizardBodyArgs) => React.ReactNode} [props.renderStep]   render-prop for the active step's body
  * @param {React.ReactNode[]} [props.children]  index-aligned step bodies (alternative to renderStep)
  * @param {string} [props.continueLabel='continue']  primary label for non-final steps
  * @param {string} [props.submitLabel='submit']      primary label for the final step
  * @param {string} [props.backLabel='back']          secondary (back) label
- * @param {string} [props['aria-label']]  accessible name for the rail
+ * @param {string} [props['aria-label']]  accessible name for the wizard (default "step wizard"); its rail is named "<aria-label> progress"
  */
 export default function StepWizard({
   steps,
@@ -174,38 +296,25 @@ export default function StepWizard({
   const panelId = `${baseId}-panel`
 
   return (
-    <section className="swz" aria-label={ariaLabel ?? 'step wizard'}>
-      <div className="swz-head">
-        <StepIndicator
-          steps={steps}
-          current={current?.id}
-          completed={completed}
-          reachable={reachable}
-          onJump={goTo}
-          aria-label={ariaLabel ?? 'progress'}
-        />
-      </div>
-
-      <div
-        className="swz-body"
-        id={panelId}
-        role="group"
-        aria-label={current ? `step ${index + 1}: ${current.label}` : undefined}
-        tabIndex={-1}
-      >
-        <span className="swz-body-kicker">
-          step {index + 1}: {current?.label}
-        </span>
-        {body}
-      </div>
-
-      <div className="swz-foot">
+    <StepWizardFrame
+      steps={steps}
+      current={current?.id}
+      completed={completed}
+      reachable={reachable}
+      onJump={goTo}
+      aria-label={ariaLabel}
+      bodyProps={{
+        id: panelId,
+        role: 'group',
+        'aria-label': current ? `step ${index + 1}: ${current.label}` : undefined,
+        tabIndex: -1,
+      }}
+      footStart={(
         <Button variant="ghost" onClick={back} disabled={index === 0}>
           {backLabel}
         </Button>
-        <span className="swz-count" aria-hidden="true">
-          step <span className="tnum">{index + 1}</span> / <span className="tnum">{steps.length}</span>
-        </span>
+      )}
+      footEnd={(
         <Button
           variant="primary"
           onClick={advance}
@@ -214,7 +323,12 @@ export default function StepWizard({
         >
           {isLast ? submitLabel : continueLabel}
         </Button>
-      </div>
-    </section>
+      )}
+    >
+      <span className="swz-body-kicker">
+        step {index + 1}: {current?.label}
+      </span>
+      {body}
+    </StepWizardFrame>
   )
 }

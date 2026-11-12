@@ -4,6 +4,14 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.67
+
+- Add `StepWizardFrame`, the controlled step-wizard shell. The host owns the current step and the footer actions; the frame draws the rail, a body, and a foot with a start slot, the "step n / m" count (spoken as "step n of m"), and an end slot. `StepWizard` is now built on the frame, so its footer count is spoken too. Peasant /kickstart and /selection consume it after release and drop their local copy of the frame.
+- `StepIndicator` keeps every label inside its rail at any width and step count. The first label starts at the first marker's left edge, the last ends at the last marker's right edge, and the rest are centred; a lone step starts at its marker and may take the whole rail. Each label wraps inside its share of the rail and breaks a word longer than that share, so neighbours never overlap. A rail too narrow for its first and last labels to hold five characters hides the labels from sight and keeps them in the accessible name.
+- A rail of many steps shrinks until its markers touch instead of overflowing: the connector paints its own gap to its marker rather than reserving one in the layout.
+- `StepWizard`'s rail is now named `<aria-label> progress`, or `step wizard progress` with no label, the name a `StepWizardFrame` gives its rail. It was named the same as the wizard itself, or `progress` with no label. A standalone `StepIndicator` keeps `progress`.
+- The `StepIndicator` rail is the container its label shares are measured against (`container-type: inline-size`), so it needs a host with a definite inline size: a block, a grid track, or a flex item that has a width. In a shrink-to-fit host (an inline-flex box, or an absolutely positioned box with `width: auto`) it collapses to zero width.
+
 ## 0.0.66
 
 - Pin `@peasant-labs/schema@0.49.0`, which publishes the kickstart node sets and the six additional harness identities. The provider policy and its brand marks already carried Grok Build, Devin Desktop, Cline, and Kiro; the older pin left those entries unreachable.

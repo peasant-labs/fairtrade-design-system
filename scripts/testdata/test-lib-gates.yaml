@@ -2,8 +2,8 @@
 # named here; deleting a gate or adding one without updating this file fails
 # scripts/run-test-lib.test.mjs. The two counts pin the raw leaf list and the deduped gate
 # list, so a duplicate or a dropped composite is visible before the set comparison.
-expectedLeafCount: 158
-expectedGateCount: 155
+expectedLeafCount: 160
+expectedGateCount: 157
 requiredGateCommands:
   - PI_MOUNTED_TEST=1 node scripts/pi-transcript.test.mjs
   - node --test scripts/check-generated-artifacts.test.mjs
@@ -96,6 +96,9 @@ requiredGateCommands:
     scripts/testdata/selection-tree.manifest.yaml
   - node scripts/selection-node-values.test.mjs
   - node scripts/selection-tree.test.mjs
+  - node scripts/parts-mutations.mjs scripts/step-wizard.test.mjs
+    scripts/testdata/step-wizard.manifest.yaml
+  - node scripts/step-wizard.test.mjs
   - node scripts/parts-mutations.mjs scripts/system-group-facet.test.mjs
     scripts/testdata/system-group-facet.manifest.yaml
   - node scripts/parts-mutations.mjs scripts/transcript-content-parts.test.mjs
