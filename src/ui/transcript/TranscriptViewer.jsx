@@ -27,6 +27,7 @@ import {
   regionBoundaries,
   scrubberTicks,
   turnsFromSegments,
+  turnUnit,
   windowCoverage,
   windowFailureCaption,
 } from './segments.js'
@@ -226,7 +227,7 @@ function PhaseDivider({ phase, heading: Heading = 'h3' }) {
   return (
     <div className="phase txn-phase">
       <Heading className="lbl"><Icon size={14} aria-hidden="true" /> {phase.label}</Heading>
-      {(phase.turnCount != null || phase.errors) && <span className="rng tnum">{phase.turnCount != null ? `${formatInteger(phase.turnCount)} ${phase.turnCount === 1 ? 'turn' : 'turns'}` : ''}{phase.errors ? `${phase.turnCount != null ? ', ' : ''}${formatInteger(phase.errors)} error` : ''}</span>}
+      {(phase.turnCount != null || phase.errors) && <span className="rng tnum">{phase.turnCount != null ? `${formatInteger(phase.turnCount)} ${turnUnit(phase.turnCount)}` : ''}{phase.errors ? `${phase.turnCount != null ? ', ' : ''}${formatInteger(phase.errors)} error` : ''}</span>}
     </div>
   )
 }
@@ -897,16 +898,15 @@ export default function TranscriptViewer({
      caption "turn 20 of 77". */
   const traceCountText = useMemo(() => {
     const total = scope?.totalConversationTurns
-    const unit = (count) => (count === 1 ? 'turn' : 'turns')
     if (total != null) {
       return scope.complete && visibleConversationCount === conversationTurns.length
-        ? `${formatInteger(total)} ${unit(total)}`
-        : `${formatInteger(visibleConversationCount)} of ${formatInteger(total)} ${unit(total)}`
+        ? `${formatInteger(total)} ${turnUnit(total)}`
+        : `${formatInteger(visibleConversationCount)} of ${formatInteger(total)} ${turnUnit(total)}`
     }
-    if (segmentMode && scope && !scope.complete) return `${formatInteger(visibleConversationCount)} of ${formatInteger(scope.totalTurns)} ${unit(scope.totalTurns)}`
+    if (segmentMode && scope && !scope.complete) return `${formatInteger(visibleConversationCount)} of ${formatInteger(scope.totalTurns)} ${turnUnit(scope.totalTurns)}`
     return visibleConversationCount === conversationTurns.length
-      ? `${formatInteger(conversationTurns.length)} ${unit(conversationTurns.length)}`
-      : `${formatInteger(visibleConversationCount)} of ${formatInteger(conversationTurns.length)} ${unit(conversationTurns.length)}`
+      ? `${formatInteger(conversationTurns.length)} ${turnUnit(conversationTurns.length)}`
+      : `${formatInteger(visibleConversationCount)} of ${formatInteger(conversationTurns.length)} ${turnUnit(conversationTurns.length)}`
   }, [segmentMode, scope, visibleConversationCount, conversationTurns.length])
 
   /* Runs of consecutive visible system turns. Ledger-only: classic keeps its full cards, so

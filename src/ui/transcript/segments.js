@@ -159,11 +159,17 @@ function positionOf(total, refs) {
   return { before: first.before, count: last.before + last.count - first.before, total }
 }
 
+/** The unit beside a turn count: the singular for exactly one. Every turn-count sentence
+ * takes its unit here, from the number it sits beside (the total in an "of" pair). */
+export function turnUnit(count) {
+  return count === 1 ? 'turn' : 'turns'
+}
+
 /** A position's range in a reader's one-based numbering, without its total. */
 function positionRange(position) {
   if (position.count === 0) return 'no conversation turns'
-  const first = formatInteger(position.before + 1)
-  return position.count === 1 ? `turn ${first}` : `turns ${first}–${formatInteger(position.before + position.count)}`
+  const first = `${turnUnit(position.count)} ${formatInteger(position.before + 1)}`
+  return position.count === 1 ? first : `${first}–${formatInteger(position.before + position.count)}`
 }
 
 /** Turn a host's loaded segments into a sorted list. Accepts an array, a record keyed by
@@ -425,7 +431,6 @@ export function loadedScope(directory, regions) {
   const segmentPart = complete
     ? `all ${totalSegments} ${totalSegments === 1 ? 'segment' : 'segments'} loaded`
     : `${loadedSegments} of ${totalSegments} ${totalSegments === 1 ? 'segment' : 'segments'} loaded`
-  const unit = (count) => (count === 1 ? 'turn' : 'turns')
   return {
     loadedSegments,
     totalSegments,
@@ -436,11 +441,11 @@ export function loadedScope(directory, regions) {
     totalConversationTurns,
     filesText: totalConversationTurns == null
       ? complete
-        ? `derived from all ${formatInteger(loadedTurns)} loaded ${unit(loadedTurns)}`
-        : `derived from ${formatInteger(loadedTurns)} of ${formatInteger(totalTurns)} ${unit(totalTurns)}, ${segmentPart}`
+        ? `derived from all ${formatInteger(loadedTurns)} loaded ${turnUnit(loadedTurns)}`
+        : `derived from ${formatInteger(loadedTurns)} of ${formatInteger(totalTurns)} ${turnUnit(totalTurns)}, ${segmentPart}`
       : complete
-        ? `derived from all ${formatInteger(totalConversationTurns)} loaded ${unit(totalConversationTurns)}`
-        : `derived from ${formatInteger(loadedConversationTurns)} of ${formatInteger(totalConversationTurns)} ${unit(totalConversationTurns)}, ${segmentPart}`,
+        ? `derived from all ${formatInteger(totalConversationTurns)} loaded ${turnUnit(totalConversationTurns)}`
+        : `derived from ${formatInteger(loadedConversationTurns)} of ${formatInteger(totalConversationTurns)} ${turnUnit(totalConversationTurns)}, ${segmentPart}`,
   }
 }
 
