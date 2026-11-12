@@ -1,10 +1,11 @@
 # Create a GitHub Release from the CHANGELOG on every release tag.
 #
-# Trigger: a `fairtrade-vX.Y.Z[-rcN]` annotated tag minted by release-pr.yml
-# after a valid maintainer-authored release PR merges to main (see AGENTS.md,
-# "release & npm publication"). Runs independently of npm-publish.yml: an npm
-# publish failure never blocks this Release, and this Release failing never
-# blocks npm publication.
+# Trigger: a `fairtrade-vX.Y.Z[-rcN]` annotated tag minted by release-batch.yml
+# on the landed release commit (see AGENTS.md, "release & npm publication").
+# The tag is computed: titles carry intent only, one serialized job plans the
+# number, and the standing bot release PR is its only writer. Runs
+# independently of npm-publish.yml: an npm publish failure never blocks this
+# Release, and this Release failing never blocks npm publication.
 #
 # Job graph, asserted by scripts/release-notes.test.mjs's workflow-shape
 # check: `release` sits behind `guard` via `needs`, so the publish step can

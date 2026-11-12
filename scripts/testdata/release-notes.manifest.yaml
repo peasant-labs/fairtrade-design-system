@@ -10,6 +10,7 @@ requiredValidNames:
   - a version whose digits are a prefix of another version's digits does not cross-match (0.0.1 vs 0.0.10)
   - the longer version does not cross-match back onto the shorter one (0.0.10 vs 0.0.1)
   - an rc version header extracts cleanly
+  - a generated release section extracts cleanly (intent.Generate bare style)
 
 requiredInvalidNames:
   - a version with no matching section fails closed

@@ -1,10 +1,8 @@
 # Publish @peasant-labs/fairtrade to npm when a release tag is pushed.
 #
-# Trigger: a `fairtrade-vX.Y.Z[-rcN]` annotated tag minted by release-pr.yml
-# after a valid maintainer-authored release PR merges to main. The releaser App
-# pushes the tag so this OIDC consumer runs; the default workflow token would
-# not trigger this workflow. Pushing the tag replaces the old interactive
-# `pnpm publish` + OTP step.
+# Trigger: a `fairtrade-vX.Y.Z[-rcN]` annotated tag minted by release-batch.yml
+# on the landed release commit. The releaser App pushes the tag so this OIDC
+# consumer runs; the default workflow token would not trigger this workflow.
 #
 # Gates: `npm publish` runs this package's `prepack`: metadata validation,
 # library/declaration build, contrast, and pack-content assertion. Behavior,
@@ -76,7 +74,7 @@ jobs:
           tag_version="${TAG#fairtrade-v}"
           pkg_version="$(node -p "require('./package.json').version")"
           if [ "${tag_version}" != "${pkg_version}" ]; then
-            echo "::error::tag ${TAG} names version ${tag_version} but package.json is ${pkg_version}; retag the release commit or fix the version bump"
+            echo "::error::tag ${TAG} names version ${tag_version} but package.json is ${pkg_version}; tags are append-only, so do not move the tag: land a fix-forward change and let the release job tag the corrected commit"
             exit 1
           fi
 

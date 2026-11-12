@@ -83,18 +83,50 @@ oracle, or evidence path.
 
 ## release & npm publication
 
-The release PR title is the cut interface: `release(vX.Y.Z[-rcN]): <summary>`. The PR must
-target `main`, or be an exact member of a native GitHub stack whose trunk is `main`. Its author
-must have `admin` or `maintain` permission, and `package.json` must carry the title's version
-without `v`. After merge, `.github/workflows/release-pr.yml` resolves canonical PR metadata. For
-a stacked PR, it also verifies the canonical stack membership, repository, merged timeline
-commit, and reachability from `main`. The workflow then uses the releaser GitHub App to mint the
-annotated tag
-`fairtrade-vX.Y.Z[-rcN]` on the merge SHA. Do not create manual tags for future releases and
-never move or delete a release tag. A failed run can be retried with `workflow_dispatch`, whose
-only input is the number of an already-merged PR; it does not accept a SHA, version, or tag.
-The required `lib` job runs canonical `pnpm prepack` (not bare `build:lib`) on every PR and push.
-`pnpm test:lib` runs the library tests, mutations, and built Pi rendering check in CI after building the artifact.
+Titles carry intent only; the release job computes every number. Write a PR
+title as `type(scope)[level]: subject` with a bracket on every releasing title
+(`feat`, `fix`, and `release` always; `refactor`, `perf`, `build`, and `revert`
+only when they release): `feat(transcript)[minor]: add group facet`,
+`fix[patch]: typo in the empty state`, `release[patch]: publish the pending
+deps bumps`. Scopes are free-form. Below 1.0 a breaking change is `![minor]`;
+`![patch]`, `![major]`, and `[major]` are rejected, and no title ever mints
+`1.0.0`. Never write a version, a CHANGELOG entry, or a spec number: the bot
+owns `CHANGELOG.md` as a whole file and the `version` field of `package.json`.
+An author PR that touches either fails `title-guard` with `protected-path`;
+other `package.json` fields stay ordinary content. `title-guard.yml` checks the
+live title, author, and SHAs on every pull-request event and again in every
+merge-group build, and refuses an unidentified group entry closed rather than
+letting it land unchecked.
+
+Every PR lands through the batched native merge queue (squash). `ci.yml` runs
+on `merge_group` with per-ref concurrency (cancelled only on `pull_request`).
+The `lib` job builds `pnpm prepack` on the release PR and `pnpm run build:lib`
+everywhere else, decided by `release-intent classify` from author and head
+branch, never by a title or branch literal. `pnpm test:lib` runs the library
+tests, mutations, and built Pi rendering check in CI after building the artifact.
+To retitle a queued PR, remove it from the queue first, edit the title, then
+enqueue again: the queue build re-checks the new title before it can land.
+
+One standing bot release PR (`automation/release`, opened by
+`peasant-labs-releaser[bot]`) carries the CHANGELOG section and the version
+field, lands through the queue by auto-merge, and is rebuilt after every
+landed batch. `.github/workflows/release-batch.yml` is the one serialized job
+that keeps it current and tags its landed commit: it plans from the branch tip
+with the release-intent tool, pushes the computed tag on a fresh candidate,
+and opens, updates, arms, holds, or closes the release PR exactly as the plan
+says. It arms auto-merge only while no releasing PR is ahead in the queue; on
+hold it only turns auto-merge off, and a queued release PR is never dequeued.
+A release commit whose content went stale is never tagged; the next run
+rebuilds the release PR instead. Nothing pushes to `main` outside the queue,
+and no hand, bot, or agent pushes or edits the release PR or its branch. With
+nothing to change, force a release through the queue, either as an empty-commit
+PR titled `release[<level>]: cut a release` or with the `cut-release.yml`
+`workflow_dispatch` button (`patch` or `minor`), which opens that PR for the
+requesting maintainer with auto-merge on. Do not create manual tags for future
+releases and never move or delete a release tag; a failed publish burns its
+number and the fix is forward. `RELEASE_BATCH_MODE` stays unset until the
+operator has checked the first landed group, and while it is unset the job
+only prints its plan.
 **Pushing the App-authenticated tag publishes**: `.github/workflows/npm-publish.yml` runs `prepack`
 (package metadata validation, `build:lib`, and tarball-content checks) and publishes `@peasant-labs/fairtrade` via **npm
 Trusted Publishing (OIDC)** - no `NPM_TOKEN` secret exists. `pnpm
@@ -112,8 +144,9 @@ a public-source release lacks the SLSA provenance predicate.
 section with `scripts/release-notes.mjs`, appends a line naming the published npm package version,
 and runs `gh release create --verify-tag --notes-file` (or `gh release edit` if the Release already
 exists, so a retried run is idempotent), `--prerelease` for an rc and `--latest` for a final. A
-release PR that ships without a matching CHANGELOG section fails this job with an actionable error;
-add the section before the tag is cut.
+tag without a matching CHANGELOG section fails this job with an actionable error;
+only the bot release PR writes that section, so fix the release content forward
+and let the job tag the corrected commit.
 
 One-time maintainer registrations (registered state lives on npmjs.com/GitHub, not in-repo):
 (1) install the releaser GitHub App on `peasant-labs/fairtrade-design-system` with Contents write
@@ -122,9 +155,7 @@ permission and configure Actions secrets `PEASANT_RELEASER_APP_ID` and
 repo; (3) on npmjs.com,
 this repo + `npm-publish.yml` + that environment registered as the package's **Trusted
 Publisher**. Never add a token secret as a fallback; if OIDC exchange fails, fix the
-registration.
-
-The latest-review approval reduction is implemented and tested in `scripts/release-guard.mjs`,
-but merge-time approval enforcement remains disabled. With one active maintainer and GitHub's
-no-self-approval rule, it is unsatisfiable. Enable the documented workflow guard only when
-multi-maintainer branch protection can require an independent approval.
+registration. Also maintainer-side: repository setting `allow_auto_merge` on, squash commit
+title `PR_TITLE`, the `Merge queue` ruleset on `main` (required contexts `lib`, `gates`,
+`title-guard`, compared with `.github/release-guard.policy.yml`), and
+`RELEASE_BATCH_MODE=tag` after the first landed group is checked.
