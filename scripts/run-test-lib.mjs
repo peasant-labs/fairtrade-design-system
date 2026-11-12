@@ -12,8 +12,8 @@
 // Why lanes rather than one flat pool: the library gate mixes cheap Node
 // fixtures, Vite-plus-jsdom mounts, mutation orchestrators that spawn their own
 // child processes, a timing benchmark, and package commands that share the pnpm
-// store. A flat pool either starves the fast gates or overcommits memory. The
-// lane budget and the weighted global semaphore bound both.
+// store. A flat pool either starves the fast gates or overloads a small
+// runner. The lane budget and the weighted global semaphore bound both.
 //
 // Usage:
 //   node scripts/run-test-lib.mjs                 # keep going, report every failure
@@ -40,8 +40,9 @@ const PKG = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
 
 /**
  * Lane budgets. `concurrency` bounds how many leaves of this lane may run at
- * once. `weight` is the global memory budget each leaf consumes; the weighted
- * semaphore below keeps two heavy lanes from stacking on a small runner.
+ * once. `weight` is a share of a scheduling budget, not a measured memory
+ * bound: the weighted semaphore below keeps heavy lanes from stacking on a
+ * small runner.
  * @type {Readonly<Record<string, { concurrency: number, weight: number, timeoutMs: number }>>}
  */
 export const LANES = Object.freeze({
@@ -50,19 +51,22 @@ export const LANES = Object.freeze({
   pure: { concurrency: 6, weight: 1, timeoutMs: 600_000 },
   ssr: { concurrency: 3, weight: 1, timeoutMs: 600_000 },
   mounted: { concurrency: 2, weight: 3, timeoutMs: 600_000 },
-  mutation: { concurrency: 3, weight: 2, timeoutMs: 900_000 },
+  mutation: { concurrency: 4, weight: 2, timeoutMs: 900_000 },
   // These gates temporarily rewrite a tracked source file and restore it.
-  // They hold the whole global budget so no other reader can observe the
+  // They hold the whole scheduling budget so no other reader can observe the
   // half-applied mutation; the serial chain had the same ordering by accident.
-  'source-mutation': { concurrency: 1, weight: 8, timeoutMs: 600_000 },
+  'source-mutation': { concurrency: 1, weight: 10, timeoutMs: 600_000 },
   pack: { concurrency: 1, weight: 1, timeoutMs: 300_000 },
   // The benchmark asserts absolute timing ceilings, so it holds the whole
   // budget exactly like the old serial chain ran it alone.
-  bench: { concurrency: 1, weight: 8, timeoutMs: 600_000 },
+  bench: { concurrency: 1, weight: 10, timeoutMs: 600_000 },
   vitest: { concurrency: 1, weight: 1, timeoutMs: 600_000 },
 })
 
-export const GLOBAL_WEIGHT = 8
+// The whole scheduling budget. Four mutation orchestrators at weight 2 share
+// it with the lighter lanes, while an exclusive lane reserves all of it so it
+// runs alone. Weights are scheduling shares, not measured memory bounds.
+export const GLOBAL_WEIGHT = 10
 
 const MUTATION_RE = /parts-mutations\.mjs|\.mutations\.mjs/
 const PACK_RE = /packed-tarball|assert-pack-contents/
@@ -162,10 +166,11 @@ export function buildGates() {
 }
 
 /**
- * Weighted counting semaphore. A caller reserves memory weight before a gate
- * starts and releases it when the gate exits. Waiters are woken in FIFO order
- * and retried in a loop, so a large reservation can wait behind a small one
- * without deadlocking.
+ * Weighted counting semaphore. A caller reserves a scheduling share before a
+ * gate starts and releases it when the gate exits. A share is not a measured
+ * memory bound; it only keeps heavy lanes from stacking. Waiters are woken in
+ * FIFO order and retried in a loop, so a large reservation can wait behind a
+ * small one without deadlocking.
  */
 export class WeightedSemaphore {
   /** @param {number} capacity total weight */
