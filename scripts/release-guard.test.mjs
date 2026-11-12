@@ -44,6 +44,7 @@ const requiredWorkflowMutations = new Map([
   ['cancel-in-progress ${{ true }} is rejected', 'release_concurrency'],
   ['closed cancels in-progress is rejected', 'release_concurrency'],
   ['validate runs on a closed PR is rejected', 'validate_if'],
+  ['dropping pack:check from prepack is rejected', 'prepack_packcheck'],
 ])
 
 function object(value, where) { assert.ok(value && typeof value === 'object' && !Array.isArray(value), `${where} must be an object`); return value }
@@ -77,10 +78,10 @@ function validateFixtures(f) {
   for (const row of f.github.native_stack.loader_invalid) { keys(row, ['name', 'operation', 'scenario', 'replacement'], 'github.native_stack.loader_invalid row'); string(row.operation, `github.native_stack.loader_invalid.${row.name}.operation`); string(row.scenario, `github.native_stack.loader_invalid.${row.name}.scenario`); assert.ok(requiredNativeStackMutations.has(row.scenario), `github.native_stack.loader_invalid.${row.name} scenario must name a required case`); assert.ok(['delete', 'replace', 'unknown_dispatch'].includes(row.operation), `github.native_stack.loader_invalid.${row.name} operation is unknown`); if (row.operation === 'delete') assert.equal(row.replacement, null, `github.native_stack.loader_invalid.${row.name}.replacement must be null`); else string(row.replacement, `github.native_stack.loader_invalid.${row.name}.replacement`) }
   named(array(f.github.pagination, 'github.pagination', 2), 'github.pagination')
   for (const row of f.github.pagination) { keys(row, ['name', 'responses', 'approved', 'expected_paths'], 'pagination row'); array(row.responses, 'pagination responses', 3); array(row.expected_paths, 'pagination expected_paths', 3); for (const response of row.responses) keys(response, response.link === undefined ? ['body'] : ['body', 'link'], 'response') }
-  keys(f.workflow, ['ci_pr_types', 'validate_if', 'tag_if', 'release_group', 'release_concurrency', 'release_needles', 'publish_needles', 'mutations'], 'workflow'); string(f.workflow.validate_if, 'workflow.validate_if'); string(f.workflow.tag_if, 'workflow.tag_if'); string(f.workflow.release_group, 'workflow.release_group'); string(f.workflow.release_concurrency, 'workflow.release_concurrency'); array(f.workflow.release_needles, 'workflow.release_needles', 10); array(f.workflow.publish_needles, 'workflow.publish_needles', 2); named(array(f.workflow.mutations, 'workflow.mutations', 11), 'workflow.mutations'); for (const row of f.workflow.mutations) keys(row, ['name', 'target', 'replacement'], 'workflow mutation')
+  keys(f.workflow, ['ci_pr_types', 'validate_if', 'tag_if', 'release_group', 'release_concurrency', 'release_needles', 'publish_needles', 'mutations'], 'workflow'); string(f.workflow.validate_if, 'workflow.validate_if'); string(f.workflow.tag_if, 'workflow.tag_if'); string(f.workflow.release_group, 'workflow.release_group'); string(f.workflow.release_concurrency, 'workflow.release_concurrency'); array(f.workflow.release_needles, 'workflow.release_needles', 10); array(f.workflow.publish_needles, 'workflow.publish_needles', 2); named(array(f.workflow.mutations, 'workflow.mutations', 12), 'workflow.mutations'); for (const row of f.workflow.mutations) keys(row, ['name', 'target', 'replacement'], 'workflow mutation')
   assert.deepEqual([...f.workflow.ci_pr_types].sort(), ['opened', 'reopened', 'synchronize'], 'CI runs on open, synchronize, and reopen without rechecking title edits')
   const workflowCases = new Map()
-  for (const row of f.workflow.mutations) { string(row.name, `workflow.mutations.${row.name}.name`); string(row.target, `workflow.mutations.${row.name}.target`); assert.ok(['tag_if', 'validate_if', 'ci_pr_types', 'prepack_if', 'release_group', 'release_concurrency'].includes(row.target), `workflow.mutations.${row.name} has unknown target ${row.target}`); if (row.target === 'ci_pr_types') assert.ok(Array.isArray(row.replacement), `workflow.mutations.${row.name} replacement must be an array`); else if (row.target === 'release_concurrency') assert.ok(typeof row.replacement === 'boolean' || typeof row.replacement === 'string', `workflow.mutations.${row.name} replacement must be a boolean or a string`); else string(row.replacement, `workflow.mutations.${row.name}.replacement`); workflowCases.set(row.name, row.target) }
+  for (const row of f.workflow.mutations) { string(row.name, `workflow.mutations.${row.name}.name`); string(row.target, `workflow.mutations.${row.name}.target`); assert.ok(['tag_if', 'validate_if', 'ci_pr_types', 'prepack_if', 'release_group', 'release_concurrency', 'prepack_packcheck'].includes(row.target), `workflow.mutations.${row.name} has unknown target ${row.target}`); if (row.target === 'ci_pr_types') assert.ok(Array.isArray(row.replacement), `workflow.mutations.${row.name} replacement must be an array`); else if (row.target === 'release_concurrency') assert.ok(typeof row.replacement === 'boolean' || typeof row.replacement === 'string', `workflow.mutations.${row.name} replacement must be a boolean or a string`); else string(row.replacement, `workflow.mutations.${row.name}.replacement`); workflowCases.set(row.name, row.target) }
   for (const [name, target] of requiredWorkflowMutations) assert.equal(workflowCases.get(name), target, `workflow.mutations must retain required scenario ${name} with target ${target}`)
   keys(f.git, ['tag', 'first_message', 'second_message', 'mutations'], 'git'); for (const field of ['tag', 'first_message', 'second_message']) string(f.git[field], `git.${field}`)
   named(array(f.git.mutations, 'git.mutations', 2), 'git.mutations')
@@ -195,6 +196,14 @@ test('paginated latest review state wins in API order', async () => {
 })
 
 function normalizeIf(value) { return value.replace(/\s+/g, ' ').trim() }
+function assertPrepackComposition(scripts) {
+  assert.match(scripts.prepack, /assert-package-provenance/)
+  assert.match(scripts.prepack, /\bpnpm build:lib\b/)
+  assert.match(scripts.prepack, /\bpnpm pack:check\b/)
+  assert.doesNotMatch(scripts.prepack, /\btest:/)
+  assert.doesNotMatch(scripts['build:lib'], /\btest:|\.test\./)
+  assert.equal(scripts['prebuild:lib'], undefined)
+}
 function assertLibContract(ci) {
   assert.deepEqual(ci.on.pull_request.types, fixtures.workflow.ci_pr_types)
   const lib = ci.jobs.lib
@@ -213,11 +222,7 @@ function assertLibContract(ci) {
   assert.equal(scripts['test:lib'], 'node scripts/run-test-lib.mjs')
   assert.ok(scripts['test:lib:serial'].includes('pnpm test:pi-transcript:mounted'))
   assert.ok(scripts['test:lib:serial'].includes('pnpm test:vitest'))
-  assert.match(scripts.prepack, /assert-package-provenance/)
-  assert.match(scripts.prepack, /\bpnpm build:lib\b/)
-  assert.doesNotMatch(scripts.prepack, /\btest:/)
-  assert.doesNotMatch(scripts['build:lib'], /\btest:|\.test\./)
-  assert.equal(scripts['prebuild:lib'], undefined)
+  assertPrepackComposition(scripts)
 }
 test('required library CI runs canonical prepack on every pull request', () => {
   const ci = YAML.parse(fs.readFileSync(path.join(root, '.github/workflows/ci.yml'), 'utf8'))
@@ -247,6 +252,7 @@ test('workflow control flow and release invariants are exact and mutation-proven
     else if (mutation.target === 'prepack_if') { const changedCi = structuredClone(ci); changedCi.jobs.lib.steps.find(step => step.run === 'pnpm prepack').if = mutation.replacement; assert.throws(() => assertLibContract(changedCi), { name: 'AssertionError' }, mutation.name) }
     else if (mutation.target === 'release_concurrency') { const changed = structuredClone(release); changed.concurrency['cancel-in-progress'] = mutation.replacement; assert.throws(() => assertWorkflowContract(changed, publish, YAML.stringify(changed), publishText), { name: 'AssertionError' }, mutation.name) }
     else if (mutation.target === 'release_group') { const changed = structuredClone(release); changed.concurrency.group = mutation.replacement; assert.throws(() => assertWorkflowContract(changed, publish, YAML.stringify(changed), publishText), { name: 'AssertionError' }, mutation.name) }
+    else if (mutation.target === 'prepack_packcheck') { const scripts = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).scripts; scripts.prepack = mutation.replacement; assert.throws(() => assertPrepackComposition(scripts), { name: 'AssertionError' }, mutation.name) }
     else throw new Error(`workflow mutation ${mutation.name} has unknown target ${mutation.target}`)
   }
 })

@@ -141,6 +141,7 @@ workflow:
     - {name: "cancel-in-progress ${{ true }} is rejected", target: release_concurrency, replacement: "${{ true }}"}
     - {name: closed cancels in-progress is rejected, target: release_concurrency, replacement: "${{ github.event_name != 'workflow_dispatch' && github.event.action != 'edited' }}"}
     - {name: validate runs on a closed PR is rejected, target: validate_if, replacement: "github.event_name == 'pull_request' && github.event.action != 'closed' && startsWith(github.event.pull_request.title, 'release(')"}
+    - {name: dropping pack:check from prepack is rejected, target: prepack_packcheck, replacement: "node scripts/assert-package-provenance.mjs && pnpm build:lib"}
 git:
   # The release-tag invariant stated in AGENTS.md: never move or delete a
   # release tag. A plain push of an existing tag is refused by the receiver, so

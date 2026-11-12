@@ -15,12 +15,17 @@ permissions:
   contents: read
   pull-requests: read
 
-# The merge path (a `closed` merge or a `workflow_dispatch` retry) has its own
-# `merge` group and is never cancelled. Gate runs share the `gates` group: a
-# body edit (`edited`) queues behind running gates instead of cancelling them,
-# and a push (`synchronize`) still supersedes them. A displaced pending gates
-# run loses only `validate`, and the edit run re-validates the same head with
-# the latest title, so nothing is lost.
+# Pushes supersede running gates. A body edit (`edited`) queues behind them
+# instead of cancelling, so the title is re-validated without losing the push
+# run's work. The merge path (`closed`, plus the `workflow_dispatch` retry) has
+# its own `merge` group: it starts immediately and is never cancelled by or
+# queued behind a gates run, so `tag` always runs. One narrow window remains:
+# GitHub lets a new run replace a pending one, so an edit that lands while a
+# push's run is still pending behind a cancellation replaces that run. Here the
+# edit run re-runs `validate` on the same head with the latest title, so nothing
+# is lost. Edits are not given a group of their own: an older push run's title
+# check could then finish after the edit's and report a stale title. A newer
+# retry may replace a pending one; both do the same work.
 concurrency:
   group: release-pr-${{ github.event.pull_request.number || inputs.pr_number }}-${{ (github.event_name == 'workflow_dispatch' || github.event.action == 'closed') && 'merge' || 'gates' }}
   cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' && github.event.action != 'closed' && github.event.action != 'edited' }}

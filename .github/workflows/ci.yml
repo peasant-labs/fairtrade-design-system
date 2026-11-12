@@ -59,7 +59,9 @@ jobs:
       # Every PR and push validates the same packaging path npm publication uses:
       # prepack is assert-package-provenance + build:lib + pack:check. The
       # provenance assertion reads no title, version, or environment, so the
-      # step runs unconditionally and needs no `edited` trigger.
+      # step runs unconditionally and needs no `edited` trigger. Re-targeting a
+      # PR to a new base needs a push or a re-run to re-validate against that
+      # base, since `edited` no longer triggers CI.
       - name: Build library (publishable artifact)
         run: pnpm prepack
 
