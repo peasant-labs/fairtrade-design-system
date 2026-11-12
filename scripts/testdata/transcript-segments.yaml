@@ -799,6 +799,17 @@ countCases:
       - {index: 1, role: assistant, entryType: text, depth: 0, content: reading the log, tool: true}
       - {index: 2, role: user, entryType: image, depth: 0, content: ''}
     header: 3 turns
+  # No directory total: the header still groups digits. `generated` appends that many
+  # alternating user and assistant text turns after `turns`.
+  - name: a thousand held turns group their digits
+    turns: []
+    generated: 1200
+    header: 1,200 turns
+  - name: a filtered thousand groups both counts
+    turns: []
+    generated: 2400
+    hiddenCategories: [prompts]
+    header: 1,200 of 2,400 turns
 
 # The hero prints the count a reader is shown, and the folded count only when the
 # producer measured no conversation count.

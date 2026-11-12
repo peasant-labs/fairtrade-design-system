@@ -81,6 +81,8 @@ requiredPositionCaseNames:
 requiredCountCaseNames:
   - tool and thinking rows are not counted
   - a reply with prose and tool calls is counted
+  - a thousand held turns group their digits
+  - a filtered thousand groups both counts
 requiredHeroCaseNames:
   - the hero prints the conversation count
   - the hero falls back to turnCount
@@ -118,7 +120,13 @@ requiredMutationNames:
   - the header compares its count with the total
   - the header ignores hidden turns
   - a tool row is counted
+  - the header without a total prints raw digits
 mutations:
+  - name: the header without a total prints raw digits
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "? `${formatInteger(conversationTurns.length)} turns`"
+    replace: "? `${conversationTurns.length} turns`"
+    expectedDiagnostic: 'a thousand held turns group their digits: header'
   - name: a history label is dropped
     file: src/ui/transcript/earlier-history-state.js
     find: "'migrated history'"

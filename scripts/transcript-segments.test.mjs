@@ -97,7 +97,7 @@ for (const row of fixture.positionCases) {
   if (('jump' in row) !== ('failure' in row.expect)) throw new Error(`${FIXTURE} ${row.name}: a jump and its failure copy are stated together`)
   if (('thenLoaded' in row) !== ('thenHeader' in row.expect)) throw new Error(`${FIXTURE} ${row.name}: a second load and its header are stated together`)
 }
-for (const row of fixture.countCases) assertFields(row, ['name', 'turns', 'header'], `${FIXTURE} ${row.name}`)
+for (const row of fixture.countCases) assertFields(row, ['name', 'turns', 'header'], `${FIXTURE} ${row.name}`, ['generated', 'hiddenCategories'])
 for (const row of fixture.heroCases) assertFields(row, ['name', 'turnCount', 'hero'], `${FIXTURE} ${row.name}`, ['conversationTurnCount'])
 for (const [key, family] of [['heldWindow', fixture.mountCases], ['failedWindow', fixture.recoveryCases], ['phase', fixture.phaseCases], ['positions', fixture.positionCases]]) {
   if (!family.some(row => row.name === fixture.vitestSelection[key])) throw new Error(`${FIXTURE}: selected ${key} case must exist`)
@@ -509,7 +509,13 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       toolCalls: tool ? [{ id: `call-${turn.index}`, name: 'Read', group: 'read', filePath: '/src/file.js', sourceIndex: 0, sourceIdUnique: true }] : [],
       ...turn,
     }))
-    const mounted = await mount(React.createElement(TranscriptViewer, { viewModel: viewModel([], { turns }), capabilities: CAPABILITIES, presentation: 'ledger' }))
+    for (let added = 0; added < (row.generated ?? 0); added += 1) {
+      const index = turns.length
+      turns.push({ index, label: String(index), annotations: [], identity: `main:${index}`, sourceIndexUnique: true, toolCalls: [], role: index % 2 === 0 ? 'user' : 'assistant', entryType: 'text', depth: 0, content: `generated turn ${index}` })
+    }
+    const categories = { ...DEFAULT_TRANSCRIPT_FILTERS.categories }
+    for (const category of row.hiddenCategories ?? []) categories[category] = false
+    const mounted = await mount(React.createElement(TranscriptViewer, { viewModel: viewModel([], { turns }), capabilities: CAPABILITIES, presentation: 'ledger', filters: { ...DEFAULT_TRANSCRIPT_FILTERS, categories }, onFiltersChange: () => {} }))
     await mounted.settle()
     const header = text(mounted.container.querySelector('.txn-trace-count'))
     report.check(header === row.header, `${row.name}: header ${JSON.stringify(header)} must equal ${JSON.stringify(row.header)}`)

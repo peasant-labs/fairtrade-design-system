@@ -901,10 +901,10 @@ export default function TranscriptViewer({
         ? `${formatInteger(total)} ${unit(total)}`
         : `${formatInteger(visibleConversationCount)} of ${formatInteger(total)} ${unit(total)}`
     }
-    if (segmentMode && scope && !scope.complete) return `${visibleConversationCount} of ${scope.totalTurns} turns`
+    if (segmentMode && scope && !scope.complete) return `${formatInteger(visibleConversationCount)} of ${formatInteger(scope.totalTurns)} turns`
     return visibleConversationCount === conversationTurns.length
-      ? `${conversationTurns.length} turns`
-      : `${visibleConversationCount} of ${conversationTurns.length} turns`
+      ? `${formatInteger(conversationTurns.length)} turns`
+      : `${formatInteger(visibleConversationCount)} of ${formatInteger(conversationTurns.length)} turns`
   }, [segmentMode, scope, visibleConversationCount, conversationTurns.length])
 
   /* Runs of consecutive visible system turns. Ledger-only: classic keeps its full cards, so
