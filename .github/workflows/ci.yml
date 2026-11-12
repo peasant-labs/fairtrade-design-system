@@ -5,16 +5,24 @@ on:
     branches: [main, 'tier-**']
   pull_request:
     types: [opened, synchronize, reopened]
+  merge_group:
   workflow_dispatch:
 
 # read-only: this workflow validates the gates, it never deploys or writes Pages
 permissions:
   contents: read
   actions: read
+  pull-requests: read
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# The one release-intent pin in this file: the schema commit the classifier
+# builds from. The integration supervisor re-pins it to the landed schema
+# tool commit before merge.
+env:
+  SCHEMA_SHA: f01a3d8420ef1dcfe86eef5a96bd80c414b8ae0b
 
 jobs:
   # The run places four pool jobs at once (lib, fairtest, two journeys).
@@ -68,8 +76,72 @@ jobs:
       # step runs unconditionally and needs no `edited` trigger. Re-targeting a
       # PR to a new base needs a push or a re-run to re-validate against that
       # base, since `edited` no longer triggers CI.
+      #
+      # Which PR is the release PR is decided by `release-intent classify`
+      # from the PR's author and head branch, never by a branch literal and
+      # never by the title (authors may now use the `release` type). A group
+      # build has no pull-request event; it resolves its entry PR with
+      # `group-pr` and reads that PR's author and head branch through the API.
+      # A push to main is not a PR, so it builds like any content PR. The
+      # release PR's PR events and its group build run canonical `pnpm
+      # prepack`; every other PR runs `build:lib` (the same compile, minus the
+      # provenance and tarball assertions, which only the release content must
+      # satisfy).
+      - name: Check out the release-intent tool
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          repository: peasant-labs/schema
+          ref: ${{ env.SCHEMA_SHA }}
+          path: schema-tool
+          sparse-checkout: |
+            cmd/release-intent
+            internal/release
+            go.mod
+            go.sum
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: schema-tool/go.mod
+
+      - name: Build release-intent
+        working-directory: schema-tool
+        run: go build -o "${RUNNER_TEMP}/release-intent" ./cmd/release-intent
+
+      - name: Classify the pull request
+        id: kind
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          GROUP_REF: ${{ github.ref }}
+          EVENT_PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          EVENT_PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -euo pipefail
+          tool="${RUNNER_TEMP}/release-intent"
+          kind=ordinary
+          if [ "${EVENT_NAME}" = "pull_request" ]; then
+            classified="$("${tool}" classify --author "${EVENT_PR_AUTHOR}" --head-branch "${EVENT_PR_BRANCH}")"
+            kind="${classified#kind=}"
+          elif [ "${EVENT_NAME}" = "merge_group" ]; then
+            resolved="$("${tool}" group-pr --ref "${GROUP_REF}")"
+            number="${resolved#pr=}"
+            if [ -n "${number}" ]; then
+              payload="$(gh pr view "${number}" --repo "${GITHUB_REPOSITORY}" --json author,headRefName)"
+              classified="$("${tool}" classify --author "$(printf '%s' "${payload}" | jq -r .author.login)" --head-branch "$(printf '%s' "${payload}" | jq -r .headRefName)")"
+              kind="${classified#kind=}"
+            fi
+          fi
+          echo "kind=${kind}" >> "${GITHUB_OUTPUT}"
+
       - name: Build library (publishable artifact)
+        if: steps.kind.outputs.kind == 'release'
         run: pnpm prepack
+
+      - name: Build library (content pull request)
+        if: steps.kind.outputs.kind != 'release'
+        run: pnpm run build:lib
 
       - name: Test library (behavior, mutations, and built rendering)
         env:
