@@ -892,7 +892,9 @@ export default function TranscriptViewer({
   /* The trace header's count. With a directory total the header stays in one unit while
      segments load: the total alone once every segment is held and no filter hides a held
      conversation turn, otherwise the visible count against it. Neither client count is
-     compared with the total, because the adapter can drop or merge legacy turns. */
+     compared with the total, because the adapter can drop or merge legacy turns. The
+     unit agrees with the number beside it: the total in an "of" pair, as in the boundary
+     caption "turn 20 of 77". */
   const traceCountText = useMemo(() => {
     const total = scope?.totalConversationTurns
     const unit = (count) => (count === 1 ? 'turn' : 'turns')
@@ -901,10 +903,10 @@ export default function TranscriptViewer({
         ? `${formatInteger(total)} ${unit(total)}`
         : `${formatInteger(visibleConversationCount)} of ${formatInteger(total)} ${unit(total)}`
     }
-    if (segmentMode && scope && !scope.complete) return `${formatInteger(visibleConversationCount)} of ${formatInteger(scope.totalTurns)} turns`
+    if (segmentMode && scope && !scope.complete) return `${formatInteger(visibleConversationCount)} of ${formatInteger(scope.totalTurns)} ${unit(scope.totalTurns)}`
     return visibleConversationCount === conversationTurns.length
-      ? `${formatInteger(conversationTurns.length)} turns`
-      : `${formatInteger(visibleConversationCount)} of ${formatInteger(conversationTurns.length)} turns`
+      ? `${formatInteger(conversationTurns.length)} ${unit(conversationTurns.length)}`
+      : `${formatInteger(visibleConversationCount)} of ${formatInteger(conversationTurns.length)} ${unit(conversationTurns.length)}`
   }, [segmentMode, scope, visibleConversationCount, conversationTurns.length])
 
   /* Runs of consecutive visible system turns. Ledger-only: classic keeps its full cards, so

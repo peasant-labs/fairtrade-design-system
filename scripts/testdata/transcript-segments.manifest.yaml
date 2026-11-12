@@ -58,6 +58,8 @@ requiredPositionDirectoryNames:
   - one turn middle segment
   - no turn middle segment
   - empty third of five
+  - one conversation turn then tool rows
+  - twelve hundred rows in two segments
   - six segments in two pages
   - five segments of seventy seven
   - twelve segments of seventy seven
@@ -78,11 +80,15 @@ requiredPositionCaseNames:
   - the slider on a segment with no conversation turns names the segment
   - the files sentence counts conversation turns
   - a sparse directory never prints a turn id as a position
+  - a single conversation turn reads in the singular
+  - an older server with a thousand rows groups its digits
 requiredCountCaseNames:
   - tool and thinking rows are not counted
   - a reply with prose and tool calls is counted
   - a thousand held turns group their digits
   - a filtered thousand groups both counts
+  - one held turn reads in the singular
+  - a hidden only turn keeps the singular
 requiredHeroCaseNames:
   - the hero prints the conversation count
   - the hero falls back to turnCount
@@ -122,11 +128,29 @@ requiredMutationNames:
   - a tool row is counted
   - the header without a total prints raw digits
   - a caption states a total other than the header's
+  - the header always prints the plural
+  - the files sentence always prints the plural
+  - the header without positions prints raw digits
 mutations:
+  - name: the header always prints the plural
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "const unit = (count) => (count === 1 ? 'turn' : 'turns')"
+    replace: "const unit = () => 'turns'"
+    expectedDiagnostic: 'one held turn reads in the singular: header'
+  - name: the files sentence always prints the plural
+    file: src/ui/transcript/segments.js
+    find: "const unit = (count) => (count === 1 ? 'turn' : 'turns')"
+    replace: "const unit = () => 'turns'"
+    expectedDiagnostic: 'a single conversation turn reads in the singular: files sentence'
+  - name: the header without positions prints raw digits
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "of ${formatInteger(scope.totalTurns)} ${unit(scope.totalTurns)}"
+    replace: "of ${scope.totalTurns} ${unit(scope.totalTurns)}"
+    expectedDiagnostic: 'an older server with a thousand rows groups its digits: header'
   - name: the header without a total prints raw digits
     file: src/ui/transcript/TranscriptViewer.jsx
-    find: "? `${formatInteger(conversationTurns.length)} turns`"
-    replace: "? `${conversationTurns.length} turns`"
+    find: "? `${formatInteger(conversationTurns.length)} ${unit(conversationTurns.length)}`"
+    replace: "? `${conversationTurns.length} ${unit(conversationTurns.length)}`"
     expectedDiagnostic: 'a thousand held turns group their digits: header'
   - name: a caption states a total other than the header's
     file: src/ui/transcript/segments.js

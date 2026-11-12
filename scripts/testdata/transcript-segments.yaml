@@ -210,7 +210,7 @@ mountCases:
       boundarySides: [newer]
       captions:
         - 30 segments, 30 MiB
-      filesScope: derived from 82 of 1312 turns, 2 of 32 segments loaded
+      filesScope: derived from 82 of 1,312 turns, 2 of 32 segments loaded
       continuationCount: 0
       truncation: false
       notIndexed: false
@@ -262,7 +262,7 @@ mountCases:
       captions:
         - 1 segment, 1 MiB
         - 30 segments, 30 MiB
-      filesScope: derived from 41 of 1312 turns, 1 of 32 segments loaded
+      filesScope: derived from 41 of 1,312 turns, 1 of 32 segments loaded
       continuationCount: 1
       truncation: false
       notIndexed: false
@@ -570,6 +570,23 @@ positionDirectories:
       - {index: 2, firstTurn: 15, lastTurn: 16, byteLength: 4096, conversationTurns: {before: 15, count: 0}}
       - {index: 3, firstTurn: 17, lastTurn: 23, byteLength: 4096, conversationTurns: {before: 15, count: 7}}
       - {index: 4, firstTurn: 24, lastTurn: 31, byteLength: 4096, conversationTurns: {before: 22, count: 8}}
+  # One request, then two tool rows in a second segment: one conversation turn.
+  - name: one conversation turn then tool rows
+    totalTurns: 3
+    totalConversationTurns: 1
+    userTurns: [0]
+    toolTurns: [1, 2]
+    segments:
+      - {index: 0, firstTurn: 0, lastTurn: 0, byteLength: 4096, conversationTurns: {before: 0, count: 1}}
+      - {index: 1, firstTurn: 1, lastTurn: 2, byteLength: 4096, conversationTurns: {before: 1, count: 0}}
+  # 1,200 folded rows, read without positions by the case that uses it.
+  - name: twelve hundred rows in two segments
+    totalTurns: 1200
+    totalConversationTurns: 1200
+    userTurns: [0]
+    segments:
+      - {index: 0, firstTurn: 0, lastTurn: 9, byteLength: 4096, conversationTurns: {before: 0, count: 10}}
+      - {index: 1, firstTurn: 10, lastTurn: 1199, byteLength: 1048576, conversationTurns: {before: 10, count: 1190}}
   # Six segments read three refs to a page.
   - name: six segments in two pages
     totalTurns: 77
@@ -780,6 +797,27 @@ positionCases:
       tickTitles: ['turns 1–19', 'turns 20–43', 'turns 44–60', 'turns 61–77']
       failure: could not load the window around turns 20–43.
       absent: ['500', '520', '544', '579']
+  # The unit agrees with the number beside it: the total in an "of" pair.
+  - name: a single conversation turn reads in the singular
+    directory: one conversation turn then tool rows
+    loaded: [0]
+    thenLoaded: [0, 1]
+    expect:
+      header: 1 of 1 turn
+      thenHeader: 1 turn
+      captions: ['no conversation turns, 1 segment, 4 KiB']
+      labels: ['load more, segment, no conversation turns, 1 segment, 4 KiB']
+      filesScope: derived from 1 of 1 turn, 1 of 2 segments loaded
+  - name: an older server with a thousand rows groups its digits
+    directory: twelve hundred rows in two segments
+    withoutPositions: true
+    loaded: [0]
+    expect:
+      header: 10 of 1,200 turns
+      captions: ['1 segment, 1 MiB']
+      labels: ['load more, segment, 1 segment, 1 MiB']
+      filesScope: derived from 10 of 1,200 turns, 1 of 2 segments loaded
+      silent: true
 
 # A whole transcript, with no directory: the header counts conversation turns among the
 # turns it holds. Each row lists cooked turns and the literal header.
@@ -810,6 +848,15 @@ countCases:
     generated: 2400
     hiddenCategories: [prompts]
     header: 1,200 of 2,400 turns
+  - name: one held turn reads in the singular
+    turns:
+      - {index: 0, role: user, entryType: text, depth: 0, content: fix the build}
+    header: 1 turn
+  - name: a hidden only turn keeps the singular
+    turns:
+      - {index: 0, role: user, entryType: text, depth: 0, content: fix the build}
+    hiddenCategories: [prompts]
+    header: 0 of 1 turn
 
 # The hero prints the count a reader is shown, and the folded count only when the
 # producer measured no conversation count.

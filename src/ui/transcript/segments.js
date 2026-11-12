@@ -425,6 +425,7 @@ export function loadedScope(directory, regions) {
   const segmentPart = complete
     ? `all ${totalSegments} ${totalSegments === 1 ? 'segment' : 'segments'} loaded`
     : `${loadedSegments} of ${totalSegments} ${totalSegments === 1 ? 'segment' : 'segments'} loaded`
+  const unit = (count) => (count === 1 ? 'turn' : 'turns')
   return {
     loadedSegments,
     totalSegments,
@@ -435,11 +436,11 @@ export function loadedScope(directory, regions) {
     totalConversationTurns,
     filesText: totalConversationTurns == null
       ? complete
-        ? `derived from all ${loadedTurns} loaded ${loadedTurns === 1 ? 'turn' : 'turns'}`
-        : `derived from ${loadedTurns} of ${totalTurns} turns, ${segmentPart}`
+        ? `derived from all ${formatInteger(loadedTurns)} loaded ${unit(loadedTurns)}`
+        : `derived from ${formatInteger(loadedTurns)} of ${formatInteger(totalTurns)} ${unit(totalTurns)}, ${segmentPart}`
       : complete
-        ? `derived from all ${formatInteger(totalConversationTurns)} loaded ${totalConversationTurns === 1 ? 'turn' : 'turns'}`
-        : `derived from ${formatInteger(loadedConversationTurns)} of ${formatInteger(totalConversationTurns)} turns, ${segmentPart}`,
+        ? `derived from all ${formatInteger(totalConversationTurns)} loaded ${unit(totalConversationTurns)}`
+        : `derived from ${formatInteger(loadedConversationTurns)} of ${formatInteger(totalConversationTurns)} ${unit(totalConversationTurns)}, ${segmentPart}`,
   }
 }
 
