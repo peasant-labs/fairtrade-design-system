@@ -17,10 +17,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # The run places four pool jobs at once (lib, fairtest, two journeys).
+  # required_slots 2 admits the pool when at least half can start at once
+  # and the rest wait for the next free slot. Requiring all four free would
+  # almost never use the four-slot pool, and a typical slot wait (1-4
+  # minutes) is about the pool speed advantage.
   determine-runner:
-    uses: peasant-labs/infra/.github/workflows/runner-router.yml@71e687cef7eede9a63659be98ce9adac3c563398
+    uses: peasant-labs/infra/.github/workflows/runner-router.yml@4329b5ebd38a0270f08da3826b59ecda67eb1a40
     with:
       fallback: '["ubuntu-latest"]'
+      required_slots: 2
     secrets:
       RUNNER_STATUS_TOKEN: ${{ secrets.RUNNER_STATUS_TOKEN }}
 
