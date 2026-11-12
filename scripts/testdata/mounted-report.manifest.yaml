@@ -1,0 +1,1 @@
+requiredCaseNames: [diagnostic-first, unrelated-first, base, malformed, diagnostic-inside-message, near-miss-first, non-string-diagnostic, empty-diagnostic, pass, non-string-message]

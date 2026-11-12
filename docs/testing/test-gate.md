@@ -34,13 +34,45 @@ without a second hand list.
 | `bench` | 1 | 8 | the timing benchmark (absolute ceilings, so it runs alone) |
 | `vitest` | 1 | 1 | the Vitest pilot project |
 
-A weighted semaphore (capacity 8) bounds total memory across lanes. The
+A weighted semaphore (capacity 8) bounds the scheduling budget across lanes.
+Weights are shares of that budget, not memory measurements. The
 `source-mutation` lane holds the whole budget, so `timeline-a11y`,
 `timeline-ghosts`, and `timeline-highlight` cannot expose a half-applied
 `src/ui/graph` mutation to a reader such as `insight-panel`. A post-run `src/`
 snapshot also fails the gate if a timed-out mutation left a tracked file
 changed. `scripts/run-test-lib.test.mjs` keeps that inventory honest and pins
 the lane classification.
+
+### Mutation lane cost
+
+Hosted `main` run 42984162482 spent 934s in the library test step. Of 2831
+gate-seconds, 2439 (86%) were mutation gates, 259 (9%) mounted gates and 133
+(5%) everything else. Each parts mutation starts a fresh Node process: local
+measurements put imports at roughly 400ms and Vite graph load at roughly 500ms,
+before checks execute. The isolation remains intentional.
+
+In mutation mode only, a failed check now exits as soon as it prints the
+expected diagnostic; ordinary runs still collect every failure. An interleaved
+local A/B of 36 orchestrator pairs measured 815.0s before and 639.9s after,
+with the same 360 mutants killed and `NODE_COMPILE_CACHE` unset in both arms.
+The CI test step also uses a job-local Node
+compile cache, without restoring or saving it between jobs; local warm samples
+saved roughly 100-150ms per mutant. Local A/B measurements are one sample per
+arm, not CI acceptance. Mutation concurrency remains at three.
+The mutation lane runs with the compile cache in CI, and all 360 orchestrated
+mutants remain killed with it enabled. If `NODE_COMPILE_CACHE` points at an
+unusable path, Node can hang rather than fail fast; check `runner.temp` if a
+`lib` job hangs with empty output.
+
+Hosted `ubuntu-latest` runners have 4 vCPU, 16 GB and AMD EPYC processors; the
+self-hosted microVM pool has 6 vCPU and 8 GB on a Ryzen 9 7950X3D host shared
+with the maintainer's desktop, so pool timings move with host load. Main-only
+`Test library` step baselines are 578-935s hosted (runs 42955960572: 578s,
+42910632182: 637s, 42925571988: 903s, 42943798857: 913s, 42984162482: 935s)
+and 455-507s microVM (42965809546: 455s, 42952865597: 505s, 42958501661:
+507s). Measure CI wall time and the paired per-gate mutation-lane ratio after
+the PR runs, always against a baseline on the same runner class, never across
+classes.
 
 ## Fairtest mounted rows
 
@@ -187,9 +219,8 @@ runs (100 per theme), 400/400 disclosure cases at 20 repeats per theme, and
 320/320 rail/shell cases at 20 repeats per theme. The job ceiling rises to 40
 minutes so the slower fallback runner has headroom.
 
-The current serial chain expands to 147 unique gates: the 146-gate row records
-the measurement taken when the lane runner landed, and the generated-artifact
-freshness test adds one more gate without changing the lane budget.
+The current serial chain expands to 155 unique gates, nine more than the
+146-gate row below; the lane budget is unchanged.
 
 ## Known limitation
 
