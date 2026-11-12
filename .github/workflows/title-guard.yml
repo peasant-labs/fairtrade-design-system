@@ -53,7 +53,7 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           repository: peasant-labs/schema
-          ref: a6ea5c7f8bc851e83080f6d45a9ed0755550e9a1
+          ref: 4e7c36167b94a3bf9f7cc57e55c2b9e1adbb0929
           path: schema-tool
           sparse-checkout: |
             cmd/release-intent

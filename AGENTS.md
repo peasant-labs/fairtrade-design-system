@@ -111,11 +111,10 @@ One standing bot release PR (`automation/release`, opened by
 `peasant-labs-releaser[bot]`) carries the CHANGELOG section and the version
 field, lands through the queue by auto-merge, and is rebuilt after every
 landed batch. `.github/workflows/release-batch.yml` is the one serialized job
-that keeps it current, tags its landed commit, and publishes the GitHub
-Release in the same tag step: it plans from the branch tip with the
-release-intent tool, pushes the computed tag on a fresh candidate, creates or
-updates the Release from the generated notes, and opens, updates, arms,
-holds, or closes the release PR exactly as the plan says. It arms auto-merge
+that keeps it current and tags its landed commit: it plans from the branch
+tip with the release-intent tool, pushes the computed tag on a fresh
+candidate (the tag step only pushes the tag; the tag-triggered `release.yml`
+publishes the GitHub Release), and opens, updates, arms, holds, or closes the release PR exactly as the plan says. It arms auto-merge
 only while no releasing PR is ahead in the queue; on hold it only turns
 auto-merge off, and a queued release PR is never dequeued. A release commit
 whose content went stale is never tagged; the next run rebuilds the release
@@ -144,8 +143,8 @@ a public-source release lacks the SLSA provenance predicate.
 `npm-publish.yml`: a `guard` job classifies the tag with `release-guard.mjs parse-tag` (version +
 `kind`, `rc` or `final`), then a `release` job extracts the matching `## X.Y.Z[-rcN]` CHANGELOG.md
 section with `scripts/release-notes.mjs`, appends a line naming the published npm package version,
-and refreshes the Release notes with `gh release edit` (the release job's tag step created the
-Release when it pushed the tag). A tag without a matching CHANGELOG section fails this job with an actionable error;
+and creates the GitHub Release with `gh release create --verify-tag` for the triggering tag, or
+updates its notes with `gh release edit` on a re-run. A tag without a matching CHANGELOG section fails this job with an actionable error;
 only the bot release PR writes that section, so fix the release content forward
 and let the job tag the corrected commit.
 

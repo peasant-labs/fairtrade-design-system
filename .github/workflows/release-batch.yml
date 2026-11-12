@@ -4,9 +4,10 @@
 # The tool decides; this workflow only carries out the one action `plan`
 # prints. Every step that can write runs only under an `if:` on one action
 # value of a `plan` step in the same run, and the tag goes out once, on the
-# verdict's `tag` action. There are no pre-tag steps in fairtrade, so the
-# verdict is the literal `taggable` and a stale candidate can never be tagged
-# whatever is passed. The queue is read through GraphQL into a file and judged
+# verdict's `tag` action. The tag step only pushes the tag: the tag-triggered
+# release.yml publishes the GitHub Release. There are no pre-tag steps in
+# fairtrade, so the verdict is the literal `taggable` and a stale candidate
+# can never be tagged whatever is passed. The queue is read through GraphQL into a file and judged
 # with `queue-gate`: on `arm` auto-merge is turned on, on `hold` it is turned
 # off for a release PR that is not already queued, and a queued release PR is
 # never dequeued. Which PR is the release PR is never compared literally: the
@@ -63,7 +64,7 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           repository: peasant-labs/schema
-          ref: a6ea5c7f8bc851e83080f6d45a9ed0755550e9a1
+          ref: 4e7c36167b94a3bf9f7cc57e55c2b9e1adbb0929
           path: schema-tool
           sparse-checkout: |
             cmd/release-intent
@@ -114,13 +115,10 @@ jobs:
       - name: Plan from the branch tip
         id: plan
         if: steps.precheck.outputs.proceed == 'true'
-        env:
-          RELEASE_BATCH_MODE: ${{ vars.RELEASE_BATCH_MODE }}
-          RELEASE_BATCH_FLOOR: ${{ vars.RELEASE_BATCH_FLOOR }}
         run: |
           set -euo pipefail
           git fetch --no-tags origin main
-          release-intent plan --branch origin/main --mode "${RELEASE_BATCH_MODE}" --verdict taggable --floor "${RELEASE_BATCH_FLOOR}" | tee -a "${GITHUB_STEP_SUMMARY}"
+          release-intent plan --branch origin/main --mode "${{ vars.RELEASE_BATCH_MODE }}" --verdict taggable --floor "${{ vars.RELEASE_BATCH_FLOOR }}" | tee -a "${GITHUB_STEP_SUMMARY}"
 
       - name: Mint the releaser App token
         id: mint
@@ -132,20 +130,13 @@ jobs:
           owner: peasant-labs
           repositories: fairtrade-design-system
 
-      - name: Set up Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: 26
-
-      - name: Tag the fresh release candidate and publish the GitHub Release
+      - name: Tag the fresh release candidate
         id: tag
         if: steps.precheck.outputs.proceed == 'true' && steps.plan.outputs.action == 'tag'
         env:
           APP_TOKEN: ${{ steps.mint.outputs.token }}
-          GH_TOKEN: ${{ steps.mint.outputs.token }}
           TAG: ${{ steps.plan.outputs.tag }}
           CANDIDATE: ${{ steps.plan.outputs.candidate }}
-          VERSION: ${{ steps.plan.outputs.version }}
         run: |
           set -euo pipefail
           git fetch --tags origin
@@ -155,28 +146,6 @@ jobs:
           git config user.email bots@peasant-labs.invalid
           git tag -a "${TAG}" "${CANDIDATE}" -m "release: ${TAG}"
           git -c http.extraheader="AUTHORIZATION: bearer ${APP_TOKEN}" push origin "refs/tags/${TAG}"
-          # The GitHub Release is published by this same tag step: the
-          # tag-triggered release.yml only refreshes notes, so creation lives
-          # where the tag is pushed and nowhere else.
-          node scripts/release-notes.mjs "${VERSION}" CHANGELOG.md > notes.md
-          {
-            echo ""
-            echo "Published as \`@peasant-labs/fairtrade@${VERSION}\` on npm."
-          } >> notes.md
-          case "${VERSION}" in
-            *-*) prerelease_flag="true"; latest_flag="false" ;;
-            *) prerelease_flag="false"; latest_flag="true" ;;
-          esac
-          if gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
-            gh release edit "${TAG}" --repo "${GITHUB_REPOSITORY}" --notes-file notes.md --prerelease="${prerelease_flag}" --latest="${latest_flag}"
-            echo "::notice::updated the existing GitHub Release ${TAG} (idempotent re-run)"
-          else
-            create_flags=()
-            if [ "${prerelease_flag}" = "true" ]; then create_flags+=(--prerelease); fi
-            if [ "${latest_flag}" = "true" ]; then create_flags+=(--latest); fi
-            gh release create "${TAG}" --repo "${GITHUB_REPOSITORY}" --verify-tag --title "${TAG}" --notes-file notes.md "${create_flags[@]}"
-            echo "::notice::published GitHub Release ${TAG}"
-          fi
 
       # After a tag the new tag is the range base, so the plan runs again with
       # the same verdict. On any other action the inputs are unchanged and the
@@ -185,24 +154,19 @@ jobs:
       - name: Plan again after the tag
         id: replan
         if: steps.precheck.outputs.proceed == 'true'
-        env:
-          RELEASE_BATCH_MODE: ${{ vars.RELEASE_BATCH_MODE }}
-          RELEASE_BATCH_FLOOR: ${{ vars.RELEASE_BATCH_FLOOR }}
         run: |
           set -euo pipefail
           git fetch --no-tags origin main
-          release-intent plan --branch origin/main --mode "${RELEASE_BATCH_MODE}" --verdict taggable --floor "${RELEASE_BATCH_FLOOR}" | tee -a "${GITHUB_STEP_SUMMARY}"
+          release-intent plan --branch origin/main --mode "${{ vars.RELEASE_BATCH_MODE }}" --verdict taggable --floor "${{ vars.RELEASE_BATCH_FLOOR }}" | tee -a "${GITHUB_STEP_SUMMARY}"
 
       - name: Write the release content
         id: write
         if: steps.precheck.outputs.proceed == 'true' && steps.replan.outputs.action == 'open-pr'
-        env:
-          RELEASE_BATCH_FLOOR: ${{ vars.RELEASE_BATCH_FLOOR }}
         run: |
           set -euo pipefail
           git fetch --no-tags origin main
           git checkout -B automation/release origin/main
-          release-intent release-pr --write --branch origin/main --current origin/automation/release --floor "${RELEASE_BATCH_FLOOR}"
+          release-intent release-pr --write --branch origin/main --current origin/automation/release --floor "${{ vars.RELEASE_BATCH_FLOOR }}"
 
       - name: Push the release branch
         id: push

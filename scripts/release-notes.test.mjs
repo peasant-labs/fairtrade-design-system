@@ -68,13 +68,24 @@ function assertReleaseWorkflowContract(workflow, text) {
     'Published as \\`@peasant-labs/fairtrade@',
     'gh release view',
     'gh release edit',
+    'gh release create',
+    '--verify-tag',
     '--notes-file notes.md',
     '--prerelease',
     '--latest',
   ]) {
     assert(text.includes(needle), `release.yml is missing expected contract text: ${needle}`)
   }
-  assert(!text.includes('gh release create'), 'release.yml must not create the GitHub Release: the release job tag step creates it when it pushes the tag, and this workflow only refreshes notes')
+  assert(workflow.jobs.release.env?.TAG === '${{ github.ref_name }}', 'the release job must publish for the tag that triggered it (TAG mapped from github.ref_name)')
+  const creates = text.match(/gh release create (?:\\\n|[^\n])*/g) ?? []
+  assert(creates.length === 1, 'release.yml must create the GitHub Release exactly once')
+  for (const create of creates) {
+    assert(create.includes('--verify-tag'), 'gh release create must pass --verify-tag, so it can never make a tag')
+    assert(/gh release create "\$TAG"/.test(create), 'gh release create must target the triggering tag ("$TAG")')
+  }
+  for (const forbidden of ['git push', 'git tag', 'refs/tags/', 'gh pr ']) {
+    assert(!text.includes(forbidden), `release.yml must not contain ${forbidden}: it publishes a Release for an existing tag and writes nothing else`)
+  }
 }
 
 function assert(condition, message) {

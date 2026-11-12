@@ -192,8 +192,8 @@ function assertBatchContract(batch, text) {
   assert.equal(normalizeIf(String(job.if)), "github.ref == 'refs/heads/main'", 'the App key is minted only on the default branch')
   assert.equal(normalizeIf(String(job.steps.find((step) => step.id === 'mint').if)), "vars.RELEASE_BATCH_MODE == 'tag'", 'the mint step runs only in tag mode, as a single comparison with no disjunction')
   for (const needle of [
-    '--mode "${RELEASE_BATCH_MODE}"',
-    'RELEASE_BATCH_MODE: ${{ vars.RELEASE_BATCH_MODE }}',
+    '--mode "${{ vars.RELEASE_BATCH_MODE }}"',
+    '--floor "${{ vars.RELEASE_BATCH_FLOOR }}"',
     '--verdict taggable',
     'release-pr --write',
     'git tag -a',
@@ -212,11 +212,10 @@ function assertBatchContract(batch, text) {
     'PEASANT_RELEASER_APP_ID',
     'merge --auto --squash',
     'queue.json',
-    'gh release create',
     '--current origin/automation/release',
   ]) assert.ok(text.includes(needle), `release-batch is missing expected contract text: ${needle}`)
   assert.doesNotMatch(text, /dequeuePullRequest/, 'on hold the job only turns auto-merge off; a queued release PR is never dequeued')
-  assert.ok(text.includes('gh release create'), 'the tag step creates the GitHub Release where it pushes the tag, and nowhere else may')
+  assert.doesNotMatch(text, /gh release/, 'the tag step only pushes the tag; the tag-triggered release.yml publishes the GitHub Release')
   assert.equal(text.match(/git tag -a/g)?.length ?? 0, 1, 'exactly one step pushes the tag')
   const tag = job.steps.find((step) => typeof step.run === 'string' && step.run.includes('git tag -a'))
   assert.match(normalizeIf(String(tag.if)), /steps\.plan\.outputs\.action == 'tag'/, 'the tag goes out once, on the verdict plan step tag action')
