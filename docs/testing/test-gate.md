@@ -28,13 +28,13 @@ without a second hand list.
 | `pure` | 6 | 1 | Node-only fixture and source tests |
 | `ssr` | 3 | 1 | built-export and static-render tests |
 | `mounted` | 2 | 3 | Vite + jsdom mounts and browser probes |
-| `mutation` | 3 | 2 | mutation orchestrators in their own child processes |
-| `source-mutation` | 1 | 8 | gates that rewrite a tracked source file and restore it |
+| `mutation` | 4 | 2 | mutation orchestrators in their own child processes |
+| `source-mutation` | 1 | 10 | gates that rewrite a tracked source file and restore it |
 | `pack` | 1 | 1 | tarball and packed-content checks (shared pnpm store) |
-| `bench` | 1 | 8 | the timing benchmark (absolute ceilings, so it runs alone) |
+| `bench` | 1 | 10 | the timing benchmark (absolute ceilings, so it runs alone) |
 | `vitest` | 1 | 1 | the Vitest pilot project |
 
-A weighted semaphore (capacity 8) bounds the scheduling budget across lanes.
+A weighted semaphore (capacity 10) bounds the scheduling budget across lanes.
 Weights are shares of that budget, not memory measurements. The
 `source-mutation` lane holds the whole budget, so `timeline-a11y`,
 `timeline-ghosts`, and `timeline-highlight` cannot expose a half-applied
@@ -58,7 +58,12 @@ with the same 360 mutants killed and `NODE_COMPILE_CACHE` unset in both arms.
 The CI test step also uses a job-local Node
 compile cache, without restoring or saving it between jobs; local warm samples
 saved roughly 100-150ms per mutant. Local A/B measurements are one sample per
-arm, not CI acceptance. Mutation concurrency remains at three.
+arm, not CI acceptance. The mutation lane runs four orchestrators at a time.
+A same-commit paired measurement on `ubuntu-latest` ran the `Test library`
+step three times per arm: the step median was 741s at three against 540s at
+four, with overlapping ranges, while mutation gate-seconds were unchanged
+(median 1880 against 1810) and every mutant stayed killed. The microVM class
+was not measured.
 The mutation lane runs with the compile cache in CI, and all 360 orchestrated
 mutants remain killed with it enabled. If `NODE_COMPILE_CACHE` points at an
 unusable path, Node can hang rather than fail fast; check `runner.temp` if a
