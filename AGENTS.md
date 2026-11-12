@@ -129,8 +129,8 @@ requesting maintainer with auto-merge on. Do not create manual tags for future
 releases and never move or delete a release tag; a failed publish burns its
 number and the fix is forward. `RELEASE_BATCH_MODE` stays unset until the
 operator has checked the first landed group, and while it is unset the job
-only prints its plan. The planner rejects unknown mode values as errors; the
-only non-empty mode is `tag`.
+only prints its plan. The planner accepts `plan-only` or `tag` as explicit
+modes and rejects unknown values as errors.
 **Pushing the App-authenticated tag publishes**: `.github/workflows/npm-publish.yml` runs `prepack`
 (package metadata validation, `build:lib`, and tarball-content checks) and publishes `@peasant-labs/fairtrade` via **npm
 Trusted Publishing (OIDC)** - no `NPM_TOKEN` secret exists. `pnpm
