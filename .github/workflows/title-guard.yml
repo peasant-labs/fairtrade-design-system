@@ -32,9 +32,7 @@ concurrency:
   group: title-guard-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# The one release-intent pin in this file: the schema commit the tool builds
-# from, written once in the tool checkout below. The integration supervisor
-# re-pins it to the landed schema tool commit before merge.
+# The checks build release-intent from the pinned infra checkout below.
 
 jobs:
   title-guard:
@@ -52,23 +50,21 @@ jobs:
       - name: Check out the release-intent tool
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
-          repository: peasant-labs/schema
-          ref: 4e7c36167b94a3bf9f7cc57e55c2b9e1adbb0929
-          path: schema-tool
+          repository: peasant-labs/infra
+          ref: 8b44454cc3b3fac37d9b4d4a118883ac9a6f684e
+          path: infra-tool
           sparse-checkout: |
-            cmd/release-intent
-            internal/release
-            go.mod
-            go.sum
+            tools/release
           persist-credentials: false
 
       - name: Set up Go
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
-          go-version-file: schema-tool/go.mod
+          go-version-file: infra-tool/tools/release/go.mod
+          cache-dependency-path: infra-tool/tools/release/go.sum
 
       - name: Build release-intent
-        working-directory: schema-tool
+        working-directory: infra-tool/tools/release
         run: |
           go build -o "${RUNNER_TEMP}/release-intent" ./cmd/release-intent
           echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
@@ -77,7 +73,7 @@ jobs:
         run: release-intent check-config --config .github/release-intent.yaml
 
       - name: Check the workflows against the policy
-        run: release-intent check-workflows --policy .github/release-guard.policy.yml --dir .github/workflows
+        run: release-intent check-workflows --policy .github/release-queue.policy.yml --dir .github/workflows
 
       # The entry PR is resolved first: from the merge-group ref on a group
       # build, from the event otherwise. The title, author, and SHAs then come

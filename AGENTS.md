@@ -96,7 +96,9 @@ An author PR that touches either fails `title-guard` with `protected-path`;
 other `package.json` fields stay ordinary content. `title-guard.yml` checks the
 live title, author, and SHAs on every pull-request event and again in every
 merge-group build, and refuses an unidentified group entry closed rather than
-letting it land unchecked.
+letting it land unchecked. The shared `release-intent` command lives in
+`peasant-labs/infra` under `tools/release`; each workflow builds it from the
+same pinned infra commit. Queue rules read `.github/release-queue.policy.yml`.
 
 Every PR lands through the batched native merge queue (squash). `ci.yml` runs
 on `merge_group` with per-ref concurrency (cancelled only on `pull_request`).
@@ -127,7 +129,8 @@ requesting maintainer with auto-merge on. Do not create manual tags for future
 releases and never move or delete a release tag; a failed publish burns its
 number and the fix is forward. `RELEASE_BATCH_MODE` stays unset until the
 operator has checked the first landed group, and while it is unset the job
-only prints its plan.
+only prints its plan. The planner rejects unknown mode values as errors; the
+only non-empty mode is `tag`.
 **Pushing the App-authenticated tag publishes**: `.github/workflows/npm-publish.yml` runs `prepack`
 (package metadata validation, `build:lib`, and tarball-content checks) and publishes `@peasant-labs/fairtrade` via **npm
 Trusted Publishing (OIDC)** - no `NPM_TOKEN` secret exists. `pnpm
@@ -157,5 +160,5 @@ this repo + `npm-publish.yml` + that environment registered as the package's **T
 Publisher**. Never add a token secret as a fallback; if OIDC exchange fails, fix the
 registration. Also maintainer-side: repository setting `allow_auto_merge` on, squash commit
 title `PR_TITLE`, the `Merge queue` ruleset on `main` (required contexts `lib`, `gates`,
-`title-guard`, compared with `.github/release-guard.policy.yml`), and
+`title-guard`, compared with `.github/release-queue.policy.yml`), and
 `RELEASE_BATCH_MODE=tag` after the first landed group is checked.

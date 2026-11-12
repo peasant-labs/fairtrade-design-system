@@ -173,7 +173,7 @@ function assertGuardContract(guard, text) {
     '--floor',
     'RELEASE_BATCH_FLOOR',
     'release-intent check-config --config',
-    'release-intent check-workflows --policy',
+    'release-intent check-workflows --policy .github/release-queue.policy.yml --dir .github/workflows',
   ]) assert.ok(text.includes(needle), `title-guard is missing expected contract text: ${needle}`)
   assert.match(text, /failing closed so an unidentified entry never lands unchecked\."\s*\n\s*exit 1/, 'an unresolvable group entry must fail the job closed, never warn and pass')
   const check = job.steps.find((step) => typeof step.run === 'string' && step.run.includes('release-pr --check'))
@@ -289,8 +289,9 @@ test('the cut-release button stays dispatch-only with a level choice', () => {
 })
 
 test('policy, config, and workflows name the same contract', () => {
-  const policy = YAML.parse(fs.readFileSync(path.join(root, '.github/release-guard.policy.yml'), 'utf8'))
+  const policy = YAML.parse(fs.readFileSync(path.join(root, '.github/release-queue.policy.yml'), 'utf8'))
   const config = YAML.parse(fs.readFileSync(path.join(root, '.github/release-intent.yaml'), 'utf8'))
+  assert.deepEqual(Object.keys(policy), ['queue'], 'the queue policy contains only the queue section')
   assert.deepEqual(policy.queue.required, [
     { context: 'lib', workflow: 'ci.yml', job: 'lib' },
     { context: 'gates', workflow: 'ci.yml', job: 'gates', aggregator: true },
@@ -309,11 +310,21 @@ test('policy, config, and workflows name the same contract', () => {
   const batch = parseWorkflow('release-batch.yml')
   const cut = parseWorkflow('cut-release.yml')
   // The tool pin is one literal per workflow, and every workflow pins the
-  // same commit: the integration supervisor re-pins it once.
+  // same commit.
   const shas = new Set([workflowSha('ci.yml', ci.text), workflowSha('title-guard.yml', guard.text), workflowSha('release-batch.yml', batch.text)])
-  assert.equal(shas.size, 1, 'every workflow that builds the tool must pin the same schema commit')
-  assert.ok(!cut.text.includes('SCHEMA_SHA'), 'cut-release needs no tool pin: it carries no tool call')
-  assert.doesNotMatch(ci.text + guard.text + batch.text + cut.text, /\$\{\{ env\.SCHEMA_SHA \}\}/, 'the pin is the literal commit in each tool checkout, never an env reference the checker cannot resolve')
+  assert.equal(shas.size, 1, 'every workflow that builds the tool must pin the same infra commit')
+  assert.ok(!cut.text.includes('RELEASE_TOOL_SHA'), 'cut-release needs no tool pin: it carries no tool call')
+  assert.doesNotMatch(ci.text + guard.text + batch.text + cut.text, /\$\{\{ env\.RELEASE_TOOL_SHA \}\}/, 'the pin is the literal commit in each tool checkout, never an env reference the checker cannot resolve')
+  for (const parsed of [ci, guard, batch]) {
+    const steps = Object.values(parsed.workflow.jobs).flatMap((job) => job.steps ?? [])
+    const checkout = steps.find((step) => step.name === 'Check out the release-intent tool')
+    const setup = steps.find((step) => step.name === 'Set up Go')
+    assert.equal(checkout?.with?.repository, 'peasant-labs/infra', `${parsed.workflow.name} must build the shared infra tool`)
+    assert.equal(checkout?.with?.['sparse-checkout'].trim(), 'tools/release', `${parsed.workflow.name} must check out only the release module`)
+    assert.equal(setup?.with?.['go-version-file'], `${checkout.with.path}/tools/release/go.mod`)
+    assert.equal(setup?.with?.['cache-dependency-path'], `${checkout.with.path}/tools/release/go.sum`)
+    assert.equal(steps.find((step) => step.name === 'Build release-intent')?.['working-directory'], `${checkout.with.path}/tools/release`)
+  }
   // The push targets name the release config's branches explicitly so the
   // checker can resolve them; the config stays the one source and this test
   // pins the equality. No workflow compares a branch literally: every
