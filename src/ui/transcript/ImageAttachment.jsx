@@ -2,6 +2,7 @@ import { ImageOff } from 'lucide-react'
 import { useId, useState } from 'react'
 import Dialog from '../Dialog.jsx'
 import { imageAltText, imageOmissionDetail, imagePartNotice } from './image-parts.js'
+import { useImageUrl } from './image-url.js'
 
 /* TranscriptImageAttachment — one recorded image block, inline in the turn's source order.
 
@@ -13,7 +14,7 @@ import { imageAltText, imageOmissionDetail, imagePartNotice } from './image-part
        a published transcript) draws a placeholder that names the reason and the recorded
        metadata. No URL is requested for it, so a published transcript never probes for bytes it
        was told are absent;
-     • a present image the host cannot resolve (no `attachmentUrl`, or no URL for the ref) reads
+     • a present image the host cannot resolve (no `imageUrl`, or no URL for the ref) reads
        as unavailable rather than as a broken image glyph, and a load failure falls back the
        same way.
 
@@ -22,13 +23,14 @@ import { imageAltText, imageOmissionDetail, imagePartNotice } from './image-part
 /** @typedef {import('./view-model.js').ImagePartVM} ImagePartVM */
 
 /**
- * @param {object} props
- * @param {ImagePartVM} [props.part]            the cooked image part
- * @param {number} [props.position=1]           1-based position among the turn's images
- * @param {number} [props.total=1]              how many images the turn carries
- * @param {(ref: string) => string | null | undefined} [props.attachmentUrl]  host resolver for a content ref
+ * @typedef {object} TranscriptImageAttachmentBaseProps
+ * @property {ImagePartVM} [part]            the cooked image part
+ * @property {number} [position=1]           1-based position among the turn's images
+ * @property {number} [total=1]              how many images the turn carries
  */
-export default function TranscriptImageAttachment({ part, position = 1, total = 1, attachmentUrl }) {
+/** @param {TranscriptImageAttachmentBaseProps & import('./image-url.js').ImageUrlProps} props */
+export default function TranscriptImageAttachment({ part, position = 1, total = 1, imageUrl, attachmentUrl }) {
+  const resolvedImageUrl = useImageUrl(imageUrl, attachmentUrl)
   const [expanded, setExpanded] = useState(false)
   const [failed, setFailed] = useState(false)
   const dialogTitleId = useId()
@@ -36,7 +38,7 @@ export default function TranscriptImageAttachment({ part, position = 1, total = 
   const image = part.image ?? {}
   const notice = imagePartNotice(image)
   const ref = typeof image.ref === 'string' ? image.ref : ''
-  const url = notice.present && ref !== '' && typeof attachmentUrl === 'function' ? attachmentUrl(ref) : ''
+  const url = notice.present && ref !== '' && typeof resolvedImageUrl === 'function' ? resolvedImageUrl(ref) : ''
   const alt = imageAltText(image, position, total)
 
   if (!notice.present || failed || !url) {

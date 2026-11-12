@@ -47,6 +47,7 @@ import TranscriptSystemGroup from './SystemGroup.jsx'
 import { systemGroups as groupSystemTurns } from './system-groups.js'
 import { systemGroupFacetKinds, filterSystemGroupMembers, systemGroupFacetKey, systemGroupFacetSelected, toggleSystemGroupFacet } from './system-group-facet.js'
 import { hasImageParts } from './image-parts.js'
+import { useImageUrl } from './image-url.js'
 import TranscriptMinimap from './Minimap.jsx'
 import Scrubber from './Scrubber.jsx'
 import Scorecard from './Scorecard.jsx'
@@ -315,6 +316,7 @@ export default function TranscriptViewer({
   LinkComponent,
   renderTurnPanel,
   renderTurnActions,
+  imageUrl,
   attachmentUrl,
   anchorHref,
   headerActions,
@@ -337,6 +339,7 @@ export default function TranscriptViewer({
   onLoadSegment,
   onLoadWindow,
 }) {
+  const resolvedImageUrl = useImageUrl(imageUrl, attachmentUrl)
   if (breadcrumb != null && breadcrumbContext != null) {
     throw new TypeError('TranscriptViewer cannot use breadcrumb and breadcrumbContext together; pass either a complete breadcrumb or ancestor context, not both.')
   }
@@ -2092,7 +2095,7 @@ export default function TranscriptViewer({
                       toggle={id => setEarlierHistoryOpen(previous => ({ ...previous, [id]: !previous[id] }))}
                       openTools={openTools}
                       toggleTool={toggleTool}
-                      attachmentUrl={attachmentUrl}
+                      imageUrl={resolvedImageUrl}
                     />
                     {activeFailure && (
                       <div className="txn-held-window" role="alert">
@@ -2166,7 +2169,7 @@ export default function TranscriptViewer({
                             registerRef={registerRef}
                             onLabel={labelTurn}
                             renderActions={renderTurnActions}
-                            attachmentUrl={attachmentUrl}
+                            imageUrl={resolvedImageUrl}
                             savedLabel={savedLabels[t.index]}
                             compact={filters.views.compact}
                             expandAll={filters.views.expandAll}

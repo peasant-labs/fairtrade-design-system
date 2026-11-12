@@ -2,21 +2,23 @@ import { useId } from 'react'
 import { ChevronDown, ChevronRight, Link as LinkIcon, History } from 'lucide-react'
 import TurnCard from './TurnCard.jsx'
 import { UsageScopes } from './UsageDisclosure.jsx'
+import { useImageUrl } from './image-url.js'
 
 /**
  * Current-source navigation and retained history use only cooked evidence.
  * No parent fetch occurs when a reader opens an earlier section.
- * @param {object} props
- * @param {import('./view-model.js').RelationshipVM[]} [props.relationships]
- * @param {import('./view-model.js').EarlierHistoryVM[]} [props.earlierHistory]
- * @param {import('./state-capabilities.js').ViewerCallbacks['onNavigateRelationship']} [props.onNavigate]
- * @param {Record<string, boolean>} props.open
- * @param {(id: string) => void} props.toggle
- * @param {Record<string, boolean>} props.openTools
- * @param {(id: string) => void} props.toggleTool
- * @param {(ref: string) => string | null | undefined} [props.attachmentUrl]  host resolver for an image part's content reference, so retained history renders its images too
+ * @typedef {object} TranscriptContextBaseProps
+ * @property {import('./view-model.js').RelationshipVM[]} [relationships]
+ * @property {import('./view-model.js').EarlierHistoryVM[]} [earlierHistory]
+ * @property {import('./state-capabilities.js').ViewerCallbacks['onNavigateRelationship']} [onNavigate]
+ * @property {Record<string, boolean>} open
+ * @property {(id: string) => void} toggle
+ * @property {Record<string, boolean>} openTools
+ * @property {(id: string) => void} toggleTool
  */
-export default function TranscriptContext({ relationships = [], earlierHistory = [], onNavigate, open, toggle, openTools, toggleTool, attachmentUrl }) {
+/** @param {TranscriptContextBaseProps & import('./image-url.js').ImageUrlProps} props */
+export default function TranscriptContext({ relationships = [], earlierHistory = [], onNavigate, open, toggle, openTools, toggleTool, imageUrl, attachmentUrl }) {
+  const resolvedImageUrl = useImageUrl(imageUrl, attachmentUrl)
   const prefix = useId()
   if (!relationships.length && !earlierHistory.length) return null
   return <section className="txn-context" aria-label="session context">
@@ -39,7 +41,7 @@ export default function TranscriptContext({ relationships = [], earlierHistory =
       <div id={`${prefix}-history-${section.id}`} hidden={!open[section.id]}>
         <p className="txn-context-note">{section.state.explanation}</p>
         <UsageScopes scopes={section.usageScopes} label="earlier history usage by scope" />
-        {open[section.id] && section.turns.map(turn => <TurnCard key={turn.identity} turn={turn} openTools={openTools} toggleTool={toggleTool} attachmentUrl={attachmentUrl} />)}
+        {open[section.id] && section.turns.map(turn => <TurnCard key={turn.identity} turn={turn} openTools={openTools} toggleTool={toggleTool} imageUrl={resolvedImageUrl} />)}
       </div>
     </section>)}
   </section>

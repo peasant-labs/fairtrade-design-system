@@ -145,7 +145,8 @@
  */
 
 /**
- * Every TranscriptViewer prop. `viewModel` + `capabilities` are the only required
+ * TranscriptViewer's base props. The full type also carries image resolver props.
+ * `viewModel` + `capabilities` are the only required
  * props; everything else is optional with a sane internal default, so
  * `<TranscriptViewer viewModel={vm} capabilities={caps} />` renders the whole
  * surface unmanaged. Each view-state prop is the `value?` half of a controllable
@@ -193,7 +194,6 @@
  * @property {import('react').ReactNode} [beforeHeader]                in-flow content before the session header
  * @property {(turn: import('./view-model.js').TurnVM) => unknown} [renderTurnPanel]  host per-turn extension rendered under each turn card
  * @property {(turn: import('./view-model.js').TurnVM) => unknown} [renderTurnActions]  host-owned per-turn actions; replaces the built-in label affordance (hosts with typed label models keep their own popovers)
- * @property {(ref: string) => string | null | undefined} [attachmentUrl]  resolve one image part's content reference to a URL the browser can load (the host's local attachment route). A present image the host cannot resolve renders its unavailable placeholder instead of a broken image; omitted images never call it
  * @property {(turnIndex: number) => string} [anchorHref]              host permalink for a turn's copy-anchor action; a root-relative return is absolutized against the page origin. Omitted, the demo copies its bare '#turn-N' placeholder
  * @property {unknown} [headerActions]                                 host session-level actions rendered at the head of the hero action row (attest etc.); the composite's own actions stay the shared tail
  * @property {import('react').ReactNode} [utilityActions]                host secondary actions, in the header on desktop and the bottom bar on phones
@@ -218,7 +218,7 @@
 
 /**
  * The full legacy trail and the ancestor-only context are alternative contracts.
- * @typedef {TranscriptViewerBaseProps & ({breadcrumb?: BreadcrumbItem[], breadcrumbContext?: never} | {breadcrumb?: never, breadcrumbContext?: BreadcrumbItem[]})} TranscriptViewerProps
+ * @typedef {TranscriptViewerBaseProps & import('./image-url.js').ImageUrlProps & ({breadcrumb?: BreadcrumbItem[], breadcrumbContext?: never} | {breadcrumb?: never, breadcrumbContext?: BreadcrumbItem[]})} TranscriptViewerProps
  */
 
 /**

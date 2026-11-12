@@ -166,8 +166,15 @@ thinkingCase:
   row: 2
 
 # `retainedImageCase` mounts one image-bearing turn from an earlier-history section. Earlier history
-# is a separate index domain, so the host's attachment resolver has to reach its turns too; the gate
+# is a separate index domain, so the host's image resolver has to reach its turns too; the gate
 # opens the section and asserts the image renders from that resolver instead of a placeholder.
+retainedResolverCases:
+  - {name: earlier-history-uses-image-url, component: viewer, imageUrl: true, attachmentUrl: false, expected: image}
+  - {name: earlier-history-uses-the-deprecated-alias, component: viewer, imageUrl: false, attachmentUrl: true, expected: attachment}
+  - {name: earlier-history-prefers-image-url, component: viewer, imageUrl: true, attachmentUrl: true, expected: image}
+  - {name: earlier-history-without-a-resolver-does-not-load-an-image, component: viewer, imageUrl: false, attachmentUrl: false, expected: unavailable}
+  - {name: context-accepts-image-url-directly, component: context, imageUrl: true, attachmentUrl: false, expected: image}
+  - {name: context-accepts-the-deprecated-alias-directly, component: context, imageUrl: false, attachmentUrl: true, expected: attachment}
 retainedImageCase:
   name: retained history resolves its image through the host
   ref: 'abababababababababababababababababababababababababababababababab'
