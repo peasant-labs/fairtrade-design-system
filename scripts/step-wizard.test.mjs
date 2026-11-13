@@ -110,21 +110,33 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       // The label is set word by word; the stylesheet decides from the longest word per place group
       // whether every label is shown or every label is hidden, and a hidden label stays in the
       // marker's accessible name. jsdom paints nothing, so the hide itself is read from the rule.
+      // `nodeLabels` passes each label as a React element rather than a string: it is measured from
+      // its text and set as given, with no word spans of its own.
       const steps = row.labels
-        ? row.labels.map((label, index) => ({ id: `word-${index + 1}`, label }))
+        ? row.labels.map((label, index) => ({
+          id: `word-${index + 1}`,
+          label: row.nodeLabels ? React.createElement('span', { key: index }, label) : label,
+        }))
         : stepsOf(row.count)
       const mounted = await mount(React.createElement(StepIndicator, { steps, current: steps[0].id }))
       const rail = mounted.container.querySelector('nav.swz-rail')
       const labels = [...(rail?.querySelectorAll('.swz-label') ?? [])]
-      const words = labels.map((label) => [...label.querySelectorAll('.swz-word')].map((word) => word.textContent))
-      report.check(same(words, row.expected.words), `${name}: words expected ${JSON.stringify(row.expected.words)}, received ${JSON.stringify(words)}`)
-      report.check(same(labels.map(spoken), steps.map((step) => step.label)), `${name}: the words and their spaces must round-trip to the label text`)
+      if (row.nodeLabels) {
+        report.check(labels.every((label) => label.querySelectorAll('.swz-word').length === 0), `${name}: a node label is set as given, with no word spans of its own`)
+      } else {
+        const words = labels.map((label) => [...label.querySelectorAll('.swz-word')].map((word) => word.textContent))
+        report.check(same(words, row.expected.words), `${name}: words expected ${JSON.stringify(row.expected.words)}, received ${JSON.stringify(words)}`)
+      }
+      report.check(same(labels.map(spoken), row.labels ?? steps.map((step) => step.label)), `${name}: the words and their spaces must round-trip to the label text`)
       const middle = rail?.style.getPropertyValue('--swz-word-middle')
       const edge = rail?.style.getPropertyValue('--swz-word-edge')
+      const only = rail?.style.getPropertyValue('--swz-word-only')
       report.check(middle === String(row.expected.middle), `${name}: --swz-word-middle must hand the stylesheet a ${row.expected.middle}-character middle word, received ${JSON.stringify(middle)}`)
       report.check(edge === String(row.expected.edge), `${name}: --swz-word-edge must hand the stylesheet a ${row.expected.edge}-character edge word, received ${JSON.stringify(edge)}`)
+      report.check(only === String(row.expected.only), `${name}: --swz-word-only must hand the stylesheet a ${row.expected.only}-character lone word, received ${JSON.stringify(only)}`)
       const css = readFileSync(resolve('src/ui/StepWizard.css'), 'utf8')
       const labelRule = css.match(/\.swz-label\s*\{([^}]*)\}/)?.[1] ?? ''
+      const onlyRule = css.match(/\.swz-label--only\s*\{([^}]*)\}/)?.[1] ?? ''
       const wordRule = css.match(/\.swz-word\s*\{([^}]*)\}/)?.[1] ?? ''
       report.check(/white-space:\s*nowrap/.test(wordRule), `${name}: a word must be set as one unbreakable run`)
       report.check(/overflow-wrap:\s*normal/.test(labelRule) && !/overflow-wrap:\s*anywhere/.test(labelRule), `${name}: a label may not break inside a word`)
@@ -137,11 +149,15 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       for (const label of labels) {
         report.check(!label.hasAttribute('aria-hidden') && !label.hasAttribute('hidden'), `${name}: a label must not be removed from the accessibility tree by markup`)
       }
-      for (const [index, step] of steps.entries()) {
+      for (const [index] of steps.entries()) {
         const button = rail?.querySelectorAll('.swz-step')[index]
-        report.check(spoken(button)?.includes(step.label), `${name}: marker ${index + 1} must keep ${JSON.stringify(step.label)} in its accessible name`)
+        const text = labels[index]?.textContent ?? ''
+        report.check(text !== '' && spoken(button)?.includes(text), `${name}: marker ${index + 1} must keep its label in its accessible name`)
       }
-      report.check(/\.swz-label--only\s*\{[^}]*--swz-room:\s*100cqi/.test(css), `${name}: a lone step may take the whole rail and is never hidden`)
+      // a lone step may take the whole rail, but only while its own word fits it: a word wider than
+      // the rail collapses the label with the rest instead of painting a clipped part of it.
+      report.check(/--swz-word-only/.test(onlyRule) && /100cqi/.test(onlyRule), `${name}: a lone label must measure its word against the whole rail`)
+      report.check(!/--swz-room:\s*100cqi/.test(onlyRule), `${name}: a lone label must not claim room without checking its word`)
       await mounted.unmount()
     } else if (row.kind === 'jump') {
       const jumps = []

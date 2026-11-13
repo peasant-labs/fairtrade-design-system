@@ -1670,6 +1670,7 @@
         "Indicator",
         "Controlled",
         "LabelsInsideFrame",
+        "LoneStep",
         "TenStops"
       ]
     },

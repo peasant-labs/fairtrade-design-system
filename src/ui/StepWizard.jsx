@@ -114,8 +114,9 @@ function labelWords(label) {
  * neighbours never overlap, and a label never breaks inside a word and is never cut with an
  * ellipsis. When any label's longest word does not fit that label's share, or the rail is too
  * narrow for its first and last labels to hold five characters, every label is hidden from sight
- * together and stays in the accessible name; the numbers carry the rail. A label passed as a node
- * is measured from its text.
+ * together and stays in the accessible name; the numbers carry the rail. A lone step may take the
+ * whole rail and shows while its own longest word fits it; it hides with the rest when that word
+ * does not. A label passed as a node is measured from its text.
  *
  * The rail is the container its label shares are measured against (`container-type: inline-size`),
  * so it needs a host with a definite inline size: a block, a grid track, or a flex item that has
@@ -140,12 +141,14 @@ export function StepIndicator({
 }) {
   // the label shares are arithmetic on the rail's width and its gap count; the rail carries the
   // count so the stylesheet can do that arithmetic (a lone step has no gap, but the share maths
-  // never divides by zero). it also carries the longest word of its middle labels and of its first
-  // and last labels, in characters, so the stylesheet can hide every label when a word does not fit.
+  // never divides by zero). it also carries the longest word of its middle labels, of its first
+  // and last labels, and of a lone label, in characters, so the stylesheet can hide every label
+  // when a word does not fit (a lone label may take the whole rail).
   const railStyle = {
     '--swz-gaps': Math.max(steps.length - 1, 1),
     '--swz-word-middle': longestWord(steps, [LABEL_PLACE.middle]),
     '--swz-word-edge': longestWord(steps, [LABEL_PLACE.start, LABEL_PLACE.end]),
+    '--swz-word-only': longestWord(steps, [LABEL_PLACE.only]),
   }
   return (
     <nav className="swz-rail" style={railStyle} aria-label={ariaLabel}>
