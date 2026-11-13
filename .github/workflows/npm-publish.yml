@@ -36,7 +36,53 @@ permissions:
   contents: read
 
 jobs:
+  verify:
+    name: verify the tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+    steps:
+      - name: Check out the repository (full history and tags)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: Check out the release-intent tool
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          repository: peasant-labs/infra
+          ref: f2d3e5591e198ffeb1603d75115127632a94b68b
+          path: infra-tool
+          sparse-checkout: |
+            tools/release
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: infra-tool/tools/release/go.mod
+          cache-dependency-path: infra-tool/tools/release/go.sum
+
+      - name: Build release-intent
+        working-directory: infra-tool/tools/release
+        run: |
+          go build -o "${RUNNER_TEMP}/release-intent" ./cmd/release-intent
+          echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
+
+      # Pushing a tag needs only the right to write tags, so the tag may name a
+      # commit that never landed. The tool checks the name against the
+      # default branch's release config and that the default branch reaches
+      # the tag's commit; nothing publishes until it passes.
+      - name: Verify the tag is a release tag on the default branch
+        run: release-intent verify-tag --tag "${GITHUB_REF_NAME}" --branch "origin/${DEFAULT_BRANCH}"
+
   npm-publish:
+    needs: verify
     name: publish npm package
     runs-on: ubuntu-latest
     timeout-minutes: 20

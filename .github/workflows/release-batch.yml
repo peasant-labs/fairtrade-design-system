@@ -1,22 +1,27 @@
-# Release batch: the one serialized job that keeps the standing bot release
-# PR current and tags it when it lands.
+# Release batch: the serialized run that keeps the standing bot release PR
+# current and tags it when it lands.
 #
-# The tool decides; this workflow only carries out the one action `plan`
+# Two jobs. `plan` holds no credential and does all the work: it builds the
+# pinned release-intent tool, plans, makes the annotated release tag object,
+# writes and commits the release content, reads the merge queue with the
+# read-only default token and judges it with `queue-gate`. It hands over
+# through job outputs and one artifact of git bundles. `release` holds the
+# releaser App token and runs only pinned allowed actions, the bundle
+# fetches, and one git or gh command per step: push the tag, push the
+# release branch, open or edit the release PR, arm or hold auto-merge, or
+# close the PR. Every gh command names the PR by its bot branch, never by a
+# number, and the job runs on a GitHub-hosted runner named literally. Nothing `plan` does can reach `release`: they run on
+# separate runners, and `release` runs no general step.
+#
+# The tool decides; the workflow only carries out the one action `plan`
 # prints. Every step that can write runs only under an `if:` on one action
-# value of a `plan` step in the same run, and the tag goes out once, on the
-# verdict's `tag` action. The tag step only pushes the tag: the tag-triggered
-# release.yml publishes the GitHub Release. There are no pre-tag steps in
-# fairtrade, so the verdict is the literal `taggable` and a stale candidate
-# can never be tagged whatever is passed. The queue is read through GraphQL into a file and judged
-# with `queue-gate`: on `arm` auto-merge is turned on, on `hold` it is turned
-# off for a release PR that is not already queued, and a queued release PR is
-# never dequeued. Which PR is the release PR is never compared literally: the
-# branch below is the push target the release config names for the release
-# kind, and every decision reads the tool's outputs. Titles travel through
-# environment variables and stdin, never through `${{ }}` interpolation into
-# a script. Flag values that can be empty (the mode and floor variables, the
-# tool's step outputs) are always quoted, so an unset variable expands to an
-# empty quoted value instead of a missing argument.
+# value of a `plan` step, read through the `plan` job's outputs, and the tag
+# goes out once, on the verdict's `tag` action. There are no pre-tag steps in
+# fairtrade, so the verdict is the literal `taggable`. Which PR is the release
+# PR is never compared literally: the branch below is the push target the
+# release config names for the release kind. Titles travel through env
+# values, never through `${{ }}` interpolation into a script. Flag values
+# that can be empty are always quoted.
 name: release-batch
 
 on:
@@ -33,23 +38,36 @@ concurrency:
   group: release-batch
   cancel-in-progress: false
 
-# read-only at the job level: every write below uses the minted releaser App
-# token, so a step that can write is visible to the policy checker.
+# read-only: the only writes use the minted releaser App token in the
+# `release` job.
 permissions:
   contents: read
   pull-requests: read
 
-# The planner builds from the pinned infra release tool checkout below.
-
 jobs:
-  release:
-    # The default-branch check belongs before the mint: a dispatch on any other
-    # branch runs that branch's copy of this file, and it must never hold the
-    # App key. Tag mode gates the mint step itself, so plan-only runs print
-    # the plan and mint nothing.
+  plan:
+    # A dispatch on any other branch runs that branch's copy of this file.
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      proceed: ${{ steps.precheck.outputs.proceed }}
+      tag-action: ${{ steps.plan.outputs.action }}
+      tag: ${{ steps.plan.outputs.tag }}
+      action: ${{ steps.replan.outputs.action }}
+      level: ${{ steps.replan.outputs.level }}
+      breaking: ${{ steps.replan.outputs.breaking }}
+      release-tag: ${{ steps.replan.outputs.tag }}
+      push: ${{ steps.write.outputs.push }}
+      number: ${{ steps.find.outputs.number }}
+      pr: ${{ steps.entry.outputs.pr }}
+      queued: ${{ steps.entry.outputs.queued }}
+      armed: ${{ steps.entry.outputs.armed }}
+      gate: ${{ steps.gate.outputs.gate }}
+      stale: ${{ steps.stale.outputs.number }}
     steps:
       - name: Check out the repository (full history and tags)
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -62,7 +80,7 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           repository: peasant-labs/infra
-          ref: 8b44454cc3b3fac37d9b4d4a118883ac9a6f684e
+          ref: f2d3e5591e198ffeb1603d75115127632a94b68b
           path: infra-tool
           sparse-checkout: |
             tools/release
@@ -81,8 +99,7 @@ jobs:
           echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
 
       # Cheap first step: a scheduled run with no open release PR, or with one
-      # that is already armed, ends here with no App token minted and nothing
-      # written. Push and dispatch runs always proceed.
+      # that is already armed, ends here and the release job never starts.
       - name: Check whether a scheduled run has work to do
         id: precheck
         env:
@@ -116,21 +133,12 @@ jobs:
           git fetch --no-tags origin main
           release-intent plan --branch origin/main --mode "${{ vars.RELEASE_BATCH_MODE }}" --verdict taggable --floor "${{ vars.RELEASE_BATCH_FLOOR }}" | tee -a "${GITHUB_STEP_SUMMARY}"
 
-      - name: Mint the releaser App token
-        id: mint
-        if: vars.RELEASE_BATCH_MODE == 'tag'
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          app-id: ${{ secrets.PEASANT_RELEASER_APP_ID }}
-          private-key: ${{ secrets.PEASANT_RELEASER_APP_PRIVATE_KEY }}
-          owner: peasant-labs
-          repositories: fairtrade-design-system
-
-      - name: Tag the fresh release candidate
-        id: tag
+      # The annotated tag object is made here, without a credential, and
+      # handed to the release job as a bundle. The bundle excludes the
+      # commit this run checked out, which the release job's checkout has.
+      - name: Make the annotated release tag
         if: steps.precheck.outputs.proceed == 'true' && steps.plan.outputs.action == 'tag'
         env:
-          APP_TOKEN: ${{ steps.mint.outputs.token }}
           TAG: ${{ steps.plan.outputs.tag }}
           CANDIDATE: ${{ steps.plan.outputs.candidate }}
         run: |
@@ -141,12 +149,11 @@ jobs:
           git config user.name peasant-release-bot
           git config user.email bots@peasant-labs.invalid
           git tag -a "${TAG}" "${CANDIDATE}" -m "release: ${TAG}"
-          git -c http.extraheader="AUTHORIZATION: bearer ${APP_TOKEN}" push origin "refs/tags/${TAG}"
+          mkdir -p bundles
+          git bundle create bundles/tag.bundle "refs/tags/${TAG}" "^${GITHUB_SHA}"
 
       # After a tag the new tag is the range base, so the plan runs again with
-      # the same verdict. On any other action the inputs are unchanged and the
-      # second plan repeats the first; the open-pr and close-pr steps below
-      # read this run's action from here.
+      # the same verdict. The local tag made above is that base.
       - name: Plan again after the tag
         id: replan
         if: steps.precheck.outputs.proceed == 'true'
@@ -164,127 +171,90 @@ jobs:
           git checkout -B automation/release origin/main
           release-intent release-pr --write --branch origin/main --current origin/automation/release --floor "${{ vars.RELEASE_BATCH_FLOOR }}"
 
-      - name: Push the release branch
-        id: push
+      - name: Bundle the release branch
         if: steps.precheck.outputs.proceed == 'true' && steps.replan.outputs.action == 'open-pr' && steps.write.outputs.push == 'true'
-        env:
-          APP_TOKEN: ${{ steps.mint.outputs.token }}
         run: |
           set -euo pipefail
-          git -c http.extraheader="AUTHORIZATION: bearer ${APP_TOKEN}" push --force-with-lease origin automation/release
+          mkdir -p bundles
+          git bundle create bundles/release.bundle refs/heads/automation/release "^${GITHUB_SHA}"
 
-      - name: Open or update the release PR
-        id: pr
+      - name: Find the open release PR
+        id: find
         if: steps.precheck.outputs.proceed == 'true' && steps.replan.outputs.action == 'open-pr' && steps.write.outputs.push == 'true'
         env:
-          GH_TOKEN: ${{ steps.mint.outputs.token }}
-          LEVEL: ${{ steps.replan.outputs.level }}
-          BREAKING: ${{ steps.replan.outputs.breaking }}
-          TAG: ${{ steps.replan.outputs.tag }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          if [ "${BREAKING}" = "true" ]; then
-            title="release![${LEVEL}]: ${TAG}"
-          else
-            title="release[${LEVEL}]: ${TAG}"
-          fi
-          body="Automated release PR for ${TAG}. Rebuilt by the release job from the landed subjects since the last tag; do not edit by hand, the next run rebuilds this branch."
-          number="$(gh pr list --head automation/release --state open --json number --jq '.[0].number // empty')"
-          if [ -z "${number}" ]; then
-            # The create and its number refresh stay one `&&` chain so the
-            # checker resolves this segment's head branch to the release
-            # branch it pushes.
-            gh pr create --head automation/release --base main --title "${title}" --body "${body}" &&
-              number="$(gh pr list --head automation/release --state open --json number --jq '.[0].number')"
-          else
-            gh pr edit "${number}" --title "${title}" --body "${body}"
-          fi
-          echo "number=${number}" >> "${GITHUB_OUTPUT}"
+          echo "number=$(gh pr list --head automation/release --state open --json number --jq '.[0].number // empty')" >> "${GITHUB_OUTPUT}"
 
-      # The hold rule: read the merge queue through GraphQL into a file, then
-      # let `queue-gate` decide. The raw response is kept as a failure
-      # artifact. A failed read fails the run with no gate value, so nothing
-      # is armed and nothing is disarmed.
+      # The hold rule: read the merge queue through GraphQL into a file with
+      # the read-only default token, then let `queue-gate` decide. A failed
+      # read fails the run with no gate value, so nothing is armed and nothing
+      # is disarmed.
       - name: Read the merge queue
         id: queue
         if: steps.precheck.outputs.proceed == 'true' && steps.replan.outputs.action == 'open-pr' && steps.write.outputs.push == 'true'
         env:
-          GH_TOKEN: ${{ steps.mint.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          owner="${GITHUB_REPOSITORY%/*}"
-          repo="${GITHUB_REPOSITORY#*/}"
-          number="$(gh pr list --head automation/release --state open --json number --jq '.[0].number // empty')"
-          if [ -z "${number}" ]; then
-            echo "::error::release-batch found no open release PR after the push step; refusing to judge the queue without the release PR number."
-            exit 1
-          fi
           # The $owner/$repo/$branch below are GraphQL query variables,
           # intentionally single-quoted so the shell does not expand them.
           # shellcheck disable=SC2016
-          gh api graphql -F owner="${owner}" -F repo="${repo}" -F branch=main -f query='
+          gh api graphql -F owner='{owner}' -F repo='{repo}' -F branch=main -f query='
             query($owner:String!, $repo:String!, $branch:String!) {
               repository(owner:$owner, name:$repo) { mergeQueue(branch:$branch) {
                 entries(first:100) { totalCount nodes { position pullRequest { number title } } } } } }' > queue.json
-          queued="$(jq --argjson n "${number}" '[.data.repository.mergeQueue.entries.nodes[] | select(.pullRequest.number == $n)] | length > 0' queue.json)"
+
+      # The release PR's number, whether it is queued, and whether it is armed.
+      # A new release PR is opened by the release job after this run's read,
+      # so it is judged on the next run.
+      - name: Find the release PR in the queue
+        id: entry
+        if: steps.precheck.outputs.proceed == 'true' && steps.replan.outputs.action == 'open-pr' && steps.write.outputs.push == 'true' && steps.find.outputs.number != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ steps.find.outputs.number }}
+        run: |
+          set -euo pipefail
+          queued="$(jq --argjson n "${NUMBER}" '[.data.repository.mergeQueue.entries.nodes[] | select(.pullRequest.number == $n)] | length > 0' queue.json)"
+          armed="$(gh pr view "${NUMBER}" --json autoMergeRequest --jq '.autoMergeRequest != null')"
           {
-            echo "pr=${number}"
+            echo "pr=${NUMBER}"
             echo "queued=${queued}"
+            echo "armed=${armed}"
           } >> "${GITHUB_OUTPUT}"
 
       - name: Judge the hold rule
         id: gate
-        if: steps.precheck.outputs.proceed == 'true' && steps.replan.outputs.action == 'open-pr' && steps.write.outputs.push == 'true' && steps.queue.outputs.pr != ''
+        if: steps.precheck.outputs.proceed == 'true' && steps.replan.outputs.action == 'open-pr' && steps.write.outputs.push == 'true' && steps.entry.outputs.pr != ''
         env:
-          RELEASE_PR: ${{ steps.queue.outputs.pr }}
+          RELEASE_PR: ${{ steps.entry.outputs.pr }}
         run: |
           set -euo pipefail
           release-intent queue-gate --queue queue.json --release-pr "${RELEASE_PR}"
 
-      - name: Arm auto-merge on the release PR
-        if: steps.precheck.outputs.proceed == 'true' && steps.replan.outputs.action == 'open-pr' && steps.write.outputs.push == 'true' && steps.gate.outputs.gate == 'arm'
-        env:
-          GH_TOKEN: ${{ steps.mint.outputs.token }}
-          RELEASE_PR: ${{ steps.queue.outputs.pr }}
-        run: |
-          set -euo pipefail
-          gh pr merge --auto --squash "${RELEASE_PR}"
-
-      # On hold the job only turns auto-merge off, and only for a release PR
-      # that is not already queued: a queued release PR is left in the queue
-      # and never dequeued. A stale commit that still lands is never tagged;
-      # the next run rebuilds the release PR instead.
-      - name: Take the arming back while a releasing PR is ahead
-        if: steps.precheck.outputs.proceed == 'true' && steps.replan.outputs.action == 'open-pr' && steps.write.outputs.push == 'true' && steps.gate.outputs.gate == 'hold'
-        env:
-          GH_TOKEN: ${{ steps.mint.outputs.token }}
-          RELEASE_PR: ${{ steps.queue.outputs.pr }}
-          QUEUED: ${{ steps.queue.outputs.queued }}
-        run: |
-          set -euo pipefail
-          if [ "${QUEUED}" = "true" ]; then
-            echo "The release PR is already queued; leaving its auto-merge state untouched and never dequeuing it."
-            exit 0
-          fi
-          armed="$(gh pr view "${RELEASE_PR}" --json autoMergeRequest --jq '.autoMergeRequest != null')"
-          if [ "${armed}" = "true" ]; then
-            gh pr merge --disable-auto "${RELEASE_PR}"
-          else
-            echo "Auto-merge is already off; nothing to take back."
-          fi
-
-      - name: Close the release PR when nothing is pending
+      - name: Find the release PR to close
+        id: stale
         if: steps.precheck.outputs.proceed == 'true' && steps.replan.outputs.action == 'close-pr'
         env:
-          GH_TOKEN: ${{ steps.mint.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          number="$(gh pr list --head automation/release --state open --json number --jq '.[0].number // empty')"
-          if [ -n "${number}" ]; then
-            gh pr close "${number}"
-          else
-            echo "No open release PR; nothing to close."
-          fi
+          echo "number=$(gh pr list --head automation/release --state open --json number --jq '.[0].number // empty')" >> "${GITHUB_OUTPUT}"
+
+      # The bundles the release job pushes. An empty directory uploads
+      # nothing; the release job then has nothing to fetch and fetches
+      # nothing.
+      - name: Hand the bundles to the release job
+        if: steps.precheck.outputs.proceed == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-bundles
+          path: bundles
+          if-no-files-found: ignore
+          overwrite: true
+          retention-days: 1
 
       - name: Keep the queue read as a failure artifact
         if: failure()
@@ -294,3 +264,101 @@ jobs:
           path: queue.json
           if-no-files-found: warn
           retention-days: 14
+
+  release:
+    needs: [plan]
+    # The default-branch check belongs before the mint, in this job's own if:
+    # a dispatch on any other branch runs that branch's copy of this file,
+    # and it must never hold the App key.
+    if: github.ref == 'refs/heads/main' && needs.plan.outputs.proceed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download the bundles
+        if: needs.plan.outputs.tag-action == 'tag' || needs.plan.outputs.push == 'true'
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: release-bundles
+          path: bundles
+
+      - name: Mint the releaser App token
+        id: mint
+        if: vars.RELEASE_BATCH_MODE == 'tag'
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.PEASANT_RELEASER_APP_ID }}
+          private-key: ${{ secrets.PEASANT_RELEASER_APP_PRIVATE_KEY }}
+          owner: peasant-labs
+          repositories: fairtrade-design-system
+
+      - name: Fetch the release tag
+        if: needs.plan.outputs.tag-action == 'tag'
+        env:
+          TAG: ${{ needs.plan.outputs.tag }}
+        run: git fetch --no-tags bundles/tag.bundle "refs/tags/${TAG}:refs/tags/${TAG}"
+
+      - name: Tag the fresh release candidate
+        id: tag
+        if: needs.plan.outputs.tag-action == 'tag'
+        env:
+          APP_TOKEN: ${{ steps.mint.outputs.token }}
+          TAG: ${{ needs.plan.outputs.tag }}
+        run: |
+          git -c http.extraheader="AUTHORIZATION: bearer ${APP_TOKEN}" push origin "refs/tags/${TAG}:refs/tags/${TAG}"
+
+      - name: Fetch the release branch
+        if: needs.plan.outputs.action == 'open-pr' && needs.plan.outputs.push == 'true'
+        run: git fetch --no-tags bundles/release.bundle automation/release:automation/release
+
+      - name: Push the release branch
+        id: push
+        if: needs.plan.outputs.action == 'open-pr' && needs.plan.outputs.push == 'true'
+        env:
+          APP_TOKEN: ${{ steps.mint.outputs.token }}
+        run: |
+          git -c http.extraheader="AUTHORIZATION: bearer ${APP_TOKEN}" push --force-with-lease origin automation/release
+
+      - name: Open the release PR
+        if: needs.plan.outputs.action == 'open-pr' && needs.plan.outputs.push == 'true' && needs.plan.outputs.number == ''
+        env:
+          GH_TOKEN: ${{ steps.mint.outputs.token }}
+          TITLE: "release${{ needs.plan.outputs.breaking == 'true' && '!' || '' }}[${{ needs.plan.outputs.level }}]: ${{ needs.plan.outputs.release-tag }}"
+          BODY: "Automated release PR for ${{ needs.plan.outputs.release-tag }}. Rebuilt by the release job from the landed subjects since the last tag; do not edit by hand, the next run rebuilds this branch."
+        run: gh pr create --head automation/release --base main --title "${TITLE}" --body "${BODY}"
+
+      - name: Update the release PR
+        if: needs.plan.outputs.action == 'open-pr' && needs.plan.outputs.push == 'true' && needs.plan.outputs.number != ''
+        env:
+          GH_TOKEN: ${{ steps.mint.outputs.token }}
+          TITLE: "release${{ needs.plan.outputs.breaking == 'true' && '!' || '' }}[${{ needs.plan.outputs.level }}]: ${{ needs.plan.outputs.release-tag }}"
+          BODY: "Automated release PR for ${{ needs.plan.outputs.release-tag }}. Rebuilt by the release job from the landed subjects since the last tag; do not edit by hand, the next run rebuilds this branch."
+        run: gh pr edit --title "${TITLE}" --body "${BODY}" -- automation/release
+
+      - name: Arm auto-merge on the release PR
+        if: needs.plan.outputs.action == 'open-pr' && needs.plan.outputs.push == 'true' && needs.plan.outputs.gate == 'arm'
+        env:
+          GH_TOKEN: ${{ steps.mint.outputs.token }}
+        run: gh pr merge --auto --squash -- automation/release
+
+      # On hold the job only turns auto-merge off, and only for a release PR
+      # that is armed and not already queued: a queued release PR is left in
+      # the queue and never dequeued.
+      - name: Take the arming back while a releasing PR is ahead
+        if: needs.plan.outputs.action == 'open-pr' && needs.plan.outputs.push == 'true' && needs.plan.outputs.gate == 'hold' && needs.plan.outputs.queued != 'true' && needs.plan.outputs.armed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.mint.outputs.token }}
+        run: gh pr merge --disable-auto -- automation/release
+
+      - name: Close the release PR when nothing is pending
+        if: needs.plan.outputs.action == 'close-pr' && needs.plan.outputs.stale != ''
+        env:
+          GH_TOKEN: ${{ steps.mint.outputs.token }}
+        run: gh pr close -- automation/release

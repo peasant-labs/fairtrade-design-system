@@ -112,16 +112,45 @@ enqueue again: the queue build re-checks the new title before it can land.
 One standing bot release PR (`automation/release`, opened by
 `peasant-labs-releaser[bot]`) carries the CHANGELOG section and the version
 field, lands through the queue by auto-merge, and is rebuilt after every
-landed batch. `.github/workflows/release-batch.yml` is the one serialized job
-that keeps it current and tags its landed commit: it plans from the branch
-tip with the release-intent tool, pushes the computed tag on a fresh
-candidate (the tag step only pushes the tag; the tag-triggered `release.yml`
-publishes the GitHub Release), and opens, updates, arms, holds, or closes the release PR exactly as the plan says. It arms auto-merge
-only while no releasing PR is ahead in the queue; on hold it only turns
-auto-merge off, and a queued release PR is never dequeued. A release commit
-whose content went stale is never tagged; the next run rebuilds the release
-PR instead. Nothing pushes to `main` outside the queue, and no hand, bot, or
-agent pushes or edits the release PR or its branch. With
+landed batch. `title-guard` holds it to that content: the release PR may change
+only `CHANGELOG.md` and the `version` field of `package.json`, and the
+cut-release PR must be its one empty commit.
+`.github/workflows/release-batch.yml` is the one serialized run that keeps it
+current and tags its landed commit: it plans from the branch tip with the
+release-intent tool, pushes the computed tag on a fresh candidate (it only
+pushes the tag; the tag-triggered `release.yml` publishes the GitHub Release),
+and opens, updates, arms, holds, or closes the release PR exactly as the plan
+says. It arms auto-merge only while no releasing PR is ahead in the queue; on
+hold it only turns auto-merge off for an armed PR that is not queued, and a
+queued release PR is never dequeued. A release commit whose content went stale
+is never tagged; the next run rebuilds the release PR instead. Nothing pushes
+to `main` outside the queue, and only the release job writes the release PR or
+its branch: no hand, other bot, or agent pushes or edits them.
+
+**Credentials stay in small jobs.** The release tool's `check-workflows`
+enforces this shape; the infra `tools/release` README ("What a consumer
+workflow may do with a credential") lists the exact rules:
+- every workflow and every job declares `permissions:` (read-only except where
+  a job publishes), and every `actions/checkout` sets
+  `persist-credentials: false`;
+- release-batch.yml and cut-release.yml are each two jobs. The first job
+  (`plan`, `prepare`) holds no credential and does all the work: it builds the
+  tool, plans, makes the annotated tag and the release commit, reads open PRs
+  and the merge queue with the read-only default token, and hands over through
+  job outputs and one artifact of git bundles. The second job (`release`,
+  `cut`) mints the releaser App token and runs only pinned allowed actions
+  (checkout, download-artifact, create-github-app-token), the bundle fetches,
+  and one `git push` or `gh` command per step;
+- a job that holds a credential runs on one literal GitHub-hosted label
+  (`ubuntu-latest`), never the runner router's output or a self-hosted label:
+  a hosted runner is a fresh machine per job. Jobs without a credential may
+  keep the router;
+- a bot job names its PR by its own bot branch
+  (`gh pr merge --auto --squash -- automation/release`), never by a number,
+  so the App token cannot act on another PR;
+- new work never goes into a credential job: add it to the job without a
+  credential and hand the result over as an output or a bundle.
+With
 nothing to change, force a release through the queue, either as an empty-commit
 PR titled `release[<level>]: cut a release` or with the `cut-release.yml`
 `workflow_dispatch` button (`patch` or `minor`), which opens that PR for the
@@ -145,13 +174,24 @@ a public-source release lacks the SLSA provenance predicate.
 **The same App-authenticated tag also runs `.github/workflows/release.yml`**, independently of
 `npm-publish.yml`: a `guard` job reads `tag_prefix` and `changelog` from
 `.github/release-intent.yaml` (the one place they are written) and classifies the tag with
-`release-guard.mjs parse-tag` under that prefix (version + `kind`, `rc` or `final`), then a
-`release` job extracts the matching `## X.Y.Z[-rcN]` section from that changelog with
-`scripts/release-notes.mjs`, appends a line naming the published npm package version,
-and creates the GitHub Release with `gh release create --verify-tag` for the triggering tag, or
-updates its notes with `gh release edit` on a re-run. A tag without a matching CHANGELOG section fails this job with an actionable error;
-only the bot release PR writes that section, so fix the release content forward
-and let the job tag the corrected commit.
+`release-guard.mjs parse-tag` under that prefix (version + `kind`, `rc` or `final`); a
+`notes` job, without a write token, extracts the matching `## X.Y.Z[-rcN]` section from that
+changelog with `scripts/release-notes.mjs`, appends a line naming the published npm package
+version, and uploads the notes as an artifact; then the `release` job, the only one with
+`contents: write`, downloads them and creates the GitHub Release with
+`gh release create --verify-tag` for the triggering tag, or updates its notes with
+`gh release edit` on a re-run. A tag without a matching CHANGELOG section fails the `notes` job
+with an actionable error; only the bot release PR writes that section, so fix the release
+content forward and let the job tag the corrected commit.
+
+**Every tag-triggered publish waits for `verify-tag`.** Pushing a tag needs only the right to
+write tags, so a tag could name a commit that never landed. `release.yml` and
+`npm-publish.yml` each have a read-only `verify` job that builds the pinned tool and runs
+`release-intent verify-tag --tag "${GITHUB_REF_NAME}" --branch "origin/${DEFAULT_BRANCH}"`
+(`DEFAULT_BRANCH` from `github.event.repository.default_branch`): it passes only when the tag
+is the release config's prefix plus an X.Y.Z version and the default branch reaches the tag's
+commit. The publish jobs (`release` needs `[guard, verify, notes]`; `npm-publish` needs
+`verify`) never run with `always()`, and the verify step has no `if` or `continue-on-error`.
 
 One-time maintainer registrations (registered state lives on npmjs.com/GitHub, not in-repo):
 (1) install the releaser GitHub App on `peasant-labs/fairtrade-design-system` with Contents write

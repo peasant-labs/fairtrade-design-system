@@ -51,9 +51,18 @@ requiredPolicyMutationNames:
   - a major cut-release level is rejected
   - a cut-release on any branch is rejected
   - a cut-release write without tag mode is rejected
-  - editing the cut-release PR is rejected
+  - editing another bot PR is rejected
   - arming another branch is rejected
   - a cut-release tag push is rejected
+  - a self-hosted runner for the credential job is rejected
+  - a credential job on a runner an expression picks is rejected
+  - naming the release PR by a number from the plan job is rejected
+  - a checkout that keeps its credentials is rejected
+  - a GitHub Release published without the tag check is rejected
+  - an npm publish without the tag check is rejected
+  - checking the tag against another branch is rejected
+  - a tag check that may fail is rejected
+  - publishing after a failed tag check is rejected
 requiredGitMutationNames:
   - a forced push moves the release tag
   - a delete and re-push moves the release tag

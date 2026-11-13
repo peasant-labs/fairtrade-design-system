@@ -27,6 +27,9 @@ jobs:
   # almost never use the four-slot pool, and a typical slot wait (1-4
   # minutes) is about the pool speed advantage.
   determine-runner:
+    permissions:
+      contents: read
+      actions: read
     uses: peasant-labs/infra/.github/workflows/runner-router.yml@4329b5ebd38a0270f08da3826b59ecda67eb1a40
     with:
       fallback: '["ubuntu-latest"]'
@@ -42,6 +45,9 @@ jobs:
   # tarball that would publish, on every PR/push, independent of who publishes.
   lib:
     needs: determine-runner
+    permissions:
+      contents: read
+      actions: read
     runs-on: ${{ fromJson(needs.determine-runner.outputs.runner) }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -87,7 +93,7 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           repository: peasant-labs/infra
-          ref: 8b44454cc3b3fac37d9b4d4a118883ac9a6f684e
+          ref: f2d3e5591e198ffeb1603d75115127632a94b68b
           path: infra-tool
           sparse-checkout: |
             tools/release
@@ -147,6 +153,9 @@ jobs:
 
   fairtest:
     needs: determine-runner
+    permissions:
+      contents: read
+      actions: read
     runs-on: ${{ fromJson(needs.determine-runner.outputs.runner) }}
     timeout-minutes: 40
     # The official Playwright image carries the browsers and their system
@@ -277,6 +286,9 @@ jobs:
 
   journeys:
     needs: determine-runner
+    permissions:
+      contents: read
+      actions: read
     runs-on: ${{ fromJson(needs.determine-runner.outputs.runner) }}
     timeout-minutes: 40
     strategy:
@@ -383,6 +395,8 @@ jobs:
     # job or any journey shard fails. It uses the hosted runner, not the pool.
     needs: [fairtest, journeys]
     if: always()
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

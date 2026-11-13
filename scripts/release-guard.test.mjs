@@ -143,9 +143,10 @@ function strictYaml(source, where) {
  *
  * @param {any} f
  * @param {any} manifest
- * @param {ReadonlySet<string>} workflowFiles
+ * @param {ReadonlySet<string>} workflowFiles the workflows the queue policy names
+ * @param {ReadonlySet<string>} checkedFiles every workflow the policy check reads
  */
-function validateFixtures(f, manifest, workflowFiles) {
+function validateFixtures(f, manifest, workflowFiles, checkedFiles) {
   keys(manifest, ['requiredValidTagNames', 'requiredInvalidTagNames', 'requiredPackageScriptNames', 'requiredForbiddenTextNames', 'requiredContractMutationNames', 'requiredPolicyMutationNames', 'requiredGitMutationNames'], 'manifest')
   keys(f, ['tags', 'package', 'workflow', 'git'], 'root')
   keys(f.tags, ['valid', 'invalid'], 'tags')
@@ -173,17 +174,26 @@ function validateFixtures(f, manifest, workflowFiles) {
   array(f.workflow.ci_skipped_activity_types, 'workflow.ci_skipped_activity_types').forEach((type, index) => string(type, `workflow.ci_skipped_activity_types[${index}]`))
   /** @param {any} row @param {string} where */
   const knownFile = (row, where) => assert.ok(workflowFiles.has(row.file), `${where}.${row.name}.file ${JSON.stringify(row.file)} is not a workflow the queue policy names (${[...workflowFiles].join(', ')})`)
+  /** @param {any} row @param {string} where */
+  const checkedFile = (row, where) => assert.ok(checkedFiles.has(row.file), `${where}.${row.name}.file ${JSON.stringify(row.file)} is not a workflow in ${RepoPath.Workflows} (${[...checkedFiles].join(', ')})`)
   exactNames(array(f.workflow.forbidden_text, 'workflow.forbidden_text'), manifest.requiredForbiddenTextNames, 'workflow.forbidden_text')
   for (const row of f.workflow.forbidden_text) { keys(row, ['name', 'file', 'text'], 'workflow.forbidden_text row'); knownFile(row, 'workflow.forbidden_text'); string(row.text, `workflow.forbidden_text.${row.name}.text`) }
-  for (const [list, required] of [['contract_mutations', manifest.requiredContractMutationNames], ['policy_mutations', manifest.requiredPolicyMutationNames]]) {
+  // A contract mutation breaks a workflow this contract reads; a policy
+  // mutation may break any workflow the policy check reads, and names the
+  // tool rule that must refuse it.
+  for (const [list, required, fields, fileCheck] of [
+    ['contract_mutations', manifest.requiredContractMutationNames, ['name', 'file', 'find', 'replace'], knownFile],
+    ['policy_mutations', manifest.requiredPolicyMutationNames, ['name', 'file', 'find', 'replace', 'rule'], checkedFile],
+  ]) {
     exactNames(array(f.workflow[list], `workflow.${list}`), required, `workflow.${list}`)
     for (const row of f.workflow[list]) {
-      keys(row, ['name', 'file', 'find', 'replace'], `workflow.${list} row`)
-      knownFile(row, `workflow.${list}`)
+      keys(row, [...fields], `workflow.${list} row`)
+      fileCheck(row, `workflow.${list}`)
       string(row.find, `workflow.${list}.${row.name}.find`)
       assert.equal(typeof row.replace, 'string', `workflow.${list}.${row.name}.replace must be a string`)
     }
   }
+  for (const row of f.workflow.policy_mutations) string(row.rule, `workflow.policy_mutations.${row.name}.rule`)
 
   keys(f.git, ['version', 'first_message', 'second_message', 'mutations'], 'git')
   for (const field of ['version', 'first_message', 'second_message']) string(f.git[field], `git.${field}`)
@@ -198,10 +208,12 @@ const config = loadReleaseConfig()
 const policy = loadQueuePolicy()
 /** Every workflow file the queue policy names: the files this contract reads. */
 const workflowFiles = new Set([...policy.required.map((check) => check.workflow), policy.releaseJob.workflow, ...policy.botJobs.map((job) => job.workflow)])
+/** Every workflow file the policy check reads: the whole workflows directory. */
+const checkedFiles = new Set(fs.readdirSync(path.join(REPO_ROOT, RepoPath.Workflows)).filter((file) => /\.ya?ml$/.test(file)))
 
 /** @param {string} [source] */
 function loadFixtures(source = fs.readFileSync(fixturePath, 'utf8')) {
-  return validateFixtures(strictYaml(source, fixturePath), strictYaml(fs.readFileSync(manifestPath, 'utf8'), manifestPath), workflowFiles)
+  return validateFixtures(strictYaml(source, fixturePath), strictYaml(fs.readFileSync(manifestPath, 'utf8'), manifestPath), workflowFiles, checkedFiles)
 }
 
 const fixtures = loadFixtures()
@@ -434,6 +446,7 @@ test('the release tool accepts this repository and refuses each policy mutation'
       const result = runGuardStep(steps.policy.run, dir)
       assert.notEqual(result.status, 0, `${mutation.name}: the policy check must refuse the mutated ${mutation.file}, but it passed:\n${result.output}`)
       assert.ok(result.output.includes(mutation.file), `${mutation.name}: the refusal must name ${mutation.file}, the file the row mutated:\n${result.output}`)
+      assert.ok(result.output.includes(`rule ${mutation.rule} in ${mutation.file}`), `${mutation.name}: the refusal must come from rule ${mutation.rule} in ${mutation.file}, the rule the row breaks:\n${result.output}`)
     } finally {
       fs.rmSync(dir, { recursive: true, force: true })
     }

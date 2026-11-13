@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 /* Fixture-driven verification for release-notes.mjs (changelog -> GitHub
    Release notes extraction) plus a workflow-shape assertion for
-   .github/workflows/release.yml - the job graph, trigger, permissions, and
-   release-config reads release.yml depends on to run safely and idempotently.
+   .github/workflows/release.yml - the job graph, trigger, permissions,
+   release-config reads, and notes handoff release.yml depends on to run
+   safely and idempotently. What the release-intent tool owns there (the
+   verify job's tag check, which jobs may hold a credential and what they may
+   run) is judged by the tool's own policy check in release-guard.test.mjs.
 
    Extraction cases live in scripts/testdata/release-notes.yaml; the
    required-name inventory (deletion protection) lives in the paired
@@ -10,11 +13,11 @@
    See scripts/release-notes.mutations.mjs for the mutation-proof companion
    (wired into build:lib). */
 import { readFileSync } from 'node:fs'
-import { relative, resolve } from 'node:path'
+import { dirname, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import YAML from 'yaml'
 import { ConfigKey, RepoPath, loadReleaseConfig, readPackageManifest } from './release-config.mjs'
-import { ALL_RELEASE_KINDS, ALL_TAG_OUTPUTS, GuardCommand, TagOutput } from './release-guard.mjs'
+import { ALL_RELEASE_KINDS, ALL_TAG_OUTPUTS, GuardCommand, TagOutput, parseReleaseKind } from './release-guard.mjs'
 import { loadStrictYaml, parsedMutations } from './release-notes-fixture.mjs'
 import { extractChangelogSection } from './release-notes.mjs'
 
@@ -60,9 +63,16 @@ for (const testCase of fixture.invalidCases) {
 
 /** The tag-triggered workflow that publishes the GitHub Release. */
 const RELEASE_WORKFLOW = 'release.yml'
-/** The job ids of release.yml. */
-const ReleaseJobId = Object.freeze({ Guard: 'guard', Publish: 'release' })
-/** The environment variable both jobs bind the triggering tag to. */
+/**
+ * The job ids of release.yml: the tag parser, the tool's tag check against
+ * the default branch, the notes builder, and the one job that publishes.
+ */
+const ReleaseJobId = Object.freeze({ Guard: 'guard', Verify: 'verify', Notes: 'notes', Publish: 'release' })
+/** Every job, in graph order. */
+const ALL_RELEASE_JOB_IDS = Object.freeze([ReleaseJobId.Guard, ReleaseJobId.Verify, ReleaseJobId.Notes, ReleaseJobId.Publish])
+/** The jobs the publish job must wait for, so it never runs on an unparsed, unverified tag or without its notes. */
+const PUBLISH_NEEDS = Object.freeze([ReleaseJobId.Guard, ReleaseJobId.Verify, ReleaseJobId.Notes])
+/** The environment variable the guard and publish jobs bind the triggering tag to. */
 const TAG_ENV = 'TAG'
 
 const config = loadReleaseConfig()
@@ -79,29 +89,39 @@ function repoRelative(url) { return relative(ROOT, fileURLToPath(url)) }
 /** Step-output and job-output expressions, built from their keys. */
 function stepOutput(stepId, key) { return `\${{ steps.${stepId}.outputs.${key} }}` }
 function needsOutput(jobId, key) { return `\${{ needs.${jobId}.outputs.${key} }}` }
+/** The expression that is true when the guard parsed a tag of this kind. */
+function kindIs(kind) { return `\${{ needs.${ReleaseJobId.Guard}.outputs.${TagOutput.Kind.wire} == '${kind.wire}' }}` }
 
-/** The env var a job binds to an expression, or undefined. */
+/** The env var a mapping binds to an expression, or undefined. */
 function envBoundTo(env, expression) { return Object.entries(env ?? {}).find(([, value]) => value === expression)?.[0] }
 
-/** Logical commands that start with head, continuation lines joined. */
-function commandsStartingWith(text, head) {
-  return text.replace(/\\\n\s*/g, ' ').split('\n').map((line) => line.trim()).filter((line) => line.startsWith(head))
+/** A job's needs as a list. */
+function needsOf(job) { return job.needs === undefined ? [] : [job.needs].flat() }
+
+/** Logical commands any step of the workflow runs that start with head, continuation lines joined. */
+function commandsStartingWith(workflow, head) {
+  return Object.values(workflow.jobs ?? {}).flatMap((job) => job.steps ?? []).filter((step) => typeof step.run === 'string')
+    .flatMap((step) => step.run.replace(/\\\n\s*/g, ' ').split('\n').map((line) => line.trim())).filter((line) => line.startsWith(head))
 }
 
 function assertReleaseWorkflowContract(workflow, text) {
   const contract = fixture.releaseWorkflow
   const trigger = workflow.on ?? workflow.true
   assert(JSON.stringify(trigger?.push?.tags) === JSON.stringify([`${config.tagPrefix}*`]), `trigger must be push.tags == ["${config.tagPrefix}*"], the release config's tag prefix`)
-  assert(JSON.stringify(workflow.permissions) === JSON.stringify(contract.permissions), `permissions must be exactly ${JSON.stringify(contract.permissions)}`)
+  assert(JSON.stringify(workflow.permissions) === JSON.stringify(contract.permissions), `workflow permissions must be exactly ${JSON.stringify(contract.permissions)}`)
   assert(workflow.concurrency?.['cancel-in-progress'] === false, 'concurrency.cancel-in-progress must be false (never cancel a mid-flight publish)')
-  const guard = workflow.jobs?.[ReleaseJobId.Guard]
-  const release = workflow.jobs?.[ReleaseJobId.Publish]
-  assert(!!guard, `a ${ReleaseJobId.Guard} job must exist`)
-  assert(!!release, `a ${ReleaseJobId.Publish} job must exist`)
-  const needs = release.needs
-  const needsGuard = needs === ReleaseJobId.Guard || (Array.isArray(needs) && needs.includes(ReleaseJobId.Guard))
-  assert(needsGuard, `the ${ReleaseJobId.Publish} job must declare needs: ${ReleaseJobId.Guard} (or an array containing it), so it cannot run detached from the tag guard`)
-  for (const job of [guard, release]) assert(job.env?.[TAG_ENV] === contract.triggeringTag, `both jobs must bind ${TAG_ENV} to the tag that triggered the run (${contract.triggeringTag})`)
+  for (const id of ALL_RELEASE_JOB_IDS) assert(!!workflow.jobs?.[id], `a ${id} job must exist`)
+  const { [ReleaseJobId.Guard]: guard, [ReleaseJobId.Notes]: notes, [ReleaseJobId.Publish]: release } = workflow.jobs
+
+  // Only the publish job holds the write-capable token; every other job
+  // declares the read-only scopes.
+  for (const id of ALL_RELEASE_JOB_IDS) {
+    const expected = id === ReleaseJobId.Publish ? contract.publishPermissions : contract.jobPermissions
+    assert(JSON.stringify(workflow.jobs[id].permissions) === JSON.stringify(expected), `the ${id} job's permissions must be exactly ${JSON.stringify(expected)}`)
+  }
+  for (const id of PUBLISH_NEEDS) assert(needsOf(release).includes(id), `the ${ReleaseJobId.Publish} job must need ${id}, so it cannot run detached from it`)
+  assert(needsOf(notes).includes(ReleaseJobId.Guard), `the ${ReleaseJobId.Notes} job must need ${ReleaseJobId.Guard}, whose outputs it reads`)
+  for (const job of [guard, release]) assert(job.env?.[TAG_ENV] === contract.triggeringTag, `the ${ReleaseJobId.Guard} and ${ReleaseJobId.Publish} jobs must bind ${TAG_ENV} to the tag that triggered the run (${contract.triggeringTag})`)
 
   // The guard checks out the parser, its imports, and the release config.
   const sparse = String(guard.steps.find((step) => step.with?.['sparse-checkout'] !== undefined)?.with['sparse-checkout'] ?? '').split('\n').map((line) => line.trim()).filter(Boolean)
@@ -119,22 +139,44 @@ function assertReleaseWorkflowContract(workflow, text) {
   for (const key of ALL_TAG_OUTPUTS) assert(guard.outputs?.[key.wire] === stepOutput(parseStep.id, key.wire), `the ${ReleaseJobId.Guard} job must expose ${key.wire} from the ${GuardCommand.ParseTag.wire} step`)
   assert(guard.outputs?.[ConfigKey.Changelog.wire] === stepOutput(configStep.id, ConfigKey.Changelog.wire), `the ${ReleaseJobId.Guard} job must expose the release config's ${ConfigKey.Changelog.wire}`)
 
-  // The release job reads the parsed version, kind, and changelog path from
-  // the guard, never a restated value.
-  const versionEnv = envBoundTo(release.env, needsOutput(ReleaseJobId.Guard, TagOutput.Version.wire))
-  const kindEnv = envBoundTo(release.env, needsOutput(ReleaseJobId.Guard, TagOutput.Kind.wire))
-  const changelogEnv = envBoundTo(release.env, needsOutput(ReleaseJobId.Guard, ConfigKey.Changelog.wire))
-  assert(versionEnv && kindEnv && changelogEnv, `the ${ReleaseJobId.Publish} job must bind the guard's ${TagOutput.Version.wire}, ${TagOutput.Kind.wire}, and ${ConfigKey.Changelog.wire} outputs`)
-  assert(release.steps.some((step) => step.run === `node ${notesScript} "$${versionEnv}" "$${changelogEnv}" > notes.md`), `the ${ReleaseJobId.Publish} job must extract the notes with node ${notesScript} from the release config's changelog`)
-  for (const kind of ALL_RELEASE_KINDS) assert(text.includes(`"$${kindEnv}" = "${kind.wire}"`), `the ${ReleaseJobId.Publish} job must handle the ${kind.label} kind (${kind.wire})`)
+  // The notes job reads the parsed version and the changelog path from the
+  // guard, never a restated value, and extracts the section into a file.
+  const versionEnv = envBoundTo(notes.env, needsOutput(ReleaseJobId.Guard, TagOutput.Version.wire))
+  const changelogEnv = envBoundTo(notes.env, needsOutput(ReleaseJobId.Guard, ConfigKey.Changelog.wire))
+  assert(versionEnv && changelogEnv, `the ${ReleaseJobId.Notes} job must bind the guard's ${TagOutput.Version.wire} and ${ConfigKey.Changelog.wire} outputs`)
+  const extraction = `node ${notesScript} "$${versionEnv}" "$${changelogEnv}" > `
+  const extractions = notes.steps.flatMap((step) => typeof step.run === 'string' ? step.run.split('\n').map((line) => line.trim()).filter((line) => line.startsWith(extraction)) : [])
+  assert(extractions.length === 1, `the ${ReleaseJobId.Notes} job must extract the notes once with node ${notesScript} from the release config's changelog`)
+  const notesFile = extractions[0].slice(extraction.length)
   assert(text.includes(`Published as \\\`${packageName}@`), `the notes must name the published package ${packageName}`)
 
-  for (const row of contract.requiredText) assert(text.includes(row.text), `${RELEASE_WORKFLOW} is missing ${JSON.stringify(row.text)}: ${row.name}`)
+  // The notes travel as an artifact: the notes job uploads the file's
+  // directory under a name, and the publish job downloads that name into the
+  // same directory before any release command reads the file.
+  const notesDir = dirname(notesFile)
+  const upload = notes.steps.find((step) => step.with?.path === notesDir && typeof step.with?.name === 'string')
+  assert(upload, `the ${ReleaseJobId.Notes} job must upload ${notesDir}, the directory it writes ${notesFile} to, as a named artifact`)
+  const downloadIndex = release.steps.findIndex((step) => step.with?.name === upload.with.name && step.with?.path === notesDir)
+  assert(downloadIndex === 0, `the ${ReleaseJobId.Publish} job's first step must download the ${upload.with.name} artifact into ${notesDir}`)
+
+  // Each release command reads the extracted notes and marks the release by
+  // the parsed kind: one flag per kind, each bound to that kind's expression.
   for (const row of contract.commands) {
-    const commands = commandsStartingWith(text, row.head)
+    const commands = commandsStartingWith(workflow, row.head)
     assert(commands.length === row.count, `${RELEASE_WORKFLOW} must run ${row.head} exactly ${row.count} time(s), found ${commands.length}: ${row.name}`)
     for (const command of commands) for (const needed of row.includes) assert(command.includes(needed), `${row.head} must include ${needed}: ${row.name}`)
   }
+  const publishing = release.steps.filter((step) => typeof step.run === 'string' && contract.commands.some((row) => step.run.startsWith(row.head)))
+  assert(publishing.length === contract.commands.length, `the ${ReleaseJobId.Publish} job must run each of ${contract.commands.map((row) => row.head).join(', ')} in a step of its own`)
+  for (const step of publishing) {
+    assert(step.run.includes(`--notes-file ${notesFile}`), `${JSON.stringify(step.name)} must read the notes from ${notesFile}, the file the ${ReleaseJobId.Notes} job wrote`)
+    for (const { kind, flag } of contract.kindFlags) {
+      const flagEnv = envBoundTo(step.env, kindIs(kind))
+      assert(flagEnv && step.run.includes(`${flag}="$${flagEnv}"`), `${JSON.stringify(step.name)} must pass ${flag} from whether the guard parsed a ${kind.label} (${kindIs(kind)})`)
+    }
+  }
+
+  for (const row of contract.requiredText) assert(text.includes(row.text), `${RELEASE_WORKFLOW} is missing ${JSON.stringify(row.text)}: ${row.name}`)
   for (const row of contract.forbiddenText) assert(!text.includes(row.text), `${RELEASE_WORKFLOW} must not contain ${JSON.stringify(row.text)}: ${row.name}`)
 }
 
@@ -148,19 +190,21 @@ try {
   assertReleaseWorkflowContract(workflow, releaseText)
   totalChecks += 1
 
-  // Mutation-prove the assertion itself: dropping `needs: guard` from the
-  // release job must make assertReleaseWorkflowContract throw. If it doesn't,
-  // this checker would silently accept a release job detached from the tag
-  // guard.
-  const detached = structuredClone(workflow)
-  delete detached.jobs[ReleaseJobId.Publish].needs
-  let caughtDetach = false
-  try {
-    assertReleaseWorkflowContract(detached, releaseText)
-  } catch {
-    caughtDetach = true
+  // Mutation-prove the job graph: dropping any one job the publish job needs
+  // must make assertReleaseWorkflowContract throw. If it doesn't, this
+  // checker would silently accept a publish job detached from the tag guard,
+  // the tag check, or the notes.
+  for (const id of PUBLISH_NEEDS) {
+    const detached = structuredClone(workflow)
+    detached.jobs[ReleaseJobId.Publish].needs = needsOf(detached.jobs[ReleaseJobId.Publish]).filter((need) => need !== id)
+    let caughtDetach = false
+    try {
+      assertReleaseWorkflowContract(detached, releaseText)
+    } catch {
+      caughtDetach = true
+    }
+    check(caughtDetach, `mutation-proof: dropping needs: ${id} from the ${ReleaseJobId.Publish} job must be caught by assertReleaseWorkflowContract, but it was not`)
   }
-  check(caughtDetach, 'mutation-proof: dropping needs: guard from the release job must be caught by assertReleaseWorkflowContract, but it was not')
 
   // Each text mutation breaks one row of the contract; it must be caught.
   for (const mutation of fixture.releaseWorkflow.mutations) {
@@ -185,7 +229,7 @@ if (failures.length > 0) {
   console.error([
     'release notes / release workflow verification failed.',
     'What went wrong: release-notes.mjs diverged from a fixtured extraction case, or release.yml diverged from its required job graph / trigger / permissions / release-config reads.',
-    'Why it happened: the changelog section extraction logic changed, or the release workflow lost a required step, its guard dependency, or a release-config read.',
+    'Why it happened: the changelog section extraction logic changed, or the release workflow lost a required step, a job its publish job needs, the notes handoff, or a release-config read.',
     'Where: scripts/release-notes.mjs, .github/workflows/release.yml, and scripts/testdata/release-notes*.yaml.',
     `When: focused release-notes verification (${failures.join('; ')}).`,
     'What it means: a real release tag could produce a GitHub Release with the wrong or missing notes, or the publish job could run without the tag guard.',
@@ -237,9 +281,21 @@ function validateFixture(value, manifestValue) {
   }
   const contract = value.releaseWorkflow
   if (!contract || typeof contract !== 'object') throw new Error('release-notes fixture releaseWorkflow must be a mapping')
-  const expectedKeys = ['permissions', 'triggeringTag', 'requiredText', 'commands', 'forbiddenText', 'mutations']
+  const expectedKeys = ['permissions', 'jobPermissions', 'publishPermissions', 'triggeringTag', 'kindFlags', 'requiredText', 'commands', 'forbiddenText', 'mutations']
   if (JSON.stringify(Object.keys(contract).sort()) !== JSON.stringify([...expectedKeys].sort())) throw new Error(`release-notes fixture releaseWorkflow keys must be exactly ${expectedKeys.join(', ')}`)
-  if (!contract.permissions || typeof contract.permissions !== 'object') throw new Error('releaseWorkflow.permissions must be a mapping')
+  for (const key of ['permissions', 'jobPermissions', 'publishPermissions']) {
+    if (!contract[key] || typeof contract[key] !== 'object' || Array.isArray(contract[key])) throw new Error(`releaseWorkflow.${key} must be a mapping`)
+  }
+  // One GitHub CLI flag per release kind, parsed at this boundary; every kind
+  // must have exactly one.
+  if (!Array.isArray(contract.kindFlags)) throw new Error('releaseWorkflow.kindFlags must be a list')
+  contract.kindFlags = contract.kindFlags.map((row) => {
+    if (JSON.stringify(Object.keys(row ?? {}).sort()) !== JSON.stringify(['flag', 'kind'])) throw new Error('releaseWorkflow.kindFlags rows must carry exactly kind and flag')
+    if (typeof row.flag !== 'string' || !row.flag.startsWith('--')) throw new Error(`releaseWorkflow.kindFlags.${row.kind}.flag must be a long flag`)
+    return Object.freeze({ kind: parseReleaseKind(row.kind), flag: row.flag })
+  })
+  const flagged = contract.kindFlags.map((row) => row.kind)
+  if (flagged.length !== new Set(flagged).size || ALL_RELEASE_KINDS.some((kind) => !flagged.includes(kind))) throw new Error(`releaseWorkflow.kindFlags must name each of ${ALL_RELEASE_KINDS.map((kind) => kind.wire).join(', ')} exactly once`)
   if (typeof contract.triggeringTag !== 'string' || contract.triggeringTag.length === 0) throw new Error('releaseWorkflow.triggeringTag must be a non-empty string')
   for (const [list, required, fields] of [
     ['requiredText', manifestValue.requiredWorkflowTextNames, ['name', 'text']],

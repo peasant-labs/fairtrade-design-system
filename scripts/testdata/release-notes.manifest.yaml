@@ -35,12 +35,9 @@ mutations:
 
 requiredWorkflowTextNames:
   - the job looks the release up first
-  - a re-run updates the existing release
-  - the notes come from the extracted section
-  - a candidate is published as a prerelease
-  - a final release is published as the latest
 
 requiredWorkflowCommandNames:
+  - a re-run updates the existing release for the triggering tag
   - the release is created once, for the triggering tag, and never makes a tag
 
 requiredForbiddenWorkflowTextNames:
@@ -55,3 +52,7 @@ requiredWorkflowMutationNames:
   - a trigger off the configured tag prefix is rejected
   - a release created without --verify-tag is rejected
   - a guard that cannot load the parser's imports is rejected
+  - a candidate published as the latest release is rejected
+  - release notes read from another file are rejected
+  - a notes job holding a write token is rejected
+  - a publish job that runs before the notes arrive is rejected

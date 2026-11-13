@@ -92,72 +92,134 @@ workflow:
       replace: "cache-dependency-path: go.sum"
   # Each row breaks one rule the release-intent tool owns. The test runs the
   # policy check title-guard runs over a copy of the workflows with the row
-  # applied and proves the tool refuses it, naming the mutated file.
+  # applied and proves the tool refuses it under that rule, naming the
+  # mutated file. A row may mutate any workflow the policy check reads.
   policy_mutations:
     - name: cancelling ci on every event is rejected
       file: ci.yml
       find: "cancel-in-progress: ${{ github.event_name == 'pull_request' }}"
       replace: "cancel-in-progress: true"
+      rule: required-workflows-concurrency-per-ref
     - name: dropping merge_group from ci is rejected
       file: ci.yml
       find: "  merge_group:\n  workflow_dispatch:"
       replace: "  workflow_dispatch:"
+      rule: merge-group-on-required-workflows
     - name: comparing a bot branch literally is rejected
       file: ci.yml
       find: "if: steps.kind.outputs.kind == 'release'"
       replace: "if: github.head_ref == 'automation/release'"
+      rule: bot-branch-via-classify
     - name: dropping edited from title-guard is rejected
       file: title-guard.yml
       find: "types: [opened, edited, synchronize, reopened]"
       replace: "types: [opened, synchronize, reopened]"
+      rule: title-guard-no-early-success
     - name: a job-level if on the guard job is rejected
       file: title-guard.yml
       find: "  title-guard:\n    runs-on: ubuntu-latest"
       replace: "  title-guard:\n    if: github.event_name == 'pull_request'\n    runs-on: ubuntu-latest"
+      rule: title-guard-no-early-success
     - name: interpolating a title is rejected
       file: title-guard.yml
       find: "PR_TITLE: ${{ steps.pr.outputs.title }}"
       replace: "PR_TITLE: ${{ github.event.pull_request.title }}"
+      rule: titles-never-interpolated
     - name: a range reader without the floor is rejected
       file: title-guard.yml
       find: " --floor \"${{ vars.RELEASE_BATCH_FLOOR }}\""
       replace: ""
+      rule: range-readers-take-the-floor
     - name: a weakened release-batch verdict is rejected
       file: release-batch.yml
       find: "--verdict taggable"
       replace: "--verdict rejected"
+      rule: release-actions-gated
     - name: arming without the gate is rejected
       file: release-batch.yml
-      find: "steps.gate.outputs.gate == 'arm'"
-      replace: "steps.replan.outputs.action == 'open-pr'"
+      find: "needs.plan.outputs.gate == 'arm'"
+      replace: "needs.plan.outputs.action == 'open-pr'"
+      rule: release-actions-gated
     - name: an ungated tag is rejected
       file: release-batch.yml
-      find: "if: steps.precheck.outputs.proceed == 'true' && steps.plan.outputs.action == 'tag'"
-      replace: "if: steps.precheck.outputs.proceed == 'true'"
+      find: "        id: tag\n        if: needs.plan.outputs.tag-action == 'tag'\n"
+      replace: "        id: tag\n"
+      rule: release-actions-gated
     - name: a major cut-release level is rejected
       file: cut-release.yml
       find: "options: [patch, minor]"
       replace: "options: [patch, minor, major]"
+      rule: cut-release-is-dispatch-only
     - name: a cut-release on any branch is rejected
       file: cut-release.yml
-      find: "if: github.ref == 'refs/heads/main' && vars.RELEASE_BATCH_MODE == 'tag'"
-      replace: "if: vars.RELEASE_BATCH_MODE == 'tag'"
+      find: "    needs: [prepare]\n    if: github.ref == 'refs/heads/main' && vars.RELEASE_BATCH_MODE == 'tag'\n"
+      replace: "    needs: [prepare]\n    if: vars.RELEASE_BATCH_MODE == 'tag'\n"
+      rule: token-mint-ref-check
     - name: a cut-release write without tag mode is rejected
       file: cut-release.yml
-      find: "        if: vars.RELEASE_BATCH_MODE == 'tag'"
-      replace: "        if: github.ref == 'refs/heads/main'"
-    - name: editing the cut-release PR is rejected
+      find: "      - name: Push the bot branch\n        if: vars.RELEASE_BATCH_MODE == 'tag'\n"
+      replace: "      - name: Push the bot branch\n        if: github.ref == 'refs/heads/main'\n"
+      rule: cut-release-is-dispatch-only
+    - name: editing another bot PR is rejected
       file: cut-release.yml
-      find: "gh pr close automation/cut-release;"
-      replace: "gh pr edit automation/cut-release --title \"x\";"
+      find: "run: gh pr close automation/cut-release"
+      replace: "run: gh pr edit automation/release --title \"x\""
+      rule: credential-steps-run-one-template
     - name: arming another branch is rejected
       file: cut-release.yml
-      find: "gh pr merge --auto --squash automation/cut-release;"
-      replace: "gh pr merge --auto --squash automation/release;"
+      find: "gh pr merge --auto --squash automation/cut-release"
+      replace: "gh pr merge --auto --squash automation/release"
+      rule: credential-steps-run-one-template
     - name: a cut-release tag push is rejected
       file: cut-release.yml
-      find: "push --force-with-lease origin HEAD:automation/cut-release"
-      replace: "push --force-with-lease origin HEAD:automation/cut-release\n          git push origin refs/tags/v0.0.0"
+      find: "push --force-with-lease origin automation/cut-release"
+      replace: "push --force-with-lease origin automation/cut-release\n          git push origin refs/tags/v0.0.0"
+      rule: credential-steps-run-one-template
+    - name: a self-hosted runner for the credential job is rejected
+      file: release-batch.yml
+      find: "    if: github.ref == 'refs/heads/main' && needs.plan.outputs.proceed == 'true'\n    runs-on: ubuntu-latest\n"
+      replace: "    if: github.ref == 'refs/heads/main' && needs.plan.outputs.proceed == 'true'\n    runs-on: [self-hosted, linux]\n"
+      rule: credential-jobs-run-no-general-steps
+    - name: a credential job on a runner an expression picks is rejected
+      file: release-batch.yml
+      find: "    if: github.ref == 'refs/heads/main' && needs.plan.outputs.proceed == 'true'\n    runs-on: ubuntu-latest\n"
+      replace: "    if: github.ref == 'refs/heads/main' && needs.plan.outputs.proceed == 'true'\n    runs-on: ${{ fromJson(needs.plan.outputs.runner) }}\n"
+      rule: credential-jobs-run-no-general-steps
+    - name: naming the release PR by a number from the plan job is rejected
+      file: release-batch.yml
+      find: "        run: gh pr merge --auto --squash -- automation/release"
+      replace: "          PR_NUMBER: ${{ needs.plan.outputs.pr }}\n        run: gh pr merge --auto --squash -- \"${PR_NUMBER}\""
+      rule: credential-steps-run-one-template
+    - name: a checkout that keeps its credentials is rejected
+      file: title-guard.yml
+      find: "persist-credentials: false"
+      replace: "persist-credentials: true"
+      rule: default-token-read-only
+    - name: a GitHub Release published without the tag check is rejected
+      file: release.yml
+      find: "    needs: [guard, verify, notes]\n"
+      replace: "    needs: [guard, notes]\n"
+      rule: tag-publish-verifies-the-tag
+    - name: an npm publish without the tag check is rejected
+      file: npm-publish.yml
+      find: "  npm-publish:\n    needs: verify\n"
+      replace: "  npm-publish:\n"
+      rule: tag-publish-verifies-the-tag
+    - name: checking the tag against another branch is rejected
+      file: npm-publish.yml
+      find: "--branch \"origin/${DEFAULT_BRANCH}\""
+      replace: "--branch origin/automation/release"
+      rule: tag-publish-verifies-the-tag
+    - name: a tag check that may fail is rejected
+      file: release.yml
+      find: "      - name: Verify the tag is a release tag on the default branch\n"
+      replace: "      - name: Verify the tag is a release tag on the default branch\n        continue-on-error: true\n"
+      rule: tag-publish-verifies-the-tag
+    - name: publishing after a failed tag check is rejected
+      file: release.yml
+      find: "    needs: [guard, verify, notes]\n"
+      replace: "    needs: [guard, verify, notes]\n    if: always()\n"
+      rule: tag-publish-verifies-the-tag
 
 git:
   # The release-tag invariant stated in AGENTS.md: never move or delete a
