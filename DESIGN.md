@@ -638,7 +638,8 @@ render the same system.
 - **Trails:** breadcrumb, step indicator, tabs and pagination; orientation lives here.
 - **Step rail:** a step's label never breaks inside a word. Each word is its own unbreakable run
   and the spaces between words are the only places a label wraps. The rail shows its labels only
-  while every word fits that label's share of the rail; when any word does not fit, or its first
+  while every word fits that label's share of the rail; a lone step's share is the whole rail, so
+  it hides only when its own word is wider than the rail. When any word does not fit, or the first
   and last labels cannot hold five characters, every label hides together and stays in the
   accessible name, and the numbers, the body heading and the foot's `step n / m` carry the rail. No
   label is ever cut with an ellipsis or allowed to leave the frame.

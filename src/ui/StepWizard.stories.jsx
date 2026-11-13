@@ -148,13 +148,16 @@ export const Controlled = {
    monospace the host has (this story loads no font), so how many steps keep their labels differs
    between machines: the play function reads the stylesheet's own floor at the label and works the rule
    out for each frame, checks that floor against the rule as stated (an edge label's room against five
-   characters), and two anchors hold in any face (up to three steps always show, ten steps on the narrow frame never do). narrow is a phone:
-   ten 28px markers need about 280px of rail, so a narrower frame cannot hold ten steps at all. */
+   characters), and two anchors hold in any face for the matrix's short labels (up to three steps always show, ten steps on the narrow frame never do). narrow is a phone:
+   ten 28px markers need about 280px of rail, so a narrower frame cannot hold ten steps at all.
+   the lone step has its own story below: its label takes the whole rail, so it hides only when its
+   one word is wider than the rail. */
 const MATRIX_LABELS = ['welcome', 'projects', 'sessions', 'redaction', 'review', 'license', 'collectives', 'share', 'confirm', 'done']
 const MATRIX_COUNTS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 const MATRIX_WIDTHS = { narrow: 360, wide: FRAME_W.wide }
-// true in every monospace face: three steps always have room, ten steps on the narrow frame never do
-// (a share of about 27px against a floor of at least 30px, whatever the face).
+// true in every monospace face for the matrix's short labels: three steps always have room, ten
+// steps on the narrow frame never do (a share of about 27px against a floor of at least 30px,
+// whatever the face). a lone step is not part of this anchor: its own frames pin the word-fit test.
 const ALWAYS_SHOWN_UP_TO = 3
 const NARROW_NEVER_SHOWN_AT = 10
 const TOLERANCE = 0.5
@@ -179,6 +182,25 @@ function MatrixFrame({ count, width }) {
         bodyProps={{ style: { minHeight: 0 } }}
       >
         <span className="swz-body-kicker">{count} {count === 1 ? 'step' : 'steps'}</span>
+      </StepWizardFrame>
+    </div>
+  )
+}
+
+// one word far wider than the narrow frame's rail, so a lone label must hide instead of showing a
+// clipped part of it. the LoneStep story mounts it.
+const LONE_LONG_WORD = 'supercalifragilisticexpialidocioussupercalifragilisticexpialidocious'
+
+function LoneFrame({ label, name }) {
+  return (
+    <div data-case-width="lone" style={{ width: MATRIX_WIDTHS.narrow, maxWidth: '100%', overflow: 'auto' }}>
+      <StepWizardFrame
+        steps={[{ id: 'only', label }]}
+        current="only"
+        aria-label={name}
+        bodyProps={{ style: { minHeight: 0 } }}
+      >
+        <span className="swz-body-kicker">one step</span>
       </StepWizardFrame>
     </div>
   )
@@ -241,19 +263,23 @@ function both(a, b) {
  * label's share against that floor. `documented` asks it as the rule is stated: an edge label's
  * room, half a marker plus half the share, against five characters (one `ch`, read the same way).
  * The two must agree, so a floor that drifts from the stated rule fails here. Each is true, false,
- * or null when it sits within half a pixel of its line and rounding decides. A lone step always
- * shows. A middle label's share is the distance between neighbouring marker centres, less the
- * gutter.
+ * or null when it sits within half a pixel of its line and rounding decides. A lone step may take
+ * the whole rail and shows while its longest word fits that rail. A middle label's share is the
+ * distance between neighbouring marker centres, less the gutter.
  */
 function labelsShown(rail, count, gutter) {
-  if (count === 1) return { shown: true, documented: true, edgeRoom: null }
   const labels = [...rail.querySelectorAll('.swz-label')]
   const label = labels[0]
+  const ch = measure(label, '1ch')
+  const decide = (room) => (Math.abs(room) <= TOLERANCE ? null : room > 0)
+  if (count === 1) {
+    // a lone step has no neighbour to share with: its share is the whole rail.
+    const fit = decide(rail.getBoundingClientRect().width - longestWordAt(labels, ['only']) * ch - 1)
+    return { shown: fit, documented: fit, edgeRoom: null }
+  }
   const marker = rail.querySelector('.swz-mark').getBoundingClientRect().width
   const share = (rail.getBoundingClientRect().width - marker) / (count - 1) - gutter
   const edgeRoom = (marker + share) / 2
-  const ch = measure(label, '1ch')
-  const decide = (room) => (Math.abs(room) <= TOLERANCE ? null : room > 0)
   const wordsFit = decide(Math.min(
     share - longestWordAt(labels, ['middle']) * ch,
     edgeRoom - longestWordAt(labels, ['start', 'end']) * ch,
@@ -273,7 +299,8 @@ function labelProblems(section, width, gutter) {
   const rail = railElement.getBoundingClientRect()
   const cells = [...section.querySelectorAll('.swz-step')]
   const { shown, documented, edgeRoom } = labelsShown(railElement, cells.length, gutter)
-  const anchored = cells.length <= ALWAYS_SHOWN_UP_TO ? true : width === 'narrow' && cells.length === NARROW_NEVER_SHOWN_AT ? false : null
+  // the matrix's anchors are about its short labels; the lone frames pin the word-fit rule instead.
+  const anchored = width === 'lone' ? null : cells.length <= ALWAYS_SHOWN_UP_TO ? true : width === 'narrow' && cells.length === NARROW_NEVER_SHOWN_AT ? false : null
   const canvas = within(section)
   if (shown !== null && documented !== null && shown !== documented) {
     problems.push(`${name}: the stylesheet's floor ${shown ? 'shows' : 'hides'} the labels, but the stated rule ${documented ? 'shows' : 'hides'} them (edge labels have ${edgeRoom.toFixed(1)}px against ${EDGE_CHARACTERS} characters)`)
@@ -341,6 +368,39 @@ export const LabelsInsideFrame = {
     const problems = frames.flatMap((holder) => labelProblems(holder.querySelector('.swz'), holder.getAttribute('data-case-width'), gutter))
     // one readable line per broken rule, so a failure names the frame, the label and the distance.
     if (problems.length > 0) throw new Error(`${problems.length} label problem(s):\n${problems.join('\n')}`)
+  },
+}
+
+/* ── one step, and one word that does not fit ───────────────────────────────────────────────────
+   a lone step has no neighbour to share the rail with, so its label may take the whole rail: it
+   shows while its one word fits the rail, and hides, keeping its name, when the word is wider than
+   the rail. without that rule the label stayed visible and the rail clipped a part of the word.
+   the third frame passes the same word as a React element: a node label is measured from its text
+   and set as given, so it follows the same rule. the play runs the same checks as LabelsInsideFrame
+   on each frame. */
+export const LoneStep = {
+  parameters: { layout: 'fullscreen' },
+  render: () => (
+    <div style={{ display: 'grid', gridTemplateColumns: 'auto auto', gap: 'var(--sp-5)', padding: 'var(--sp-5)', justifyContent: 'start' }}>
+      <LoneFrame label="welcome" name="1 step, a word that fits the rail" />
+      <LoneFrame label={LONE_LONG_WORD} name="1 step, one word wider than the rail" />
+      <LoneFrame label={<span>{LONE_LONG_WORD}</span>} name="1 step, a node label wider than the rail" />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await document.fonts.ready
+    const gutter = parseFloat(getComputedStyle(canvasElement.querySelector('.swz-rail')).getPropertyValue('--swz-label-gutter'))
+    await expect(gutter).toBeGreaterThan(0)
+    const frames = [...canvasElement.querySelectorAll('[data-case-width]')]
+    await expect(frames).toHaveLength(3)
+    const problems = frames.flatMap((holder) => labelProblems(holder.querySelector('.swz'), holder.getAttribute('data-case-width'), gutter))
+    if (problems.length > 0) throw new Error(`${problems.length} label problem(s):\n${problems.join('\n')}`)
+    // the line the story pins: the short word shows, both long words hide with their names kept.
+    const visible = frames.map((holder) => {
+      const box = holder.querySelector('.swz-label').getBoundingClientRect()
+      return box.width > 0 && box.height > 0
+    })
+    await expect(visible).toEqual([true, false, false])
   },
 }
 

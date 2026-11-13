@@ -128,14 +128,16 @@
    each label wraps between its words inside that share. a word never breaks: each word is its own
    unbreakable run (.swz-word), and a label is never cut with an ellipsis. so a label can never
    cross into a neighbour or past the rail, the rail shows its labels only while every word fits:
-   the rail hands the stylesheet the longest word of its middle labels (--swz-word-middle) and of
-   its first and last labels (--swz-word-edge), in characters, and the labels are in the mono face,
-   so a word's width is its count in `ch` with no measuring. when a word does not fit its share,
-   or the edge labels cannot hold five characters (--swz-label-floor), every label is hidden
-   together and stays in the accessible name; the numbers, the body heading and the foot's
-   "step n / m" carry the rail. the shift that anchors the first and last label uses `translate`,
-   whose percentages are the label's own width: half its width, less half a marker, puts its edge
-   on the marker's edge at any text length. */
+   the rail hands the stylesheet the longest word of its middle labels (--swz-word-middle), of its
+   first and last labels (--swz-word-edge), and of a lone label (--swz-word-only), in characters,
+   and the labels are in the mono face, so a word's width is its count in `ch` with no measuring.
+   when a word does not fit its share, or the edge labels cannot hold five characters
+   (--swz-label-floor), every label is hidden together and stays in the accessible name; the
+   numbers, the body heading and the foot's "step n / m" carry the rail. a lone step has the whole
+   rail as its share and follows the same rule against it, so a word wider than the rail hides the
+   label instead of leaving a clipped part of it on screen. the shift that anchors the first and
+   last label uses `translate`, whose percentages are the label's own width: half its width, less
+   half a marker, puts its edge on the marker's edge at any text length. */
 .swz-label {
   /* centre-to-centre distance between neighbouring markers. */
   --swz-pitch: calc((100cqi - var(--swz-mark-size)) / var(--swz-gaps, 1));
@@ -186,9 +188,13 @@
   translate: calc(var(--swz-mark-size) / 2 - 50%) 0;
   text-align: right;
 }
+/* a lone step has no neighbour to share with, so its label may take the whole rail. it still shows
+   only while its own longest word fits that rail: the same room term, measured against 100cqi
+   instead of a share, so a word wider than the rail hides the label with the rest rather than
+   letting the rail clip a part of it. */
 .swz-label--only {
   --swz-cap: 100cqi;
-  --swz-room: 100cqi;
+  --swz-room: calc((100cqi - var(--swz-word-only, 0) * 1ch - 1px) * 1000);
   translate: calc(50% - var(--swz-mark-size) / 2) 0;
   text-align: left;
 }

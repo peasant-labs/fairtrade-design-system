@@ -72,11 +72,13 @@ cases:
   - {name: an empty head draws no head slot, kind: head, count: 2, current: welcome, heads: [null, false, true], expected: {slots: 0}}
 
   # kind words: StepIndicator over `labels` (or the first `count` pool steps). `expected.words` is
-  # each label as the runs it is set in, `expected.middle` and `expected.edge` the longest word the
-  # rail hands the stylesheet for its middle labels and for its first and last labels, in
-  # characters. A word never breaks, and a rail that cannot fit every word hides all its labels
-  # together in the stylesheet while they stay in the accessible name; the geometry of that hide is
-  # measured in a browser, in the LabelsInsideFrame and TenStops stories.
+  # each label as the runs it is set in, and `expected.middle`, `expected.edge` and `expected.only`
+  # are the longest words the rail hands the stylesheet, in characters, for its middle labels, its
+  # first and last labels, and a lone label. `nodeLabels` passes each label as a React element: it
+  # is measured from its text and set as given. A word never breaks, and a rail that cannot fit
+  # every word hides all its labels together in the stylesheet while they stay in the accessible
+  # name; the geometry of that hide is measured in a browser, in the LabelsInsideFrame and TenStops
+  # stories.
   - name: no-label-breaks-inside-a-word
     kind: words
     labels: [welcome, auto-ingest new branches, share]
@@ -84,6 +86,7 @@ cases:
       words: [[welcome], [auto-ingest, new, branches], [share]]
       middle: 11
       edge: 7
+      only: 0
 
   - name: labels-hide-together-when-a-word-does-not-fit
     kind: words
@@ -92,6 +95,7 @@ cases:
       words: [[welcome], [review, the, scan], [done]]
       middle: 6
       edge: 7
+      only: 0
 
   - name: hidden-labels-stay-in-the-accessible-name
     kind: words
@@ -100,6 +104,25 @@ cases:
       words: [[welcome], [projects], [sessions], [redaction], [review], [license], [collectives], [share], [confirm], [done]]
       middle: 11
       edge: 7
+      only: 0
+
+  - name: a-lone-word-wider-than-the-rail-hides-the-label
+    kind: words
+    labels: [supercalifragilisticexpialidocioussupercalifragilisticexpialidocious]
+    expected:
+      words: [[supercalifragilisticexpialidocioussupercalifragilisticexpialidocious]]
+      middle: 0
+      edge: 0
+      only: 68
+
+  - name: a-node-label-is-measured-by-its-text
+    kind: words
+    nodeLabels: true
+    labels: [supercalifragilisticexpialidocious]
+    expected:
+      middle: 0
+      edge: 0
+      only: 34
 
   # kind jump: a completed or reachable marker reports its id, a locked one does not.
   - name: a reachable marker jumps and a locked one does not
