@@ -43,6 +43,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     }
 
     const emitted = []
+    const previews = []
     const props = {
       nodes: row.nodes,
       value: row.value ?? [],
@@ -51,6 +52,10 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       ...(row.paging ?? {}),
     }
     if (row.value) props.value = row.value
+    if (row.preview) {
+      props.onPreview = (id) => { previews.push(id) }
+      if (row.preview.previewId) props.previewId = row.preview.previewId
+    }
     const mounted = await mount(React.createElement(SelectionTree, props))
     const root = mounted.container
     const expected = row.expect
@@ -121,6 +126,83 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     }
     if (expected.noStorage) {
       report.check(!source.includes('localStorage') && !source.includes('sessionStorage'), `${row.name}: the tree must not store a second copy`)
+    }
+    if (expected.facts) {
+      for (const [id, facts] of Object.entries(expected.facts)) {
+        const rowEl = root.querySelector(`[data-node-id="${id}"] > .st-row`)
+        // The tally is the phrase as drawn: the kind, the colon, the number, the noun.
+        const text = (rowEl?.querySelector(':scope > .st-facts > .st-tally')?.textContent ?? '')
+          .replace(/\s+/g, ' ').trim()
+        report.check(text === facts, `${row.name}: ${id} facts expected ${JSON.stringify(facts)}, received ${JSON.stringify(text)}`)
+      }
+    }
+    if (expected.pressed) {
+      for (const [id, pressed] of Object.entries(expected.pressed)) {
+        const rowEl = root.querySelector(`[data-node-id="${id}"] > .st-row`)
+        const title = rowEl?.querySelector(':scope > button.st-title')
+        report.check(title?.getAttribute('aria-pressed') === String(pressed), `${row.name}: ${id} title aria-pressed expected ${pressed}, received ${title?.getAttribute('aria-pressed')}`)
+        report.check((rowEl?.getAttribute('data-previewed') === 'true') === pressed, `${row.name}: ${id} row mark expected ${pressed ? 'present' : 'absent'}`)
+      }
+      // The mark is the selection inset (a shape at the row's start), not a fill alone.
+      const css = readFileSync(resolve('src/ui/SelectionTree.css'), 'utf8')
+      const rule = css.match(/\.st-row\[data-previewed\]::before\s*\{([^}]*)\}/)?.[1] ?? ''
+      report.check(/box-shadow:\s*inset var\(--stroke-emphasis\)/.test(rule), `${row.name}: the previewed row must carry the selection inset, not colour alone`)
+    }
+    if (expected.titleNames) {
+      for (const [id, name] of Object.entries(expected.titleNames)) {
+        const title = root.querySelector(`[data-node-id="${id}"] > .st-row > button.st-title`)
+        report.check(title?.getAttribute('aria-label') === name, `${row.name}: ${id} title name expected ${JSON.stringify(name)}, received ${JSON.stringify(title?.getAttribute('aria-label'))}`)
+        report.check(title?.closest('label') === null, `${row.name}: ${id} title must sit outside the checkbox label`)
+      }
+    }
+    if (expected.checkboxNames) {
+      for (const [id, name] of Object.entries(expected.checkboxNames)) {
+        const input = root.querySelector(`[data-node-id="${id}"] > .st-row input[type="checkbox"]`)
+        report.check(input?.getAttribute('aria-label') === name, `${row.name}: ${id} checkbox name expected ${JSON.stringify(name)}, received ${JSON.stringify(input?.getAttribute('aria-label'))}`)
+      }
+    }
+    if (expected.titleButtons !== undefined) {
+      const count = root.querySelectorAll('button.st-title').length
+      report.check(count === expected.titleButtons, `${row.name}: title buttons expected ${expected.titleButtons}, received ${count}`)
+    }
+    if (row.rail) {
+      // The connector is measured after a frame; jsdom has no layout, so it counts anchors.
+      await mounted.settle(20)
+      const rail = root.querySelector('svg.st-rail')
+      const anchors = Number(rail?.getAttribute('data-anchor-count'))
+      report.check(anchors === expected.anchors, `${row.name}: rail anchors expected ${expected.anchors}, received ${anchors}`)
+      report.check(root.querySelectorAll('svg.st-rail .st-rail__path').length === 1, `${row.name}: one connector path is drawn`)
+      report.check(rail?.getAttribute('aria-hidden') === 'true', `${row.name}: the rail must be hidden from assistive technology`)
+      if (expected.railHidden) {
+        report.check(rail?.querySelector('[role], [aria-label], title, text') === null, `${row.name}: the rail must carry no name or text`)
+        const css = readFileSync(resolve('src/ui/SelectionTree.css'), 'utf8')
+        report.check(/\.st-rail\s*\{[^}]*pointer-events:\s*none/.test(css), `${row.name}: the rail must take no pointer events`)
+      }
+      if (row.rail.fold) {
+        const caret = root.querySelector(`[data-node-id="${row.rail.fold}"] > .st-row > .st-disclosure`)
+        await mounted.act(() => caret.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true })))
+        await mounted.settle(20)
+        const folded = Number(root.querySelector('svg.st-rail')?.getAttribute('data-anchor-count'))
+        report.check(folded === expected.foldedAnchors, `${row.name}: rail anchors after folding ${row.rail.fold} expected ${expected.foldedAnchors}, received ${folded}`)
+        report.check(root.querySelectorAll(`[data-node-id="${row.rail.fold}"] .st-children`).length === 0, `${row.name}: a folded row mounts no children`)
+      }
+    }
+    if (row.preview?.click) {
+      const target = root.querySelector(`[data-node-id="${row.preview.target}"] > .st-row`)
+      const control = row.preview.click === 'title'
+        ? target?.querySelector(':scope > button.st-title')
+        : target?.querySelector('input[type="checkbox"]')
+      if (!control) throw new Error(`selection tree: no ${row.preview.click} for ${row.preview.target}`)
+      control.focus()
+      await mounted.act(() => control.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true })))
+    }
+    if (row.labelClick) {
+      const label = root.querySelector(`[data-node-id="${row.labelClick}"] > .st-row .st-label`)
+      if (!label) throw new Error(`selection tree: no label for ${row.labelClick}`)
+      await mounted.act(() => label.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true })))
+    }
+    if (expected.previews) {
+      report.check(JSON.stringify(previews) === JSON.stringify(expected.previews), `${row.name}: previews expected ${JSON.stringify(expected.previews)}, received ${JSON.stringify(previews)}`)
     }
     if (row.toggle) {
       await fireChange(mounted, window, row.toggle)
