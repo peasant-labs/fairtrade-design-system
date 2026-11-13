@@ -2,15 +2,19 @@
 /* Mounted-source gate for the step wizard (StepIndicator, StepWizardFrame, StepWizard): the place
    each step's label is given under its marker for 1 to 10 steps (the first starts at the first
    marker, the last ends at the last marker, the rest are centred, a lone step starts), the gap
-   count the rail hands the stylesheet for the label shares, the controlled frame's head, body and
-   foot regions with the host's slots, the "step n / m" count in words and as drawn (0 when the
-   current id names no step), the names the frame hands its regions, a marker that jumps or stays
-   locked, and the uncontrolled wizard that is built on the frame. jsdom has no layout, so where a
-   place puts the label (inside the rail, flush with its marker, clear of its neighbours) is
-   measured in a browser, in the LabelsInsideFrame story and its Fairtest mounted row.
+   count the rail hands the stylesheet for the label shares, the words a label is set in and the
+   longest word the rail hands the stylesheet for its middle and edge labels, the controlled frame's
+   head, body and foot regions with the host's slots, the "step n / m" count in words and as drawn
+   (0 when the current id names no step), the names the frame hands its regions, a marker that jumps
+   or stays locked, and the uncontrolled wizard that is built on the frame. jsdom has no layout, so
+   where a place puts the label (inside the rail, flush with its marker, clear of its neighbours)
+   and how a label hides when a word does not fit are measured in a browser, in the
+   LabelsInsideFrame and TenStops stories.
    Cases: scripts/testdata/step-wizard.yaml (+ .manifest.yaml).
    Run: node scripts/step-wizard.test.mjs; mutations: node scripts/parts-mutations.mjs
    scripts/step-wizard.test.mjs scripts/testdata/step-wizard.manifest.yaml. */
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { loadFixturePair, withMountedSource, click, createReport } from './mounted-parts.mjs'
 
 const FIXTURE = 'scripts/testdata/step-wizard.yaml'
@@ -102,6 +106,43 @@ await withMountedSource(async ({ load, mount, window, React }) => {
         report.check(slots === row.expected.slots, `${name}: head=${JSON.stringify(head)} must draw ${row.expected.slots} head slots, received ${slots}`)
         await mounted.unmount()
       }
+    } else if (row.kind === 'words') {
+      // The label is set word by word; the stylesheet decides from the longest word per place group
+      // whether every label is shown or every label is hidden, and a hidden label stays in the
+      // marker's accessible name. jsdom paints nothing, so the hide itself is read from the rule.
+      const steps = row.labels
+        ? row.labels.map((label, index) => ({ id: `word-${index + 1}`, label }))
+        : stepsOf(row.count)
+      const mounted = await mount(React.createElement(StepIndicator, { steps, current: steps[0].id }))
+      const rail = mounted.container.querySelector('nav.swz-rail')
+      const labels = [...(rail?.querySelectorAll('.swz-label') ?? [])]
+      const words = labels.map((label) => [...label.querySelectorAll('.swz-word')].map((word) => word.textContent))
+      report.check(same(words, row.expected.words), `${name}: words expected ${JSON.stringify(row.expected.words)}, received ${JSON.stringify(words)}`)
+      report.check(same(labels.map(spoken), steps.map((step) => step.label)), `${name}: the words and their spaces must round-trip to the label text`)
+      const middle = rail?.style.getPropertyValue('--swz-word-middle')
+      const edge = rail?.style.getPropertyValue('--swz-word-edge')
+      report.check(middle === String(row.expected.middle), `${name}: --swz-word-middle must hand the stylesheet a ${row.expected.middle}-character middle word, received ${JSON.stringify(middle)}`)
+      report.check(edge === String(row.expected.edge), `${name}: --swz-word-edge must hand the stylesheet a ${row.expected.edge}-character edge word, received ${JSON.stringify(edge)}`)
+      const css = readFileSync(resolve('src/ui/StepWizard.css'), 'utf8')
+      const labelRule = css.match(/\.swz-label\s*\{([^}]*)\}/)?.[1] ?? ''
+      const wordRule = css.match(/\.swz-word\s*\{([^}]*)\}/)?.[1] ?? ''
+      report.check(/white-space:\s*nowrap/.test(wordRule), `${name}: a word must be set as one unbreakable run`)
+      report.check(/overflow-wrap:\s*normal/.test(labelRule) && !/overflow-wrap:\s*anywhere/.test(labelRule), `${name}: a label may not break inside a word`)
+      report.check(/word-break:\s*normal/.test(labelRule) && /hyphens:\s*manual/.test(labelRule), `${name}: a label must not hyphenate or split a word`)
+      report.check(/--swz-room:\s*calc\(min\(/.test(labelRule), `${name}: the show-or-hide decision must be one rail-wide room, not a per-label one`)
+      for (const term of ['--swz-label-floor', '--swz-word-middle', '--swz-word-edge']) {
+        report.check(labelRule.includes(term), `${name}: the room must account for ${term}`)
+      }
+      report.check(!/display:\s*none|visibility:\s*hidden|content-visibility/.test(labelRule), `${name}: a hidden label must stay in the accessibility tree`)
+      for (const label of labels) {
+        report.check(!label.hasAttribute('aria-hidden') && !label.hasAttribute('hidden'), `${name}: a label must not be removed from the accessibility tree by markup`)
+      }
+      for (const [index, step] of steps.entries()) {
+        const button = rail?.querySelectorAll('.swz-step')[index]
+        report.check(spoken(button)?.includes(step.label), `${name}: marker ${index + 1} must keep ${JSON.stringify(step.label)} in its accessible name`)
+      }
+      report.check(/\.swz-label--only\s*\{[^}]*--swz-room:\s*100cqi/.test(css), `${name}: a lone step may take the whole rail and is never hidden`)
+      await mounted.unmount()
     } else if (row.kind === 'jump') {
       const jumps = []
       const mounted = await mount(React.createElement(

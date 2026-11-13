@@ -12,6 +12,9 @@ requiredCaseNames:
   - label places for 8 steps
   - label places for 9 steps
   - label places for 10 steps
+  - no-label-breaks-inside-a-word
+  - labels-hide-together-when-a-word-does-not-fit
+  - hidden-labels-stay-in-the-accessible-name
   - the frame lays out head, body and foot
   - the count reads the current step
   - the count follows the current step
@@ -40,6 +43,8 @@ requiredMutationNames:
   - the wizard drops the name the host gives it
   - the standalone rail changes its default name
   - the wizard stops reporting completion
+  - a-label-breaks-inside-a-word
+  - the-rail-forgets-its-longest-word
 mutations:
   - name: the first label is centred
     file: src/ui/StepWizard.jsx
@@ -58,8 +63,8 @@ mutations:
     expectedDiagnostic: "label places for 1 step: places must be"
   - name: the rail drops its gap count
     file: src/ui/StepWizard.jsx
-    find: "{ '--swz-gaps': Math.max(steps.length - 1, 1) }"
-    replace: "{}"
+    find: "'--swz-gaps': Math.max(steps.length - 1, 1),"
+    replace: "'--swz-gaps': 1,"
     expectedDiagnostic: "label places for 4 steps: the rail must hand the stylesheet 3 gaps"
   - name: the count starts from zero
     file: src/ui/StepWizard.jsx
@@ -106,3 +111,13 @@ mutations:
     find: "onComplete?.({ completed: done })"
     replace: "void done"
     expectedDiagnostic: "the wizard walks continue and back through the frame: the last step must report"
+  - name: a-label-breaks-inside-a-word
+    file: src/ui/StepWizard.jsx
+    find: '<span className="swz-word">{word}</span>'
+    replace: '<span>{word}</span>'
+    expectedDiagnostic: "no-label-breaks-inside-a-word: words expected"
+  - name: the-rail-forgets-its-longest-word
+    file: src/ui/StepWizard.jsx
+    find: "'--swz-word-middle': longestWord(steps, [LABEL_PLACE.middle]),"
+    replace: "'--swz-word-middle': 0,"
+    expectedDiagnostic: "--swz-word-middle must hand the stylesheet"
