@@ -140,8 +140,9 @@ export const Controlled = {
    one frame for every step count from 1 to 10, at a narrow and a wide width. the play function
    measures each label against its own rail: inside it, anchored to its marker (the first starts at
    the first marker's left edge, the last ends at the last marker's right edge, the rest are centred),
-   clear of its neighbours, and not clipped. a rail too narrow for its first and last labels to hold
-   five characters hides all its labels from sight, and they stay in the accessible name: the play
+   clear of its neighbours, and not clipped, with no word broken. a rail too narrow for any label's
+   longest word, or for its first and last labels to hold five characters, hides all its labels from
+   sight, and they stay in the accessible name: the play
    function asks for each marker by role and name, which leaves out anything hidden with `display` or
    `visibility`. the floor is written in characters of the label's own face, and the face is whatever
    monospace the host has (this story loads no font), so how many steps keep their labels differs
@@ -217,24 +218,49 @@ function measure(label, length) {
 // tightest, can hold this many characters of the label's own face.
 const EDGE_CHARACTERS = 5
 
+/** The longest word, in characters, among the labels at the given places of one rail. */
+function longestWordAt(labels, places) {
+  return labels
+    .filter((label) => places.includes(placeOf(label)))
+    .flatMap((label) => label.textContent.split(/\s+/).filter(Boolean))
+    .reduce((longest, word) => Math.max(longest, [...word].length), 0)
+}
+
+/** True when both hold, false when either fails, null when rounding decides one and the other holds. */
+function both(a, b) {
+  if (a === false || b === false) return false
+  if (a === null || b === null) return null
+  return true
+}
+
 /**
- * Whether a rail should show its labels, worked out two ways. `shown` follows the stylesheet's own
- * floor (`--swz-label-floor`, read at the label): the middle label's share against that floor.
- * `documented` follows the rule as stated: an edge label's room, half a marker plus half the share,
- * against five characters (one `ch`, read the same way). The two must agree, so a floor that drifts
- * from the stated rule fails here. Each is true, false, or null when it sits within half a pixel of
- * its line and rounding decides. A lone step always shows. A middle label's share is the distance
- * between neighbouring marker centres, less the gutter.
+ * Whether a rail should show its labels, worked out two ways. Both ask the same two questions:
+ * does every word fit its label's share (the longest middle word in a middle share, the longest
+ * first-or-last word in an edge share, one pixel of slack), and does the floor hold. `shown` asks
+ * the floor through the stylesheet's own value (`--swz-label-floor`, read at the label): the middle
+ * label's share against that floor. `documented` asks it as the rule is stated: an edge label's
+ * room, half a marker plus half the share, against five characters (one `ch`, read the same way).
+ * The two must agree, so a floor that drifts from the stated rule fails here. Each is true, false,
+ * or null when it sits within half a pixel of its line and rounding decides. A lone step always
+ * shows. A middle label's share is the distance between neighbouring marker centres, less the
+ * gutter.
  */
-function labelsShown(rail, label, count, gutter) {
+function labelsShown(rail, count, gutter) {
   if (count === 1) return { shown: true, documented: true, edgeRoom: null }
+  const labels = [...rail.querySelectorAll('.swz-label')]
+  const label = labels[0]
   const marker = rail.querySelector('.swz-mark').getBoundingClientRect().width
   const share = (rail.getBoundingClientRect().width - marker) / (count - 1) - gutter
   const edgeRoom = (marker + share) / 2
+  const ch = measure(label, '1ch')
   const decide = (room) => (Math.abs(room) <= TOLERANCE ? null : room > 0)
+  const wordsFit = decide(Math.min(
+    share - longestWordAt(labels, ['middle']) * ch,
+    edgeRoom - longestWordAt(labels, ['start', 'end']) * ch,
+  ) - 1)
   return {
-    shown: decide(share - measure(label, 'var(--swz-label-floor)')),
-    documented: decide(edgeRoom - EDGE_CHARACTERS * measure(label, '1ch')),
+    shown: both(wordsFit, decide(share - measure(label, 'var(--swz-label-floor)'))),
+    documented: both(wordsFit, decide(edgeRoom - EDGE_CHARACTERS * ch)),
     edgeRoom,
   }
 }
@@ -246,7 +272,7 @@ function labelProblems(section, width, gutter) {
   const railElement = section.querySelector('.swz-rail')
   const rail = railElement.getBoundingClientRect()
   const cells = [...section.querySelectorAll('.swz-step')]
-  const { shown, documented, edgeRoom } = labelsShown(railElement, cells[0].querySelector('.swz-label'), cells.length, gutter)
+  const { shown, documented, edgeRoom } = labelsShown(railElement, cells.length, gutter)
   const anchored = cells.length <= ALWAYS_SHOWN_UP_TO ? true : width === 'narrow' && cells.length === NARROW_NEVER_SHOWN_AT ? false : null
   const canvas = within(section)
   if (shown !== null && documented !== null && shown !== documented) {
@@ -274,12 +300,22 @@ function labelProblems(section, width, gutter) {
       problems.push(`${name}: label ${index + 1} (${JSON.stringify(text)}) is not in its marker's accessible name`)
     }
     if (shown !== null && visible !== shown) {
-      problems.push(`${name}: label ${index + 1} is ${visible ? 'shown' : 'hidden'} but the rail's share ${shown ? 'holds' : 'is under'} the floor at ${cells.length} steps`)
+      problems.push(`${name}: label ${index + 1} is ${visible ? 'shown' : 'hidden'} but the rail ${shown ? 'fits' : 'does not fit'} every word and the floor at ${cells.length} steps`)
     }
     if (anchored !== null && visible !== anchored) {
       problems.push(`${name}: label ${index + 1} is ${visible ? 'shown' : 'hidden'} but ${cells.length} steps on the ${width} frame ${anchored ? 'always show' : 'never show'} their labels, in any face`)
     }
     if (visible) {
+      // a word is never broken and never cut: each word of a shown label sits on one line, inside it.
+      for (const word of label.querySelectorAll('.swz-word')) {
+        const rect = word.getBoundingClientRect()
+        if (word.getClientRects().length !== 1 || rect.left < box.left - TOLERANCE || rect.right > box.right + TOLERANCE) {
+          problems.push(`${name}: label ${index + 1} breaks or cuts the word ${JSON.stringify(word.textContent)}`)
+        }
+      }
+      if (getComputedStyle(label).overflowWrap !== 'normal') {
+        problems.push(`${name}: label ${index + 1} may break inside a word (overflow-wrap: ${getComputedStyle(label).overflowWrap})`)
+      }
       if (label.scrollWidth > label.clientWidth + 1 || label.scrollHeight > label.clientHeight + 1) {
         problems.push(`${name}: label ${index + 1} is clipped (${label.scrollWidth}x${label.scrollHeight} in ${label.clientWidth}x${label.clientHeight})`)
       }
@@ -304,6 +340,74 @@ export const LabelsInsideFrame = {
     await expect(frames).toHaveLength(MATRIX_COUNTS.length * Object.keys(MATRIX_WIDTHS).length)
     const problems = frames.flatMap((holder) => labelProblems(holder.querySelector('.swz'), holder.getAttribute('data-case-width'), gutter))
     // one readable line per broken rule, so a failure names the frame, the label and the distance.
+    if (problems.length > 0) throw new Error(`${problems.length} label problem(s):\n${problems.join('\n')}`)
+  },
+}
+
+/* ── ten stops, peasant's labels ─────────────────────────────────────────────────────────────────
+   the rail at the length and with the words a real ten-step flow has (peasant's setup wizard), from
+   a phone up to a laptop, then at whatever width the reader's window gives it. a stop title is
+   several words, some long ("publication", "auto-ingest"), so this is where a label used to break
+   inside a word. at every width each rail either shows every label with every word whole, or hides
+   every label from sight and keeps each in its marker's accessible name. the play function runs the
+   same checks as LabelsInsideFrame on each frame. */
+const TEN_STOPS = [
+  'peasant online', 'choose sessions to import', 'auto-ingest new branches', 'publication', 'privacy',
+  'content license', 'sharing', 'claude retention', 'review', 'ingest',
+].map((label, index) => ({ id: `stop-${index + 1}`, label }))
+const TEN_STOP_WIDTHS = [360, 600, 840, 960]
+
+export const TenStops = {
+  parameters: { layout: 'fullscreen' },
+  render: () => (
+    <div style={{ display: 'grid', gap: 'var(--sp-5)', padding: 'var(--sp-4)' }}>
+      {TEN_STOP_WIDTHS.map((width) => (
+        <div key={width} data-case-width={`w${width}`} style={{ width, maxWidth: '100%', overflow: 'hidden' }}>
+          <StepWizardFrame
+            steps={TEN_STOPS}
+            current="stop-2"
+            completed={new Set(['stop-1'])}
+            reachable={new Set(['stop-1', 'stop-2'])}
+            aria-label={`ten stops, ${width}px`}
+            bodyProps={{ style: { minHeight: 0 } }}
+          >
+            <span className="swz-body-kicker">{width}px</span>
+          </StepWizardFrame>
+        </div>
+      ))}
+      <div data-case-width="w-window" style={{ minWidth: 0, overflow: 'hidden' }}>
+        <StepWizardFrame
+          steps={TEN_STOPS}
+          current="stop-2"
+          completed={new Set(['stop-1'])}
+          reachable={new Set(['stop-1', 'stop-2'])}
+          aria-label="ten stops, the window's width"
+          bodyProps={{ style: { minHeight: 0 } }}
+        >
+          <span className="swz-body-kicker">the window&apos;s width</span>
+        </StepWizardFrame>
+      </div>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await document.fonts.ready
+    const gutter = parseFloat(getComputedStyle(canvasElement.querySelector('.swz-rail')).getPropertyValue('--swz-label-gutter'))
+    const frames = [...canvasElement.querySelectorAll('[data-case-width]')]
+    await expect(frames).toHaveLength(TEN_STOP_WIDTHS.length + 1)
+    const problems = []
+    for (const holder of frames) {
+      const section = holder.querySelector('.swz')
+      problems.push(...labelProblems(section, holder.getAttribute('data-case-width'), gutter))
+      // every label of one rail is shown, or every label is hidden: never some of each.
+      const visible = [...section.querySelectorAll('.swz-label')].map((label) => {
+        const box = label.getBoundingClientRect()
+        return box.width > 0 && box.height > 0
+      })
+      if (new Set(visible).size !== 1) problems.push(`${section.getAttribute('aria-label')}: some labels are shown and some hidden`)
+    }
+    // the narrowest frame is a phone: its rail cannot fit "publication", so its labels hide.
+    const phone = frames[0].querySelector('.swz-label')
+    await expect(phone.getBoundingClientRect().width).toBe(0)
     if (problems.length > 0) throw new Error(`${problems.length} label problem(s):\n${problems.join('\n')}`)
   },
 }

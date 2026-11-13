@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from 'react'
+import { Children, Fragment, isValidElement, useId, useMemo, useState } from 'react'
 import { Check } from 'lucide-react'
 import Button from './Button.jsx'
 import './StepWizard.css'
@@ -48,6 +48,61 @@ function labelPlace(index, count) {
 }
 
 /**
+ * The text a label reads as, for a label passed as a string, a number, or a node holding them.
+ * @param {React.ReactNode} node
+ * @returns {string}
+ */
+function textOf(node) {
+  if (typeof node === 'string') return node
+  if (typeof node === 'number') return String(node)
+  if (Array.isArray(node)) return node.map(textOf).join('')
+  if (isValidElement(node)) return Children.toArray(node.props.children).map(textOf).join('')
+  return ''
+}
+
+/**
+ * The words of a label: the runs between whitespace. A label never breaks inside one, so a
+ * hyphenated word ("auto-ingest") counts whole.
+ * @param {React.ReactNode} label
+ * @returns {string[]}
+ */
+function wordsOf(label) {
+  return textOf(label).split(/\s+/).filter(Boolean)
+}
+
+/**
+ * The longest word, in characters, among the labels at the given places. The labels are drawn in
+ * the mono face, so a word's width is its character count in `ch`: the rail hands the stylesheet
+ * these counts and the stylesheet decides, with no measuring, whether every word fits its share.
+ * @param {ReadonlyArray<WizardStep>} steps
+ * @param {ReadonlyArray<string>} places the LABEL_PLACE values to read
+ * @returns {number}
+ */
+function longestWord(steps, places) {
+  let longest = 0
+  steps.forEach((step, index) => {
+    if (!places.includes(labelPlace(index, steps.length))) return
+    for (const word of wordsOf(step.label)) longest = Math.max(longest, [...word].length)
+  })
+  return longest
+}
+
+/**
+ * A label as it is drawn: a string label is set word by word, each word unbreakable, with the
+ * spaces between them as the only places it may wrap. A label passed as a node is drawn as given.
+ * @param {React.ReactNode} label
+ * @returns {React.ReactNode}
+ */
+function labelWords(label) {
+  if (typeof label !== 'string') return label
+  const words = wordsOf(label)
+  // the space between two words sits outside both, so it stays the one place a line may break.
+  return words.map((word, index) => (
+    <Fragment key={index}>{index > 0 ? ' ' : null}<span className="swz-word">{word}</span></Fragment>
+  ))
+}
+
+/**
  * The rail alone: numbered square markers joined by connector lines. Pure/controlled — it owns no
  * state. current = amber fill + bold near-black number + aria-current="step"; completed = olive +
  * check glyph (clickable to jump back); future/unreachable = hairline + --ink-4 + aria-disabled
@@ -55,9 +110,12 @@ function labelPlace(index, count) {
  *
  * Labels stay inside the rail at any width and step count. The first label starts at the first
  * marker's left edge, the last ends at the last marker's right edge, and the others are centred
- * on their markers. Each label wraps inside its own share of the rail, so neighbours never
- * overlap. When the rail is too narrow for its first and last labels to hold five characters, the
- * labels are hidden from sight and stay in the accessible name; the numbers carry the rail.
+ * on their markers. Each label wraps between its words inside its own share of the rail, so
+ * neighbours never overlap, and a label never breaks inside a word and is never cut with an
+ * ellipsis. When any label's longest word does not fit that label's share, or the rail is too
+ * narrow for its first and last labels to hold five characters, every label is hidden from sight
+ * together and stays in the accessible name; the numbers carry the rail. A label passed as a node
+ * is measured from its text.
  *
  * The rail is the container its label shares are measured against (`container-type: inline-size`),
  * so it needs a host with a definite inline size: a block, a grid track, or a flex item that has
@@ -82,8 +140,13 @@ export function StepIndicator({
 }) {
   // the label shares are arithmetic on the rail's width and its gap count; the rail carries the
   // count so the stylesheet can do that arithmetic (a lone step has no gap, but the share maths
-  // never divides by zero).
-  const railStyle = { '--swz-gaps': Math.max(steps.length - 1, 1) }
+  // never divides by zero). it also carries the longest word of its middle labels and of its first
+  // and last labels, in characters, so the stylesheet can hide every label when a word does not fit.
+  const railStyle = {
+    '--swz-gaps': Math.max(steps.length - 1, 1),
+    '--swz-word-middle': longestWord(steps, [LABEL_PLACE.middle]),
+    '--swz-word-edge': longestWord(steps, [LABEL_PLACE.start, LABEL_PLACE.end]),
+  }
   return (
     <nav className="swz-rail" style={railStyle} aria-label={ariaLabel}>
       {steps.map((step, idx) => {
@@ -120,7 +183,7 @@ export function StepIndicator({
                   ? <Check className="swz-mark-check" size={14} aria-hidden="true" />
                   : idx + 1}
               </span>
-              <span className={`swz-label swz-label--${labelPlace(idx, steps.length)}`}>{step.label}</span>
+              <span className={`swz-label swz-label--${labelPlace(idx, steps.length)}`}>{labelWords(step.label)}</span>
             </button>
           </div>
         )

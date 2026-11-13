@@ -125,28 +125,45 @@
                     to the neighbour: (marker + pitch) / 2, less half the gutter
      lone step      anchored left, may take the whole rail
 
-   each label wraps inside that share and breaks a word that is longer than it, so it can never
-   cross into a neighbour or past the rail. the shift that anchors the first and last label uses
-   `translate`, whose percentages are the label's own width: half its width, less half a marker,
-   puts its edge on the marker's edge at any text length. */
+   each label wraps between its words inside that share. a word never breaks: each word is its own
+   unbreakable run (.swz-word), and a label is never cut with an ellipsis. so a label can never
+   cross into a neighbour or past the rail, the rail shows its labels only while every word fits:
+   the rail hands the stylesheet the longest word of its middle labels (--swz-word-middle) and of
+   its first and last labels (--swz-word-edge), in characters, and the labels are in the mono face,
+   so a word's width is its count in `ch` with no measuring. when a word does not fit its share,
+   or the edge labels cannot hold five characters (--swz-label-floor), every label is hidden
+   together and stays in the accessible name; the numbers, the body heading and the foot's
+   "step n / m" carry the rail. the shift that anchors the first and last label uses `translate`,
+   whose percentages are the label's own width: half its width, less half a marker, puts its edge
+   on the marker's edge at any text length. */
 .swz-label {
   /* centre-to-centre distance between neighbouring markers. */
   --swz-pitch: calc((100cqi - var(--swz-mark-size)) / var(--swz-gaps, 1));
-  /* what a middle label may take. the rail hides every label together or none, and it decides
-     on this one share, so a rail never shows some labels and hides others. */
+  /* what a middle label may take. */
   --swz-share: calc(var(--swz-pitch) - var(--swz-label-gutter));
+  /* what a first or last label may take. */
+  --swz-edge-share: calc((var(--swz-mark-size) + var(--swz-share)) / 2);
   /* what this label may take. the edge labels override it below. */
   --swz-cap: var(--swz-share);
-  /* positive while the share holds the floor, otherwise zero or less; scaled so the first pixel
-     of room already counts as room. */
-  --swz-room: calc((var(--swz-share) - var(--swz-label-floor)) * 1000);
+  /* one rail-wide decision, so a rail never shows some labels and hides others: the least room
+     left over by the floor, by the longest middle word in a middle share, and by the longest edge
+     word in an edge share. one pixel of slack keeps a word that fits exactly from wrapping on
+     sub-pixel rounding. positive while every label fits, otherwise zero or less; scaled so the
+     first pixel of room already counts as room. */
+  --swz-room: calc(min(
+    var(--swz-share) - var(--swz-label-floor),
+    var(--swz-share) - var(--swz-word-middle, 0) * 1ch - 1px,
+    var(--swz-edge-share) - var(--swz-word-edge, 0) * 1ch - 1px
+  ) * 1000);
   display: block;
   width: max-content;
   max-width: min(var(--swz-cap), max(0px, var(--swz-room)));
   /* a hidden label collapses to nothing but stays in the accessibility tree. */
   max-height: max(0px, var(--swz-room));
   overflow: hidden;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: manual;
   font-family: var(--font-mono);
   font-size: var(--fs-label);
   line-height: 1.2;
@@ -155,9 +172,11 @@
   color: var(--ink-4);
   white-space: normal;
 }
+/* one word of a string label: it wraps as a whole or not at all. */
+.swz-word { white-space: nowrap; }
 .swz-label--start,
 .swz-label--end {
-  --swz-cap: calc((var(--swz-mark-size) + var(--swz-share)) / 2);
+  --swz-cap: var(--swz-edge-share);
 }
 .swz-label--start {
   translate: calc(50% - var(--swz-mark-size) / 2) 0;
