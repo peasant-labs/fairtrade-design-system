@@ -1505,7 +1505,8 @@
       "props": {},
       "stories": [
         "Forest",
-        "KeyboardToggle"
+        "KeyboardToggle",
+        "Preview"
       ]
     },
     {
@@ -1668,7 +1669,8 @@
         "Default",
         "Indicator",
         "Controlled",
-        "LabelsInsideFrame"
+        "LabelsInsideFrame",
+        "TenStops"
       ]
     },
     {
