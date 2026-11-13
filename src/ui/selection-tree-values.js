@@ -109,6 +109,54 @@ export function parseNodeState(raw) {
 }
 
 /**
+ * The noun a number of rows of each kind takes, singular and plural. Written once, keyed by
+ * member, so a count never re-spells a kind.
+ * @type {ReadonlyArray<readonly [SelectionNodeKind, Readonly<{ one: string, other: string }>]>}
+ */
+const KIND_NOUN_ROWS = [
+  [SelectionNodeKind.Project, Object.freeze({ one: 'project', other: 'projects' })],
+  [SelectionNodeKind.Group, Object.freeze({ one: 'group', other: 'groups' })],
+  [SelectionNodeKind.Branch, Object.freeze({ one: 'branch', other: 'branches' })],
+  [SelectionNodeKind.Session, Object.freeze({ one: 'session', other: 'sessions' })],
+]
+
+/** @type {ReadonlyMap<SelectionNodeKind, Readonly<{ one: string, other: string }>>} */
+const KIND_NOUN = new Map(KIND_NOUN_ROWS)
+
+/** What a session counts: the sessions it started, which are not always rows of the forest. */
+const CHILD_SESSION_NOUN = Object.freeze({ one: 'child session', other: 'child sessions' })
+
+/** What a row counts when its child rows are of more than one kind, or of none the tree can name. */
+const CHILD_NOUN = Object.freeze({ one: 'child', other: 'children' })
+
+/**
+ * The noun that follows a row's host-supplied count: "branches" in "project: 6 branches".
+ *
+ * The count itself is the host's (`childCount`), drawn as given; only the noun comes from here,
+ * and it is read off the child rows the tree already holds, never re-derived from the row's own
+ * kind. When every child row has one kind, the noun is that kind (a project over branches counts
+ * branches; a project whose child rows are sessions, as a branchless project's are, counts
+ * sessions; a branch counts sessions). A session counts the sessions it started, which the forest
+ * may not hold as rows: with no child rows, or only session child rows, it reads "child sessions".
+ * Any other row whose child rows are of mixed kinds, or that has none, keeps "child" or
+ * "children". The noun is singular at exactly one.
+ *
+ * @param {number} count the host-supplied count, as drawn
+ * @param {SelectionNodeKind} kind the counted row's own kind
+ * @param {readonly SelectionNodeKind[]} childKinds the kinds of the row's child rows
+ * @returns {string}
+ */
+export function childCountNoun(count, kind, childKinds) {
+  const kinds = new Set(childKinds)
+  const only = kinds.size === 1 ? [...kinds][0] : undefined
+  /** @type {Readonly<{ one: string, other: string }>} */
+  let noun = CHILD_NOUN
+  if (kind === SelectionNodeKind.Session && (kinds.size === 0 || only === SelectionNodeKind.Session)) noun = CHILD_SESSION_NOUN
+  else if (only !== undefined) noun = KIND_NOUN.get(only) ?? CHILD_NOUN
+  return count === 1 ? noun.one : noun.other
+}
+
+/**
  * @template {SelectionNodeKind | SelectionNodeState} Member
  * @param {unknown} raw
  * @param {ReadonlyMap<string, Member>} byWire

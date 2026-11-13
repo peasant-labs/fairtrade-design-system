@@ -1,9 +1,23 @@
 /* SelectionTree. A server-grouped forest. Every dimension and colour is a token.
    Namespace st-. Radius 0. The checkbox glyph carries none / some / all; locked
    is a word plus a disabled checkbox, not a colour. Chrome is lowercase. User
-   labels are not transformed. */
+   labels are not transformed.
+
+   Paint order, back to front: the tree's surface, a row's fill (hover, or the
+   previewed row's fill and selection inset), the connector, the row's controls
+   and text. The tree is its own stacking context (isolation), a row's fill is a
+   pseudo-element at z-index -1 inside it, the connector is the positioned layer
+   at 0, and each control of a row sits at 1. So the connector stays visible
+   across a hovered or previewed row, the controls stay on top of it, and the
+   connector never takes a pointer event.
+
+   The tree is the container its row layout is measured against
+   (`container: st / inline-size`), so it needs a host with a definite inline
+   size: a block, a grid track, or a flex item that has a width. */
 
 .st {
+  container: st / inline-size;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -14,6 +28,32 @@
   font-family: var(--font-mono);
 }
 
+/* the element the connector is drawn over: the rows, not the diagnostic under them. */
+.st-body {
+  position: relative;
+  min-width: 0;
+}
+
+/* the measured connector (tree-rail.js), the idiom the helper tree draws too: one path through
+   the centre of every mounted row checkbox, a column per depth, one square step into each deeper
+   row. it paints in --rule-strong, the functional-border ink, because it crosses the hover fill
+   and the previewed row's fill, where --rule falls under 3:1 in both themes. */
+.st-rail {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.st-rail__path {
+  fill: none;
+  stroke: var(--rule-strong);
+  stroke-width: var(--stroke-hairline);
+}
+
 .st-nodes,
 .st-children {
   margin: 0;
@@ -21,13 +61,40 @@
   list-style: none;
 }
 
+/* one row: caret, checkbox, title, facts. the facts (kind, count, lock, harness) sit at the end of
+   the row's line; in a narrow tree they take a line of their own under the title. */
 .st-row {
-  display: flex;
+  position: relative;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: var(--sp-2);
+  column-gap: var(--sp-2);
   min-height: var(--control-h);
   padding-block: var(--sp-1);
   padding-inline-end: var(--sp-3);
+}
+
+/* the row's fill lives under the connector. */
+.st-row::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* the row's controls and text sit above the connector. */
+.st-row > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* the previewed row: the selection inset (a 2px amber bar at the row's start) over a quiet fill.
+   the bar is a shape, so the mark is not colour alone, and the title button also carries
+   aria-pressed. */
+.st-row[data-previewed]::before {
+  background: var(--surface-2);
+  box-shadow: inset var(--stroke-emphasis) 0 0 var(--amber);
 }
 
 .st-disclosure {
@@ -59,9 +126,10 @@
   transform: rotate(90deg);
 }
 
+/* without a preview, the checkbox label holds the title and spans the title column. */
 .st-hit {
+  grid-column: 2 / 4;
   display: inline-flex;
-  flex: 1 1 auto;
   align-items: center;
   gap: var(--sp-2);
   min-width: var(--target-min);
@@ -69,8 +137,60 @@
   cursor: pointer;
 }
 
+/* with a preview, the checkbox label holds the box alone, centred in a target-sized hit area. */
+.st-hit-box {
+  grid-column: 2;
+  justify-content: center;
+}
+
 .st-hit:has(.check-box:disabled) {
   cursor: not-allowed;
+}
+
+/* a locked row's checkbox is drawn at half opacity, which would let the connector through it. an
+   opaque box of the checkbox's size sits behind it (a flex container places it where the box is),
+   so the connector stops at the box's edge, as it does at every other checkbox. */
+.st-hit .check-box {
+  position: relative;
+}
+
+.st-hit:has(.check-box:disabled)::before {
+  content: '';
+  position: absolute;
+  width: var(--ic-lg);
+  height: var(--ic-lg);
+  background: var(--canvas);
+  pointer-events: none;
+}
+
+/* the title as its own button: it previews and never selects. it reads as the row's title, not as
+   a boxed button, and it takes the target floor. */
+.st-title {
+  grid-column: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  min-width: var(--target-min);
+  max-width: 100%;
+  min-height: var(--target-min);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.st-title:hover .st-label {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.st-title[aria-pressed='true'] .st-label {
+  color: var(--ink-strong);
 }
 
 .st-label {
@@ -84,6 +204,21 @@
   overflow-wrap: anywhere;
 }
 
+/* the kind and the count read as one phrase, "project: 6 branches", and wrap as one. */
+.st-tally {
+  white-space: nowrap;
+}
+
+.st-facts {
+  grid-column: 4;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sp-1) var(--sp-2);
+}
+
+.st-tally,
 .st-kind,
 .st-count,
 .st-locked,
@@ -93,6 +228,7 @@
   font-size: var(--fs-label);
   line-height: var(--lh-body);
   text-transform: none;
+  white-space: nowrap;
 }
 
 .st-num {
@@ -114,6 +250,19 @@
   text-transform: none;
 }
 
+/* a narrow tree gives the title its whole line: the facts move under the title, aligned with it. */
+@container st (width < 36rem) {
+  .st-facts {
+    grid-row: 2;
+    grid-column: 3 / -1;
+    justify-content: flex-start;
+  }
+
+  .st:not([data-previewable]) .st-facts {
+    grid-column: 2 / -1;
+  }
+}
+
 .st-diagnostic {
   margin: 0;
   padding: var(--sp-2) var(--sp-3);
@@ -129,14 +278,15 @@
 
 @media (pointer: coarse) {
   .st-disclosure,
-  .st-hit {
+  .st-hit,
+  .st-title {
     min-width: var(--target-comfortable);
     min-height: var(--target-comfortable);
   }
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .st-row:hover {
+  .st-row:hover::before {
     background: var(--surface-hover);
   }
 }
@@ -152,6 +302,7 @@
 }
 
 .st-disclosure:focus-visible,
+.st-title:focus-visible,
 .st-hit .check-box:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: var(--focus-ring-offset);

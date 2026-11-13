@@ -1,14 +1,16 @@
-import { useCallback, useId, useMemo, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useState } from 'react'
 import { ChevronRight } from 'lucide-react'
 import BrandMark from './BrandMark.jsx'
 import Checkbox from './Checkbox.jsx'
 import { formatInteger } from './format.js'
 import {
+  childCountNoun,
   parseNodeKind,
   parseNodeState,
   SelectionNodeKind,
   SelectionNodeState,
 } from './selection-tree-values.js'
+import { useMeasuredRail } from './tree-rail.js'
 import './SelectionTree.css'
 
 /**
@@ -23,7 +25,9 @@ import './SelectionTree.css'
  * @property {string} label user content. Rendered with its case unchanged.
  * @property {string} [sessionId] session identity; for session rows the server sets it equal to id, which is reported.
  * @property {string} [harness] provider name, shown as given when present.
- * @property {number} [childCount] displayed as given. Not counted from children.
+ * @property {number} [childCount] displayed as given. Not counted from children. The noun after it
+ *   names the kind of the row's child rows: "project: 6 branches", "branch: 1 session", and
+ *   "session: 2 child sessions" for the sessions a session started.
  * @property {boolean} [locked] disables this row's checkbox and is announced.
  */
 
@@ -51,10 +55,26 @@ import './SelectionTree.css'
  *
  * There is no paging prop, no cursor, and no stored copy of the forest.
  *
+ * Preview contract.
+ *
+ * With `onPreview`, a row has three controls and each does one thing: the caret folds, the
+ * checkbox selects, and the title previews. The title is its own button, outside the checkbox's
+ * label, so a title click never changes the selection and a checkbox click never previews. The
+ * title button reports the row's node id (a project, branch, group or session id) to
+ * `onPreview`, for every row kind, locked rows included. The host owns which row is previewed and
+ * passes it back as `previewId`; that row's title carries `aria-pressed="true"` and the row is
+ * marked with the selection inset as well as a fill, so the mark is not colour alone. Without
+ * `onPreview` the title stays inside the checkbox label and a click on it toggles the row, as
+ * before the preview contract.
+ *
  * @typedef {Object} SelectionTreeProps
  * @property {readonly SelectionTreeNode[]} [nodes]
  * @property {ReadonlySet<string> | readonly string[]} value
  * @property {(ids: readonly string[]) => void} [onSelectionChange]
+ * @property {(nodeId: string) => void} [onPreview] called with a row's node id when its title is
+ *   activated. Turns each title into a preview button.
+ * @property {string | null} [previewId] the node id the host is previewing, or null for none.
+ *   Read only with `onPreview`.
  * @property {string} [ariaLabel]
  */
 
@@ -68,6 +88,8 @@ export default function SelectionTree({
   nodes = [],
   value,
   onSelectionChange,
+  onPreview,
+  previewId = null,
   ariaLabel = 'sessions',
 }) {
   if (!Array.isArray(nodes)) throw new TypeError('SelectionTree: nodes must be an array of server-grouped nodes; pass an empty array while loading.')
@@ -98,6 +120,14 @@ export default function SelectionTree({
     })
   }, [])
 
+  // One measured connector traces the mounted rows' checkboxes, the rail fairtrade's helper tree
+  // draws too. Folding unmounts a row's children, so they drop out of the rail; every render may
+  // have moved a row, so every render re-measures.
+  const rail = useMeasuredRail()
+  const { scheduleMeasure } = rail
+  useEffect(() => { scheduleMeasure() })
+  const preview = typeof onPreview === 'function' ? onPreview : null
+
   const notice = diagnosticText(prepared.unknownKind, prepared.unknownState, prepared.unreadable, prepared.unreachable, prepared.duplicates)
 
   return (
@@ -107,20 +137,33 @@ export default function SelectionTree({
       aria-label={ariaLabel}
       data-unknown-kind={prepared.unknownKind}
       data-unknown-state={prepared.unknownState}
+      data-previewable={preview ? 'true' : undefined}
     >
-      <ul className="st-nodes">
-        {prepared.roots.map((node) => (
-          <SelectionNode
-            key={node.id}
-            node={node}
-            depth={0}
-            byParent={prepared.byParent}
-            collapsed={collapsed}
-            onToggle={toggle}
-            onCollapse={toggleCollapsed}
-          />
-        ))}
-      </ul>
+      <div className="st-body" ref={rail.containerRef}>
+        {/* The connector only paints. It sits above the row fills (hover, preview) and below the
+            row's controls, and it takes no pointer events. */}
+        <svg className="st-rail" aria-hidden="true" data-anchor-count={rail.anchorCount}>
+          {rail.railPath && <path className="st-rail__path" d={rail.railPath}
+            shapeRendering="crispEdges" strokeLinecap="square" />}
+        </svg>
+        <ul className="st-nodes">
+          {prepared.roots.map((node) => (
+            <SelectionNode
+              key={node.id}
+              node={node}
+              depth={0}
+              byParent={prepared.byParent}
+              collapsed={collapsed}
+              onToggle={toggle}
+              onCollapse={toggleCollapsed}
+              onPreview={preview}
+              previewId={previewId}
+              register={rail.register}
+              unregister={rail.unregister}
+            />
+          ))}
+        </ul>
+      </div>
       {notice && (
         <p className="st-diagnostic" role="status">{notice}</p>
       )}
@@ -136,13 +179,34 @@ export default function SelectionTree({
  * @param {ReadonlySet<string>} props.collapsed
  * @param {(id: string) => void} props.onToggle
  * @param {(id: string) => void} props.onCollapse
+ * @param {((id: string) => void) | null} props.onPreview
+ * @param {string | null} props.previewId
+ * @param {(element: Element, depth: number) => void} props.register
+ * @param {(element: Element) => void} props.unregister
  */
-function SelectionNode({ node, depth, byParent, collapsed, onToggle, onCollapse }) {
+function SelectionNode({ node, depth, byParent, collapsed, onToggle, onCollapse, onPreview, previewId, register, unregister }) {
   const children = byParent.get(node.id) ?? []
   const branch = children.length > 0
   const open = branch && !collapsed.has(node.id)
   const panelId = useId()
   const indent = { paddingInlineStart: `calc(var(--sp-4) * ${depth})` }
+  const previewed = onPreview !== null && previewId === node.id
+  const hasCount = typeof node.childCount === 'number' && Number.isFinite(node.childCount)
+  // The row registers with the tree's rail while it is mounted; its checkbox is the anchor.
+  const rowRef = useCallback((element) => {
+    if (!element) return undefined
+    register(element, depth)
+    return () => unregister(element)
+  }, [register, unregister, depth])
+  const checkboxName = node.locked ? `${node.label}, locked` : node.label
+  const checkboxProps = {
+    checked: node.state === SelectionNodeState.All,
+    indeterminate: node.state === SelectionNodeState.Some,
+    disabled: node.locked,
+    'aria-checked': node.state === SelectionNodeState.Some ? 'mixed' : node.state === SelectionNodeState.All ? 'true' : 'false',
+    'aria-label': checkboxName,
+    onChange: () => onToggle(node.id),
+  }
 
   return (
     <li
@@ -153,7 +217,7 @@ function SelectionNode({ node, depth, byParent, collapsed, onToggle, onCollapse 
       data-locked={node.locked ? 'true' : undefined}
       data-depth={depth}
     >
-      <div className="st-row" style={indent}>
+      <div className="st-row" style={indent} ref={rowRef} data-previewed={previewed ? 'true' : undefined}>
         {branch ? (
           <button
             type="button"
@@ -168,25 +232,43 @@ function SelectionNode({ node, depth, byParent, collapsed, onToggle, onCollapse 
         ) : (
           <span className="st-disclosure st-disclosure-spacer" aria-hidden="true" />
         )}
-        <Checkbox labelClassName="st-hit" checked={node.state === SelectionNodeState.All}
-          indeterminate={node.state === SelectionNodeState.Some} disabled={node.locked}
-          aria-checked={node.state === SelectionNodeState.Some ? 'mixed' : node.state === SelectionNodeState.All ? 'true' : 'false'}
-          aria-label={node.locked ? `${node.label}, locked` : node.label}
-          onChange={() => onToggle(node.id)}><span className="st-label">{node.label}</span></Checkbox>
-        <span className="st-kind">{node.kind.label}</span>
-        {typeof node.childCount === 'number' && Number.isFinite(node.childCount) && (
-          <span className="st-count">
-            <span className="st-num">{formatInteger(node.childCount)}</span>
-            <span className="st-count-label">{node.childCount === 1 ? ' child' : ' children'}</span>
-          </span>
+        {onPreview ? (
+          <>
+            <Checkbox labelClassName="st-hit st-hit-box" {...checkboxProps} />
+            <button
+              type="button"
+              className="st-title"
+              aria-pressed={previewed}
+              aria-label={`preview ${node.label}`}
+              onClick={() => onPreview(node.id)}
+            >
+              <span className="st-label">{node.label}</span>
+            </button>
+          </>
+        ) : (
+          <Checkbox labelClassName="st-hit" {...checkboxProps}><span className="st-label">{node.label}</span></Checkbox>
         )}
-        {node.locked && <span className="st-locked">locked</span>}
-        {node.harness && (
-          <span className="st-harness">
-            <BrandMark name={node.harness} />
-            <span className="st-harness-name">{node.harness}</span>
+        <span className="st-facts">
+          <span className="st-tally">
+            <span className="st-kind">{node.kind.label}</span>
+            {hasCount && (
+              <>
+                {': '}
+                <span className="st-count">
+                  <span className="st-num">{formatInteger(node.childCount)}</span>
+                  <span className="st-count-label"> {childCountNoun(node.childCount, node.kind, children.map((child) => child.kind))}</span>
+                </span>
+              </>
+            )}
           </span>
-        )}
+          {node.locked && <span className="st-locked">locked</span>}
+          {node.harness && (
+            <span className="st-harness">
+              <BrandMark name={node.harness} />
+              <span className="st-harness-name">{node.harness}</span>
+            </span>
+          )}
+        </span>
       </div>
       {open && (
         <ul className="st-children" id={panelId}>
@@ -199,6 +281,10 @@ function SelectionNode({ node, depth, byParent, collapsed, onToggle, onCollapse 
               collapsed={collapsed}
               onToggle={onToggle}
               onCollapse={onCollapse}
+              onPreview={onPreview}
+              previewId={previewId}
+              register={register}
+              unregister={unregister}
             />
           ))}
         </ul>
