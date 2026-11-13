@@ -8,7 +8,10 @@ on:
   merge_group:
   workflow_dispatch:
 
-# read-only: this workflow validates the gates, it never deploys or writes Pages
+# read-only: this workflow validates the gates, it never deploys or writes Pages.
+# Every job also declares its own permissions, which replace these: the pool
+# jobs keep `actions: read` so the runner-timing capture can read the Actions
+# timestamps.
 permissions:
   contents: read
   actions: read
@@ -27,9 +30,7 @@ jobs:
   # almost never use the four-slot pool, and a typical slot wait (1-4
   # minutes) is about the pool speed advantage.
   determine-runner:
-    permissions:
-      contents: read
-      actions: read
+    permissions: {contents: read, actions: read}
     uses: peasant-labs/infra/.github/workflows/runner-router.yml@4329b5ebd38a0270f08da3826b59ecda67eb1a40
     with:
       fallback: '["ubuntu-latest"]'
@@ -45,9 +46,7 @@ jobs:
   # tarball that would publish, on every PR/push, independent of who publishes.
   lib:
     needs: determine-runner
-    permissions:
-      contents: read
-      actions: read
+    permissions: {contents: read, actions: read}
     runs-on: ${{ fromJson(needs.determine-runner.outputs.runner) }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -153,9 +152,7 @@ jobs:
 
   fairtest:
     needs: determine-runner
-    permissions:
-      contents: read
-      actions: read
+    permissions: {contents: read, actions: read}
     runs-on: ${{ fromJson(needs.determine-runner.outputs.runner) }}
     timeout-minutes: 40
     # The official Playwright image carries the browsers and their system
@@ -286,9 +283,7 @@ jobs:
 
   journeys:
     needs: determine-runner
-    permissions:
-      contents: read
-      actions: read
+    permissions: {contents: read, actions: read}
     runs-on: ${{ fromJson(needs.determine-runner.outputs.runner) }}
     timeout-minutes: 40
     strategy:
@@ -352,8 +347,7 @@ jobs:
       - name: Timeline route gate (production build + source mutation)
         if: matrix.project == 'dark'
         run: |
-          CHROME_PATH="$(pnpm exec node -e "console.log(require('@playwright/test').chromium.executablePath())")"
-          export CHROME_PATH
+          export CHROME_PATH="$(pnpm exec node -e "console.log(require('@playwright/test').chromium.executablePath())")"
           test -x "$CHROME_PATH"
           pnpm test:timeline-rendered && pnpm test:timeline-session-route:mutations
 
