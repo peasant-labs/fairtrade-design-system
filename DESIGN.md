@@ -636,6 +636,12 @@ render the same system.
 - **Tabs:** mono lowercase, `--ink-3` at rest, the active tab in `--ink` with a 2px amber underline;
   counts are tabular in `--ink-4`.
 - **Trails:** breadcrumb, step indicator, tabs and pagination; orientation lives here.
+- **Step rail:** a step's label never breaks inside a word. Each word is its own unbreakable run
+  and the spaces between words are the only places a label wraps. The rail shows its labels only
+  while every word fits that label's share of the rail; when any word does not fit, or its first
+  and last labels cannot hold five characters, every label hides together and stays in the
+  accessible name, and the numbers, the body heading and the foot's `step n / m` carry the rail. No
+  label is ever cut with an ellipsis or allowed to leave the frame.
 - **App sidebar:** `AppSidebar` is the one sidebar for every app screen (online, local and docs),
   in one order that every app gets, enforced by the component so no app can drift: (1) the brand
   row, the mark with the collapse control; (2) the app's own pages (`groups`; settings is never
@@ -687,6 +693,25 @@ render the same system.
   `online` and keeps the id and route `village`. Online presents saved relevant collective
   observations and separately pageable contribution evidence, with independently dated fetch
   results. Hosts own network operations and authorization; observations never grant permission.
+
+### Trees
+`SelectionTree` draws a server-grouped forest; the helper tree draws saved threads. Both share one
+connector: a measured hairline in `--rule-strong` through the centre of every mounted row's
+checkbox, one column per depth, with one short square step into each deeper row. It is decoration
+only (`aria-hidden`, no pointer events, drawn above a row's hover and preview fills), and a folded
+row mounts no children, so its connector is not drawn.
+- **Three controls per row:** the caret folds, the checkbox selects, and the title previews. With
+  `onPreview`, a row's title is its own button outside the checkbox's label, so a title click never
+  changes the selection and a checkbox click never previews; a host that passes no `onPreview`
+  keeps the title inside the checkbox label, where it toggles the row. The previewed row's title
+  carries `aria-pressed` and its row carries the amber selection inset over a quiet fill, so the
+  mark is never colour alone.
+- **Counts:** one phrase, `<kind>: <n> <child noun>`, the number in tabular figures and the noun
+  singular at one. The noun is the kind of the row's child rows (a project over branches counts
+  `branches`; a project whose child rows are sessions, as a branchless project's are, counts
+  `sessions`; a branch counts `sessions`), and a session counts the sessions it started as
+  `child sessions`. Mixed kinds read `children`, and a row with no count draws none. The count is
+  the host's: the tree never counts children itself.
 
 ### Transcript viewer (signature component)
 The reading view both apps embed (`TranscriptViewer`, fed only by `adaptTranscript`). A header whose
