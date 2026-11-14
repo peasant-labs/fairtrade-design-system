@@ -16,6 +16,7 @@ import './StepWizard.css'
    one set of shell markup. */
 
 /**
+ * StepWizard - a step indicator and controlled wizard frame.
  * @typedef {Object} WizardStep
  * @property {string} id     stable id for the step (aria wiring + completed/reachable sets)
  * @property {React.ReactNode} label  the full host-supplied step label

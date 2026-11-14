@@ -1663,7 +1663,7 @@
         "StepIndicator",
         "StepWizardFrame"
       ],
-      "doc": "",
+      "doc": "StepWizard - a step indicator and controlled wizard frame.",
       "props": {},
       "stories": [
         "Default",
