@@ -41,10 +41,9 @@ export const KICKSTART_FOREST = Object.freeze([
   { id: 'session-glossary', parentId: 'project-notes', kind: 'session', state: 'none', label: 'Build a glossary', harness: 'opencode' },
 ])
 
-/* What the server reads for a preview: typed lines. A project or branch row reads its repository
-   summary; a session row reads the start of the session. `kind` is the line's role. */
+/* Project and branch summaries stay typed lines. All session details below are invented examples,
+   not reads from a developer's machine. */
 const SUMMARY = (lines) => Object.freeze(lines.map(([label, text]) => Object.freeze({ kind: 'summary', label, text })))
-const TURNS = (lines) => Object.freeze(lines.map(([label, text]) => Object.freeze({ kind: 'turn', label, text })))
 
 export const KICKSTART_PREVIEWS = Object.freeze({
   'project-peasant': SUMMARY([['repository', 'peasant-labs/peasant'], ['branches', '3'], ['sessions', '7'], ['last session', '2 hours ago']]),
@@ -52,14 +51,30 @@ export const KICKSTART_PREVIEWS = Object.freeze({
   'branch-kickstart': SUMMARY([['branch', 'feat/kickstart'], ['sessions', '1'], ['last session', 'yesterday']]),
   'branch-retention': SUMMARY([['branch', 'fix/retention-copy'], ['sessions', '2'], ['last session', '3 days ago']]),
   'project-notes': SUMMARY([['folder', '~/notes'], ['sessions', '3'], ['last session', 'last week']]),
-  'session-scan': TURNS([['user', 'The scan runs for a minute with no feedback. Show its progress on the selection stop.'], ['assistant', 'I will read the scan job state from the session and draw a progress bar with the done and total counts.']]),
-  'session-retention': TURNS([['user', 'The retention stop says "forever" but claude deletes local transcripts after 30 days. Fix the copy.'], ['assistant', 'The stop should name the setting and its default. I will change the help text and keep the field label.']]),
-  'session-rebase': TURNS([['user', 'Rebase the selection page onto the new tree component.'], ['assistant', 'Two helper sessions will run the type check and the journey while I move the page.']]),
-  'session-config': TURNS([['user', 'Why is ~/.config/peasant/kickstart.toml ignored when the daemon starts before the first scan?'], ['assistant', 'The daemon reads the file once at start. A scan that has not run yet has nothing to apply it to.']]),
-  'session-stops': TURNS([['user', 'Draft the ten wizard stops from the terminal flow.'], ['assistant', 'Here are the stops in order, each with its question and its default.']]),
-  'session-copy': TURNS([['user', 'Reword the claude retention stop so it names the 30 day default.']]),
-  'session-copy-tests': TURNS([['user', 'Pin the retention copy in the wizard fixtures.']]),
-  'session-reading': TURNS([['user', 'Summarise the reading list in five lines.']]),
-  'session-outline': TURNS([['user', 'Outline a twenty minute talk on transcript sharing.']]),
-  'session-glossary': TURNS([['user', 'Build a glossary of the terms in these notes.']]),
+})
+
+/** A complete synthetic wire detail, consumed by the same adapter as an actual session. */
+function detail(id, harness, user, assistant) {
+  return {
+    id, harness,
+    startTime: '2026-11-12T09:00:00Z', endTime: '2026-11-12T09:04:00Z',
+    durationMins: 4, totalTokens: 120, tokensIn: 60, tokensOut: 60, turnCount: 2, toolCallCount: 0,
+    turns: [
+      { index: 0, role: 'user', entryType: 'text', content: user, timestamp: '2026-11-12T09:00:00Z', depth: 0 },
+      { index: 1, role: 'assistant', entryType: 'text', content: assistant, timestamp: '2026-11-12T09:01:00Z', depth: 0 },
+    ],
+  }
+}
+
+export const KICKSTART_SESSION_DETAILS = Object.freeze({
+  'session-scan': detail('session-scan', 'claude-code', 'The scan runs for a minute with no feedback. Show its progress on the selection stop.', 'I will draw a progress bar with the done and total counts.'),
+  'session-retention': detail('session-retention', 'opencode', 'The retention stop says "forever" but the local setting has a 30 day default. Fix the copy.', 'I will name the setting and its default.\n\n```ts\nexport const retentionDays = 30\nexport function retentionLabel(days: number) {\n  return `kept for ${days} days`\n}\n```\n\n![example image](https://preview.invalid/SECRET-synthetic-preview-only)'),
+  'session-rebase': detail('session-rebase', 'claude-code', 'Rebase the selection page onto the new tree component.', 'Two helper sessions will run checks while I move the page.'),
+  'session-config': detail('session-config', 'cursor', 'Why is the setup file ignored when the daemon starts before the first scan?', 'The daemon reads the file once at start. I will check the scan state.'),
+  'session-stops': detail('session-stops', 'claude-code', 'Draft the ten wizard stops from the terminal flow.', 'Here are the stops in order, each with its question and its default.'),
+  'session-copy': detail('session-copy', 'codex', 'Reword the retention stop so it names the 30 day default.', 'I will update the help text and leave the field label alone.'),
+  'session-copy-tests': detail('session-copy-tests', 'codex', 'Pin the retention copy in the wizard fixtures.', 'I will add a fixture for the displayed default.'),
+  'session-reading': detail('session-reading', 'gemini-cli', 'Summarise the reading list in five lines.', 'I will group the papers by topic.'),
+  'session-outline': detail('session-outline', 'claude-code', 'Outline a twenty minute talk on transcript sharing.', 'I will begin with the reader and the consent boundary.'),
+  'session-glossary': detail('session-glossary', 'opencode', 'Build a glossary of the terms in these notes.', 'I will keep the definitions short and link related terms.'),
 })

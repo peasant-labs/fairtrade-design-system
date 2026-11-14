@@ -77,7 +77,7 @@ export default function GraphApp({ theme }) {
       {view === 'home' && <HomeView offline={offline} />}
       {view === 'village' && <LocalVillage />}
       {view === 'settings' && <SettingsView />}
-      {view === 'kickstart' && <KickstartView />}
+      {view === 'kickstart' && <KickstartView theme={theme} />}
       {view === 'map' && (
         <>
           <MapView theme={theme} onNavigate={onAppNavigate} />

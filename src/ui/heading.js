@@ -19,7 +19,7 @@ export function pageHeadingLevel(level, component) {
 
 /**
  * The tag for a heading drawn `depth` levels under the composite's title (0 is the title itself).
- * @param {1|2} pageLevel
+ * @param {1|2|3|4} pageLevel
  * @param {number} depth
  * @returns {'h1'|'h2'|'h3'|'h4'|'h5'|'h6'}
  */

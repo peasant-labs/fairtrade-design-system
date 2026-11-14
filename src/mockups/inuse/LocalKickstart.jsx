@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
-import { Button, SelectionTree, StepWizardFrame } from '../../ui'
-import { KICKSTART_FOREST, KICKSTART_PREVIEWS, KICKSTART_SELECTION_STOP, KICKSTART_STOPS } from './kickstart-fixture.js'
+import { adaptTranscript, Button, SelectionTree, StepWizardFrame, TranscriptViewer } from '../../ui'
+import { KICKSTART_FOREST, KICKSTART_PREVIEWS, KICKSTART_SELECTION_STOP, KICKSTART_SESSION_DETAILS, KICKSTART_STOPS } from './kickstart-fixture.js'
 
 /* The local app's setup wizard for the in-use graph demo (`?app=graph&view=kickstart`). Peasant
    serves it at /kickstart, outside the section registry, so the demo reaches it by route and keeps
@@ -12,6 +12,7 @@ import { KICKSTART_FOREST, KICKSTART_PREVIEWS, KICKSTART_SELECTION_STOP, KICKSTA
    tree itself never rolls state up. */
 
 const SESSION = 'session'
+const PREVIEW_CAPABILITIES = Object.freeze({ canEdit: false, canLabel: false, canContribute: false, canChangeVisibility: false, canExport: false })
 
 /** Every row's children, in the order the server sent them. */
 function childrenOf(forest) {
@@ -42,14 +43,44 @@ function withStates(selected) {
   return KICKSTART_FOREST.map((row) => ({ ...row, state: stateOf(row) }))
 }
 
-function PreviewPane({ previewId }) {
+function PreviewPane({ previewId, theme }) {
   const row = previewId === null ? null : KICKSTART_FOREST.find((node) => node.id === previewId) ?? null
   const lines = row === null ? null : KICKSTART_PREVIEWS[row.id] ?? []
+  const [leftOpen, setLeftOpen] = useState(false)
+  const [rightOpen, setRightOpen] = useState(false)
+  const viewModel = useMemo(() => {
+    const payload = row?.kind === SESSION ? KICKSTART_SESSION_DETAILS[row.id] : null
+    if (!payload) return null
+    const cooked = adaptTranscript(payload)
+    // The row label is the demo's display title; the adapter owns all structural projection.
+    return { ...cooked, session: { ...cooked.session, title: row.label } }
+  }, [row])
   return (
     <aside className="iu-ks-preview" aria-label="preview">
-      <h4 className="iu-ks-preview-title">{row === null ? 'preview a row' : <span className="iu-ks-preview-name">{row.label}</span>}</h4>
+      {viewModel === null && <h4 className="iu-ks-preview-title">{row === null ? 'preview a row' : <span className="iu-ks-preview-name">{row.label}</span>}</h4>}
       {row === null ? (
         <p className="iu-ks-help">click a title to read the start of it. previewing does not select it. use its checkbox to import it.</p>
+      ) : viewModel !== null ? (
+        <>
+          <p className="iu-ks-preview-note">sample transcript, no local session was read<br />raw, on this computer only</p>
+          <div className="iu-ks-viewer">
+            <TranscriptViewer
+              key={row.id}
+              viewModel={viewModel}
+              capabilities={PREVIEW_CAPABILITIES}
+              theme={theme}
+              headingLevel={4}
+              allowMarkdownImages={false}
+              leftRailOpen={leftOpen}
+              onLeftRailOpenChange={setLeftOpen}
+              rightRailOpen={rightOpen}
+              onRightRailOpenChange={setRightOpen}
+              breadcrumb={[{ label: 'preview' }, { label: row.label }]}
+              showTail={false}
+              showOutcome={false}
+            />
+          </div>
+        </>
       ) : (
         <ul className="iu-ks-lines" aria-label="preview lines">
           {lines.map((line, index) => (
@@ -64,7 +95,7 @@ function PreviewPane({ previewId }) {
   )
 }
 
-function SelectionStop() {
+function SelectionStop({ theme }) {
   const [selected, setSelected] = useState(INITIAL_SELECTION)
   const [previewId, setPreviewId] = useState(null)
   const nodes = useMemo(() => withStates(new Set(selected)), [selected])
@@ -83,7 +114,7 @@ function SelectionStop() {
             ariaLabel="sessions to import"
           />
         </div>
-        <PreviewPane previewId={previewId} />
+        <PreviewPane previewId={previewId} theme={theme} />
       </div>
       <p className="iu-ks-counts">
         <span className="tnum">{sessions}</span> sessions found, <span className="tnum">{selected.length}</span> chosen
@@ -93,7 +124,7 @@ function SelectionStop() {
 }
 
 /** The setup wizard, opened on the selection stop with the connection stop answered. */
-export default function KickstartView() {
+export default function KickstartView({ theme = 'dark' }) {
   const [current, setCurrent] = useState(KICKSTART_SELECTION_STOP)
   const index = KICKSTART_STOPS.findIndex((stop) => stop.id === current)
   const completed = useMemo(() => new Set(KICKSTART_STOPS.slice(0, index).map((stop) => stop.id)), [index])
@@ -125,7 +156,7 @@ export default function KickstartView() {
       >
         <h3 className="iu-ks-stop">{stop.label}</h3>
         {current === KICKSTART_SELECTION_STOP
-          ? <SelectionStop />
+          ? <SelectionStop theme={theme} />
           : <p className="iu-ks-help">peasant asks this stop's question here. the demo draws the selection stop.</p>}
       </StepWizardFrame>
     </div>

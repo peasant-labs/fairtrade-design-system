@@ -1,0 +1,31 @@
+cases:
+  - name: session-title-opens-the-real-viewer-without-selection
+    kind: session
+    node: session-retention
+    theme: dark
+    title: Fix the retention copy
+    user: 'The retention stop says'
+    assistant: 'I will name the setting'
+    code: 'export const retentionDays = 30'
+  - name: light-theme-reaches-the-viewer
+    kind: session
+    node: session-retention
+    theme: light
+    title: Fix the retention copy
+    user: 'The retention stop says'
+    assistant: 'I will name the setting'
+    code: 'export const retentionDays = 30'
+  - name: checkbox-does-not-change-the-preview
+    kind: checkbox
+    node: session-retention
+  - name: caret-folds-without-changing-selection-or-preview
+    kind: caret
+    node: branch-develop
+  - name: project-title-keeps-the-summary
+    kind: summary
+    node: project-peasant
+    expected: peasant-labs/peasant
+  - name: branch-title-keeps-the-summary
+    kind: summary
+    node: branch-develop
+    expected: develop
