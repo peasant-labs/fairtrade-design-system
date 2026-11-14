@@ -1,8 +1,9 @@
-import { createContext, Fragment, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { createContext, Fragment, useCallback, useContext, useEffect, useId, useMemo, useState } from 'react'
 import { RefreshCw, Unlink } from 'lucide-react'
 import BrandMark from './BrandMark.jsx'
 import Checkbox from './Checkbox.jsx'
 import SessionGroupDisclosure from './SessionGroupDisclosure.jsx'
+import { useMeasuredRail } from './tree-rail.js'
 
 /**
  * HelperGroup - a count chip inside one owner-anchored tree of saved threads.
@@ -66,39 +67,6 @@ export default function HelperGroup(props) {
  * ordinary row.
  */
 const HelperTreeContext = createContext(null)
-
-/** How far the connector reaches past its first and last anchor, in measured px. */
-const RAIL_CAP = 6
-
-/**
- * Composes ONE continuous path through the ordered checkbox anchors. Between
- * adjacent rows the lone horizontal step sits at the DEEPER row's y (always an
- * indentation gutter, never across a row's title), and the vertical changes
- * column exactly once, so at any y there is exactly one vertical segment. The
- * path opens and closes with a single cap collinear with the first/last
- * segment.
- */
-function buildRailPath(anchors) {
-  if (anchors.length === 0) return ''
-  const first = anchors[0]
-  const parts = [`M ${first.x} ${first.y - RAIL_CAP}`, `L ${first.x} ${first.y}`]
-  for (let i = 1; i < anchors.length; i++) {
-    const prev = anchors[i - 1]
-    const cur = anchors[i]
-    if (cur.x === prev.x) {
-      parts.push(`L ${cur.x} ${cur.y}`)
-    } else if (cur.depth > prev.depth) {
-      // Descending: fall at the parent column to the child row, then step in.
-      parts.push(`L ${prev.x} ${cur.y}`, `L ${cur.x} ${cur.y}`)
-    } else {
-      // Ascending: step out at the deeper (previous) row, then fall to the row.
-      parts.push(`L ${cur.x} ${prev.y}`, `L ${cur.x} ${cur.y}`)
-    }
-  }
-  const last = anchors[anchors.length - 1]
-  parts.push(`L ${last.x} ${last.y + RAIL_CAP}`)
-  return parts.join(' ')
-}
 
 /**
  * The count a closed helper control states.
@@ -384,93 +352,11 @@ export function HelperGroupListItem({ owner, ownerStatus, children }) {
   if (owner == null && !Object.hasOwn(OWNER_COPY, ownerStatus)) {
     throw new Error('HelperGroupListItem render failed: owner context has no supported status; no owner can be safely displayed. Pass the authorized context ownerStatus from the grouped list.')
   }
-  const treeRef = useRef(null)
-  const rowsRef = useRef(new Map())
-  const frameRef = useRef(0)
-  const timerRef = useRef(0)
-  const [railPath, setRailPath] = useState('')
-  const [anchorCount, setAnchorCount] = useState(0)
-
-  const register = useCallback((element, depth) => { rowsRef.current.set(element, depth) }, [])
-  const unregister = useCallback((element) => { rowsRef.current.delete(element) }, [])
-
-  const measure = useCallback(() => {
-    const container = treeRef.current
-    if (!container) return
-    const containerRect = container.getBoundingClientRect()
-    const anchors = []
-    for (const [element, depth] of rowsRef.current) {
-      // A row that unmounted left its registration behind; drop it rather than
-      // trace a node that is no longer on the page.
-      if (!element.isConnected || !container.contains(element)) {
-        rowsRef.current.delete(element)
-        continue
-      }
-      const input = element.querySelector('input[type="checkbox"]')
-      if (!input) continue // no checkbox, no anchor
-      const rect = input.getBoundingClientRect()
-      anchors.push({
-        x: rect.left + rect.width / 2 - containerRect.left,
-        y: rect.top + rect.height / 2 - containerRect.top,
-        depth,
-      })
-    }
-    if (anchors.length === 0) {
-      setRailPath('')
-      setAnchorCount(0)
-      return
-    }
-    // Anchors arrive in registration order, which is mount order; the path is
-    // traced top to bottom, so order them by where they actually sit.
-    anchors.sort((a, b) => a.y - b.y)
-    // Snap each depth to ONE column (its median x) so every vertical at a
-    // given depth is exactly aligned - provably a single line per column.
-    const byDepth = new Map()
-    for (const anchor of anchors) {
-      const xs = byDepth.get(anchor.depth) ?? []
-      xs.push(anchor.x)
-      byDepth.set(anchor.depth, xs)
-    }
-    for (const [depth, xs] of byDepth) {
-      const sorted = xs.slice().sort((a, b) => a - b)
-      const column = sorted[Math.floor(sorted.length / 2)]
-      for (const anchor of anchors) if (anchor.depth === depth) anchor.x = column
-    }
-    setRailPath(buildRailPath(anchors))
-    setAnchorCount(anchors.length)
-  }, [])
-
-  const scheduleMeasure = useCallback(() => {
-    if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frameRef.current)
-    if (typeof clearTimeout === 'function') clearTimeout(timerRef.current)
-    if (typeof requestAnimationFrame === 'function') {
-      frameRef.current = requestAnimationFrame(measure)
-      // A throttled tab (backgrounded, or one of several stories polled at once)
-      // can starve rAF, which would leave the rail unmeasured; one bounded
-      // timeout guarantees the connector is drawn either way. Measuring twice is
-      // harmless: the path is derived from where the rows actually sit.
-      timerRef.current = setTimeout(measure, 250)
-    } else {
-      measure()
-    }
-  }, [measure])
+  // The connector is the measured tree rail fairtrade shares between its trees (tree-rail.js).
+  const { containerRef: treeRef, register, unregister, scheduleMeasure, railPath, anchorCount } = useMeasuredRail()
 
   const tree = useMemo(() => ({ depth: 0, register, unregister, scheduleMeasure }),
     [register, unregister, scheduleMeasure])
-
-  useEffect(() => {
-    scheduleMeasure()
-    const container = treeRef.current
-    const observer = typeof ResizeObserver !== 'undefined' && container ? new ResizeObserver(scheduleMeasure) : null
-    observer?.observe(container)
-    window.addEventListener('resize', scheduleMeasure)
-    return () => {
-      if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frameRef.current)
-      if (typeof clearTimeout === 'function') clearTimeout(timerRef.current)
-      observer?.disconnect()
-      window.removeEventListener('resize', scheduleMeasure)
-    }
-  }, [scheduleMeasure])
 
   return (
     <div className="helper-group-item helper-tree" ref={treeRef} data-helper-tree>

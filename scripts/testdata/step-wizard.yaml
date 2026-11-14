@@ -1,8 +1,8 @@
 # Cases for the step wizard (src/ui/StepWizard.jsx). scripts/step-wizard.test.mjs mounts the REAL
 # components for each case and checks what a reader and a host reach: the place each step's label
-# is given under its marker (the geometry that follows from a place is measured in a browser, in the
-# LabelsInsideFrame story and its Fairtest row), the controlled frame's regions and count, and the
-# uncontrolled wizard that is built on the frame.
+# is given under its marker and the words it is set in (the geometry that follows from a place, and
+# whether every word fits, is measured in a browser, in the LabelsInsideFrame and TenStops stories),
+# the controlled frame's regions and count, and the uncontrolled wizard that is built on the frame.
 #
 # `steps` is the pool a case draws its first `count` steps from.
 steps:
@@ -18,6 +18,30 @@ steps:
   - {id: done, label: done}
 
 cases:
+  - name: footer progress retains full names and compact labels
+    kind: footer-progress
+    labels: [connect to peasant online, choose sessions to import, review]
+    shortLabels: [online, choose sessions, review]
+    expectedNames: ['step 1 of 3, connect to peasant online', 'step 2 of 3, choose sessions to import', 'step 3 of 3, review']
+  - name: footer progress keeps arbitrary labels when short labels are absent
+    kind: footer-progress
+    labels: ['WELCOME Case!', 'Choose many unusual sessions', 'Review & Close']
+    expectedNames: ['step 1 of 3, WELCOME Case!', 'step 2 of 3, Choose many unusual sessions', 'step 3 of 3, Review & Close']
+  - name: footer progress retains full react node labels
+    kind: footer-progress
+    nodeLabels: true
+    labels: ['Open mixed Case', 'Choose sessions in /Home', 'Done!']
+    shortLabels: [open, sessions, done]
+    expectedNames: ['step 1 of 3, Open mixed Case', 'step 2 of 3, Choose sessions in /Home', 'step 3 of 3, Done!']
+  - name: footer progress falls back to full react node labels
+    kind: footer-progress
+    nodeLabels: true
+    labels: ['First / Mixed', 'A label with punctuation!', 'last']
+    expectedNames: ['step 1 of 3, First / Mixed', 'step 2 of 3, A label with punctuation!', 'step 3 of 3, last']
+  - name: footer progress handles eleven host supplied stops
+    kind: footer-progress
+    labels: [First, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, 'Eleventh stop']
+    expectedNames: ['step 1 of 11, First', 'step 2 of 11, Two', 'step 3 of 11, Three', 'step 4 of 11, Four', 'step 5 of 11, Five', 'step 6 of 11, Six', 'step 7 of 11, Seven', 'step 8 of 11, Eight', 'step 9 of 11, Nine', 'step 10 of 11, Ten', 'step 11 of 11, Eleventh stop']
   # kind places: StepIndicator over the first `count` steps; `expected.places` is the place of each
   # label in order, `expected.gaps` the gap count the rail hands the stylesheet for the label shares.
   - {name: label places for 1 step, kind: places, count: 1, expected: {places: [only], gaps: '1'}}
@@ -70,6 +94,59 @@ cases:
   # kind head: a head the host leaves empty (null, false or true, which React draws as nothing) draws
   # no head slot, so no margin is left under the rail.
   - {name: an empty head draws no head slot, kind: head, count: 2, current: welcome, heads: [null, false, true], expected: {slots: 0}}
+
+  # kind words: StepIndicator over `labels` (or the first `count` pool steps). `expected.words` is
+  # each label as the runs it is set in, and `expected.middle`, `expected.edge` and `expected.only`
+  # are the longest words the rail hands the stylesheet, in characters, for its middle labels, its
+  # first and last labels, and a lone label. `nodeLabels` passes each label as a React element: it
+  # is measured from its text and set as given. A word never breaks, and a rail that cannot fit
+  # every word hides all its labels together in the stylesheet while they stay in the accessible
+  # name; the geometry of that hide is measured in a browser, in the LabelsInsideFrame and TenStops
+  # stories.
+  - name: no-label-breaks-inside-a-word
+    kind: words
+    labels: [welcome, auto-ingest new branches, share]
+    expected:
+      words: [[welcome], [auto-ingest, new, branches], [share]]
+      middle: 11
+      edge: 7
+      only: 0
+
+  - name: labels-hide-together-when-a-word-does-not-fit
+    kind: words
+    labels: [welcome, review the scan, done]
+    expected:
+      words: [[welcome], [review, the, scan], [done]]
+      middle: 6
+      edge: 7
+      only: 0
+
+  - name: hidden-labels-stay-in-the-accessible-name
+    kind: words
+    count: 10
+    expected:
+      words: [[welcome], [projects], [sessions], [redaction], [review], [license], [collectives], [share], [confirm], [done]]
+      middle: 11
+      edge: 7
+      only: 0
+
+  - name: a-lone-word-wider-than-the-rail-hides-the-label
+    kind: words
+    labels: [supercalifragilisticexpialidocioussupercalifragilisticexpialidocious]
+    expected:
+      words: [[supercalifragilisticexpialidocioussupercalifragilisticexpialidocious]]
+      middle: 0
+      edge: 0
+      only: 68
+
+  - name: a-node-label-is-measured-by-its-text
+    kind: words
+    nodeLabels: true
+    labels: [supercalifragilisticexpialidocious]
+    expected:
+      middle: 0
+      edge: 0
+      only: 34
 
   # kind jump: a completed or reachable marker reports its id, a locked one does not.
   - name: a reachable marker jumps and a locked one does not

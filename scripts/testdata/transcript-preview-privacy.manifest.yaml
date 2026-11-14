@@ -1,0 +1,27 @@
+requiredPathNames:
+  - main-turn-body
+  - first-ordered-text-part
+  - second-ordered-text-part
+  - system-row-body
+  - control-row-body
+  - earlier-history-body
+requiredPolicyNames:
+  - private-preview-blocks-all-markdown-images
+  - omitted-policy-keeps-existing-host-images
+requiredUnsafeNames:
+  - javascript-image-has-no-empty-source
+  - empty-image-has-no-empty-source
+requiredMutationNames:
+  - private-preview-accidentally-loads-images
+  - markdown-heading-ignores-host-level
+mutations:
+  - name: private-preview-accidentally-loads-images
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: 'allowImages: allowMarkdownImages !== false'
+    replace: 'allowImages: true'
+    expectedDiagnostic: 'private-preview-blocks-all-markdown-images / main-turn-body: image policy is applied'
+  - name: markdown-heading-ignores-host-level
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: 'turnHeadingLevel: pageLevel + 2'
+    replace: 'turnHeadingLevel: 4'
+    expectedDiagnostic: 'authored heading is nested and retained'

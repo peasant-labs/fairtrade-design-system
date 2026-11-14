@@ -1,0 +1,32 @@
+requiredCaseNames:
+  - dark-desktop-wizard
+  - light-desktop-wizard
+  - dark-short-desktop-wizard
+  - light-short-desktop-wizard
+  - dark-laptop-desktop-wizard
+  - light-laptop-desktop-wizard
+  - dark-compact-laptop-wizard
+  - light-compact-laptop-wizard
+  - dark-small-laptop-wizard
+  - light-small-laptop-wizard
+  - dark-narrow-wizard
+  - light-narrow-wizard
+  - dark-phone-wizard
+  - light-phone-wizard
+  - dark-small-phone-wizard
+  - light-small-phone-wizard
+requiredViewportNames:
+  - dark-short-desktop-wizard
+  - light-short-desktop-wizard
+  - dark-laptop-desktop-wizard
+  - light-laptop-desktop-wizard
+  - dark-compact-laptop-wizard
+  - light-compact-laptop-wizard
+  - dark-small-laptop-wizard
+  - light-small-laptop-wizard
+requiredRaceNames:
+  - delayed-highlighter-does-not-overwrite-new-session
+requiredResizeNames:
+  - whole-label-fit-recalculates-after-resize
+requiredShortViewportNames:
+  - short-phone-keeps-a-readable-scrollable-preview

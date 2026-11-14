@@ -49,17 +49,18 @@ assert.equal(scrollSource.split(scrollSpec.readMutation.find).length - 1, 1, 'sc
 const linearMutant = await import(`data:text/javascript,${encodeURIComponent(scrollSource.replace(scrollSpec.readMutation.find, scrollSpec.readMutation.replace))}`)
 assert.throws(() => checkScroll(linearRow, linearRow.line, linearMutant.turnAtReadingLine), /logarithmic offset reads/, scrollSpec.readMutation.name)
 
-/** @type {{requiredNames: string[], externals: {name: string, package: string, mutation: string, dependencyMutation: string}[]}} */
+/** @type {{requiredNames: string[], externals: {name: string, package: string, external?: string, mutation: string, dependencyMutation: string}[]}} */
 const externalSpec = loadStrictYaml('scripts/testdata/library-externals.yaml')
 assertExactNames(externalSpec.externals.map(row => row.name), externalSpec.requiredNames, 'library externals')
 const packageManifest = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
 for (const row of externalSpec.externals) {
-  const assertExternal = (externals) => assert.ok(externals.includes(row.package), `${row.name} must remain external`)
+  const external = row.external ?? row.package
+  const assertExternal = (externals) => assert.ok(externals.includes(external), `${row.name} must remain external`)
   assertExternal(LIB_EXTERNALS)
   const assertDependency = dependencies => assert.ok(dependencies[row.package], `${row.name} must be installable by consumers`)
   assertDependency(packageManifest.dependencies)
   assert.throws(() => assertDependency({...packageManifest.dependencies, [row.package]: undefined}), /must be installable/, row.dependencyMutation)
-  assert.throws(() => assertExternal(LIB_EXTERNALS.filter(name => name !== row.package)), /must remain external/, row.mutation)
+  assert.throws(() => assertExternal(LIB_EXTERNALS.filter(name => name !== external)), /must remain external/, row.mutation)
 }
 
 let failed = 0

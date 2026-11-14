@@ -1505,7 +1505,8 @@
       "props": {},
       "stories": [
         "Forest",
-        "KeyboardToggle"
+        "KeyboardToggle",
+        "Preview"
       ]
     },
     {
@@ -1662,13 +1663,15 @@
         "StepIndicator",
         "StepWizardFrame"
       ],
-      "doc": "",
+      "doc": "StepWizard - a step indicator and controlled wizard frame.",
       "props": {},
       "stories": [
         "Default",
         "Indicator",
         "Controlled",
-        "LabelsInsideFrame"
+        "LabelsInsideFrame",
+        "LoneStep",
+        "TenStops"
       ]
     },
     {

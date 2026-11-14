@@ -6,23 +6,31 @@ import { MapView, ChangesView, ChangeDetailView, SessionDestinationView, Timelin
 import { AnalyticsView } from './GraphAnalytics.jsx'
 import { HomeView, SettingsView } from './LocalHome.jsx'
 import LocalVillage from './LocalVillage.jsx'
+import KickstartView from './LocalKickstart.jsx'
 
 /* peasant (local app) demo parent. The section registry opens on home; home and settings are in
    the nav, while online (id village), analytics, changes and code map are reached by route only:
    `?section=<id>` opens one directly with a back to home, and the changes timeline still links
    into the code map. change-detail opens from a
    commit click (onNavigate) with a back affordance. `?local=offline` shows the page-level notice
-   for a stopped local app above the section body. */
+   for a stopped local app above the section body. `?view=kickstart` opens the setup wizard, which
+   peasant serves at /kickstart outside the section registry, with a back to settings. */
 
 const SECTIONS = LOCAL_APP_SECTIONS
 const SECTION_IDS = new Set(SECTIONS.map((section) => section.id))
 const BACK_TO = {
   'change-detail': 'changes',
   'session-detail': 'changes',
+  kickstart: 'settings',
   ...Object.fromEntries(SECTIONS.filter((section) => !section.inNav).map((section) => [section.id, 'home'])),
 }
 
+/* views reached by route only that are not sections: the registry stays unchanged. */
+const ROUTE_VIEWS = new Set(['kickstart'])
+
 function initialSection() {
+  const view = new URLSearchParams(window.location.search).get('view')
+  if (view && ROUTE_VIEWS.has(view)) return view
   const requested = new URLSearchParams(window.location.search).get('section')
   return requested && SECTION_IDS.has(requested) ? requested : SECTIONS[0].id
 }
@@ -65,10 +73,12 @@ export default function GraphApp({ theme }) {
       backTo={back}
       onSectionChange={setView}
       notice={offline ? <OfflineNotice /> : null}
+      navEnd={view === 'kickstart' ? <h2 className="iu-ks-page-title">set up peasant</h2> : null}
     >
       {view === 'home' && <HomeView offline={offline} />}
       {view === 'village' && <LocalVillage />}
       {view === 'settings' && <SettingsView />}
+      {view === 'kickstart' && <KickstartView theme={theme} />}
       {view === 'map' && (
         <>
           <MapView theme={theme} onNavigate={onAppNavigate} />
