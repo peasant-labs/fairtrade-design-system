@@ -1,0 +1,7 @@
+requiredCaseNames:
+  - dark-desktop-wizard
+  - light-desktop-wizard
+  - dark-narrow-wizard
+  - light-narrow-wizard
+requiredRaceNames:
+  - delayed-highlighter-does-not-overwrite-new-session

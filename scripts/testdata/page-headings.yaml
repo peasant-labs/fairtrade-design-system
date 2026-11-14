@@ -26,6 +26,14 @@ cases:
     component: viewer
     props: {headingLevel: 1}
     headings: [H1.txn-title, H2.lbl, H3.txn-turn-heading, H3.txn-turn-heading]
+  - name: the viewer nests below a page section
+    component: viewer
+    props: {headingLevel: 3}
+    headings: [H3.txn-title, H4.lbl, H5.txn-turn-heading, H5.txn-turn-heading]
+  - name: the viewer nests below a wizard stop
+    component: viewer
+    props: {headingLevel: 4}
+    headings: [H4.txn-title, H5.lbl, H6.txn-turn-heading, H6.txn-turn-heading]
   - name: explore is a section by default
     component: explore
     props: {}
@@ -35,5 +43,6 @@ cases:
     props: {headingLevel: 1}
     headings: [H1.cex-h2, H2.cex-title, H2.cex-title, H2.cex-title, H2.cex-title]
 invalid:
-  - {name: the viewer refuses another level, component: viewer, props: {headingLevel: 3}, diagnostic: 'TranscriptViewer: headingLevel must be 1'}
+  - {name: the viewer refuses a level that leaves no room for turns, component: viewer, props: {headingLevel: 5}, diagnostic: 'TranscriptViewer: headingLevel must be 1'}
+  - {name: explore still refuses the viewer pane level, component: explore, props: {headingLevel: 3}, diagnostic: 'Explore: headingLevel must be 1'}
   - {name: explore refuses another level, component: explore, props: {headingLevel: '1'}, diagnostic: 'Explore: headingLevel must be 1'}

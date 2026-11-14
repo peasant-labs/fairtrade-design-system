@@ -1,0 +1,18 @@
+cases:
+  - {name: dark-desktop-wizard, theme: dark, width: 1440, height: 1400, layout: side-by-side}
+  - {name: light-desktop-wizard, theme: light, width: 1440, height: 1400, layout: side-by-side}
+  - {name: dark-narrow-wizard, theme: dark, width: 390, height: 1800, layout: stacked}
+  - {name: light-narrow-wizard, theme: light, width: 390, height: 1800, layout: stacked}
+probe:
+  node: session-retention
+  title: Fix the retention copy
+  source: 'export const retentionDays = 30'
+  excerpt: 'The retention stop says'
+  search: 'const retentionDays'
+  secret: SECRET-synthetic-preview-only
+  imageHost: preview.invalid
+race:
+  name: delayed-highlighter-does-not-overwrite-new-session
+  firstNode: session-retention
+  secondNode: session-scan
+  secondTitle: Wire the scan progress bar

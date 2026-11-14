@@ -11,6 +11,18 @@
 /** @type {readonly string[]} */
 export const LIB_EXTERNALS = Object.freeze([
   '@peasant-labs/schema',
+  '@shikijs/core',
+  '@shikijs/engine-javascript',
+  '@shikijs/langs',
+  '@shikijs/langs/typescript',
+  '@shikijs/langs/javascript',
+  '@shikijs/langs/python',
+  '@shikijs/langs/go',
+  '@shikijs/langs/json',
+  '@shikijs/langs/yaml',
+  '@shikijs/langs/bash',
+  '@shikijs/langs/css',
+  '@shikijs/langs/html',
   '@tanstack/react-table',
   '@xyflow/react',
   'lucide-react',

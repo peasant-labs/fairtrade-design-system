@@ -2,8 +2,8 @@
 # named here; deleting a gate or adding one without updating this file fails
 # scripts/run-test-lib.test.mjs. The two counts pin the raw leaf list and the deduped gate
 # list, so a duplicate or a dropped composite is visible before the set comparison.
-expectedLeafCount: 160
-expectedGateCount: 157
+expectedLeafCount: 164
+expectedGateCount: 161
 requiredGateCommands:
   - PI_MOUNTED_TEST=1 node scripts/pi-transcript.test.mjs
   - node --test scripts/check-generated-artifacts.test.mjs
@@ -46,6 +46,7 @@ requiredGateCommands:
   - node scripts/graph-contract-enums.test.mjs
   - node scripts/helper-groups.test.mjs
   - node scripts/insight-panel.test.mjs
+  - node scripts/kickstart-demo.test.mjs
   - node scripts/local-offline-banner.test.mjs
   - node scripts/mobile-layout.test.mjs
   - node scripts/number-format.test.mjs
@@ -117,6 +118,8 @@ requiredGateCommands:
     scripts/testdata/transcript-library-table.manifest.yaml
   - node scripts/parts-mutations.mjs scripts/transcript-reading-layout.test.mjs
     scripts/testdata/transcript-reading-layout.manifest.yaml
+  - node scripts/parts-mutations.mjs scripts/transcript-preview-privacy.test.mjs
+    scripts/testdata/transcript-preview-privacy.manifest.yaml
   - node scripts/parts-mutations.mjs scripts/transcript-segments.test.mjs
     scripts/testdata/transcript-segments.manifest.yaml
   - node scripts/parts-mutations.mjs scripts/transcript-session-records.test.mjs
@@ -172,6 +175,7 @@ requiredGateCommands:
   - node scripts/transcript-initial-position.test.mjs
   - node scripts/transcript-integrity-viewer.test.mjs
   - node scripts/transcript-integrity.test.mjs
+  - node scripts/transcript-highlight.test.mjs
   - node scripts/transcript-ledger-chrome.test.mjs
   - node scripts/transcript-ledger-turns.test.mjs
   - node scripts/transcript-library-table.render.test.mjs
@@ -181,6 +185,7 @@ requiredGateCommands:
   - node scripts/transcript-outcome-chip.mutations.mjs
   - node scripts/transcript-outcome-chip.test.mjs
   - node scripts/transcript-provenance-retention.test.mjs
+  - node scripts/transcript-preview-privacy.test.mjs
   - node scripts/transcript-published-images.test.mjs
   - node scripts/transcript-reading-layout.test.mjs
   - node scripts/transcript-schema-adapter.mutations.mjs

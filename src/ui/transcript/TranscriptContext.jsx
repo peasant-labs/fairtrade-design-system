@@ -15,9 +15,10 @@ import { useImageUrl } from './image-url.js'
  * @property {(id: string) => void} toggle
  * @property {Record<string, boolean>} openTools
  * @property {(id: string) => void} toggleTool
+ * @property {number} [headingLevel] level of each retained turn's heading
  */
 /** @param {TranscriptContextBaseProps & import('./image-url.js').ImageUrlProps} props */
-export default function TranscriptContext({ relationships = [], earlierHistory = [], onNavigate, open, toggle, openTools, toggleTool, imageUrl, attachmentUrl }) {
+export default function TranscriptContext({ relationships = [], earlierHistory = [], onNavigate, open, toggle, openTools, toggleTool, imageUrl, attachmentUrl, headingLevel }) {
   const resolvedImageUrl = useImageUrl(imageUrl, attachmentUrl)
   const prefix = useId()
   if (!relationships.length && !earlierHistory.length) return null
@@ -41,7 +42,7 @@ export default function TranscriptContext({ relationships = [], earlierHistory =
       <div id={`${prefix}-history-${section.id}`} hidden={!open[section.id]}>
         <p className="txn-context-note">{section.state.explanation}</p>
         <UsageScopes scopes={section.usageScopes} label="earlier history usage by scope" />
-        {open[section.id] && section.turns.map(turn => <TurnCard key={turn.identity} turn={turn} openTools={openTools} toggleTool={toggleTool} imageUrl={resolvedImageUrl} />)}
+        {open[section.id] && section.turns.map(turn => <TurnCard key={turn.identity} turn={turn} openTools={openTools} toggleTool={toggleTool} imageUrl={resolvedImageUrl} headingLevel={headingLevel} />)}
       </div>
     </section>)}
   </section>

@@ -1,0 +1,34 @@
+requiredCaseNames:
+  - typescript-is-highlighted
+  - python-is-highlighted
+  - go-is-highlighted
+  - json-is-highlighted
+  - yaml-is-highlighted
+  - shell-is-highlighted
+  - css-is-highlighted
+  - html-is-highlighted
+  - unknown-language-keeps-plain-source
+  - omitted-language-keeps-plain-source
+  - oversized-line-keeps-plain-source
+  - executable-looking-code-stays-text
+  - multiline-code-preserves-blank-lines
+requiredInvalidNames:
+  - changed-token-text-is-refused
+  - untrusted-token-style-is-refused
+  - non-text-token-is-refused
+  - missing-token-line-is-refused
+  - invalid-line-shape-is-refused
+  - excessive-token-output-is-refused
+requiredPreservationNames:
+  - carriage-return-line-endings-preserved
+  - trailing-and-leading-blank-lines-preserved
+requiredBudgetNames:
+  - overlong-line-never-invokes-tokenizer
+  - too-many-lines-never-invokes-tokenizer
+  - too-much-source-never-invokes-tokenizer
+requiredSearchNames:
+  - search-crosses-token-spans
+requiredFailureNames:
+  - tokenizer-error-retains-plain-source
+requiredRerenderNames:
+  - changing-the-source-never-shows-old-tokens

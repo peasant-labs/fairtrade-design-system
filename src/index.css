@@ -2120,19 +2120,21 @@
   }
   .iu-page-titlerow { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); }
   /* ---- the local app's setup wizard (`?view=kickstart`): the frame over peasant's ten stops, and the
-     selection stop's tree beside the preview of the row whose title was clicked. the tree takes three
-     parts and the preview two from 1024px up; narrower, the preview sits under the tree. ---- */
+     selection stop's tree beside the preview of the row whose title was clicked. the tree takes two
+     parts and the preview three from 1024px up; narrower, the preview sits under the tree. ---- */
   .iu-ks-stop { margin: 0 0 var(--sp-3); font-family: var(--font-display); font-weight: 700; font-size: var(--fs-lg); line-height: var(--lh-body); color: var(--ink-strong); text-transform: lowercase; }
   .iu-ks-field { display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; }
   .iu-ks-help { margin: 0; font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink-2); }
   .iu-ks-select { display: grid; gap: var(--sp-4); grid-template-columns: minmax(0, 1fr); align-items: start; }
   @media (width >= 1024px) {
-    .iu-ks-select { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+    .iu-ks-select { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); }
   }
   .iu-ks-tree { min-width: 0; max-height: 28rem; overflow-y: auto; }
   .iu-ks-preview { display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; padding: var(--sp-3) var(--sp-4); border: var(--bd); background: var(--surface); }
   .iu-ks-preview-title { margin: 0; font-family: var(--font-mono); font-size: var(--fs-label); font-weight: 600; line-height: var(--lh-body); color: var(--ink-3); text-transform: lowercase; }
   .iu-ks-preview-name { color: var(--ink-strong); font-family: var(--font-body); font-size: var(--fs-body); text-transform: none; overflow-wrap: anywhere; }
+  .iu-ks-preview-note { margin: 0; font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-body); color: var(--ink-3); }
+  .iu-ks-viewer { height: calc(var(--sp-8) * 9); min-width: 0; }
   .iu-ks-lines { display: flex; flex-direction: column; gap: var(--sp-2); margin: 0; padding: 0; list-style: none; min-width: 0; }
   .iu-ks-line { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; }
   .iu-ks-line-label { font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-body); color: var(--ink-3); }
@@ -2470,6 +2472,8 @@
   .txn-body .txn-md-heading-1 { font-size: var(--fs-lg); }
   .txn-body .txn-md-heading-2 { font-size: var(--fs-lg); }
   .txn-body .txn-md-heading-3 { font-size: var(--fs-lg); }
+  .txn-body .txn-md-heading-4, .txn-body .txn-md-heading-5, .txn-body .txn-md-heading-6 { font-size: var(--fs-body); }
+  .txn-body .txn-md-image-blocked { color: var(--ink-3); }
   .txn-body strong,
   .txn-body b { color: var(--amber-bright); font-weight: 700; }
   .txn-body .txn-md-list { margin-block: var(--sp-3) 0; padding-inline-start: var(--sp-5); }
@@ -2488,6 +2492,14 @@
   .txn-body .txn-md-code-wrap { background: var(--canvas); border: var(--bd); }
   .txn-body .txn-md-code { min-inline-size: max-content; margin: 0; padding: var(--sp-3); background: transparent; border: 0; color: var(--ink-2); font-family: var(--font-mono); font-size: var(--fs-body); line-height: var(--lh-mono); letter-spacing: 0; word-spacing: normal; white-space: pre; }
   .txn-body .txn-md-code-wrap code { display: block; padding: 0; background: transparent; border: 0; font: inherit; color: inherit; }
+  /* Shiki's validated token names map only to the system's text-safe theme tokens. */
+  .txn-md-code .txn-code-foreground, .txn-md-code .txn-code-punctuation { color: var(--ink); }
+  .txn-md-code .txn-code-keyword { color: var(--amber); }
+  .txn-md-code .txn-code-string, .txn-md-code .txn-code-string-expression { color: var(--olive); }
+  .txn-md-code .txn-code-constant { color: var(--clay); }
+  .txn-md-code .txn-code-function, .txn-md-code .txn-code-link { color: var(--teal); }
+  .txn-md-code .txn-code-parameter { color: var(--mauve); }
+  .txn-md-code .txn-code-comment { color: var(--ink-3); }
   .txn-inlinecode { font-family: var(--font-mono); font-size: var(--fs-body); line-height: var(--lh-mono); background: var(--canvas); border: var(--bd); padding-inline: var(--sp-1); color: var(--ink-2); }
   .txn-body .txn-md-link { text-decoration: underline dotted; text-underline-offset: var(--sp-1); }
   .txn-body .txn-md-link:hover,

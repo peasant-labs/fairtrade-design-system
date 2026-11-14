@@ -1,8 +1,10 @@
 import MermaidBlock from './MermaidBlock.jsx'
+import FencedCode from './FencedCode.jsx'
+import { MarkdownContext } from './markdown-context.js'
 import ReactMarkdown from 'react-markdown'
 import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
-import { memo } from 'react'
+import { memo, useContext } from 'react'
 
 /* Markdown is the transcript's untrusted-content boundary. The parser deliberately has no
    rehype-raw plugin, so source HTML stays text instead of becoming executable DOM. GFM supplies
@@ -53,12 +55,6 @@ const markdownComponents = {
   /** @param {object} props */
   p: ({ children, node: _node, ...props }) => <p className="txn-md-prose" {...props}>{children}</p>,
   /** @param {object} props */
-  h1: ({ children, node: _node, ...props }) => <h1 className="txn-md-heading txn-md-heading-1" {...props}>{children}</h1>,
-  /** @param {object} props */
-  h2: ({ children, node: _node, ...props }) => <h2 className="txn-md-heading txn-md-heading-2" {...props}>{children}</h2>,
-  /** @param {object} props */
-  h3: ({ children, node: _node, ...props }) => <h3 className="txn-md-heading txn-md-heading-3" {...props}>{children}</h3>,
-  /** @param {object} props */
   ul: ({ children, className, node: _node, ...props }) => (
     <ul className={classNames('txn-md-list txn-md-list-ul', className)} {...props}>{children}</ul>
   ),
@@ -93,6 +89,12 @@ const markdownComponents = {
       const source = code.children?.map((child) => child.type === 'text' ? child.value : '').join('') ?? ''
       return <MermaidBlock source={source} />
     }
+    if (code?.tagName === 'code' && code.children?.every((child) => child.type === 'text')) {
+      const source = code.children.map((child) => child.value).join('')
+      const classes = Array.isArray(code.properties?.className) ? code.properties.className : []
+      const language = classes.find((name) => typeof name === 'string' && name.startsWith('language-'))?.slice(9) ?? ''
+      return <FencedCode source={source} language={language} className={classes.join(' ')} preProps={props} />
+    }
     return (
     <div className="txn-md-code-wrap" tabIndex={0} role="region" aria-label="message code">
       <pre className="txn-md-code" {...props}>{children}</pre>
@@ -121,6 +123,38 @@ const markdownComponents = {
   del: ({ children, node: _node, ...props }) => <del className="txn-md-del" {...props}>{children}</del>,
 }
 
+/* A source heading is nested beneath its containing turn. ARIA permits levels deeper than six;
+   using a named heading rather than another h6 preserves hierarchy inside a deeply nested pane. */
+function sourceHeading(depth, turnHeadingLevel) {
+  return function MarkdownHeading({ children, node: _node, ...props }) {
+    const level = turnHeadingLevel == null ? depth : turnHeadingLevel + depth
+    const Heading = level <= 6 ? `h${level}` : 'div'
+    return <Heading className={`txn-md-heading txn-md-heading-${depth}`} {...(level > 6 ? { role: 'heading', 'aria-level': level } : {})} {...props}>{children}</Heading>
+  }
+}
+
+function imageComponent(allowImages) {
+  return function MarkdownImage({ node: _node, src, alt, ...props }) {
+    if (!allowImages || !src) return <span className="txn-md-image-blocked" data-txn-image-blocked="true">{allowImages ? 'image unavailable' : 'image not loaded in local preview'}{alt ? `: ${alt}` : ''}</span>
+    return <img src={src} alt={alt ?? ''} {...props} />
+  }
+}
+
+/* Only viewer levels 1..4 plus the standalone renderer are possible. These maps contain no
+   transcript content and stay stable across the viewer's frequent chrome re-renders. */
+const componentMaps = new Map()
+function componentsFor(allowImages, turnHeadingLevel) {
+  const key = `${allowImages ? 'images' : 'no-images'}:${turnHeadingLevel ?? 'standalone'}`
+  if (!componentMaps.has(key)) componentMaps.set(key, {
+    ...markdownComponents,
+    h1: sourceHeading(1, turnHeadingLevel), h2: sourceHeading(2, turnHeadingLevel),
+    h3: sourceHeading(3, turnHeadingLevel), h4: sourceHeading(4, turnHeadingLevel),
+    h5: sourceHeading(5, turnHeadingLevel), h6: sourceHeading(6, turnHeadingLevel),
+    img: imageComponent(allowImages),
+  })
+  return componentMaps.get(key)
+}
+
 /**
  * Render a cooked transcript body as safe, structured Markdown.
  *
@@ -134,13 +168,14 @@ const markdownComponents = {
  */
 export default function Markdown({ text, source }) {
   const value = typeof text === 'string' ? text : typeof source === 'string' ? source : ''
+  const { allowImages, turnHeadingLevel } = useContext(MarkdownContext)
 
   return (
     <div className="body txn-body">
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkBreaks]}
         urlTransform={safeUrlTransform}
-        components={markdownComponents}
+        components={componentsFor(allowImages, turnHeadingLevel)}
       >
         {value}
       </ReactMarkdown>

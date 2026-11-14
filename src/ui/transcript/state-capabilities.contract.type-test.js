@@ -218,6 +218,15 @@ _acceptViewerProps({ viewModel: vm, capabilities: caps, showSearchTrigger: 1 })
 // @ts-expect-error — showOutcome is a boolean, not null
 _acceptViewerProps({ viewModel: vm, capabilities: caps, showOutcome: null })
 
+_acceptViewerProps({ viewModel: vm, capabilities: caps, headingLevel: 3, allowMarkdownImages: false })
+_acceptViewerProps({ viewModel: vm, capabilities: caps, headingLevel: 4 })
+
+// @ts-expect-error — a viewer title may be no deeper than h4, to leave room for phases and turns
+_acceptViewerProps({ viewModel: vm, capabilities: caps, headingLevel: 5 })
+
+// @ts-expect-error — a string must never silently enable resource requests
+_acceptViewerProps({ viewModel: vm, capabilities: caps, allowMarkdownImages: 'false' })
+
 /* ── (5c) NEGATIVE: presentation is a closed union ───────────────────────────────
    The ledger value is the one a consumer opts into; a typo or a widened string must fail. */
 // @ts-expect-error — presentation is the closed 'classic' | 'ledger' union
