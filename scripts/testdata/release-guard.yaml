@@ -59,6 +59,48 @@ workflow:
   forbidden_text:
     - {name: the hold rule never dequeues a queued release PR, file: release-batch.yml, text: dequeuePullRequest}
     - {name: the release job leaves the GitHub Release to the tag-triggered workflow, file: release-batch.yml, text: gh release}
+  # Complete conjunctions for the recovery path. A prepared but unchanged
+  # branch still needs queue reads and arm/hold decisions; only branch writes
+  # need push=true. The test also rejects any extra push=true gate on recovery.
+  recovery_gates:
+    - name: find a release PR after either preparation result
+      job: plan
+      step: Find the open release PR
+      clauses: &prepared ["steps.precheck.outputs.proceed == 'true'", "steps.replan.outputs.action == 'open-pr'", "steps.write.outputs.push != ''"]
+    - {name: read the queue after either preparation result, job: plan, step: Read the merge queue, clauses: *prepared}
+    - name: find an existing release PR in the queue
+      job: plan
+      step: Find the release PR in the queue
+      clauses: ["steps.precheck.outputs.proceed == 'true'", "steps.replan.outputs.action == 'open-pr'", "steps.write.outputs.push != ''", "steps.find.outputs.number != ''"]
+    - name: judge the queue after either preparation result
+      job: plan
+      step: Judge the hold rule
+      clauses: ["steps.precheck.outputs.proceed == 'true'", "steps.replan.outputs.action == 'open-pr'", "steps.write.outputs.push != ''", "steps.entry.outputs.pr != ''"]
+    - name: bundle only a changed branch
+      job: plan
+      step: Bundle the release branch
+      clauses: ["steps.precheck.outputs.proceed == 'true'", "steps.replan.outputs.action == 'open-pr'", "steps.write.outputs.push == 'true'"]
+    - name: fetch only a changed branch
+      job: release
+      step: Fetch the release branch
+      clauses: &push ["needs.plan.outputs.action == 'open-pr'", "needs.plan.outputs.push == 'true'"]
+    - {name: push only a changed branch, job: release, step: Push the release branch, clauses: *push}
+    - name: open a PR only for a changed branch
+      job: release
+      step: Open the release PR
+      clauses: ["needs.plan.outputs.action == 'open-pr'", "needs.plan.outputs.push == 'true'", "needs.plan.outputs.number == ''"]
+    - name: update a PR only for a changed branch
+      job: release
+      step: Update the release PR
+      clauses: ["needs.plan.outputs.action == 'open-pr'", "needs.plan.outputs.push == 'true'", "needs.plan.outputs.number != ''"]
+    - name: arm an unchanged unarmed release PR
+      job: release
+      step: Arm auto-merge on the release PR
+      clauses: ["needs.plan.outputs.action == 'open-pr'", "needs.plan.outputs.gate == 'arm'"]
+    - name: hold an unchanged armed release PR
+      job: release
+      step: Take the arming back while a releasing PR is ahead
+      clauses: ["needs.plan.outputs.action == 'open-pr'", "needs.plan.outputs.gate == 'hold'", "needs.plan.outputs.queued != 'true'", "needs.plan.outputs.armed == 'true'"]
   # Each row breaks one fairtrade-owned contract; the test proves the matching
   # assertion in release-guard.test.mjs catches it.
   contract_mutations:
@@ -90,6 +132,34 @@ workflow:
       file: ci.yml
       find: "cache-dependency-path: infra-tool/tools/release/go.sum"
       replace: "cache-dependency-path: go.sum"
+    - name: release PR lookup only on push is rejected
+      file: release-batch.yml
+      find: "        id: find\n        if: steps.precheck.outputs.proceed == 'true' && steps.replan.outputs.action == 'open-pr' && steps.write.outputs.push != ''\n"
+      replace: "        id: find\n        if: steps.precheck.outputs.proceed == 'true' && steps.replan.outputs.action == 'open-pr' && steps.write.outputs.push == 'true'\n"
+    - name: queue read only on push is rejected
+      file: release-batch.yml
+      find: "        id: queue\n        if: steps.precheck.outputs.proceed == 'true' && steps.replan.outputs.action == 'open-pr' && steps.write.outputs.push != ''\n"
+      replace: "        id: queue\n        if: steps.precheck.outputs.proceed == 'true' && steps.replan.outputs.action == 'open-pr' && steps.write.outputs.push == 'true'\n"
+    - name: queue entry lookup only on push is rejected
+      file: release-batch.yml
+      find: "steps.write.outputs.push != '' && steps.find.outputs.number != ''"
+      replace: "steps.write.outputs.push == 'true' && steps.find.outputs.number != ''"
+    - name: queue decision only on push is rejected
+      file: release-batch.yml
+      find: "steps.write.outputs.push != '' && steps.entry.outputs.pr != ''"
+      replace: "steps.write.outputs.push == 'true' && steps.entry.outputs.pr != ''"
+    - name: arming only on push is rejected
+      file: release-batch.yml
+      find: "needs.plan.outputs.action == 'open-pr' && needs.plan.outputs.gate == 'arm'"
+      replace: "needs.plan.outputs.action == 'open-pr' && needs.plan.outputs.push == 'true' && needs.plan.outputs.gate == 'arm'"
+    - name: holding only on push is rejected
+      file: release-batch.yml
+      find: "needs.plan.outputs.action == 'open-pr' && needs.plan.outputs.gate == 'hold'"
+      replace: "needs.plan.outputs.action == 'open-pr' && needs.plan.outputs.push == 'true' && needs.plan.outputs.gate == 'hold'"
+    - name: pushing an unchanged branch is rejected
+      file: release-batch.yml
+      find: "        id: push\n        if: needs.plan.outputs.action == 'open-pr' && needs.plan.outputs.push == 'true'\n"
+      replace: "        id: push\n        if: needs.plan.outputs.action == 'open-pr'\n"
   # Each row breaks one rule the release-intent tool owns. The test runs the
   # policy check title-guard runs over a copy of the workflows with the row
   # applied and proves the tool refuses it under that rule, naming the
@@ -177,13 +247,13 @@ workflow:
       rule: credential-steps-run-one-template
     - name: a self-hosted runner for the credential job is rejected
       file: release-batch.yml
-      find: "    if: github.ref == 'refs/heads/main' && needs.plan.outputs.proceed == 'true'\n    runs-on: ubuntu-latest\n"
-      replace: "    if: github.ref == 'refs/heads/main' && needs.plan.outputs.proceed == 'true'\n    runs-on: [self-hosted, linux]\n"
+      find: "    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && needs.plan.outputs.proceed == 'true'\n    runs-on: ubuntu-latest\n"
+      replace: "    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && needs.plan.outputs.proceed == 'true'\n    runs-on: [self-hosted, linux]\n"
       rule: credential-jobs-run-no-general-steps
     - name: a credential job on a runner an expression picks is rejected
       file: release-batch.yml
-      find: "    if: github.ref == 'refs/heads/main' && needs.plan.outputs.proceed == 'true'\n    runs-on: ubuntu-latest\n"
-      replace: "    if: github.ref == 'refs/heads/main' && needs.plan.outputs.proceed == 'true'\n    runs-on: ${{ fromJson(needs.plan.outputs.runner) }}\n"
+      find: "    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && needs.plan.outputs.proceed == 'true'\n    runs-on: ubuntu-latest\n"
+      replace: "    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && needs.plan.outputs.proceed == 'true'\n    runs-on: ${{ fromJson(needs.plan.outputs.runner) }}\n"
       rule: credential-jobs-run-no-general-steps
     - name: naming the release PR by a number from the plan job is rejected
       file: release-batch.yml

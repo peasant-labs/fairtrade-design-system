@@ -29,6 +29,18 @@ requiredPackageScriptNames:
 requiredForbiddenTextNames:
   - the hold rule never dequeues a queued release PR
   - the release job leaves the GitHub Release to the tag-triggered workflow
+requiredRecoveryGateNames:
+  - find a release PR after either preparation result
+  - read the queue after either preparation result
+  - find an existing release PR in the queue
+  - judge the queue after either preparation result
+  - bundle only a changed branch
+  - fetch only a changed branch
+  - push only a changed branch
+  - open a PR only for a changed branch
+  - update a PR only for a changed branch
+  - arm an unchanged unarmed release PR
+  - hold an unchanged armed release PR
 requiredContractMutationNames:
   - re-adding edited to ci.yml is rejected
   - unconditional prepack is rejected
@@ -37,6 +49,13 @@ requiredContractMutationNames:
   - warn-and-pass group resolution is rejected
   - a cancellable release run is rejected
   - a Go cache keyed on another module is rejected
+  - release PR lookup only on push is rejected
+  - queue read only on push is rejected
+  - queue entry lookup only on push is rejected
+  - queue decision only on push is rejected
+  - arming only on push is rejected
+  - holding only on push is rejected
+  - pushing an unchanged branch is rejected
 requiredPolicyMutationNames:
   - cancelling ci on every event is rejected
   - dropping merge_group from ci is rejected

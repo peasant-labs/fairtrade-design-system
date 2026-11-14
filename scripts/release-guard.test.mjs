@@ -37,8 +37,11 @@ const WorkflowStepId = Object.freeze({
   /** title-guard: resolves the merge-group entry PR and must fail closed. */
   GroupEntry: 'entry',
 })
-/** The files a Go module checkout carries that setup-go reads. */
+/** The files a Go module checkout carries that setup-go reads or caches. */
 const GoModuleFile = Object.freeze({ Mod: 'go.mod', Sum: 'go.sum' })
+/** The release tool is built from this module in the shared infra repository. */
+const RELEASE_TOOL_REPOSITORY = 'peasant-labs/infra'
+const RELEASE_TOOL_MODULE = 'tools/release'
 /** The status bash reports when the command it runs is not on PATH. */
 const COMMAND_NOT_FOUND = 127
 /** CI builds the release tool before the tests, so a missing tool there is a failure, not a skip. */
@@ -147,7 +150,7 @@ function strictYaml(source, where) {
  * @param {ReadonlySet<string>} checkedFiles every workflow the policy check reads
  */
 function validateFixtures(f, manifest, workflowFiles, checkedFiles) {
-  keys(manifest, ['requiredValidTagNames', 'requiredInvalidTagNames', 'requiredPackageScriptNames', 'requiredForbiddenTextNames', 'requiredContractMutationNames', 'requiredPolicyMutationNames', 'requiredGitMutationNames'], 'manifest')
+  keys(manifest, ['requiredValidTagNames', 'requiredInvalidTagNames', 'requiredPackageScriptNames', 'requiredForbiddenTextNames', 'requiredRecoveryGateNames', 'requiredContractMutationNames', 'requiredPolicyMutationNames', 'requiredGitMutationNames'], 'manifest')
   keys(f, ['tags', 'package', 'workflow', 'git'], 'root')
   keys(f.tags, ['valid', 'invalid'], 'tags')
   exactNames(array(f.tags.valid, 'tags.valid'), manifest.requiredValidTagNames, 'tags.valid')
@@ -170,7 +173,7 @@ function validateFixtures(f, manifest, workflowFiles, checkedFiles) {
     return Object.freeze({ name: row.name, script: string(row.script, `package.scripts.${row.name}.script`), check, operand: row[check.wire] })
   })
 
-  keys(f.workflow, ['ci_skipped_activity_types', 'forbidden_text', 'contract_mutations', 'policy_mutations'], 'workflow')
+  keys(f.workflow, ['ci_skipped_activity_types', 'forbidden_text', 'recovery_gates', 'contract_mutations', 'policy_mutations'], 'workflow')
   array(f.workflow.ci_skipped_activity_types, 'workflow.ci_skipped_activity_types').forEach((type, index) => string(type, `workflow.ci_skipped_activity_types[${index}]`))
   /** @param {any} row @param {string} where */
   const knownFile = (row, where) => assert.ok(workflowFiles.has(row.file), `${where}.${row.name}.file ${JSON.stringify(row.file)} is not a workflow the queue policy names (${[...workflowFiles].join(', ')})`)
@@ -178,6 +181,15 @@ function validateFixtures(f, manifest, workflowFiles, checkedFiles) {
   const checkedFile = (row, where) => assert.ok(checkedFiles.has(row.file), `${where}.${row.name}.file ${JSON.stringify(row.file)} is not a workflow in ${RepoPath.Workflows} (${[...checkedFiles].join(', ')})`)
   exactNames(array(f.workflow.forbidden_text, 'workflow.forbidden_text'), manifest.requiredForbiddenTextNames, 'workflow.forbidden_text')
   for (const row of f.workflow.forbidden_text) { keys(row, ['name', 'file', 'text'], 'workflow.forbidden_text row'); knownFile(row, 'workflow.forbidden_text'); string(row.text, `workflow.forbidden_text.${row.name}.text`) }
+  exactNames(array(f.workflow.recovery_gates, 'workflow.recovery_gates'), manifest.requiredRecoveryGateNames, 'workflow.recovery_gates')
+  for (const row of f.workflow.recovery_gates) {
+    keys(row, ['name', 'job', 'step', 'clauses'], 'workflow.recovery_gates row')
+    string(row.job, `workflow.recovery_gates.${row.name}.job`)
+    string(row.step, `workflow.recovery_gates.${row.name}.step`)
+    const clauses = array(row.clauses, `workflow.recovery_gates.${row.name}.clauses`)
+    clauses.forEach((clause, index) => string(clause, `workflow.recovery_gates.${row.name}.clauses[${index}]`))
+    assert.equal(new Set(clauses).size, clauses.length, `workflow.recovery_gates.${row.name}.clauses must be unique`)
+  }
   // A contract mutation breaks a workflow this contract reads; a policy
   // mutation may break any workflow the policy check reads, and names the
   // tool rule that must refuse it.
@@ -307,8 +319,28 @@ function assertReleaseRunIsNeverCancelled(release) {
 }
 
 /**
+ * A fresh existing branch still needs a queue decision. Branch writes, unlike
+ * queue reads and arm/hold decisions, run only when preparation says to push.
+ * The fixture names every step and its complete set of conjunctive gates.
+ *
+ * @param {ReturnType<typeof parseWorkflow>} release
+ */
+function assertReleaseRecoveryGates(release) {
+  for (const row of fixtures.workflow.recovery_gates) {
+    const job = jobOf(release, row.job)
+    const matching = job.steps.filter((/** @type {any} */ step) => step.name === row.step)
+    assert.equal(matching.length, 1, `${release.file} job ${row.job} must contain exactly one step named ${row.step}: ${row.name}`)
+    const clauses = normalizeIf(string(matching[0].if, `${release.file} step ${row.step} if`)).split(/\s*&&\s*/)
+    assert.equal(new Set(clauses).size, clauses.length, `${release.file} step ${row.step} must not repeat a gate: ${row.name}`)
+    assert.deepEqual(new Set(clauses), new Set(row.clauses.map(normalizeIf)), `${release.file} step ${row.step} has the wrong gates: ${row.name}`)
+  }
+}
+
+/**
  * Every workflow that builds the release tool checks out the same commit of
- * the same module, and setup-go and the build read that module.
+ * the same module, and setup-go and the build in each job read that module.
+ * The tag-verification job uses a confined, cache-free build; the general
+ * guard builds run from the module directory with the module checksum cache.
  *
  * @param {ReadonlyMap<string, ReturnType<typeof parseWorkflow>>} byFile
  */
@@ -318,16 +350,33 @@ function assertToolCheckouts(byFile) {
   /** @type {Set<string>} */
   const building = new Set()
   for (const parsed of byFile.values()) {
-    const steps = Object.values(parsed.workflow.jobs ?? {}).flatMap((/** @type {any} */ job) => job.steps ?? [])
-    const checkout = steps.find((step) => step.with?.repository !== undefined)
-    if (!checkout) continue
-    checkouts.push(checkout.with)
-    building.add(parsed.file)
-    const moduleDir = `${checkout.with.path}/${string(checkout.with['sparse-checkout'], `${parsed.file} tool checkout sparse-checkout`).trim()}`
-    const setup = steps.find((step) => step.with?.['go-version-file'] !== undefined)
-    assert.equal(setup?.with?.['go-version-file'], `${moduleDir}/${GoModuleFile.Mod}`, `${parsed.file}: setup-go must read the tool module's Go version`)
-    assert.equal(setup?.with?.['cache-dependency-path'], `${moduleDir}/${GoModuleFile.Sum}`, `${parsed.file}: setup-go must key its cache on the tool module's checksums`)
-    assert.ok(steps.some((step) => step['working-directory'] === moduleDir), `${parsed.file}: the tool must build from its module directory ${moduleDir}`)
+    for (const [jobId, job] of Object.entries(/** @type {Record<string, any>} */ (parsed.workflow.jobs ?? {}))) {
+      const steps = job.steps ?? []
+      const where = `${parsed.file} job ${jobId}`
+      const checkout = steps.find((/** @type {any} */ step) => step.with?.repository !== undefined)
+      const build = steps.find((/** @type {any} */ step) => typeof step.run === 'string' && /^\s*go build\b/m.test(step.run) && step.run.includes('./cmd/release-intent'))
+      if (!checkout) {
+        assert.equal(build, undefined, `${where}: a release-tool build must check out the pinned tool module`)
+        continue
+      }
+      checkouts.push(checkout.with)
+      building.add(parsed.file)
+      const sparse = string(checkout.with['sparse-checkout'], `${where} tool checkout sparse-checkout`).trim()
+      assert.equal(checkout.with.repository, RELEASE_TOOL_REPOSITORY, `${where}: the tool must come from the shared infra repository`)
+      assert.equal(sparse, RELEASE_TOOL_MODULE, `${where}: the checkout must read the release tool module`)
+      const moduleDir = `${checkout.with.path}/${sparse}`
+      const setup = steps.find((/** @type {any} */ step) => step.with?.['go-version-file'] !== undefined)
+      assert.equal(setup?.with?.['go-version-file'], `${moduleDir}/${GoModuleFile.Mod}`, `${where}: setup-go must read the tool module's Go version`)
+      assert.ok(build, `${where}: the tool must be built from ${moduleDir}`)
+      if (steps.some((/** @type {any} */ step) => typeof step.run === 'string' && step.run.includes('verify-tag'))) {
+        assert.equal(setup?.with?.cache, false, `${where}: a confined tag-verification build must disable the Go cache`)
+        assert.equal(setup?.with?.['cache-dependency-path'], undefined, `${where}: a cache-free build must not specify a cache dependency path`)
+        assert.equal(build.run, `go build -C ${moduleDir} -o "\${RUNNER_TEMP}/release-intent" ./cmd/release-intent`, `${where}: the confined build must read the tool module`)
+      } else {
+        assert.equal(setup?.with?.['cache-dependency-path'], `${moduleDir}/${GoModuleFile.Sum}`, `${where}: setup-go must key its cache on the tool module's checksums`)
+        assert.equal(build['working-directory'], moduleDir, `${where}: the tool must build from its module directory ${moduleDir}`)
+      }
+    }
   }
   assert.ok(building.has(roles.guard.workflow), `${roles.guard.workflow} must build the release tool its checks run`)
   for (const checkout of checkouts) assert.deepEqual(checkout, checkouts[0], 'every workflow must check out the same release tool module at the same commit')
@@ -345,11 +394,12 @@ function assertWorkflowContract(byFile) {
   assertLibraryBuildContract(at(roles.lib.workflow))
   assertGuardFailsClosed(at(roles.guard.workflow))
   assertReleaseRunIsNeverCancelled(at(roles.release.workflow))
+  assertReleaseRecoveryGates(at(roles.release.workflow))
   assertToolCheckouts(byFile)
   assertForbiddenText(byFile)
 }
 
-function readWorkflows() { return new Map([...workflowFiles].map((file) => [file, readWorkflow(file)])) }
+function readWorkflows() { return new Map([...checkedFiles].map((file) => [file, readWorkflow(file)])) }
 
 /* ── the release tool's own checks, as title-guard runs them ─────────────── */
 

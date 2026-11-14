@@ -56,7 +56,7 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           repository: peasant-labs/infra
-          ref: f2d3e5591e198ffeb1603d75115127632a94b68b
+          ref: e2424038e2a25f3fe0bc4db9b71435e05e7da789
           path: infra-tool
           sparse-checkout: |
             tools/release
@@ -66,20 +66,19 @@ jobs:
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version-file: infra-tool/tools/release/go.mod
-          cache-dependency-path: infra-tool/tools/release/go.sum
+          cache: false
 
       - name: Build release-intent
-        working-directory: infra-tool/tools/release
-        run: |
-          go build -o "${RUNNER_TEMP}/release-intent" ./cmd/release-intent
-          echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
+        env:
+          GOWORK: "off"
+        run: go build -C infra-tool/tools/release -o "${RUNNER_TEMP}/release-intent" ./cmd/release-intent
 
       # Pushing a tag needs only the right to write tags, so the tag may name a
       # commit that never landed. The tool checks the name against the
       # default branch's release config and that the default branch reaches
       # the tag's commit; nothing publishes until it passes.
       - name: Verify the tag is a release tag on the default branch
-        run: release-intent verify-tag --tag "${GITHUB_REF_NAME}" --branch "origin/${DEFAULT_BRANCH}"
+        run: '"${RUNNER_TEMP}/release-intent" verify-tag --tag "${GITHUB_REF_NAME}" --branch "origin/${DEFAULT_BRANCH}"'
 
   npm-publish:
     needs: verify
