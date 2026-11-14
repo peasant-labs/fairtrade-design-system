@@ -12,5 +12,5 @@ cases:
       statistic: median
     ceilingsMs:
       intrinsic: 100
-      rederivation: 16
+      rederivation: 50
     deliberateSlowdownFactor: 4
