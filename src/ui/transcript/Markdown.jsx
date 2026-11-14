@@ -155,18 +155,10 @@ function componentsFor(allowImages, turnHeadingLevel) {
   return componentMaps.get(key)
 }
 
-/**
- * Render a cooked transcript body as safe, structured Markdown.
- *
- * `text` is the established public prop used by TurnCard. `source` is accepted as a compatible
- * alias for hosts that already describe the same value as a source string; when both are supplied,
- * the established `text` prop wins. The component remains intentionally wire-agnostic.
- *
- * @param {object} props
- * @param {string} [props.text]   the cooked markdown body (e.g. `TurnVM.content`)
- * @param {string} [props.source] a source alias for the cooked markdown body
- */
-export default function Markdown({ text, source }) {
+/* The body reads the viewer's Markdown policy. It is private to this module so the public
+   component below can stay hook-free: hosts may call `TranscriptMarkdown({ text })` directly to
+   obtain the element, and that call must not reach a hook outside a render. */
+function MarkdownContent({ text, source }) {
   const value = typeof text === 'string' ? text : typeof source === 'string' ? source : ''
   const { allowImages, turnHeadingLevel } = useContext(MarkdownContext)
 
@@ -181,6 +173,25 @@ export default function Markdown({ text, source }) {
       </ReactMarkdown>
     </div>
   )
+}
+
+/**
+ * Render a cooked transcript body as safe, structured Markdown.
+ *
+ * `text` is the established public prop used by TurnCard. `source` is accepted as a compatible
+ * alias for hosts that already describe the same value as a source string; when both are supplied,
+ * the established `text` prop wins. The component remains intentionally wire-agnostic.
+ *
+ * Calling the export is a supported host behavior and returns the element for that body without
+ * needing a render. When React renders it, image blocking and nested headings come from the
+ * viewer's MarkdownContext through the private child.
+ *
+ * @param {object} props
+ * @param {string} [props.text]   the cooked markdown body (e.g. `TurnVM.content`)
+ * @param {string} [props.source] a source alias for the cooked markdown body
+ */
+export default function Markdown({ text, source }) {
+  return <MarkdownContent text={text} source={source} />
 }
 
 // Reader chrome changes frequently while the transcript text stays unchanged.
