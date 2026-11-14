@@ -20,6 +20,8 @@ await withMountedSource(async ({ load, mount, React, window }) => {
     const title = root.querySelector(`[data-node-id="${row.node}"] > .st-row > button.st-title`)
     const checkbox = root.querySelector(`[data-node-id="${row.node}"] > .st-row input[type="checkbox"]`)
     report.check(!!root.querySelector('.swz') && !!root.querySelector('.iu-ks-tree'), `${row.name}: frame and tree are mounted`)
+    report.check(!!root.querySelector('.iu-ks-selection .iu-ks-stop') && !!root.querySelector('.iu-ks-selection .iu-ks-tree'), `${row.name}: the selection heading belongs to the tree pane`)
+    report.check(!root.querySelector('.swz-body > .iu-ks-stop'), `${row.name}: the selection heading does not occupy a row over both panes`)
     if (!title || !checkbox) throw new Error(`${row.name}: tree controls are missing`)
     const selectedBefore = checkbox.checked
     if (row.kind === 'caret') {
@@ -48,7 +50,8 @@ await withMountedSource(async ({ load, mount, React, window }) => {
         const preview = root.querySelector('.iu-ks-preview')
         report.check(!!viewer, `${row.name}: real TranscriptViewer is mounted`)
         report.check(viewer?.getAttribute('data-theme') === row.theme, `${row.name}: viewer receives host theme`)
-        report.check(preview?.textContent.includes('sample') && preview?.textContent.includes('raw, on this computer only'), `${row.name}: sample and raw-local labels are visible`)
+        report.check(!root.querySelector('.iu-ks-selection .iu-ks-preview-note'), `${row.name}: the bottom-left notice is removed`)
+        report.check(!preview?.querySelector('.iu-ks-preview-note'), `${row.name}: the notice does not consume the preview header`)
         report.check(viewer?.querySelector('h4.txn-title')?.textContent === row.title, `${row.name}: viewer title is nested under the wizard stop`)
         report.check(viewer?.textContent.includes(row.user) && viewer?.textContent.includes(row.assistant), `${row.name}: user and assistant turns render`)
         report.check(viewer?.querySelector('[data-highlighted="true"]')?.textContent.includes(row.code), `${row.name}: real fenced code is highlighted`)

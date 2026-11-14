@@ -1,4 +1,4 @@
-import { Children, Fragment, isValidElement, useId, useMemo, useState } from 'react'
+import { Children, Fragment, isValidElement, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { Check } from 'lucide-react'
 import Button from './Button.jsx'
 import './StepWizard.css'
@@ -18,7 +18,8 @@ import './StepWizard.css'
 /**
  * @typedef {Object} WizardStep
  * @property {string} id     stable id for the step (aria wiring + completed/reachable sets)
- * @property {React.ReactNode} label  the step's lowercase chrome label, shown under its number
+ * @property {React.ReactNode} label  the full host-supplied step label
+ * @property {string} [shortLabel] optional concise visual label for a footer rail; `label` remains its accessible name
  */
 
 /* where a step's label hangs under its marker. a label is wider than the 28px marker, so a label
@@ -117,6 +118,8 @@ function labelWords(label) {
  * together and stays in the accessible name; the numbers carry the rail. A lone step may take the
  * whole rail and shows while its own longest word fits it; it hides with the rest when that word
  * does not. A label passed as a node is measured from its text.
+ * With `singleLine`, the whole rendered visual label is measured instead. `shortLabel` is an
+ * optional visual substitute; the full host-supplied label remains the marker's accessible name.
  *
  * The rail is the container its label shares are measured against (`container-type: inline-size`),
  * so it needs a host with a definite inline size: a block, a grid track, or a flex item that has
@@ -129,6 +132,7 @@ function labelWords(label) {
  * @param {ReadonlySet<string>} [props.completed]   ids of finished steps (olive + check, jump-back enabled)
  * @param {ReadonlySet<string>} [props.reachable]   ids the user may jump to (the gate). current + completed are implicitly reachable
  * @param {(id: string) => void} [props.onJump]  called with a step id when a reachable/complete marker is activated
+ * @param {boolean} [props.singleLine] use shortLabel when supplied, fit each entire label on one line, and name markers with the full label and position
  * @param {string} [props['aria-label']]    accessible name for the rail (default "progress")
  */
 export function StepIndicator({
@@ -137,8 +141,50 @@ export function StepIndicator({
   completed = new Set(),
   reachable = new Set(),
   onJump,
+  singleLine = false,
   'aria-label': ariaLabel = 'progress',
 }) {
+  const railRef = useRef(null)
+  const [labelsFit, setLabelsFit] = useState(false)
+  // The footer's one-line labels can contain more than one word, fallback fonts or React nodes.
+  // Measure the rendered text, not only the longest word or a guessed character width. A hidden
+  // label retains its intrinsic scrollWidth, so it can reappear after a resize or font load.
+  useEffect(() => {
+    const rail = railRef.current
+    if (!singleLine || !rail) return undefined
+    let active = true
+    const measure = () => {
+      if (!active || !rail.clientWidth) return
+      const labels = [...rail.querySelectorAll('.swz-label')]
+      const marker = rail.querySelector('.swz-mark')
+      if (!marker || labels.length !== steps.length) return
+      const markerWidth = marker.getBoundingClientRect().width
+      const gutter = parseFloat(getComputedStyle(rail).getPropertyValue('--sp-1')) || 0
+      const share = (rail.clientWidth - markerWidth) / Math.max(steps.length - 1, 1) - gutter
+      const edge = (markerWidth + share) / 2
+      const fits = labels.every((label, index) => {
+        const cap = steps.length === 1 ? rail.clientWidth : index === 0 || index === steps.length - 1 ? edge : share
+        return label.scrollWidth + 1 <= cap
+      })
+      setLabelsFit(fits)
+    }
+    measure()
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure)
+    observer?.observe(rail)
+    rail.querySelectorAll('.swz-label').forEach(label => observer?.observe(label))
+    const contentObserver = typeof MutationObserver === 'undefined' ? null : new MutationObserver(measure)
+    contentObserver?.observe(rail, { childList: true, characterData: true, subtree: true })
+    window.addEventListener('resize', measure)
+    document.fonts?.addEventListener('loadingdone', measure)
+    document.fonts?.ready.then(measure)
+    return () => {
+      active = false
+      observer?.disconnect()
+      contentObserver?.disconnect()
+      window.removeEventListener('resize', measure)
+      document.fonts?.removeEventListener('loadingdone', measure)
+    }
+  }, [singleLine, steps])
   // the label shares are arithmetic on the rail's width and its gap count; the rail carries the
   // count so the stylesheet can do that arithmetic (a lone step has no gap, but the share maths
   // never divides by zero). it also carries the longest word of its middle labels, of its first
@@ -151,7 +197,7 @@ export function StepIndicator({
     '--swz-word-only': longestWord(steps, [LABEL_PLACE.only]),
   }
   return (
-    <nav className="swz-rail" style={railStyle} aria-label={ariaLabel}>
+    <nav ref={railRef} className={singleLine ? `swz-rail swz-rail--single-line${labelsFit ? '' : ' swz-rail--labels-hidden'}` : 'swz-rail'} style={railStyle} aria-label={ariaLabel}>
       {steps.map((step, idx) => {
         const isCurrent = step.id === current
         const isComplete = completed.has(step.id)
@@ -181,12 +227,13 @@ export function StepIndicator({
               aria-current={isCurrent ? 'step' : undefined}
               aria-disabled={isLocked || undefined}
             >
-              <span className="swz-mark">
+              {singleLine && <span className="swz-sr-only">step {idx + 1} of {steps.length}, {step.shortLabel != null ? step.label : null}</span>}
+              <span className="swz-mark" aria-hidden={singleLine || undefined}>
                 {isComplete
                   ? <Check className="swz-mark-check" size={14} aria-hidden="true" />
                   : idx + 1}
               </span>
-              <span className={`swz-label swz-label--${labelPlace(idx, steps.length)}`}>{labelWords(step.label)}</span>
+              <span className={`swz-label swz-label--${labelPlace(idx, steps.length)}`} aria-hidden={singleLine && step.shortLabel != null ? true : undefined}>{labelWords(singleLine ? step.shortLabel ?? step.label : step.label)}</span>
             </button>
           </div>
         )
@@ -204,6 +251,8 @@ export function StepIndicator({
  * shell's markup. The frame is a head (the rail, plus anything the host adds under it), a body
  * (the children), and a foot with the host's start action, the "step n / m" count on the foot's
  * centre line, and the host's end action.
+ * `footerProgress` opts into a one-line rail in the foot and a screen-reader-only live count;
+ * it leaves the default head rail and visible count unchanged when omitted.
  *
  * The count names the current step by its position in `steps`. When `current` names no step the
  * count reads "step 0 / m" and no marker is current.
@@ -217,6 +266,7 @@ export function StepIndicator({
  * @param {React.ReactNode} [props.head]    shown in the head, under the rail
  * @param {React.ReactNode} [props.footStart]  the foot's start slot (typically back)
  * @param {React.ReactNode} [props.footEnd]    the foot's end slot (typically the one primary action)
+ * @param {boolean} [props.footerProgress] place the one-line progress rail in the footer instead of the head; hide it on phones and retain the accessible position
  * @param {React.HTMLAttributes<HTMLDivElement>} [props.bodyProps]  attributes for the body region (id, role, aria-label, tabIndex)
  * @param {string} [props.className]        extra class on the frame, for a host that sizes it
  * @param {React.ReactNode} [props.children]  the body
@@ -234,6 +284,7 @@ export function StepWizardFrame({
   head,
   footStart,
   footEnd,
+  footerProgress = false,
   bodyProps,
   className,
   children,
@@ -242,19 +293,23 @@ export function StepWizardFrame({
   // React draws nothing for null, undefined or a boolean, so none of them earns a slot (and its margin).
   const hasHead = head != null && typeof head !== 'boolean'
   const { className: bodyClassName, ...bodyRest } = bodyProps ?? {}
+  const rail = (
+    <StepIndicator
+      steps={steps}
+      current={current}
+      completed={completed}
+      reachable={reachable}
+      onJump={onJump}
+      singleLine={footerProgress}
+      aria-label={`${ariaLabel} progress`}
+    />
+  )
   return (
-    <section className={className ? `swz ${className}` : 'swz'} aria-label={ariaLabel}>
-      <div className="swz-head">
-        <StepIndicator
-          steps={steps}
-          current={current}
-          completed={completed}
-          reachable={reachable}
-          onJump={onJump}
-          aria-label={`${ariaLabel} progress`}
-        />
+    <section className={`swz${footerProgress ? ' swz--footer-progress' : ''}${className ? ` ${className}` : ''}`} aria-label={ariaLabel}>
+      {(!footerProgress || hasHead) && <div className="swz-head">
+        {!footerProgress && rail}
         {hasHead && <div className="swz-head-slot">{head}</div>}
-      </div>
+      </div>}
 
       <div {...bodyRest} className={bodyClassName ? `swz-body ${bodyClassName}` : 'swz-body'}>
         {children}
@@ -262,12 +317,13 @@ export function StepWizardFrame({
 
       <div className="swz-foot">
         <div className="swz-foot-start">{footStart}</div>
-        <span className="swz-count">
+        <span className="swz-count" role={footerProgress ? 'status' : undefined} aria-atomic={footerProgress ? 'true' : undefined}>
           <span className="swz-sr-only">step {position} of {steps.length}</span>
           <span aria-hidden="true">
             step <span className="tnum">{position}</span> / <span className="tnum">{steps.length}</span>
           </span>
         </span>
+        {footerProgress && rail}
         <div className="swz-foot-end">{footEnd}</div>
       </div>
     </section>

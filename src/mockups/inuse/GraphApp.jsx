@@ -73,6 +73,7 @@ export default function GraphApp({ theme }) {
       backTo={back}
       onSectionChange={setView}
       notice={offline ? <OfflineNotice /> : null}
+      navEnd={view === 'kickstart' ? <h2 className="iu-ks-page-title">set up peasant</h2> : null}
     >
       {view === 'home' && <HomeView offline={offline} />}
       {view === 'village' && <LocalVillage />}

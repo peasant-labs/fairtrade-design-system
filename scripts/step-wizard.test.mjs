@@ -42,7 +42,21 @@ await withMountedSource(async ({ load, mount, window, React }) => {
 
   for (const row of fixture.cases) {
     const name = row.name
-    if (row.kind === 'places') {
+    if (row.kind === 'footer-progress') {
+      const steps = row.labels.map((label, i) => ({ id: String(i), label: row.nodeLabels ? React.createElement('span', null, label) : label, shortLabel: row.shortLabels?.[i] }))
+      const mounted = await mount(React.createElement(StepWizardFrame, { steps, current: '1', footerProgress: true }, 'body'))
+      const root = mounted.container
+      const rail = root.querySelector('.swz-foot > .swz-rail')
+      const buttons = [...(rail?.querySelectorAll('.swz-step') ?? [])]
+      report.check(!!rail && !root.querySelector('.swz-head > .swz-rail'), `${name}: the only rail is in the footer`)
+      const names = buttons.map(button => [spoken(button.querySelector('.swz-sr-only')), button.querySelector('.swz-label')?.getAttribute('aria-hidden') === 'true' ? null : spoken(button.querySelector('.swz-label'))].filter(Boolean).join(' '))
+      report.check(same(names, row.expectedNames), `${name}: every marker retains its full name and position`)
+      report.check(same([...root.querySelectorAll('.swz-label')].map(spoken), row.shortLabels ?? row.labels), `${name}: the visible labels match the presentation or full text`)
+      report.check(rail?.classList.contains('swz-rail--single-line'), `${name}: the footer rail uses one-line label fitting`)
+      report.check(spoken(root.querySelector('.swz-count .swz-sr-only')) === `step 2 of ${steps.length}`, `${name}: an accessible position remains`)
+      report.check(root.querySelector('.swz-count')?.getAttribute('role') === 'status', `${name}: a step change announces its position`)
+      await mounted.unmount()
+    } else if (row.kind === 'places') {
       const steps = stepsOf(row.count)
       const mounted = await mount(React.createElement(StepIndicator, { steps, current: steps[0].id }))
       const rail = mounted.container.querySelector('nav.swz-rail')
