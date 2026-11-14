@@ -54,6 +54,19 @@ jobs:
       - name: Install (frozen lockfile)
         run: pnpm install --frozen-lockfile
 
+      # Static guard against stringly-typed values. It runs before the build so
+      # a new hit fails in the first minute with a file and line.
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version: '1.24.x'
+          cache-dependency-path: package.json
+
+      - name: Install ast-grep
+        run: npm install --global @ast-grep/cli@0.51.2
+
+      - name: Static guard (unstring)
+        run: pnpm run lint:unstring --format github
+
       # Contract gate: checkJs + strict + noImplicitAny on the transcript wire
       # contract / TranscriptViewModel type-test. Runs first so a contract leak
       # fails early with a clear attribution (not buried in the Vite/tsc build).
