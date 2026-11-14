@@ -2122,6 +2122,7 @@
   /* ---- the local app's setup wizard (`?view=kickstart`): the frame over peasant's ten stops, and the
      selection stop's tree beside the preview of the row whose title was clicked. the tree takes two
      parts and the preview three from 1024px up; narrower, the preview sits under the tree. ---- */
+  .iu-ks { gap: var(--sp-2); padding-block-start: var(--sp-3); }
   .iu-ks-stop { margin: 0 0 var(--sp-3); font-family: var(--font-display); font-weight: 700; font-size: var(--fs-lg); line-height: var(--lh-body); color: var(--ink-strong); text-transform: lowercase; }
   .iu-ks-field { display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; }
   .iu-ks-help { margin: 0; font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink-2); }
@@ -2129,17 +2130,34 @@
   @media (width >= 1024px) {
     .iu-ks-select { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); }
   }
+  .iu-ks-selection { display: flex; flex-direction: column; gap: var(--sp-2); min-width: 0; }
+  .iu-ks-selection .iu-ks-stop { margin-bottom: 0; }
   .iu-ks-tree { min-width: 0; max-height: 28rem; overflow-y: auto; }
-  .iu-ks-preview { display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; padding: var(--sp-3) var(--sp-4); border: var(--bd); background: var(--surface); }
+  .iu-ks-preview { display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; padding: var(--sp-2) var(--sp-4); border: var(--bd); background: var(--surface); }
   .iu-ks-preview-title { margin: 0; font-family: var(--font-mono); font-size: var(--fs-label); font-weight: 600; line-height: var(--lh-body); color: var(--ink-3); text-transform: lowercase; }
   .iu-ks-preview-name { color: var(--ink-strong); font-family: var(--font-body); font-size: var(--fs-body); text-transform: none; overflow-wrap: anywhere; }
-  .iu-ks-preview-note { margin: 0; font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-body); color: var(--ink-3); }
   .iu-ks-viewer { height: calc(var(--sp-8) * 9); min-width: 0; }
   .iu-ks-lines { display: flex; flex-direction: column; gap: var(--sp-2); margin: 0; padding: 0; list-style: none; min-width: 0; }
   .iu-ks-line { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; }
   .iu-ks-line-label { font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-body); color: var(--ink-3); }
   .iu-ks-line-text { font-family: var(--font-body); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink); overflow-wrap: anywhere; }
   .iu-ks-counts { margin: 0; font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-body); color: var(--ink-3); }
+  /* Give the tree and transcript the space between the navigation and actions. Each pane
+     scrolls its own content, so the sticky footer cannot cover the viewer tabs or the count.
+     Very short and stacked layouts keep the natural page scroll instead. */
+  @media (width >= 1024px) and (height >= 45rem) {
+    .iu-view:has(> .iu-ks) { min-height: 0; }
+    .iu-ks { height: 100%; min-height: 0; padding-block-end: var(--sp-4); }
+    .iu-ks > .swz { flex: 1 1 0; min-height: 0; }
+    .iu-ks .swz-head, .iu-ks .swz-foot { flex: none; }
+    .iu-ks .swz-body { display: flex; flex-direction: column; flex: 1 1 0; min-height: 0; }
+    .iu-ks-field, .iu-ks-select { flex: 1 1 0; min-height: 0; }
+    .iu-ks-select { align-items: stretch; }
+    .iu-ks-selection { min-height: 0; }
+    .iu-ks-tree { flex: 1 1 0; min-height: 0; max-height: none; }
+    .iu-ks-preview { min-height: 0; }
+    .iu-ks-viewer { flex: 1 1 0; height: auto; min-height: 0; }
+  }
   .iu-page-context { margin: 0; display: inline-flex; align-items: center; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-3); }
   .iu-page-context .lucide { width: var(--ic-sm); height: var(--ic-sm); }
   .iu-page-callout { max-width: none; margin: 0; display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-4); border: var(--bd-strong); background: var(--surface-2); }
@@ -3915,6 +3933,48 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 }
 /* Local Village observations: presentation only, independent domain dates and evidence pages. */
 .iu-app-root:has(> .iu-view > .vobs) > .iu-view { min-height: 0; --vobs-height: 100%; }
+
+/* Setup demo: the page name shares the app navigation, not the wizard's reading height. */
+.iu-ks-page-title {
+  margin: 0 0 0 var(--sp-5);
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  line-height: var(--lh-body);
+  color: var(--ink-strong);
+}
+.iu-ks-answers { display: flex; align-items: center; gap: var(--sp-2); }
+.iu-ks-counts-mobile { display: none; }
+
+@media (width < 768px) {
+  /* These remain readable by assistive technology; none is an interactive control. */
+  .iu-ks-page-title,
+  .iu-ks-selection > .iu-ks-stop,
+  .iu-ks-selection > .iu-ks-help {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .iu-view:has(> .iu-ks) { min-height: 0; container: kickstart-view / size; }
+  .iu-ks { padding-inline: var(--sp-2); }
+  .iu-ks .swz-body:has(> .iu-ks-field) { padding-inline: var(--sp-2); }
+  .iu-ks-selection { padding: 0; }
+  .iu-ks-tree > .st { border: 0; }
+  .iu-ks-counts-desktop { display: none; }
+  .iu-ks-counts-mobile { display: inline; white-space: nowrap; }
+  /* cqh is the stage height remaining below the demo navigation. The footer consumes
+     one control height plus its insets; the remaining gap keeps both sticky bars clear.
+     On very short viewports keep a readable minimum and let the page scroll instead. */
+  .iu-ks-preview:has(.iu-ks-viewer) {
+    height: max(calc(var(--control-h) * 8), calc(100cqh - var(--control-h) - 2 * var(--sp-3) - var(--stroke-hairline) - var(--sp-4)));
+    min-height: 0;
+  }
+  .iu-ks-preview .iu-ks-viewer { flex: 1 1 0; height: auto; min-height: 0; }
+}
 .vobs { padding: var(--sp-4); color: var(--ink); font-family: var(--font-body); font-size: var(--fs-body); min-width: 0; overflow-wrap: anywhere; display: flex; flex-direction: column; height: var(--vobs-height, calc(100dvh - var(--nav-h))); min-height: 0; }
 /* Keep absolute accessibility labels inside their scroller without relying on motion transforms. */
 .vobs .tabpanel { position: relative; max-width: none; min-width: 0; font-family: var(--font-body); font-size: var(--fs-body); color: var(--ink); flex: 1; min-height: 0; overflow: auto; scroll-padding-block: var(--sp-4); }

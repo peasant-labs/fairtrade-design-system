@@ -198,6 +198,10 @@
   translate: calc(50% - var(--swz-mark-size) / 2) 0;
   text-align: left;
 }
+/* A footer rail fits the complete rendered label, including spaces, into each share. The
+   controlled rail measures real rendered widths and hides every label together if any does not fit. */
+.swz-rail--single-line .swz-label { --swz-room: 100cqi; white-space: nowrap; text-transform: none; }
+.swz-rail--single-line.swz-rail--labels-hidden .swz-label { max-width: 0; max-height: 0; }
 .swz-step--current .swz-label { color: var(--ink); }
 .swz-step--complete .swz-label,
 .swz-step--reachable .swz-label { color: var(--ink-2); }
@@ -285,6 +289,31 @@
   flex-wrap: wrap;
 }
 .swz-foot-end { justify-content: flex-end; }
+
+/* Optional compact composition; the ordinary head rail and counter are unchanged. */
+.swz--footer-progress .swz-foot {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  column-gap: var(--sp-6);
+  z-index: var(--z-sticky);
+}
+.swz--footer-progress .swz-foot > .swz-rail {
+  min-width: 0;
+  width: min(100%, max(61rem, 90%));
+  justify-self: center;
+}
+.swz--footer-progress .swz-count {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+@media (width < 768px) {
+  /* Removing the rail from layout and the accessibility tree also removes its tab stops. */
+  .swz--footer-progress .swz-foot > .swz-rail { display: none; }
+  .swz--footer-progress .swz-foot { grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--sp-3); }
+}
 
 /* a quiet "step n / m" counter on the footer's centre line — the wizard's mate to <Pager>'s
    "page n / m". mono, tabular, lowercase; the slash-separated count matches the rail's "1 / 4". */

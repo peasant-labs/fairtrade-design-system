@@ -643,6 +643,13 @@ render the same system.
   and last labels cannot hold five characters, every label hides together and stays in the
   accessible name, and the numbers, the body heading and the foot's `step n / m` carry the rail. No
   label is ever cut with an ellipsis or allowed to leave the frame.
+- **Optional footer step rail:** `StepWizardFrame` can place the rail between the footer actions
+  with `footerProgress`. The host may provide a step's `shortLabel` for the one-line visual rail;
+  when absent its full `label` is shown instead. Markers keep the full supplied label and position
+  as their accessible names. The rail measures each whole rendered label and hides all labels
+  together when any cannot fit. Below 768px the rail is removed from both view and keyboard order;
+  the accessible current-step count remains and announces changes. The ordinary head rail and visible footer count are
+  unchanged unless the host opts in.
 - **App sidebar:** `AppSidebar` is the one sidebar for every app screen (online, local and docs),
   in one order that every app gets, enforced by the component so no app can drift: (1) the brand
   row, the mark with the collapse control; (2) the app's own pages (`groups`; settings is never

@@ -140,6 +140,7 @@ export function GraphAppShell({
   backTo,
   onBack,
   notice = null,
+  navEnd = /** @type {React.ReactNode} */ (null),
   children,
   ariaLabel = 'peasant sections',
 }) {
@@ -163,6 +164,7 @@ export function GraphAppShell({
             {p.label}
           </button>
         ))}
+        {navEnd}
       </nav>
       {/* a page-level notice (e.g. the local offline banner) sits between the nav and the body */}
       {notice}

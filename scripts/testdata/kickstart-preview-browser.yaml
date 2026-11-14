@@ -1,8 +1,20 @@
 cases:
   - {name: dark-desktop-wizard, theme: dark, width: 1440, height: 1400, layout: side-by-side}
   - {name: light-desktop-wizard, theme: light, width: 1440, height: 1400, layout: side-by-side}
+  - {name: dark-short-desktop-wizard, theme: dark, width: 2008, height: 916, layout: side-by-side, capture: dark-short-desktop, minVisibleTrace: 240, labelsVisible: true}
+  - {name: light-short-desktop-wizard, theme: light, width: 2008, height: 916, layout: side-by-side, capture: light-short-desktop, minVisibleTrace: 240, labelsVisible: true}
+  - {name: dark-laptop-desktop-wizard, theme: dark, width: 1440, height: 900, layout: side-by-side, capture: dark-laptop-desktop, minVisibleTrace: 220, labelsVisible: true, railJump: true}
+  - {name: light-laptop-desktop-wizard, theme: light, width: 1440, height: 900, layout: side-by-side, capture: light-laptop-desktop, minVisibleTrace: 220, labelsVisible: true, railJump: true}
+  - {name: dark-compact-laptop-wizard, theme: dark, width: 1280, height: 800, layout: side-by-side, minVisibleTrace: 180, labelsVisible: false}
+  - {name: light-compact-laptop-wizard, theme: light, width: 1280, height: 800, layout: side-by-side, minVisibleTrace: 180, labelsVisible: false}
+  - {name: dark-small-laptop-wizard, theme: dark, width: 1024, height: 768, layout: side-by-side, minVisibleTrace: 150, labelsVisible: false}
+  - {name: light-small-laptop-wizard, theme: light, width: 1024, height: 768, layout: side-by-side, minVisibleTrace: 150, labelsVisible: false}
   - {name: dark-narrow-wizard, theme: dark, width: 390, height: 1800, layout: stacked}
   - {name: light-narrow-wizard, theme: light, width: 390, height: 1800, layout: stacked}
+  - {name: dark-phone-wizard, theme: dark, width: 390, height: 844, layout: stacked, phone: true, minReaderHeight: 450, answer: no}
+  - {name: light-phone-wizard, theme: light, width: 390, height: 844, layout: stacked, phone: true, minReaderHeight: 450, answer: yes}
+  - {name: dark-small-phone-wizard, theme: dark, width: 320, height: 720, layout: stacked, phone: true, minReaderHeight: 300, answer: yes}
+  - {name: light-small-phone-wizard, theme: light, width: 320, height: 720, layout: stacked, phone: true, minReaderHeight: 300, answer: no}
 probe:
   node: session-retention
   title: Fix the retention copy
@@ -11,6 +23,22 @@ probe:
   search: 'const retentionDays'
   secret: SECRET-synthetic-preview-only
   imageHost: preview.invalid
+  layoutMarker: swz--footer-progress
+stopLabels: [peasant online, choose sessions to import, auto-ingest new branches, publication, privacy, content license, sharing, claude retention, review, ingest]
+resize:
+  name: whole-label-fit-recalculates-after-resize
+  theme: dark
+  wide: 2008
+  narrow: 1280
+  phone: 390
+  height: 916
+shortViewport:
+  name: short-phone-keeps-a-readable-scrollable-preview
+  width: 320
+  height: 400
+scrollProbe:
+  node: session-glossary
+  title: Build a glossary
 race:
   name: delayed-highlighter-does-not-overwrite-new-session
   firstNode: session-retention

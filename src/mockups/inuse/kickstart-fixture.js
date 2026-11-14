@@ -5,16 +5,16 @@
    Recorded text (repository names, branch names, session titles) keeps its case. */
 
 export const KICKSTART_STOPS = Object.freeze([
-  { id: 'connection', label: 'peasant online' },
-  { id: 'selection', label: 'choose sessions to import' },
-  { id: 'auto-ingest', label: 'auto-ingest new branches' },
-  { id: 'publication', label: 'publication' },
-  { id: 'privacy', label: 'privacy' },
-  { id: 'license', label: 'content license' },
-  { id: 'sharing', label: 'sharing' },
-  { id: 'retention', label: 'claude retention' },
-  { id: 'review', label: 'review' },
-  { id: 'ingest', label: 'ingest' },
+  { id: 'connection', label: 'peasant online', shortLabel: 'online' },
+  { id: 'selection', label: 'choose sessions to import', shortLabel: 'sessions' },
+  { id: 'auto-ingest', label: 'auto-ingest new branches', shortLabel: 'auto ingest' },
+  { id: 'publication', label: 'publication', shortLabel: 'publish' },
+  { id: 'privacy', label: 'privacy', shortLabel: 'privacy' },
+  { id: 'license', label: 'content license', shortLabel: 'license' },
+  { id: 'sharing', label: 'sharing', shortLabel: 'sharing' },
+  { id: 'retention', label: 'claude retention', shortLabel: 'retention' },
+  { id: 'review', label: 'review', shortLabel: 'review' },
+  { id: 'ingest', label: 'ingest', shortLabel: 'ingest' },
 ])
 
 /** The stop the demo opens on: the selection stop. */

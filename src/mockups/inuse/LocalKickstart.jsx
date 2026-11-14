@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 import { adaptTranscript, Button, SelectionTree, StepWizardFrame, TranscriptViewer } from '../../ui'
 import { KICKSTART_FOREST, KICKSTART_PREVIEWS, KICKSTART_SELECTION_STOP, KICKSTART_SESSION_DETAILS, KICKSTART_STOPS } from './kickstart-fixture.js'
 
@@ -62,7 +62,6 @@ function PreviewPane({ previewId, theme }) {
         <p className="iu-ks-help">click a title to read the start of it. previewing does not select it. use its checkbox to import it.</p>
       ) : viewModel !== null ? (
         <>
-          <p className="iu-ks-preview-note">sample transcript, no local session was read<br />raw, on this computer only</p>
           <div className="iu-ks-viewer">
             <TranscriptViewer
               key={row.id}
@@ -95,30 +94,36 @@ function PreviewPane({ previewId, theme }) {
   )
 }
 
-function SelectionStop({ theme }) {
+function SelectionStop({ theme, label }) {
+  const headingId = useId()
+  const instructionId = useId()
   const [selected, setSelected] = useState(INITIAL_SELECTION)
   const [previewId, setPreviewId] = useState(null)
   const nodes = useMemo(() => withStates(new Set(selected)), [selected])
   const sessions = KICKSTART_FOREST.filter((row) => row.kind === SESSION).length
   return (
     <div className="iu-ks-field">
-      <p className="iu-ks-help">peasant imports the sessions you tick. a project or branch row ticks every session under it.</p>
       <div className="iu-ks-select">
-        <div className="iu-ks-tree">
-          <SelectionTree
-            nodes={nodes}
-            value={selected}
-            onSelectionChange={setSelected}
-            onPreview={setPreviewId}
-            previewId={previewId}
-            ariaLabel="sessions to import"
-          />
-        </div>
+        <section className="iu-ks-selection" aria-labelledby={headingId} aria-describedby={instructionId}>
+          <h3 id={headingId} className="iu-ks-stop">{label}</h3>
+          <p id={instructionId} className="iu-ks-help">tick to import; click a title to preview.</p>
+          <div className="iu-ks-tree">
+            <SelectionTree
+              nodes={nodes}
+              value={selected}
+              onSelectionChange={setSelected}
+              onPreview={setPreviewId}
+              previewId={previewId}
+              ariaLabel="sessions to import"
+            />
+          </div>
+          <p className="iu-ks-counts" role="status">
+            <span className="iu-ks-counts-desktop"><span className="tnum">{sessions}</span> sessions found, <span className="tnum">{selected.length}</span> chosen</span>
+            <span className="iu-ks-counts-mobile"><span className="tnum">{selected.length}</span> {selected.length === 1 ? 'session' : 'sessions'} chosen</span>
+          </p>
+        </section>
         <PreviewPane previewId={previewId} theme={theme} />
       </div>
-      <p className="iu-ks-counts">
-        <span className="tnum">{sessions}</span> sessions found, <span className="tnum">{selected.length}</span> chosen
-      </p>
     </div>
   )
 }
@@ -131,33 +136,41 @@ export default function KickstartView({ theme = 'dark' }) {
   const reachable = useMemo(() => new Set(KICKSTART_STOPS.slice(0, index + 1).map((stop) => stop.id)), [index])
   const stop = KICKSTART_STOPS[index]
   const last = index === KICKSTART_STOPS.length - 1
+  const advance = () => setCurrent(KICKSTART_STOPS[index + 1].id)
+  const connection = index === 0
+  const questionId = useId()
   return (
     <div className="iu-page iu-ks">
-      <header className="iu-page-head">
-        <h2 className="iu-page-title">set up peasant</h2>
-      </header>
       <StepWizardFrame
         steps={KICKSTART_STOPS}
         current={current}
         completed={completed}
         reachable={reachable}
         onJump={setCurrent}
+        footerProgress
         aria-label="set up peasant"
+        bodyProps={{ style: { paddingBlock: 'var(--sp-3)' } }}
         footStart={(
-          <Button variant="ghost" disabled={index === 0} onClick={() => setCurrent(KICKSTART_STOPS[index - 1].id)}>
-            back
+          <Button variant="secondary" disabled={index === 0} onClick={() => setCurrent(KICKSTART_STOPS[index - 1].id)}>
+            prev
           </Button>
         )}
         footEnd={(
-          <Button variant="primary" disabled={last} onClick={() => setCurrent(KICKSTART_STOPS[index + 1].id)}>
-            continue
-          </Button>
+          connection ? (
+            <div className="iu-ks-answers" role="group" aria-labelledby={questionId}>
+              <Button variant="secondary" onClick={advance}>no</Button>
+              <Button variant="primary" onClick={advance}>yes</Button>
+            </div>
+          ) : (
+            <Button variant="primary" disabled={last} onClick={advance}>continue</Button>
+          )
         )}
       >
-        <h3 className="iu-ks-stop">{stop.label}</h3>
         {current === KICKSTART_SELECTION_STOP
-          ? <SelectionStop theme={theme} />
-          : <p className="iu-ks-help">peasant asks this stop's question here. the demo draws the selection stop.</p>}
+          ? <SelectionStop theme={theme} label={stop.label} />
+          : connection
+            ? <><h3 id={questionId} className="iu-ks-stop">connect to peasant online?</h3><p className="iu-ks-help">demo only: neither choice connects or signs in.</p></>
+            : <><h3 className="iu-ks-stop">{stop.label}</h3><p className="iu-ks-help">peasant asks this stop's question here. the demo draws the selection stop.</p></>}
       </StepWizardFrame>
     </div>
   )
