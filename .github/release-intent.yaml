@@ -10,7 +10,7 @@
 # keep editing `package.json` scripts, dependencies, and the schema pin.
 releases: true
 tag_prefix: fairtrade-v
-automation_author: peasant-labs-releaser[bot]
+automation_author: app/peasant-labs-releaser
 changelog: CHANGELOG.md
 version_files:
   - {path: package.json, field: version}

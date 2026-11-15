@@ -111,7 +111,7 @@ To retitle a queued PR, remove it from the queue first, edit the title, then
 enqueue again: the queue build re-checks the new title before it can land.
 
 One standing bot release PR (`automation/release`, opened by
-`peasant-labs-releaser[bot]`) carries the CHANGELOG section and the version
+`app/peasant-labs-releaser`) carries the CHANGELOG section and the version
 field, lands through the queue by auto-merge, and is rebuilt after every
 landed batch. `title-guard` holds it to that content: the release PR may change
 only `CHANGELOG.md` and the `version` field of `package.json`, and the
