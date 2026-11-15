@@ -2,7 +2,31 @@ requiredNames:
   - markdown renderer
   - markdown line breaks
   - markdown tables
+  - syntax engine core
+  - syntax javascript regex engine
+  - syntax grammars
+  - typescript grammar
+  - javascript grammar
+  - python grammar
+  - go grammar
+  - json grammar
+  - yaml grammar
+  - shell grammar
+  - css grammar
+  - html grammar
 externals:
   - {name: markdown renderer, package: react-markdown, mutation: renderer bundled again, dependencyMutation: renderer dependency missing}
   - {name: markdown line breaks, package: remark-breaks, mutation: line breaks bundled again, dependencyMutation: line breaks dependency missing}
   - {name: markdown tables, package: remark-gfm, mutation: tables bundled again, dependencyMutation: tables dependency missing}
+  - {name: syntax engine core, package: '@shikijs/core', mutation: syntax engine bundled again, dependencyMutation: syntax engine dependency missing}
+  - {name: syntax javascript regex engine, package: '@shikijs/engine-javascript', mutation: syntax regex engine bundled again, dependencyMutation: syntax regex dependency missing}
+  - {name: syntax grammars, package: '@shikijs/langs', mutation: syntax grammars bundled again, dependencyMutation: syntax grammars dependency missing}
+  - {name: typescript grammar, package: '@shikijs/langs', external: '@shikijs/langs/typescript', mutation: typescript grammar bundled, dependencyMutation: typescript grammar dependency missing}
+  - {name: javascript grammar, package: '@shikijs/langs', external: '@shikijs/langs/javascript', mutation: javascript grammar bundled, dependencyMutation: javascript grammar dependency missing}
+  - {name: python grammar, package: '@shikijs/langs', external: '@shikijs/langs/python', mutation: python grammar bundled, dependencyMutation: python grammar dependency missing}
+  - {name: go grammar, package: '@shikijs/langs', external: '@shikijs/langs/go', mutation: go grammar bundled, dependencyMutation: go grammar dependency missing}
+  - {name: json grammar, package: '@shikijs/langs', external: '@shikijs/langs/json', mutation: json grammar bundled, dependencyMutation: json grammar dependency missing}
+  - {name: yaml grammar, package: '@shikijs/langs', external: '@shikijs/langs/yaml', mutation: yaml grammar bundled, dependencyMutation: yaml grammar dependency missing}
+  - {name: shell grammar, package: '@shikijs/langs', external: '@shikijs/langs/bash', mutation: shell grammar bundled, dependencyMutation: shell grammar dependency missing}
+  - {name: css grammar, package: '@shikijs/langs', external: '@shikijs/langs/css', mutation: css grammar bundled, dependencyMutation: css grammar dependency missing}
+  - {name: html grammar, package: '@shikijs/langs', external: '@shikijs/langs/html', mutation: html grammar bundled, dependencyMutation: html grammar dependency missing}

@@ -2,6 +2,11 @@
 # equal this list exactly, as a set, and parts-mutations.mjs proves each production mutation below
 # turns the gate red for the named reason.
 requiredCaseNames:
+  - footer progress retains full names and compact labels
+  - footer progress keeps arbitrary labels when short labels are absent
+  - footer progress retains full react node labels
+  - footer progress falls back to full react node labels
+  - footer progress handles eleven host supplied stops
   - label places for 1 step
   - label places for 2 steps
   - label places for 3 steps
@@ -12,6 +17,11 @@ requiredCaseNames:
   - label places for 8 steps
   - label places for 9 steps
   - label places for 10 steps
+  - no-label-breaks-inside-a-word
+  - labels-hide-together-when-a-word-does-not-fit
+  - hidden-labels-stay-in-the-accessible-name
+  - a-lone-word-wider-than-the-rail-hides-the-label
+  - a-node-label-is-measured-by-its-text
   - the frame lays out head, body and foot
   - the count reads the current step
   - the count follows the current step
@@ -40,6 +50,11 @@ requiredMutationNames:
   - the wizard drops the name the host gives it
   - the standalone rail changes its default name
   - the wizard stops reporting completion
+  - a-label-breaks-inside-a-word
+  - the-rail-forgets-its-longest-word
+  - the-rail-forgets-the-lone-word
+  - footer progress loses the rail
+  - footer marker announces the short label twice
 mutations:
   - name: the first label is centred
     file: src/ui/StepWizard.jsx
@@ -58,8 +73,8 @@ mutations:
     expectedDiagnostic: "label places for 1 step: places must be"
   - name: the rail drops its gap count
     file: src/ui/StepWizard.jsx
-    find: "{ '--swz-gaps': Math.max(steps.length - 1, 1) }"
-    replace: "{}"
+    find: "'--swz-gaps': Math.max(steps.length - 1, 1),"
+    replace: "'--swz-gaps': 1,"
     expectedDiagnostic: "label places for 4 steps: the rail must hand the stylesheet 3 gaps"
   - name: the count starts from zero
     file: src/ui/StepWizard.jsx
@@ -106,3 +121,28 @@ mutations:
     find: "onComplete?.({ completed: done })"
     replace: "void done"
     expectedDiagnostic: "the wizard walks continue and back through the frame: the last step must report"
+  - name: a-label-breaks-inside-a-word
+    file: src/ui/StepWizard.jsx
+    find: '<span className="swz-word">{word}</span>'
+    replace: '<span>{word}</span>'
+    expectedDiagnostic: "no-label-breaks-inside-a-word: words expected"
+  - name: the-rail-forgets-its-longest-word
+    file: src/ui/StepWizard.jsx
+    find: "'--swz-word-middle': longestWord(steps, [LABEL_PLACE.middle]),"
+    replace: "'--swz-word-middle': 0,"
+    expectedDiagnostic: "--swz-word-middle must hand the stylesheet"
+  - name: the-rail-forgets-the-lone-word
+    file: src/ui/StepWizard.jsx
+    find: "'--swz-word-only': longestWord(steps, [LABEL_PLACE.only]),"
+    replace: "'--swz-word-only': 0,"
+    expectedDiagnostic: "--swz-word-only must hand the stylesheet"
+  - name: footer progress loses the rail
+    file: src/ui/StepWizard.jsx
+    find: '{footerProgress && rail}'
+    replace: '{null}'
+    expectedDiagnostic: 'footer progress retains full names and compact labels: the only rail is in the footer'
+  - name: footer marker announces the short label twice
+    file: src/ui/StepWizard.jsx
+    find: 'aria-hidden={singleLine && step.shortLabel != null ? true : undefined}'
+    replace: 'aria-hidden={undefined}'
+    expectedDiagnostic: 'footer progress retains full names and compact labels: every marker retains its full name and position'
