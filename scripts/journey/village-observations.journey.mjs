@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { withAxeRetry } from './lib/assertions.mjs'
 import { readFile } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
 import { loadFixturePair, assertExactNames } from '../mounted-parts.mjs'
@@ -112,7 +113,7 @@ test('local village mounted catalog, history and independent pages', async ({ pa
   await expect(body.locator('.vobs-catalog p').first()).toHaveCSS('font-size', '16px')
   expect(await body.locator('.vobs-catalog p').first().evaluate((node) => getComputedStyle(node).fontFamily)).toContain('Atkinson Hyperlegible"')
   expect(await body.locator('p').first().evaluate((node) => getComputedStyle(node).fontFamily)).toContain('Atkinson')
-  const axe = await new AxeBuilder({ page }).include('#inuse').analyze()
+  const axe = await withAxeRetry(() => new AxeBuilder({ page }).include('#inuse').analyze())
   expect(axe.violations).toEqual([])
   await body.locator('.tabpanel:visible').evaluate((node) => { node.scrollTop = 0 })
   await shell.screenshot({ path: info.outputPath(`village-${theme}-desktop.png`) })

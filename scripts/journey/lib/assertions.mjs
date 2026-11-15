@@ -57,6 +57,33 @@ function axeScanOptions(options) {
 }
 
 /**
+ * Run one axe scan, retrying only the library's non-reentrant-frame race.
+ *
+ * axe-core refuses a second run in a frame while one is still executing; in a
+ * Storybook preview the previous run can still be finishing in the preview
+ * frame when the next state is scanned. Every scan in this harness goes
+ * through here, so the race is absorbed at one boundary while a genuine
+ * violation or any other error still propagates. The retry is bounded and
+ * only matches that exact library message.
+ * @template T
+ * @param {() => Promise<T>} run one scan attempt
+ * @param {{ attempts?: number, delayMs?: number }} [options] bounded retry policy
+ * @returns {Promise<T>}
+ */
+export async function withAxeRetry(run, options = {}) {
+  const { attempts = 4, delayMs = 200 } = options
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await run()
+    } catch (error) {
+      const busy = /Axe is already running/.test(error instanceof Error ? error.message : String(error))
+      if (!busy || attempt >= attempts) throw error
+      await new Promise((resolve) => setTimeout(resolve, delayMs))
+    }
+  }
+}
+
+/**
  * Run axe-core over the current page and return a compact, JSON-serializable
  * report. An optional root scopes the run to one subtree; the returned shape is
  * the same either way, so a page-wide scan and a row-scoped scan are
@@ -68,8 +95,10 @@ function axeScanOptions(options) {
  */
 export async function scanAxe(page, options) {
   const { tags = DEFAULT_AXE_TAGS, root } = axeScanOptions(options)
-  const builder = new AxeBuilder({ page }).withTags(tags)
-  const results = await (root === undefined ? builder : builder.include(root)).analyze()
+  const results = await withAxeRetry(() => {
+    const builder = new AxeBuilder({ page }).withTags(tags)
+    return (root === undefined ? builder : builder.include(root)).analyze()
+  })
   return {
     tags,
     violations: results.violations.map((v) => ({

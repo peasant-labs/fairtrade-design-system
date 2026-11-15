@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { withAxeRetry } from './lib/assertions.mjs'
 import { loadFixturePair } from '../mounted-parts.mjs'
 
 /* AppSidebar motion on the built Storybook: the current-item indicator rests on the current item
@@ -32,7 +33,7 @@ const alignment = (page) => page.evaluate(() => {
 // axe over the whole page, keeping the findings inside the sidebar: every part of it must sit in
 // a landmark, and no other rule may fail there
 const expectAxeClean = async (page, context) => {
-  const { violations } = await new AxeBuilder({ page }).analyze()
+  const { violations } = await withAxeRetry(() => new AxeBuilder({ page }).analyze())
   const findings = []
   for (const violation of violations) {
     for (const node of violation.nodes) {

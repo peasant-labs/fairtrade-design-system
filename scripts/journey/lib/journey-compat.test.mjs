@@ -271,7 +271,7 @@ describe('journey helper compatibility', () => {
   it('keeps every helper module loadable with its current exports', async () => {
     assert.deepEqual(assertions.DEFAULT_AXE_TAGS, ['wcag2a', 'wcag2aa'], 'axe tags must stay pinned')
     const assertionExports = /** @type {Record<string, unknown>} */ (assertions)
-    for (const symbol of ['scanAxe', 'seriousViolations', 'expectTheme', 'expectComputedTokens']) {
+    for (const symbol of ['scanAxe', 'withAxeRetry', 'seriousViolations', 'expectTheme', 'expectComputedTokens']) {
       assert.equal(typeof assertionExports[symbol], 'function', `${symbol} must stay exported from assertions.mjs`)
     }
     assert.ok(Object.isFrozen(assertions.AXE_RESULT_FIELDS), 'the declared axe result shape must stay frozen')
@@ -288,6 +288,31 @@ describe('journey helper compatibility', () => {
     assert.equal(fixtures.storyUrl('demo-id', 'dark'), '/iframe.html?id=demo-id&viewMode=story')
   })
 
+  it('retries only the axe busy race and bounds the retry', async () => {
+    let calls = 0
+    const value = await assertions.withAxeRetry(async () => {
+      calls += 1
+      if (calls === 1) throw new Error('Axe is already running. Use `await axe.run()` to wait for the previous run to finish before starting a new run.')
+      return 'ok'
+    }, { attempts: 2, delayMs: 1 })
+    assert.equal(value, 'ok')
+    assert.equal(calls, 2)
+
+    let other = 0
+    await assert.rejects(
+      () => assertions.withAxeRetry(async () => { other += 1; throw new Error('different failure') }, { attempts: 2, delayMs: 1 }),
+      /different failure/,
+    )
+    assert.equal(other, 1)
+
+    let exhausted = 0
+    await assert.rejects(
+      () => assertions.withAxeRetry(async () => { exhausted += 1; throw new Error('Axe is already running.') }, { attempts: 2, delayMs: 1 }),
+      /Axe is already running/,
+    )
+    assert.equal(exhausted, 2)
+  })
+
   it('keeps the pinned pure values byte-identical', () => {
     assert.equal(constants.FROZEN_EPOCH_MS, Date.UTC(2024, 0, 1, 12, 0, 0), 'FROZEN_EPOCH_MS must stay pinned')
     assert.equal(constants.PRNG_SEED, 0x9e3779b9, 'PRNG_SEED must stay pinned')
@@ -299,7 +324,7 @@ describe('journey helper compatibility', () => {
     const { scratch, loaded } = await loadVendoredCopy()
     try {
       const loadedExports = /** @type {Record<string, unknown>} */ (loaded)
-      for (const symbol of ['scanAxe', 'seriousViolations', 'expectTheme', 'expectComputedTokens']) {
+      for (const symbol of ['scanAxe', 'withAxeRetry', 'seriousViolations', 'expectTheme', 'expectComputedTokens']) {
         assert.equal(typeof loadedExports[symbol], 'function', `${symbol} must load from a vendored tree that has no app module`)
       }
       assert.deepEqual([...loaded.AXE_RESULT_FIELDS], [...assertions.AXE_RESULT_FIELDS], 'the vendored copy must carry the same declared axe result shape')
@@ -520,6 +545,6 @@ describe('journey helper compatibility', () => {
     }
     const text = readFileSync(join(ROOT, 'scripts', 'journey', 'app-validate.journey.mjs'), 'utf8')
     assert.ok(text.includes('passes the twenty interaction checks'), 'legacy path must keep its twenty-check test')
-    assert.ok(text.includes('http://localhost:5180/?fb=off'), 'legacy path must keep driving the built documentation page')
+    assert.ok(text.includes('JOURNEY_APP_PORT') && text.includes('/?fb=off'), 'legacy path must keep driving the built documentation page')
   })
 })
