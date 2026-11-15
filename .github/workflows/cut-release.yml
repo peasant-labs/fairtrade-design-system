@@ -129,7 +129,7 @@ jobs:
         env:
           APP_TOKEN: ${{ steps.mint.outputs.token }}
         run: |
-          git -c http.extraheader="AUTHORIZATION: bearer ${APP_TOKEN}" push --force-with-lease origin automation/cut-release
+          git -c credential.helper='!f() { echo "username=x-access-token"; echo "password=${APP_TOKEN}"; }; f' push --force-with-lease origin automation/cut-release
 
       - name: Close a cut-release PR with another level
         if: vars.RELEASE_BATCH_MODE == 'tag' && needs.prepare.outputs.stale == 'true'
