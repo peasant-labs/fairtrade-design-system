@@ -18,12 +18,12 @@ import { fileURLToPath } from 'node:url'
 import YAML from 'yaml'
 import { ConfigKey, RepoPath, loadReleaseConfig, readPackageManifest } from './release-config.mjs'
 import { ALL_RELEASE_KINDS, ALL_TAG_OUTPUTS, GuardCommand, TagOutput, parseReleaseKind } from './release-guard.mjs'
-import { loadStrictYaml, parsedMutations } from './release-notes-fixture.mjs'
+import { RELEASE_NOTES_FIXTURE_PATH, RELEASE_NOTES_MANIFEST_PATH, loadStrictYaml, parsedMutations } from './release-notes-fixture.mjs'
 import { extractChangelogSection } from './release-notes.mjs'
 
 const ROOT = resolve(new URL('..', import.meta.url).pathname)
-const fixture = loadStrictYaml('testdata/release-notes.yaml')
-const manifest = loadStrictYaml('testdata/release-notes.manifest.yaml')
+const fixture = loadStrictYaml(RELEASE_NOTES_FIXTURE_PATH)
+const manifest = loadStrictYaml(RELEASE_NOTES_MANIFEST_PATH)
 
 validateManifest(manifest)
 validateFixture(fixture, manifest)

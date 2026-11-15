@@ -9,12 +9,12 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { ProbeGroup, loadStrictYaml, parsedMutations } from './release-notes-fixture.mjs'
+import { ProbeGroup, RELEASE_NOTES_FIXTURE_PATH, RELEASE_NOTES_MANIFEST_PATH, loadStrictYaml, parsedMutations } from './release-notes-fixture.mjs'
 
 const ROOT = resolve(new URL('..', import.meta.url).pathname)
 const SOURCE_PATH = resolve(ROOT, 'scripts/release-notes.mjs')
-const manifest = loadStrictYaml('testdata/release-notes.manifest.yaml')
-const fixture = loadStrictYaml('testdata/release-notes.yaml')
+const manifest = loadStrictYaml(RELEASE_NOTES_MANIFEST_PATH)
+const fixture = loadStrictYaml(RELEASE_NOTES_FIXTURE_PATH)
 
 const baseline = readFileSync(SOURCE_PATH, 'utf8')
 let killed = 0

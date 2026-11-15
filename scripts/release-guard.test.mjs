@@ -20,8 +20,10 @@ import { closed } from '../src/ui/closed-value.js'
 import { ALL_RELEASE_KINDS, parseReleaseKind, parseReleaseTag } from './release-guard.mjs'
 import { REPO_ROOT, RepoPath, loadQueuePolicy, loadReleaseConfig, parseWorkflow, readPackageManifest, readWorkflow } from './release-config.mjs'
 
-const fixturePath = path.join(import.meta.dirname, 'testdata/release-guard.yaml')
-const manifestPath = path.join(import.meta.dirname, 'testdata/release-guard.manifest.yaml')
+const FIXTURE_RELATIVE_PATH = 'testdata/release-guard.yaml'
+const MANIFEST_RELATIVE_PATH = 'testdata/release-guard.manifest.yaml'
+const fixturePath = path.join(import.meta.dirname, FIXTURE_RELATIVE_PATH)
+const manifestPath = path.join(import.meta.dirname, MANIFEST_RELATIVE_PATH)
 /** Per-command ceiling for one throwaway-repository git call, in ms. */
 const GIT_COMMAND_TIMEOUT_MS = 10000
 /** Ceiling for the whole release-tag case, in ms: a regression fails instead of hanging. */

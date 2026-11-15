@@ -6,6 +6,9 @@ import { readFileSync } from 'node:fs'
 import YAML from 'yaml'
 import { closed } from '../src/ui/closed-value.js'
 
+export const RELEASE_NOTES_FIXTURE_PATH = 'testdata/release-notes.yaml'
+export const RELEASE_NOTES_MANIFEST_PATH = 'testdata/release-notes.manifest.yaml'
+
 /**
  * Which extraction cases a mutation is probed against: a valid case must stop
  * returning its expected body, an invalid case must stop throwing.
@@ -27,7 +30,7 @@ const PROBE_GROUP_BY_WIRE = Object.freeze(Object.fromEntries(ALL_PROBE_GROUPS.ma
  */
 export function parseProbeGroup(raw, where) {
   if (typeof raw === 'string' && Object.hasOwn(PROBE_GROUP_BY_WIRE, raw)) return PROBE_GROUP_BY_WIRE[raw]
-  throw new Error(`${where}: probeGroup ${JSON.stringify(raw)} is not one of ${ALL_PROBE_GROUPS.map((group) => group.wire).join(', ')}. Fix scripts/testdata/release-notes.manifest.yaml.`)
+  throw new Error(`${where}: probeGroup ${JSON.stringify(raw)} is not one of ${ALL_PROBE_GROUPS.map((group) => group.wire).join(', ')}. Fix scripts/${RELEASE_NOTES_MANIFEST_PATH}.`)
 }
 
 /**

@@ -71,9 +71,7 @@ rules:
     scripts/publish-recovery.test.mjs: 1
     scripts/publish-states.test.mjs: 2
     scripts/redaction-categories.consumer.mjs: 1
-    scripts/release-guard.mjs: 5
-    scripts/release-guard.test.mjs: 2
-    scripts/release-notes.test.mjs: 1
+    scripts/release-guard.test.mjs: 1
     scripts/repo-picker.test.mjs: 5
     scripts/responsive.mjs: 1
     scripts/sbshot.mjs: 1
@@ -368,9 +366,7 @@ rules:
     scripts/publish-recovery.test.mjs: 1
     scripts/published-package-preservation.mjs: 1
     scripts/redaction-labels.test.mjs: 1
-    scripts/release-guard.test.mjs: 1
-    scripts/release-notes.mutations.mjs: 2
-    scripts/release-notes.test.mjs: 3
+    scripts/release-notes.test.mjs: 1
     scripts/run-test-lib.test.mjs: 8
     scripts/runtime-floor.test.mjs: 1
     scripts/selection-node-values.test.mjs: 3
