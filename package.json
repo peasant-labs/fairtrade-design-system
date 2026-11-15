@@ -211,6 +211,8 @@
     "test:transcript-markdown": "node scripts/transcript-markdown.test.mjs",
     "test:transcript-markdown:mutations": "node scripts/transcript-markdown.entrypoint.test.mjs && node scripts/transcript-markdown.mutations.mjs",
     "lint:css": "node scripts/css-token-lint.mjs",
+    "lint:unstring": "go run github.com/peasant-labs/infra/unstring/cmd/unstring@v0.0.1 check",
+    "lint:unstring:update": "go run github.com/peasant-labs/infra/unstring/cmd/unstring@v0.0.1 update",
     "test:css-guards": "node scripts/css-guards.test.mjs",
     "smoke:transcript": "node scripts/smoke-transcript.mjs",
     "smoke:transcript-ui": "node scripts/smoke-transcript-ui.mjs",
