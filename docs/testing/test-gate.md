@@ -98,6 +98,23 @@ runs. The required CI step uses `--target=all`; the verifier reads all 24 rows.
 The declared Fairtest budget dropped from 24 to 12 minutes, and the mounted-row
 stage from 18.5 to 6.5 minutes, after the measurements below.
 
+Each producer row also writes `digests.json` after its six artifact classes.
+The record is row metadata, not a seventh artifact class. `pnpm
+test:fairtest:verify` reads it and compares every recorded SHA-256 against the
+current artifact bytes before it parses any JSON artifact; a changed byte,
+missing or malformed record, extra or missing digest entry, invalid hash,
+missing artifact, or extra row file fails closed with the row and artifact
+named. The producer hashes the screenshot buffer Playwright returned, not a
+later file read. `pnpm test:fairtest:digest-boundary` runs after the mounted
+producer and proves the untouched run verifies and every one of those mutations
+fails on an isolated copy. This is change detection relative to an unchanged
+digest record, not authenticated provenance: a writer who changes both an
+artifact and its record is not detected by a run-root-only check, and an
+independently protected trust anchor belongs outside the writable run root. A
+run root produced before the digest record existed has no `digests.json`; it
+fails closed rather than having the verifier regenerate a digest from the
+current bytes, so re-run the producer for a root that should verify.
+
 ## Journey projects
 
 CI runs the full Playwright catalog as the dark and light theme projects on

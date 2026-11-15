@@ -646,6 +646,7 @@ function inspectWorkflowOrder(text) {
     'Fairtest browser-free contracts',
     'Fairtest inventory and selection (browser-free, before services)',
     'Fairtest mounted producer',
+    'Fairtest artifact digest boundary',
     'Fairtest evidence verification',
     'Fairtest evidence preflight',
   ]
@@ -689,6 +690,7 @@ function inspectWorkflowOrder(text) {
     'pnpm test:fairtest:paths',
     'pnpm test:fairtest:boundary',
     'pnpm test:fairtest:dispatch',
+    'pnpm test:fairtest:digest-boundary:contract',
     'pnpm test:fairtest:envelope',
     'pnpm test:fairtest:compat',
     'pnpm --filter @peasant-labs/fairtest test:capture',
@@ -696,6 +698,13 @@ function inspectWorkflowOrder(text) {
     if (!browserFreeCommands.includes(command)) {
       workflowFail(command, `the browser-free contracts step must run ${command}, observed ${JSON.stringify(browserFree.run)}`)
     }
+  }
+  // The producer-to-verifier digest regression must run on the producer's real
+  // output between the mounted producer and the verifier. Declaring the command
+  // without mounting it here would leave the digest boundary unenforced.
+  const digestBoundary = stepByName(steps, 'Fairtest artifact digest boundary')
+  if (digestBoundary.run !== 'pnpm test:fairtest:digest-boundary') {
+    workflowFail('run', `the artifact digest boundary step must run pnpm test:fairtest:digest-boundary, observed ${JSON.stringify(digestBoundary.run)}`)
   }
   const uploadIndex = steps.findIndex((entry) => entry.name === 'Fairtest evidence upload')
   if (uploadIndex < indices[indices.length - 1]) {

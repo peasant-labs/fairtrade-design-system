@@ -1,4 +1,4 @@
-expectedRecordCount: 8
+expectedRecordCount: 9
 requiredRecordNames:
   - example-mounted-product-proof
   - example-mounted-component-proof
@@ -8,6 +8,7 @@ requiredRecordNames:
   - fairtest-raw-path-literal-guard
   - fairtest-path-resolution-guard
   - app-reduced-transparency-computed-check
+  - fairtest-artifact-digest-boundary
 expectedMutationCount: 13
 requiredMutationNames:
   - missing-answer-subject

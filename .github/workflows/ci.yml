@@ -146,6 +146,7 @@ jobs:
           pnpm test:fairtest:paths
           pnpm test:fairtest:boundary
           pnpm test:fairtest:dispatch
+          pnpm test:fairtest:digest-boundary:contract
           pnpm test:fairtest:promotion
           pnpm --filter @peasant-labs/fairtest test:core
           pnpm --filter @peasant-labs/fairtest test:adapter
@@ -172,6 +173,9 @@ jobs:
         env:
           JOURNEY_HTML: "0"
         run: pnpm test:fairtest:mounted -- --target=all
+
+      - name: Fairtest artifact digest boundary
+        run: pnpm test:fairtest:digest-boundary
 
       - name: Fairtest evidence verification
         run: pnpm test:fairtest:verify
