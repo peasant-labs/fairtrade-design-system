@@ -1,0 +1,102 @@
+# Required-NAME manifest for release-guard.yaml: deletion protection. The test
+# (scripts/release-guard.test.mjs) asserts each list's names equal these lists
+# exactly, as sets. Membership is asserted, never a bare count.
+requiredValidTagNames:
+  - final
+  - candidate
+  - zero core
+requiredInvalidTagNames:
+  - missing namespace
+  - missing v
+  - beta
+  - leading zero major
+  - leading zero minor
+  - leading zero patch
+  - rc zero
+  - rc padded
+  - unknown kind
+requiredPackageScriptNames:
+  - prepack asserts the package provenance
+  - prepack builds the library
+  - prepack checks the packed contents
+  - prepack runs no tests
+  - build:lib runs no test script
+  - build:lib runs no test file
+  - build:lib has no pre-hook
+  - test:lib runs the lane runner
+  - the serial lane renders the mounted pi transcript
+  - the serial lane runs vitest
+requiredForbiddenTextNames:
+  - the hold rule never dequeues a queued release PR
+  - the release job leaves the GitHub Release to the tag-triggered workflow
+requiredRecoveryGateNames:
+  - find a release PR after either preparation result
+  - read the queue after either preparation result
+  - find an existing release PR in the queue
+  - judge the queue after either preparation result
+  - bundle only a changed branch
+  - fetch only a changed branch
+  - push only a changed branch
+  - open a PR only for a changed branch
+  - update a PR only for a changed branch
+  - arm an unchanged unarmed release PR
+  - hold an unchanged armed release PR
+requiredContractMutationNames:
+  - re-adding edited to ci.yml is rejected
+  - unconditional prepack is rejected
+  - prepack on a bot PR that is not the release PR is rejected
+  - a content build that also runs on the release PR is rejected
+  - warn-and-pass group resolution is rejected
+  - a cancellable release run is rejected
+  - a release without the independent verifier is rejected
+  - a status function bypassing the verifier is rejected
+  - a self-hosted bundle verifier is rejected
+  - a bundle verifier with App credentials is rejected
+  - skipping the tag bundle check is rejected
+  - skipping the release bundle check is rejected
+  - a release commit title not bound to the PR title is rejected
+  - a tag verifier without independent replanning is rejected
+  - a tag verifier masking a failed replan is rejected
+  - a tag verifier without the action check is rejected
+  - a tag verifier that accepts repeated plan outputs is rejected
+  - a tag verifier that ignores the recomputed version is rejected
+  - a tag verifier without the candidate comparison is rejected
+  - a tag verifier without the tag comparison is rejected
+  - a prepared release from an outdated tip is rejected
+  - a Go cache keyed on another module is rejected
+  - release PR lookup only on push is rejected
+  - queue read only on push is rejected
+  - queue entry lookup only on push is rejected
+  - queue decision only on push is rejected
+  - arming only on push is rejected
+  - holding only on push is rejected
+  - pushing an unchanged branch is rejected
+requiredPolicyMutationNames:
+  - cancelling ci on every event is rejected
+  - dropping merge_group from ci is rejected
+  - comparing a bot branch literally is rejected
+  - dropping edited from title-guard is rejected
+  - a job-level if on the guard job is rejected
+  - interpolating a title is rejected
+  - a range reader without the floor is rejected
+  - a weakened release-batch verdict is rejected
+  - arming without the gate is rejected
+  - an ungated tag is rejected
+  - a major cut-release level is rejected
+  - a cut-release on any branch is rejected
+  - a cut-release write without tag mode is rejected
+  - editing another bot PR is rejected
+  - arming another branch is rejected
+  - a cut-release tag push is rejected
+  - a self-hosted runner for the credential job is rejected
+  - a credential job on a runner an expression picks is rejected
+  - naming the release PR by a number from the plan job is rejected
+  - a checkout that keeps its credentials is rejected
+  - a GitHub Release published without the tag check is rejected
+  - an npm publish without the tag check is rejected
+  - checking the tag against another branch is rejected
+  - a tag check that may fail is rejected
+  - publishing after a failed tag check is rejected
+requiredGitMutationNames:
+  - a forced push moves the release tag
+  - a delete and re-push moves the release tag

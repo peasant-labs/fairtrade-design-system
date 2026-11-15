@@ -165,6 +165,30 @@ validCases:
 
       - the rc1 candidate entry.
 
+  # Byte shape of the release job's generated output: `intent.Generate` over
+  # pending `feat[patch]`/`feat[minor]` subjects writes one bare `## 0.0.N`
+  # section, undated to match recent entries, with one line per subject and
+  # its PR number. The GitHub Release notes for a bot-tagged release are
+  # extracted from exactly this shape.
+  - name: a generated release section extracts cleanly (intent.Generate bare style)
+    version: "0.0.68"
+    changelog: |
+      # Changelog
+
+      All notable changes to `@peasant-labs/fairtrade` are documented here.
+
+      ## 0.0.68
+
+      - add the group facet (#281)
+      - fix the empty state (#282)
+
+      ## 0.0.67
+
+      - feat(x)[minor]: one (#9)
+    expected: |-
+      - add the group facet (#281)
+      - fix the empty state (#282)
+
 invalidCases:
   - name: a version with no matching section fails closed
     version: "9.9.9"
@@ -189,7 +213,7 @@ invalidCases:
       ### Added
 
       - the prior entry.
-    errorMatch: 'the "## 0\.2\.0" section in CHANGELOG\.md is empty'
+    errorMatch: 'the "## 0\.2\.0" section in the changelog is empty'
 
   - name: a section header present but with only blank lines in its body fails closed
     version: "0.2.0"
@@ -204,4 +228,65 @@ invalidCases:
       ### Added
 
       - the prior entry.
-    errorMatch: 'the "## 0\.2\.0" section in CHANGELOG\.md is empty'
+    errorMatch: 'the "## 0\.2\.0" section in the changelog is empty'
+
+# The release.yml contract text the GitHub CLI and Actions own. Everything the
+# repository owns (the tag prefix, the changelog path, the parser's command,
+# outputs, and kinds, the script paths, the package name) is read from its
+# owner by release-notes.test.mjs instead.
+releaseWorkflow:
+  # The workflow is read-only by default; every job but the publish job keeps
+  # the read-only scopes, and only the publish job may write the Release.
+  permissions: {contents: read}
+  jobPermissions: {contents: read}
+  publishPermissions: {contents: write}
+  triggeringTag: "${{ github.ref_name }}"
+  # The GitHub CLI flag each release kind sets on the Release.
+  kindFlags:
+    - {kind: rc, flag: --prerelease}
+    - {kind: final, flag: --latest}
+  requiredText:
+    - {name: the job looks the release up first, text: gh release view}
+  commands:
+    - name: a re-run updates the existing release for the triggering tag
+      head: gh release edit
+      count: 1
+      includes: ['"$TAG"']
+    - name: the release is created once, for the triggering tag, and never makes a tag
+      head: gh release create
+      count: 1
+      includes: ['"$TAG"', --verify-tag]
+  forbiddenText:
+    - {name: the workflow pushes nothing, text: git push}
+    - {name: the workflow makes no tag, text: git tag}
+    - {name: the workflow names no tag ref, text: refs/tags/}
+    - {name: the workflow writes no pull request, text: "gh pr "}
+  # Each row breaks one contract row; the test proves it is caught.
+  mutations:
+    - name: a hard-coded changelog path is rejected
+      find: '"$VERSION" "$CHANGELOG"'
+      replace: '"$VERSION" CHANGELOG.md'
+    - name: a hard-coded tag prefix is rejected
+      find: 'parse-tag "$TAG" "$TAG_PREFIX"'
+      replace: 'parse-tag "$TAG" fairtrade-v'
+    - name: a trigger off the configured tag prefix is rejected
+      find: "tags: ['fairtrade-v*']"
+      replace: "tags: ['v*']"
+    - name: a release created without --verify-tag is rejected
+      find: "--verify-tag --title"
+      replace: "--title"
+    - name: a guard that cannot load the parser's imports is rejected
+      find: "            src/ui/closed-value.js\n"
+      replace: ""
+    - name: a candidate published as the latest release is rejected
+      find: "PRERELEASE: ${{ needs.guard.outputs.kind == 'rc' }}"
+      replace: "PRERELEASE: ${{ needs.guard.outputs.kind == 'final' }}"
+    - name: release notes read from another file are rejected
+      find: "--notes-file notes/notes.md"
+      replace: "--notes-file notes.md"
+    - name: a notes job holding a write token is rejected
+      find: "    needs: guard\n    runs-on: ubuntu-latest\n    timeout-minutes: 10\n    permissions:\n      contents: read\n"
+      replace: "    needs: guard\n    runs-on: ubuntu-latest\n    timeout-minutes: 10\n    permissions:\n      contents: write\n"
+    - name: a publish job that runs before the notes arrive is rejected
+      find: "      - uses: actions/download-artifact@"
+      replace: "      - run: test -d notes\n      - uses: actions/download-artifact@"
