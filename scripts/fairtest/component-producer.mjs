@@ -11,8 +11,9 @@
 // knowledge of its own: a story row is a COMPONENT_STORIES entry. It writes
 // exactly the SAME six artifact class names the product row writes, from the
 // one shared constant in fairtest-artifacts.mjs (which product-producer.mjs only
-// re-exports), into a `producer/<rowPrefix>-<theme>/` row directory so one
-// verifier reads both kinds with one closed set.
+// re-exports), plus one row-owned digest record, into a
+// `producer/<rowPrefix>-<theme>/` row directory so one verifier reads both kinds
+// with one closed set.
 //
 // Row sequence per story entry and theme (dark, light): serve the direct
 // iframe, wait for a genuine mount (real root children, a settled render
@@ -29,9 +30,9 @@
 // repair. A failing row never writes a passing record.
 
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, readdirSync } from 'node:fs'
 import http from 'node:http'
-import { join, resolve } from 'node:path'
+import { basename, join, resolve } from 'node:path'
 import { importFairtestSource } from '../fairtest-source.mjs'
 import { FAIRTEST_APP_HOST, FAIRTEST_STORYBOOK_PORT, PRODUCT_VIEWPORT } from './fairtest-runtime.mjs'
 import { fairtestPath } from './fairtest-paths.mjs'
@@ -56,6 +57,7 @@ import {
   componentGateReceiptFields,
   componentThemeSetup,
 } from './fairtrade-component-target.mjs'
+import { ARTIFACT_DIGEST_RECORD, readVerifiedRowArtifacts, writeArtifactDigestRecord, writeRowArtifact } from './artifact-digest-record.mjs'
 import { ARTIFACT_CLASSES, PRODUCT_ONLY_FIELDS, assertServedDigestsMatchRunRoot } from './fairtest-artifacts.mjs'
 import { requireEnvelopeForRun, resolveRunId, resolveRunRoot } from './run-envelope-contract.mjs'
 
@@ -166,15 +168,15 @@ export function componentRowDir(runRoot, theme, story = COMPONENT_DEFAULT_STORY)
 }
 
 /**
- * Refuse a row directory that already carries one of the six artifact classes.
- * Module-private: prepareComponentRowDir is the only way the row can reach this
- * refusal, so freshness can never be validated after a write has overwritten a
- * previous run's bytes.
+ * Refuse a row directory that already carries one of the six artifact classes
+ * or a digest record. Module-private: prepareComponentRowDir is the only way
+ * the row can reach this refusal, so freshness can never be validated after a
+ * write has overwritten a previous run's bytes.
  * @param {string} rowDir row directory
  * @returns {void}
  */
 function refuseStaleComponentSubtree(rowDir) {
-  for (const name of COMPONENT_ARTIFACT_CLASSES) {
+  for (const name of [...COMPONENT_ARTIFACT_CLASSES, ARTIFACT_DIGEST_RECORD]) {
     if (existsSync(join(rowDir, name))) {
       throw new Error(
         `component producer: stale artifact ${JSON.stringify(name)} for field "artifact" at path run.rowDir/${name}; ` +
@@ -827,7 +829,7 @@ export function assertComponentScreenshotFloor(bytes, path = 'screenshot.png', f
   if (!Number.isInteger(bytes) || /** @type {number} */ (bytes) < floor) {
     throw new Error(
       'component producer: blank screenshot for field "screenshot" at path evidence.screenshot; ' +
-      `wrote ${JSON.stringify(bytes)} bytes to ${JSON.stringify(path)}, below the component floor ${floor}; ` +
+      `captured ${JSON.stringify(bytes)} bytes for ${JSON.stringify(path)}, below the component floor ${floor}; ` +
       'repair: keep the mounted component expanded and rendered so the capture is non-blank.',
     )
   }
@@ -835,10 +837,12 @@ export function assertComponentScreenshotFloor(bytes, path = 'screenshot.png', f
 
 /**
  * Read a row directory and refuse any entry outside the one shared six-class
- * artifact set. This is the closed-set reader: an extra class (an invented
- * seventh, a leftover scratch file) is a real defect the completeness guard
- * alone never saw, because a presence loop over the six cannot notice an
- * unexpected member. The returned set is the declared six, in declared order.
+ * artifact set plus the row-owned digest record. This is the closed-set
+ * reader: an extra class (an invented seventh, a leftover scratch file) is a
+ * real defect the completeness guard alone never saw, because a presence loop
+ * over the six cannot notice an unexpected member. The returned set is the
+ * declared six, in declared order; the digest record is metadata, never an
+ * artifact observation.
  * @param {string} rowDir row directory
  * @returns {readonly string[]} the frozen declared artifact class list
  */
@@ -846,11 +850,13 @@ export function readComponentArtifactSet(rowDir) {
   const entries = readdirSync(rowDir, { withFileTypes: true })
     .filter((entry) => entry.isFile())
     .map((entry) => entry.name)
-  const unknown = entries.filter((name) => !COMPONENT_ARTIFACT_CLASSES.includes(name)).sort()
+  const unknown = entries
+    .filter((name) => !COMPONENT_ARTIFACT_CLASSES.includes(name) && name !== ARTIFACT_DIGEST_RECORD)
+    .sort()
   if (unknown.length > 0) {
     throw new Error(
       `component producer: unknown artifact class ${JSON.stringify(unknown[0])} for field "artifact" at path artifactClasses; ` +
-      `the row writes exactly ${JSON.stringify([...COMPONENT_ARTIFACT_CLASSES])}; ` +
+      `the row writes exactly ${JSON.stringify([...COMPONENT_ARTIFACT_CLASSES])} plus ${JSON.stringify(ARTIFACT_DIGEST_RECORD)}; ` +
       `repair: remove the extra artifact ${JSON.stringify(unknown[0])} from ${JSON.stringify(rowDir)} so one verifier reads the closed six-class set.`,
     )
   }
@@ -858,23 +864,26 @@ export function readComponentArtifactSet(rowDir) {
 }
 
 /**
- * Assert a row directory ends with the complete shared six-class artifact set
- * and nothing else. The closed-set reader refuses an extra class first, then
- * this loop refuses a missing one by name. The same set the product row writes,
- * so one verifier reads both kinds.
+ * Assert a row directory ends with the complete shared six-class artifact set,
+ * its row-owned digest record, and nothing else. The closed-set reader refuses
+ * an extra file first, then this loop refuses a missing class by name, and the
+ * shared reader refuses a missing or inconsistent digest record. The same set
+ * the product row writes, so one verifier reads both kinds.
  * @param {string} rowDir row directory
+ * @param {string} [rowKey] expected row key, defaults to the row directory name
  * @returns {void}
  */
-export function assertComponentArtifactSet(rowDir) {
+export function assertComponentArtifactSet(rowDir, rowKey = basename(rowDir)) {
   readComponentArtifactSet(rowDir)
   for (const name of COMPONENT_ARTIFACT_CLASSES) {
     if (!existsSync(join(rowDir, name))) {
       throw new Error(
         `component producer: missing artifact ${JSON.stringify(name)} for field "artifact" at path run.rowDir/${name}; ` +
-        'repair: keep the six artifact writes intact so every row ends with the complete set.',
+        'repair: keep the six artifact writes and the row-owned digest record intact so every row ends with the complete set.',
       )
     }
   }
+  readVerifiedRowArtifacts({ rowDir, rowKey, artifactClasses: COMPONENT_ARTIFACT_CLASSES })
 }
 
 /**
@@ -1212,9 +1221,10 @@ async function performComponentAction(page, story, action) {
 }
 
 /**
- * Capture one component story row on the real built Storybook artifact and
- * write its six durable artifacts. The page must already belong to a browser
- * owned by the Playwright runner; the loopback service must already be ready.
+ * Capture one component story row on the real built Storybook artifact, write
+ * its six durable artifacts, and record their row-owned digests. The page must
+ * already belong to a browser owned by the Playwright runner; the loopback
+ * service must already be ready.
  *
  * Row sequence: serve the direct iframe, wait for real root children and for
  * the render lifecycle to settle, prove the mount for the story's layout,
@@ -1358,8 +1368,11 @@ export async function captureComponentRow(page, theme, options = {}) {
   // after-facts proved, so the tie is read on both sides of them: a state that
   // ends before the scan finishes is refused instead of recorded.
   const tieBefore = await readComponentFact(page, story.gateTie.expectation)
+  // Capture into memory so the digest is computed from the exact bytes the
+  // browser returned, then write those same bytes. This row never reads the
+  // screenshot file back to build its digest.
   const screenshotPath = join(rowDir, 'screenshot.png')
-  await page.locator(COMPONENT_SELECTORS.root).screenshot({ path: screenshotPath })
+  const screenshotBuffer = await page.locator(COMPONENT_SELECTORS.root).screenshot()
   const ariaSnapshot = await page.locator(COMPONENT_SELECTORS.root).ariaSnapshot()
   const scopedAfter = await scanAxe(page, { root: COMPONENT_SELECTORS.root })
   assertComponentAxeScanShape(scopedAfter, 'evidence.axe.scopedAfter')
@@ -1376,7 +1389,8 @@ export async function captureComponentRow(page, theme, options = {}) {
   const gate = buildComponentGateReceipt({ scan: scopedAfter, observedTheme: themeObservation.observed, story, tie: tieAfter.holds })
 
   assertComponentAriaFloor(ariaSnapshot, story.floors.ariaChars)
-  assertComponentScreenshotFloor(statSync(screenshotPath).size, screenshotPath, story.floors.screenshotBytes)
+  assertComponentScreenshotFloor(screenshotBuffer.byteLength, screenshotPath, story.floors.screenshotBytes)
+  const screenshotWrite = writeRowArtifact(rowDir, 'screenshot.png', screenshotBuffer)
 
   const accessibility = buildComponentAccessibilityEvidence({ pageWide, scoped: scopedAfter, gate })
   const accessibilityVerdict = readComponentAccessibilityVerdict(accessibility, story)
@@ -1448,13 +1462,17 @@ export async function captureComponentRow(page, theme, options = {}) {
     }
   }
 
-  writeFileSync(join(rowDir, 'record.json'), `${JSON.stringify(record, null, 2)}\n`)
-  writeFileSync(join(rowDir, 'aria.json'), `${JSON.stringify({ target: story.targetId, rowTheme: theme, storyId: story.storyId, snapshot: ariaSnapshot }, null, 2)}\n`)
-  writeFileSync(join(rowDir, 'axe.json'), `${JSON.stringify({ target: story.targetId, rowTheme: theme, policy: COMPONENT_A11Y_POLICY, scopeRoot: COMPONENT_SELECTORS.root, gate: { ...gate }, pageWide: { scope: COMPONENT_A11Y_SCOPES.page, root: COMPONENT_A11Y_SCOPES.pageRoot, informational: true, ...pageWide } }, null, 2)}\n`)
-  writeFileSync(join(rowDir, 'provenance.json'), `${JSON.stringify(provenance, null, 2)}\n`)
-  writeFileSync(join(rowDir, 'resolution.json'), `${JSON.stringify(proof, null, 2)}\n`)
-
-  assertComponentArtifactSet(rowDir)
+  const recordWrite = writeRowArtifact(rowDir, 'record.json', `${JSON.stringify(record, null, 2)}\n`)
+  const ariaWrite = writeRowArtifact(rowDir, 'aria.json', `${JSON.stringify({ target: story.targetId, rowTheme: theme, storyId: story.storyId, snapshot: ariaSnapshot }, null, 2)}\n`)
+  const axeWrite = writeRowArtifact(rowDir, 'axe.json', `${JSON.stringify({ target: story.targetId, rowTheme: theme, policy: COMPONENT_A11Y_POLICY, scopeRoot: COMPONENT_SELECTORS.root, gate: { ...gate }, pageWide: { scope: COMPONENT_A11Y_SCOPES.page, root: COMPONENT_A11Y_SCOPES.pageRoot, informational: true, ...pageWide } }, null, 2)}\n`)
+  const provenanceWrite = writeRowArtifact(rowDir, 'provenance.json', `${JSON.stringify(provenance, null, 2)}\n`)
+  const resolutionWrite = writeRowArtifact(rowDir, 'resolution.json', `${JSON.stringify(proof, null, 2)}\n`)
+  const rowKey = `${story.rowPrefix}-${theme}`
+  // The digest record is written once, after all six artifacts, and the row is
+  // read back through the verifier's own reader so a partial write or a
+  // concurrent mutation cannot end the row with a green summary.
+  writeArtifactDigestRecord(rowDir, [recordWrite, ariaWrite, axeWrite, screenshotWrite, provenanceWrite, resolutionWrite])
+  assertComponentArtifactSet(rowDir, rowKey)
 
   return {
     theme,
