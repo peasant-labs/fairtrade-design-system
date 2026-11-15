@@ -9,7 +9,29 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { assertExactNames, loadFixturePair } from './mounted-parts.mjs'
 
-const { fixture, manifest } = loadFixturePair('scripts/testdata/kickstart-preview-browser.yaml', 'scripts/testdata/kickstart-preview-browser.manifest.yaml')
+const FIXTURE = 'scripts/testdata/kickstart-preview-browser.yaml'
+const MANIFEST = 'scripts/testdata/kickstart-preview-browser.manifest.yaml'
+/** @type {Readonly<{Stacked: 'stacked', SideBySide: 'side-by-side'}>} */
+const FixtureLayout = Object.freeze({ Stacked: 'stacked', SideBySide: 'side-by-side' })
+/** @type {Readonly<{None: 'none'}>} */
+const CssDisplay = Object.freeze({ None: 'none' })
+const { fixture, manifest } = loadFixturePair(FIXTURE, MANIFEST)
+const Copy = Object.freeze({
+  FullTrace: /full trace/,
+  Previous: 'prev',
+  Continue: 'continue',
+  SelectionStep: `step 2 of 10, ${fixture.stopLabels[1]}`,
+  OnlineStep: `step 1 of 10, ${fixture.stopLabels[0]}`,
+  CopyTurnLink: /copy link to turn/i,
+  TranscriptTools: 'transcript tools',
+  UserTurns: 'user turns',
+  Filters: 'filters',
+  CloseDrawer: 'close drawer',
+  SearchTranscript: 'search transcript',
+  OnlineQuestion: 'connect to peasant online?',
+  No: 'no',
+  Yes: 'yes',
+})
 assertExactNames([fixture.race.name], manifest.requiredRaceNames, 'browser preview races')
 assertExactNames([fixture.resize.name], manifest.requiredResizeNames, 'browser resize checks')
 assertExactNames([fixture.shortViewport.name], manifest.requiredShortViewportNames, 'short phone checks')
@@ -68,7 +90,7 @@ try {
       assert.equal(await viewer.locator('.txn-body-grid').getAttribute('data-left-rail'), 'closed')
       assert.equal(await viewer.locator('.txn-body-grid').getAttribute('data-right-rail'), 'closed')
       if (row.minVisibleTrace) {
-        await viewer.getByRole('tab', { name: /full trace/ }).click()
+        await viewer.getByRole('tab', { name: Copy.FullTrace }).click()
         await page.locator('#inuse-stage').evaluate(el => { el.scrollTop = 0 })
       }
       const layout = await page.evaluate(() => {
@@ -103,7 +125,7 @@ try {
       })
       assert.ok(layout.documentScroll <= layout.documentWidth, `${row.name}: page overflows horizontally`)
       assert.ok(layout.treeScroll <= layout.treeWidth, `${row.name}: a tree row overflows its pane`)
-      assert.ok(row.layout === 'stacked' ? layout.preview.y >= layout.tree.y + layout.tree.height : layout.preview.x > layout.tree.x + layout.tree.width, `${row.name}: incorrect pane layout`)
+      assert.ok(row.layout === FixtureLayout.Stacked ? layout.preview.y >= layout.tree.y + layout.tree.height : layout.preview.x > layout.tree.x + layout.tree.width, `${row.name}: incorrect pane layout`)
       if (row.minVisibleTrace) {
         assert.ok(layout.visibleTrace >= row.minVisibleTrace, `${row.name}: only ${layout.visibleTrace}px of the transcript is visible above the wizard footer; need ${row.minVisibleTrace}px`)
         assert.ok(layout.tabsVisible && layout.countVisible && layout.titleVisible, `${row.name}: the footer obscures viewer tabs, selection count or page title: ${JSON.stringify(layout)}`)
@@ -111,12 +133,12 @@ try {
       assert.ok(layout.contrast.length > 0 && layout.contrast.every(token => token.ratio >= 4.5), `${row.name}: code token contrast below 4.5:1: ${JSON.stringify(layout.contrast)}`)
       const rail = page.locator('.iu-ks .swz-foot > .swz-rail')
       const footer = page.locator('.iu-ks .swz-foot')
-      const previous = footer.getByRole('button', { name: 'prev' })
-      const next = footer.getByRole('button', { name: 'continue' })
+      const previous = footer.getByRole('button', { name: Copy.Previous })
+      const next = footer.getByRole('button', { name: Copy.Continue })
       assert.equal(await page.locator('.iu-subnav .iu-ks-page-title').textContent(), 'set up peasant', `${row.name}: the title is in the top row`)
       assert.equal(await page.locator('.iu-ks > .swz').getAttribute('aria-label'), 'set up peasant')
       assert.equal(await rail.locator('.swz-step').count(), 10)
-      await rail.getByRole('button', { name: 'step 2 of 10, choose sessions to import' }).waitFor({ state: row.width < 768 ? 'hidden' : 'visible' })
+      await rail.getByRole('button', { name: Copy.SelectionStep }).waitFor({ state: row.width < 768 ? 'hidden' : 'visible' })
       assert.equal(await previous.evaluate(el => getComputedStyle(el).borderTopStyle), 'solid', `${row.name}: prev is outlined`)
       assert.equal(await page.locator('.iu-ks .swz-count .swz-sr-only').textContent(), 'step 2 of 10')
       const railGeometry = await rail.evaluate(el => {
@@ -137,7 +159,7 @@ try {
         const [prevBox, nextBox] = await Promise.all([previous.boundingBox(), next.boundingBox()])
         assert.ok(railGeometry.rail.x - (prevBox.x + prevBox.width) >= 31 && nextBox.x - railGeometry.rail.right >= 31, `${row.name}: the rail needs separation from both actions`)
       } else {
-        assert.equal(railGeometry.display, 'none', `${row.name}: phone rail must not leave invisible tab stops`)
+        assert.equal(railGeometry.display, CssDisplay.None, `${row.name}: phone rail must not leave invisible tab stops`)
         const snapshot = await page.locator('.iu-ks > .swz').ariaSnapshot()
         assert.ok(snapshot.includes('step 2 of 10') && snapshot.includes('choose sessions to import') && snapshot.includes('3 sessions chosen'), `${row.name}: mobile position and selection context missing: ${snapshot}`)
         assert.ok(!snapshot.includes('10 sessions found') && !snapshot.includes('navigation "set up peasant progress"'), `${row.name}: hidden phone chrome leaked into the accessibility tree`)
@@ -208,22 +230,22 @@ try {
         await check.press('Space')
         assert.equal(await page.locator('.iu-ks-counts').innerText(), '3 sessions chosen', `${row.name}: keyboard can undo the selection`)
       }
-      await viewer.getByRole('button', { name: /copy link to turn/i }).first().click()
+      await viewer.getByRole('button', { name: Copy.CopyTurnLink }).first().click()
       if (output) {
         await viewer.locator('.txn-stream').evaluate(el => { el.scrollTop = el.scrollHeight })
         await page.locator('#inuse').screenshot({ path: join(output, `${capture}-code.png`), animations: 'disabled' })
       }
-      await viewer.getByRole('button', { name: 'transcript tools' }).click()
-      await viewer.getByRole('button', { name: 'user turns', exact: true }).click()
+      await viewer.getByRole('button', { name: Copy.TranscriptTools }).click()
+      await viewer.getByRole('button', { name: Copy.UserTurns, exact: true }).click()
       const drawer = viewer.locator('dialog[open]')
       await drawer.waitFor()
       assert.equal(await drawer.getAttribute('aria-label'), 'user turns', `${row.name}: outline drawer must open`)
-      await drawer.getByRole('button', { name: 'filters', exact: true }).click()
+      await drawer.getByRole('button', { name: Copy.Filters, exact: true }).click()
       assert.equal(await drawer.getAttribute('aria-label'), 'filters', `${row.name}: filters drawer must open`)
       await drawer.locator('.txn-toolcat-toggle').click()
-      await drawer.getByRole('button', { name: 'close drawer' }).click()
+      await drawer.getByRole('button', { name: Copy.CloseDrawer }).click()
       await page.keyboard.press('Control+f')
-      await viewer.getByRole('textbox', { name: 'search transcript' }).fill(fixture.probe.search)
+      await viewer.getByRole('textbox', { name: Copy.SearchTranscript }).fill(fixture.probe.search)
       await page.waitForFunction(() => document.querySelector('.iu-ks-preview .txn-search-count')?.textContent !== '0 matches')
       await page.locator('.txn-search-highlight.is-current').first().waitFor()
       assert.equal(await viewer.locator('.txn-search-unrendered').count(), 0, `${row.name}: search must find text across token spans`)
@@ -261,10 +283,10 @@ try {
       await previous.focus()
       await previous.press('Enter')
       assert.equal(await page.locator('.iu-ks .swz-count .swz-sr-only').textContent(), 'step 1 of 10', `${row.name}: keyboard prev changes the step`)
-      const answerGroup = footer.getByRole('group', { name: 'connect to peasant online?' })
-      const no = answerGroup.getByRole('button', { name: 'no', exact: true })
-      const yes = answerGroup.getByRole('button', { name: 'yes', exact: true })
-      assert.equal(await footer.getByRole('button', { name: 'continue' }).count(), 0, `${row.name}: answer stop does not have continue`)
+      const answerGroup = footer.getByRole('group', { name: Copy.OnlineQuestion })
+      const no = answerGroup.getByRole('button', { name: Copy.No, exact: true })
+      const yes = answerGroup.getByRole('button', { name: Copy.Yes, exact: true })
+      assert.equal(await footer.getByRole('button', { name: Copy.Continue }).count(), 0, `${row.name}: answer stop does not have continue`)
       assert.match(await page.locator('.iu-ks .swz-body').innerText(), /demo only: neither choice connects or signs in/)
       const [noBox, yesBox] = await Promise.all([no.boundingBox(), yes.boundingBox()])
       assert.ok(noBox.x < yesBox.x && Math.abs(yesBox.x + yesBox.width - continueBox.x - continueBox.width) <= 1, `${row.name}: no then yes, with yes at the continue edge`)
@@ -281,18 +303,18 @@ try {
         assert.ok(answerLabels.every((label, i) => label.height <= label.line + 1 && label.scroll <= label.client + 1 && (i === 0 || label.x >= answerLabels[i - 1].right - 0.5)), `${row.name}: an answer-state label wraps, overlaps or clips`)
       }
       if (output) await page.screenshot({ path: join(output, `${row.name}-answers.png`), animations: 'disabled' })
-      await answerGroup.getByRole('button', { name: row.answer ?? 'no', exact: true }).focus()
+      await answerGroup.getByRole('button', { name: row.answer ?? Copy.No, exact: true }).focus()
       await page.keyboard.press('Enter')
       assert.equal(await page.locator('.iu-ks .swz-count .swz-sr-only').textContent(), 'step 2 of 10', `${row.name}: a demo answer returns to selection`)
       if (row.railJump) {
-        const marker = rail.getByRole('button', { name: 'step 1 of 10, peasant online' })
+        const marker = rail.getByRole('button', { name: Copy.OnlineStep })
         await marker.focus()
         await marker.press('Enter')
         assert.equal(await page.locator('.iu-ks .swz-count .swz-sr-only').textContent(), 'step 1 of 10', `${row.name}: a completed marker supports keyboard jump`)
-        await footer.getByRole('button', { name: 'no', exact: true }).press('Enter')
+        await footer.getByRole('button', { name: Copy.No, exact: true }).press('Enter')
         assert.equal(await page.locator('.iu-ks .swz-count .swz-sr-only').textContent(), 'step 2 of 10', `${row.name}: the answer returns from the keyboard jump`)
       }
-      await footer.getByRole('button', { name: 'continue' }).focus()
+      await footer.getByRole('button', { name: Copy.Continue }).focus()
       await page.keyboard.press('Enter')
       assert.equal(await page.locator('.iu-ks .swz-count .swz-sr-only').textContent(), 'step 3 of 10', `${row.name}: keyboard continue advances the wizard`)
       await previous.focus()
@@ -311,9 +333,9 @@ try {
     await waitForLabels(fixture.stopLabels.length)
     await resizePage.setViewportSize({ width: resize.narrow, height: resize.height })
     await waitForLabels(0)
-    await resizePage.getByRole('button', { name: 'step 1 of 10, peasant online' }).focus()
+    await resizePage.getByRole('button', { name: Copy.OnlineStep }).focus()
     await resizePage.setViewportSize({ width: resize.phone, height: resize.height })
-    await resizePage.waitForFunction(() => getComputedStyle(document.querySelector('.iu-ks .swz-rail')).display === 'none' && !document.activeElement.closest('.swz-rail'))
+    await resizePage.waitForFunction(none => getComputedStyle(document.querySelector('.iu-ks .swz-rail')).display === none && !document.activeElement.closest('.swz-rail'), CssDisplay.None)
     await resizePage.setViewportSize({ width: resize.wide, height: resize.height })
     await waitForLabels(fixture.stopLabels.length)
     assert.equal(await visibleLabels(), fixture.stopLabels.length, `${resize.name}: labels return when the full text fits`)

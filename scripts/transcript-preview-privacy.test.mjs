@@ -2,7 +2,9 @@
 /* Production adapter and mounted viewer: all Markdown paths share image policy and nesting. */
 import { createReport, loadFixturePair, withMountedSource } from './mounted-parts.mjs'
 
-const { fixture } = loadFixturePair('scripts/testdata/transcript-preview-privacy.yaml', 'scripts/testdata/transcript-preview-privacy.manifest.yaml', {
+const FIXTURE = 'scripts/testdata/transcript-preview-privacy.yaml'
+const MANIFEST = 'scripts/testdata/transcript-preview-privacy.manifest.yaml'
+const { fixture } = loadFixturePair(FIXTURE, MANIFEST, {
   paths: 'requiredPathNames', policies: 'requiredPolicyNames', unsafe: 'requiredUnsafeNames',
 })
 const report = createReport('transcript preview privacy')

@@ -141,7 +141,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
         const rowEl = root.querySelector(`[data-node-id="${id}"] > .st-row`)
         const title = rowEl?.querySelector(':scope > button.st-title')
         report.check(title?.getAttribute('aria-pressed') === String(pressed), `${row.name}: ${id} title aria-pressed expected ${pressed}, received ${title?.getAttribute('aria-pressed')}`)
-        report.check((rowEl?.getAttribute('data-previewed') === 'true') === pressed, `${row.name}: ${id} row mark expected ${pressed ? 'present' : 'absent'}`)
+        report.check((rowEl?.getAttribute('data-previewed') === String(true)) === pressed, `${row.name}: ${id} row mark expected ${pressed ? 'present' : 'absent'}`)
       }
       // The mark is the selection inset (a shape at the row's start), not a fill alone.
       const css = readFileSync(resolve('src/ui/SelectionTree.css'), 'utf8')

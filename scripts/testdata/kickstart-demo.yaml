@@ -7,6 +7,7 @@ cases:
     user: 'The retention stop says'
     assistant: 'I will name the setting'
     code: 'export const retentionDays = 30'
+    railState: closed
   - name: light-theme-reaches-the-viewer
     kind: session
     node: session-retention
@@ -15,6 +16,7 @@ cases:
     user: 'The retention stop says'
     assistant: 'I will name the setting'
     code: 'export const retentionDays = 30'
+    railState: closed
   - name: checkbox-does-not-change-the-preview
     kind: checkbox
     node: session-retention

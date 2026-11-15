@@ -14,6 +14,8 @@ import { memo, useContext } from 'react'
 const SAFE_PROTOCOLS = new Set(['http:', 'https:', 'mailto:'])
 const URL_BASE = 'https://fairtrade.invalid'
 const ENCODED_CONTROL_CHARACTER = /%(?:0[0-9a-f]|1[0-9a-f]|7f)/i
+/** @type {Readonly<{Text: 'text'}>} */
+const MarkdownNodeType = Object.freeze({ Text: 'text' })
 
 /**
  * Keep URL handling fail-closed at the renderer boundary. Relative links and fragments remain
@@ -86,10 +88,10 @@ const markdownComponents = {
   pre: ({ children, node: _node, ...props }) => {
     const code = _node?.children?.length === 1 ? _node.children[0] : null
     if (code?.tagName === 'code' && code.properties?.className?.includes('language-mermaid')) {
-      const source = code.children?.map((child) => child.type === 'text' ? child.value : '').join('') ?? ''
+      const source = code.children?.map((child) => child.type === MarkdownNodeType.Text ? child.value : '').join('') ?? ''
       return <MermaidBlock source={source} />
     }
-    if (code?.tagName === 'code' && code.children?.every((child) => child.type === 'text')) {
+    if (code?.tagName === 'code' && code.children?.every((child) => child.type === MarkdownNodeType.Text)) {
       const source = code.children.map((child) => child.value).join('')
       const classes = Array.isArray(code.properties?.className) ? code.properties.className : []
       const language = classes.find((name) => typeof name === 'string' && name.startsWith('language-'))?.slice(9) ?? ''

@@ -2,7 +2,9 @@
 /* Mounted Markdown and its real structured-token validation. Fixture cases live in testdata. */
 import { createReport, loadFixturePair, withMountedSource } from './mounted-parts.mjs'
 
-const { fixture } = loadFixturePair('scripts/testdata/transcript-highlight.yaml', 'scripts/testdata/transcript-highlight.manifest.yaml', {
+const FIXTURE = 'scripts/testdata/transcript-highlight.yaml'
+const MANIFEST = 'scripts/testdata/transcript-highlight.manifest.yaml'
+const { fixture } = loadFixturePair(FIXTURE, MANIFEST, {
   cases: 'requiredCaseNames', invalid: 'requiredInvalidNames', failures: 'requiredFailureNames', rerenders: 'requiredRerenderNames',
   preservation: 'requiredPreservationNames', budgets: 'requiredBudgetNames', searches: 'requiredSearchNames',
 })

@@ -1,5 +1,6 @@
 import { useId, useMemo, useState } from 'react'
 import { adaptTranscript, Button, SelectionTree, StepWizardFrame, TranscriptViewer } from '../../ui'
+import { SelectionNodeKind, SelectionNodeState } from '../../ui/selection-tree-values.js'
 import { KICKSTART_FOREST, KICKSTART_PREVIEWS, KICKSTART_SELECTION_STOP, KICKSTART_SESSION_DETAILS, KICKSTART_STOPS } from './kickstart-fixture.js'
 
 /* The local app's setup wizard for the in-use graph demo (`?app=graph&view=kickstart`). Peasant
@@ -11,7 +12,6 @@ import { KICKSTART_FOREST, KICKSTART_PREVIEWS, KICKSTART_SELECTION_STOP, KICKSTA
    for the server: it rolls the selected session ids up into the row states it hands the tree. The
    tree itself never rolls state up. */
 
-const SESSION = 'session'
 const PREVIEW_CAPABILITIES = Object.freeze({ canEdit: false, canLabel: false, canContribute: false, canChangeVisibility: false, canExport: false })
 
 /** Every row's children, in the order the server sent them. */
@@ -27,18 +27,18 @@ function childrenOf(forest) {
 }
 
 const CHILDREN = childrenOf(KICKSTART_FOREST)
-const INITIAL_SELECTION = KICKSTART_FOREST.filter((row) => row.kind === SESSION && row.state === 'all').map((row) => row.id)
+const INITIAL_SELECTION = KICKSTART_FOREST.filter((row) => row.kind === SelectionNodeKind.Session.wire && row.state === SelectionNodeState.All.wire).map((row) => row.id)
 
 /** The server's part, played by the demo: each row's state from the selected session ids. */
 function withStates(selected) {
   const stateOf = (row) => {
     if (row.locked) return row.state
-    if (row.kind === SESSION) return selected.has(row.id) ? 'all' : 'none'
+    if (row.kind === SelectionNodeKind.Session.wire) return selected.has(row.id) ? SelectionNodeState.All.wire : SelectionNodeState.None.wire
     const states = (CHILDREN.get(row.id) ?? []).filter((child) => !child.locked).map(stateOf)
-    if (states.length === 0) return 'none'
-    if (states.every((state) => state === 'all')) return 'all'
-    if (states.every((state) => state === 'none')) return 'none'
-    return 'some'
+    if (states.length === 0) return SelectionNodeState.None.wire
+    if (states.every((state) => state === SelectionNodeState.All.wire)) return SelectionNodeState.All.wire
+    if (states.every((state) => state === SelectionNodeState.None.wire)) return SelectionNodeState.None.wire
+    return SelectionNodeState.Some.wire
   }
   return KICKSTART_FOREST.map((row) => ({ ...row, state: stateOf(row) }))
 }
@@ -49,7 +49,7 @@ function PreviewPane({ previewId, theme }) {
   const [leftOpen, setLeftOpen] = useState(false)
   const [rightOpen, setRightOpen] = useState(false)
   const viewModel = useMemo(() => {
-    const payload = row?.kind === SESSION ? KICKSTART_SESSION_DETAILS[row.id] : null
+    const payload = row?.kind === SelectionNodeKind.Session.wire ? KICKSTART_SESSION_DETAILS[row.id] : null
     if (!payload) return null
     const cooked = adaptTranscript(payload)
     // The row label is the demo's display title; the adapter owns all structural projection.
@@ -100,7 +100,7 @@ function SelectionStop({ theme, label }) {
   const [selected, setSelected] = useState(INITIAL_SELECTION)
   const [previewId, setPreviewId] = useState(null)
   const nodes = useMemo(() => withStates(new Set(selected)), [selected])
-  const sessions = KICKSTART_FOREST.filter((row) => row.kind === SESSION).length
+  const sessions = KICKSTART_FOREST.filter((row) => row.kind === SelectionNodeKind.Session.wire).length
   return (
     <div className="iu-ks-field">
       <div className="iu-ks-select">

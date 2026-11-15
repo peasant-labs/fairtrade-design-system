@@ -120,7 +120,6 @@ rules:
     src/mockups/inuse/CommonsManage.jsx: 10
     src/mockups/inuse/CommonsPages.jsx: 1
     src/mockups/inuse/CommonsPullRequest.jsx: 2
-    src/mockups/inuse/GraphApp.jsx: 2
     src/mockups/inuse/GraphMap.jsx: 4
     src/mockups/inuse/InUseShell.jsx: 4
     src/mockups/inuse/LocalHome.jsx: 6
@@ -194,7 +193,6 @@ rules:
     src/ui/table/align-class.js: 2
     src/ui/transcript/DiffEntryCard.jsx: 2
     src/ui/transcript/FiltersRail.jsx: 6
-    src/ui/transcript/Markdown.jsx: 1
     src/ui/transcript/Minimap.jsx: 2
     src/ui/transcript/OutlineRail.jsx: 7
     src/ui/transcript/Scorecard.jsx: 2
@@ -274,7 +272,6 @@ rules:
     src/ui/Redaction.stories.jsx: 19
     src/ui/RepoPicker.stories.jsx: 10
     src/ui/RoleRoster.stories.jsx: 9
-    src/ui/SelectionTree.stories.jsx: 14
     src/ui/Settings.stories.jsx: 10
     src/ui/SettingsNav.stories.jsx: 8
     src/ui/SignIn.stories.jsx: 13
@@ -426,12 +423,10 @@ rules:
     src/FeedbackTool.jsx: 1
   jsx-literal-testid:
     src/ui/FacetRail.jsx: 1
-    src/ui/SelectionTree.stories.jsx: 1
     src/ui/graph/CodeMapComposition.jsx: 1
   testid-query-literal:
     src/ui/FacetRail.stories.jsx: 1
     src/ui/HelperGroup.stories.jsx: 2
-    src/ui/SelectionTree.stories.jsx: 1
     src/ui/SessionGroupDisclosure.stories.jsx: 3
   testid-selector-string:
     scripts/fairtest/component-adapter.test.mjs: 2
