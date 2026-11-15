@@ -24,14 +24,14 @@ await withMountedSource(async ({ load, mount, React }) => {
   const mounted = await mount(React.createElement(TranscriptViewer, {
     viewModel: vm,
     capabilities: { canEdit: false, canLabel: false, canContribute: false, canChangeVisibility: false, canExport: false },
-    attachmentUrl: () => { requests++; return '/attachment' },
+    imageUrl: () => { requests++; return '/image' },
   }))
   try {
     const card = mounted.container.querySelector('[data-image-omitted="not_published"]')
     assert.ok(card, 'published image omission renders in the viewer')
     assert.match(card.textContent, /image not published/)
     assert.equal(mounted.container.querySelectorAll('.txn-image-thumb').length, 0)
-    assert.equal(requests, 0, 'omitted parts never resolve attachment URLs')
+    assert.equal(requests, 0, 'omitted parts never resolve image URLs')
   } finally {
     await mounted.unmount()
   }

@@ -10,6 +10,7 @@ import TranscriptSystemRow from './SystemRow.jsx'
 import TranscriptControlRow from './ControlRow.jsx'
 import TranscriptImageAttachment from './ImageAttachment.jsx'
 import { imageParts } from './image-parts.js'
+import { useImageUrl } from './image-url.js'
 import TranscriptWorkGroup, { ModelActions } from './WorkGroup.jsx'
 import { turnHasProse } from './work-summary.js'
 import UsageDisclosure from './UsageDisclosure.jsx'
@@ -49,29 +50,28 @@ function turnTimeLabel(ts) {
 }
 
 /**
- * @param {object} props
- * @param {TurnVM} [props.turn]
- * @param {boolean} [props.active]
- * @param {(turnIndex: number) => void} [props.onSelect] select the prose card without scrolling
- * @param {Record<string, boolean>} [props.openTools]   tool id → open?
- * @param {(id: string) => void} [props.toggleTool]
- * @param {(turnIndex: number) => void} [props.onCopyAnchor]
- * @param {boolean} [props.copied]
- * @param {(turnIndex: number, el: HTMLElement | null) => void} [props.registerRef]
- * @param {(turnIndex: number) => void} [props.onLabel]   omit to hide the "label" affordance
- * @param {(turn: object) => unknown} [props.renderActions]  host-owned per-turn actions; replaces the built-in label button (hosts with their own label models render their own popover)
- * @param {(ref: string) => string | null | undefined} [props.attachmentUrl]  host resolver for an image part's content reference
- * @param {{ outcome: string, flag?: string }} [props.savedLabel]
- * @param {boolean} [props.compact]
- * @param {boolean} [props.expandAll]
- * @param {number} [props.revealRequest] explicit search navigation sequence
- * @param {number} [props.headingLevel=4] the turn heading's level: h4 under a viewer whose title is an h2, h3 under one
+ * @typedef {object} TurnCardBaseProps
+ * @property {TurnVM} [turn]
+ * @property {boolean} [active]
+ * @property {(turnIndex: number) => void} [onSelect] select the prose card without scrolling
+ * @property {Record<string, boolean>} [openTools]   tool id → open?
+ * @property {(id: string) => void} [toggleTool]
+ * @property {(turnIndex: number) => void} [onCopyAnchor]
+ * @property {boolean} [copied]
+ * @property {(turnIndex: number, el: HTMLElement | null) => void} [registerRef]
+ * @property {(turnIndex: number) => void} [onLabel]   omit to hide the "label" affordance
+ * @property {(turn: object) => unknown} [renderActions]  host-owned per-turn actions; replaces the built-in label button (hosts with their own label models render their own popover)
+ * @property {{ outcome: string, flag?: string }} [savedLabel]
+ * @property {boolean} [compact]
+ * @property {boolean} [expandAll]
+ * @property {number} [revealRequest] explicit search navigation sequence
+ * @property {number} [headingLevel=4] the turn heading's level: h4 under a viewer whose title is an h2, h3 under one
  *        whose title is the page's h1
- * @param {boolean} [props.flagged=false] the integrity check marked this turn: the article takes `is-flagged`, the
+ * @property {boolean} [flagged=false] the integrity check marked this turn: the article takes `is-flagged`, the
  *        heading gains a hidden suffix naming the flag, and a visible mark shows in the head (or the system row's
  *        trailing cluster, or the start of a ledger detail turn's work block)
- * @param {ReadonlySet<number>} [props.flaggedPositions] source positions marked in a work group this card renders
- * @param {'classic' | 'ledger'} [props.presentation='classic'] chrome presentation. `ledger` leads with a
+ * @property {ReadonlySet<number>} [flaggedPositions] source positions marked in a work group this card renders
+ * @property {'classic' | 'ledger'} [presentation='classic'] chrome presentation. `ledger` leads with a
  *        square role well and the role word, groups the turn's tool calls into one work panel, and renders a
  *        system turn as a compact row; absent, the classic card renders exactly as before. In ledger the head
  *        carries only the role, the turn number, the time, and the copy anchor (plus the host's
@@ -80,6 +80,7 @@ function turnTimeLabel(ts) {
  *        `renderActions` and `renderTurnPanel` keep rendering on every role, so a host extension is never
  *        dropped by the presentation switch.
  */
+/** @param {TurnCardBaseProps & import('./image-url.js').ImageUrlProps} props */
 export default function TurnCard({
   turn,
   active = false,
@@ -91,6 +92,7 @@ export default function TurnCard({
   registerRef = () => {},
   onLabel,
   renderActions,
+  imageUrl,
   attachmentUrl,
   savedLabel,
   compact = false,
@@ -105,6 +107,7 @@ export default function TurnCard({
   flagged = false,
   flaggedPositions,
 }) {
+  const resolvedImageUrl = useImageUrl(imageUrl, attachmentUrl)
   const TurnHeading = `h${Math.min(6, Math.max(1, headingLevel))}`
   /* the hidden suffix that makes a flagged turn's accessible name say so; the visible mark is aria-hidden */
   const flagName = flagged ? <span className="txn-sr">{INTEGRITY_COPY.turnName}</span> : null
@@ -246,7 +249,7 @@ export default function TurnCard({
           part={part}
           position={imagePosition}
           total={images.length}
-          attachmentUrl={attachmentUrl}
+          imageUrl={resolvedImageUrl}
         />
       )
     })

@@ -13,15 +13,33 @@ requiredCaseNames:
   - unknown-state-fails-closed-counted
   - label-keeps-case
   - no-paging-props
+  - count-names-branches-under-a-project
+  - count-names-sessions-under-a-branch
+  - count-names-sessions-under-a-branchless-project
+  - count-is-singular-at-one
+  - count-keeps-children-for-mixed-kinds
+  - session-count-names-child-sessions
+  - title-click-previews-and-reports-no-selection
+  - checkbox-click-selects-and-reports-no-preview
+  - previewed-row-is-marked-without-colour
+  - no-onpreview-keeps-label-toggle
+  - locked-row-title-still-previews
+  - rail-drawn-for-each-open-level
+  - rail-absent-under-a-folded-row
+  - rail-is-hidden-from-assistive-tech
 requiredMutationNames:
   - ignore-host-state
   - no-descendant-cascade
   - omit-lock-announcement
+  - title-toggles-selection
+  - count-ignores-child-kind
+  - previewed-row-loses-its-mark
+  - rail-traces-no-rows
 mutations:
   - name: ignore-host-state
     file: src/ui/SelectionTree.jsx
-    find: 'checked={node.state === SelectionNodeState.All}'
-    replace: 'checked={true}'
+    find: 'checked: node.state === SelectionNodeState.All,'
+    replace: 'checked: true,'
     expectedDiagnostic: 'state-comes-from-host'
   - name: no-descendant-cascade
     file: src/ui/SelectionTree.jsx
@@ -30,6 +48,26 @@ mutations:
     expectedDiagnostic: 'project-toggle-selects-descendants'
   - name: omit-lock-announcement
     file: src/ui/SelectionTree.jsx
-    find: 'aria-label={node.locked ? `${node.label}, locked` : node.label}'
-    replace: 'aria-label={node.label}'
+    find: 'const checkboxName = node.locked ? `${node.label}, locked` : node.label'
+    replace: 'const checkboxName = node.label'
     expectedDiagnostic: 'accessible name must announce'
+  - name: title-toggles-selection
+    file: src/ui/SelectionTree.jsx
+    find: 'onClick={() => onPreview(node.id)}'
+    replace: 'onClick={() => onToggle(node.id)}'
+    expectedDiagnostic: 'title-click-previews-and-reports-no-selection'
+  - name: count-ignores-child-kind
+    file: src/ui/SelectionTree.jsx
+    find: 'childCountNoun(node.childCount, node.kind, children.map((child) => child.kind))'
+    replace: 'childCountNoun(node.childCount, node.kind, [])'
+    expectedDiagnostic: 'count-names-branches-under-a-project'
+  - name: previewed-row-loses-its-mark
+    file: src/ui/SelectionTree.jsx
+    find: 'const previewed = onPreview !== null && previewId === node.id'
+    replace: 'const previewed = false'
+    expectedDiagnostic: 'previewed-row-is-marked-without-colour'
+  - name: rail-traces-no-rows
+    file: src/ui/SelectionTree.jsx
+    find: 'register(element, depth)'
+    replace: 'void depth'
+    expectedDiagnostic: 'rail-drawn-for-each-open-level'

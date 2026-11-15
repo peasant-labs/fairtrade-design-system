@@ -19,14 +19,23 @@ export const IN_USE_APPS = Object.freeze([
    `village` (and so its route) for compatibility; only its label reads `online`. A consumer derives its nav and
    routes from this list and fails loudly on an id it does not map. The declared type keeps the
    components' `sections` prop open to any AppSection list. */
+export const LocalAppSection = Object.freeze({
+  Home: Object.freeze({ id: 'home', label: 'home', inNav: true }),
+  Village: Object.freeze({ id: 'village', label: 'online', inNav: false }),
+  Settings: Object.freeze({ id: 'settings', label: 'settings', inNav: true }),
+  Analytics: Object.freeze({ id: 'analytics', label: 'analytics', inNav: false }),
+  Changes: Object.freeze({ id: 'changes', label: 'changes', inNav: false }),
+  Map: Object.freeze({ id: 'map', label: 'code map', inNav: false }),
+})
+
 /** @type {ReadonlyArray<Readonly<AppSection>>} */
 export const LOCAL_APP_SECTIONS = Object.freeze([
-  Object.freeze({ id: 'home', label: 'home', inNav: true }),
-  Object.freeze({ id: 'village', label: 'online', inNav: false }),
-  Object.freeze({ id: 'settings', label: 'settings', inNav: true }),
-  Object.freeze({ id: 'analytics', label: 'analytics', inNav: false }),
-  Object.freeze({ id: 'changes', label: 'changes', inNav: false }),
-  Object.freeze({ id: 'map', label: 'code map', inNav: false }),
+  LocalAppSection.Home,
+  LocalAppSection.Village,
+  LocalAppSection.Settings,
+  LocalAppSection.Analytics,
+  LocalAppSection.Changes,
+  LocalAppSection.Map,
 ])
 
 /**
@@ -140,6 +149,7 @@ export function GraphAppShell({
   backTo,
   onBack,
   notice = null,
+  navEnd = /** @type {React.ReactNode} */ (null),
   children,
   ariaLabel = 'peasant sections',
 }) {
@@ -163,6 +173,7 @@ export function GraphAppShell({
             {p.label}
           </button>
         ))}
+        {navEnd}
       </nav>
       {/* a page-level notice (e.g. the local offline banner) sits between the nav and the body */}
       {notice}

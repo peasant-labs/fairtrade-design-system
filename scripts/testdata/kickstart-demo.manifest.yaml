@@ -1,0 +1,7 @@
+requiredCaseNames:
+  - session-title-opens-the-real-viewer-without-selection
+  - light-theme-reaches-the-viewer
+  - checkbox-does-not-change-the-preview
+  - caret-folds-without-changing-selection-or-preview
+  - project-title-keeps-the-summary
+  - branch-title-keeps-the-summary

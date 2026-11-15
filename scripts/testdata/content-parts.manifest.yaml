@@ -14,9 +14,26 @@ requiredCaseNames:
   - alt text names one image's recorded facts
   - alt text places an image among its siblings
   - alt text never comes back empty for a bare part
+requiredResolverCaseNames:
+  - image-url-resolves-a-present-image
+  - deprecated-attachment-url-still-resolves
+  - null-image-prop-uses-the-deprecated-resolver
+  - neither-resolver-fetches-an-image
+  - undefined-image-url-renders-unavailable
+  - conflict-is-silent-in-production
+  - image-url-wins-when-both-are-passed
+  - unresolved-image-url-does-not-fall-back
+  - standalone-turn-card-accepts-the-deprecated-resolver
+  - standalone-image-accepts-the-deprecated-resolver
+  - standalone-turn-card-accepts-image-url
+  - standalone-image-accepts-image-url
 requiredMutationNames:
   - the alt text drops its recorded facts
   - the cursor wrapper survives on image-bearing parts
+  - the deprecated resolver overrides imageUrl
+  - the deprecated resolver no longer works
+  - resolver conflicts warn repeatedly
+  - resolver conflicts warn in production
 mutations:
   - name: the alt text drops its recorded facts
     file: src/ui/transcript/image-parts.js
@@ -28,3 +45,23 @@ mutations:
     find: "    const contentParts = shown !== undefined ? stripUserQueryParts(parts) : parts"
     replace: "    const contentParts = parts"
     expectedDiagnostic: "a cursor image prompt loses its user_query wrapper"
+  - name: the deprecated resolver overrides imageUrl
+    file: src/ui/transcript/image-url.js
+    find: "  return imageUrl ?? attachmentUrl"
+    replace: "  return attachmentUrl ?? imageUrl"
+    expectedDiagnostic: image-url-wins-when-both-are-passed
+  - name: the deprecated resolver no longer works
+    file: src/ui/transcript/image-url.js
+    find: "  return imageUrl ?? attachmentUrl"
+    replace: "  return imageUrl"
+    expectedDiagnostic: deprecated-attachment-url-still-resolves
+  - name: resolver conflicts warn repeatedly
+    file: src/ui/transcript/image-url.js
+    find: "      warnedAboutBothResolvers = true"
+    replace: "      warnedAboutBothResolvers = false"
+    expectedDiagnostic: unresolved-image-url-does-not-fall-back
+  - name: resolver conflicts warn in production
+    file: src/ui/transcript/image-url.js
+    find: "development = process.env.NODE_ENV !== 'production'"
+    replace: "development = true"
+    expectedDiagnostic: conflict-is-silent-in-production

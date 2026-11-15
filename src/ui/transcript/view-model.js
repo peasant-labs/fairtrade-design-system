@@ -191,7 +191,7 @@ export const TOOL_GROUPS = Object.freeze([
 /**
  * One cooked image block of a turn, in source order. `image` is the producer's recorded part:
  * a content reference plus metadata, or an omission reason that explains the missing bytes.
- * The host resolves `image.ref` to a URL through the viewer's `attachmentUrl` prop.
+ * The host resolves `image.ref` to a URL through the viewer's `imageUrl` prop.
  * @typedef {object} ImagePartVM
  * @property {'image'} type
  * @property {import('@peasant-labs/schema').ImagePart} image

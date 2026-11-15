@@ -145,7 +145,8 @@
  */
 
 /**
- * Every TranscriptViewer prop. `viewModel` + `capabilities` are the only required
+ * TranscriptViewer's base props. The full type also carries image resolver props.
+ * `viewModel` + `capabilities` are the only required
  * props; everything else is optional with a sane internal default, so
  * `<TranscriptViewer viewModel={vm} capabilities={caps} />` renders the whole
  * surface unmanaged. Each view-state prop is the `value?` half of a controllable
@@ -193,7 +194,6 @@
  * @property {import('react').ReactNode} [beforeHeader]                in-flow content before the session header
  * @property {(turn: import('./view-model.js').TurnVM) => unknown} [renderTurnPanel]  host per-turn extension rendered under each turn card
  * @property {(turn: import('./view-model.js').TurnVM) => unknown} [renderTurnActions]  host-owned per-turn actions; replaces the built-in label affordance (hosts with typed label models keep their own popovers)
- * @property {(ref: string) => string | null | undefined} [attachmentUrl]  resolve one image part's content reference to a URL the browser can load (the host's local attachment route). A present image the host cannot resolve renders its unavailable placeholder instead of a broken image; omitted images never call it
  * @property {(turnIndex: number) => string} [anchorHref]              host permalink for a turn's copy-anchor action; a root-relative return is absolutized against the page origin. Omitted, the demo copies its bare '#turn-N' placeholder
  * @property {unknown} [headerActions]                                 host session-level actions rendered at the head of the hero action row (attest etc.); the composite's own actions stay the shared tail
  * @property {import('react').ReactNode} [utilityActions]                host secondary actions, in the header on desktop and the bottom bar on phones
@@ -202,7 +202,8 @@
  * @property {boolean} [showOutcome]                                   default true: render the session outcome chip in the meta row when the session carries an outcome
  * @property {boolean} [showSearchTrigger]                             default false: render a `search transcript` button at the end of the session views in the bottom bar that opens search exactly as ⌘F does; independent of `showTail`
  * @property {{ hints?: boolean, progress?: boolean }} [footer]      default omitted: both stay off. `hints` renders the shortcut line, `progress` the visible-turn position counter, in the bottom bar beside the session views. A host opts in per part, so a reading surface can stay quiet without losing the views. The shortcut hint is keyboard-only, so it leaves a coarse pointer below the phone breakpoint; the counter exists only on the trace view in list mode with a visible turn. The session views themselves live in the bottom bar, after the panel in DOM order, which is why the viewer opens with a `skip to session views` control
- * @property {1|2} [headingLevel]                                      default 2: the transcript's title is an h2 in a host page; 1 when the host mounts the viewer as the whole page, so the title is the page's h1 and the phase and turn headings move up one level
+ * @property {1|2|3|4} [headingLevel]                                  default 2: the title's level, with phase and turn headings nested below it. A host embedding the viewer passes the level immediately below its own heading.
+ * @property {boolean} [allowMarkdownImages]                          default true. Pass false for a local-only preview: Markdown images become text placeholders and make no image request. This does not change host-supplied image attachment resolvers.
  * @property {Presentation} [presentation]                            chrome presentation; defaults to 'ledger'. `classic` retains the report-style surface. An unrecognized runtime value fails closed to classic.
  * @property {import('react').ReactNode} [subtitle]                    optional deck under the session title; rendered in either presentation when supplied
  * @property {unknown} [pullRequests]                                  host-owned node rendered under the meta row (a pull request list and its own "show all" control); omitted renders nothing
@@ -218,7 +219,7 @@
 
 /**
  * The full legacy trail and the ancestor-only context are alternative contracts.
- * @typedef {TranscriptViewerBaseProps & ({breadcrumb?: BreadcrumbItem[], breadcrumbContext?: never} | {breadcrumb?: never, breadcrumbContext?: BreadcrumbItem[]})} TranscriptViewerProps
+ * @typedef {TranscriptViewerBaseProps & import('./image-url.js').ImageUrlProps & ({breadcrumb?: BreadcrumbItem[], breadcrumbContext?: never} | {breadcrumb?: never, breadcrumbContext?: BreadcrumbItem[]})} TranscriptViewerProps
  */
 
 /**

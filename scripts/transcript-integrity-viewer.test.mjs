@@ -19,6 +19,7 @@ const { fixture, manifest } = loadFixturePair(FIXTURE, MANIFEST, {
   outlineCases: 'requiredOutlineCaseNames',
   interactions: 'requiredInteractionNames',
   historyCases: 'requiredHistoryCaseNames',
+  retainedResolverCases: 'requiredRetainedResolverCaseNames',
 })
 if (fixture.thinkingCase?.name !== manifest.requiredThinkingCaseName) throw new Error(`${FIXTURE}: thinkingCase must be named ${JSON.stringify(manifest.requiredThinkingCaseName)}`)
 if (fixture.retainedImageCase?.name !== manifest.requiredRetainedImageCaseName) throw new Error(`${FIXTURE}: retainedImageCase must be named ${JSON.stringify(manifest.requiredRetainedImageCaseName)}`)
@@ -74,7 +75,7 @@ const FILTERS = {
 }
 const SERVED_HASH = 'sha256:served'
 const OTHER_HASH = 'sha256:other'
-const ATTACHMENT_URL = 'data:image/png;base64,iVBORw0KGgo='
+const IMAGE_URL = 'data:image/png;base64,iVBORw0KGgo='
 
 const report = createReport('transcript integrity viewer')
 const text = (node) => (node?.textContent ?? '').replace(/\s+/g, ' ').trim()
@@ -85,6 +86,7 @@ const SETTLE_MS = 150 /* past the badge's announce delay */
 await withMountedSource(async ({ load, mount, window, React }) => {
   const { adaptTranscript } = await load('/src/ui/transcript/adapter.js')
   const { default: TranscriptViewer } = await load('/src/ui/transcript/TranscriptViewer.jsx')
+  const { default: TranscriptContext } = await load('/src/ui/transcript/TranscriptContext.jsx')
   const { INTEGRITY_COPY } = await load('/src/ui/transcript/integrity.js')
   for (const row of fixture.historyCases) {
     const input = structuredClone(fixture.payload)
@@ -212,7 +214,48 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   }
 
   {
-    /* earlier history is its own index domain; the host's attachment resolver must reach it */
+    const { payload, ref } = fixture.retainedImageCase
+    const retainedVm = adaptTranscript(payload)
+    const section = retainedVm.earlierHistory[0]
+    const aliasURL = 'data:image/png;base64,YWxpYXM='
+    const originalWarn = console.warn
+    try {
+      for (const row of fixture.retainedResolverCases) {
+        assertFields(row, ['name', 'component', 'imageUrl', 'attachmentUrl', 'expected'], `${FIXTURE} ${row.name}`)
+        if (!['image', 'attachment', 'unavailable'].includes(row.expected)) throw new Error(`${FIXTURE}: unknown resolver expectation ${row.expected}`)
+        const imageCalls = []
+        const aliasCalls = []
+        const resolvers = {
+          ...(row.imageUrl ? { imageUrl: value => { imageCalls.push(value); return IMAGE_URL } } : {}),
+          ...(row.attachmentUrl ? { attachmentUrl: value => { aliasCalls.push(value); return aliasURL } } : {}),
+        }
+        // The conflict warning is asserted by the resolver gate; keep this gate's output quiet.
+        console.warn = () => {}
+        let element
+        if (row.component === 'viewer') {
+          element = React.createElement(TranscriptViewer, { viewModel: retainedVm, capabilities: CAPABILITIES, earlierHistoryOpen: { [section.id]: true }, ...resolvers })
+        } else if (row.component === 'context') {
+          element = React.createElement(TranscriptContext, { earlierHistory: retainedVm.earlierHistory, open: { [section.id]: true }, toggle: () => {}, openTools: {}, toggleTool: () => {}, ...resolvers })
+        } else throw new Error(`${FIXTURE}: unknown resolver component ${row.component}`)
+        const mounted = await mount(element)
+        try {
+          const image = mounted.container.querySelector('.txn-earlier .txn-image-thumb')
+          const expectedURL = row.expected === 'image' ? IMAGE_URL : row.expected === 'attachment' ? aliasURL : null
+          report.check((image?.getAttribute('src') ?? null) === expectedURL, `${row.name}: the retained image must use the selected resolver`)
+          report.check(expectedURL !== null || !!mounted.container.querySelector('.txn-earlier [data-image-omitted="unavailable"]'), `${row.name}: no resolver must show an unavailable placeholder`)
+          report.check(row.imageUrl ? imageCalls.length > 0 && imageCalls.every(value => value === ref) : imageCalls.length === 0, `${row.name}: imageUrl receives the retained reference`)
+          report.check(row.attachmentUrl && !row.imageUrl ? aliasCalls.length > 0 && aliasCalls.every(value => value === ref) : aliasCalls.length === 0, `${row.name}: only the chosen alias receives the retained reference`)
+        } finally {
+          await mounted.unmount()
+        }
+      }
+    } finally {
+      console.warn = originalWarn
+    }
+  }
+
+  {
+    /* earlier history is its own index domain; the host's image resolver must reach it */
     const { name, payload, ref } = fixture.retainedImageCase
     const retainedVm = adaptTranscript(payload)
     const section = retainedVm.earlierHistory?.[0]
@@ -223,13 +266,13 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       capabilities: CAPABILITIES,
       presentation: 'ledger',
       earlierHistoryOpen: { [section.id]: true },
-      attachmentUrl: (value) => { requested.push(value); return ATTACHMENT_URL },
+      imageUrl: (value) => { requested.push(value); return IMAGE_URL },
     }))
     await mounted.settle(SETTLE_MS)
     const image = mounted.container.querySelector('.txn-earlier .txn-image-thumb')
     report.check(!!image, `${name}: the retained image must render under its earlier section, not as a placeholder`)
     report.check(requested.includes(ref), `${name}: the host resolver must receive the recorded content reference`)
-    report.check(image?.getAttribute('src') === ATTACHMENT_URL, `${name}: the rendered image must use the host's resolved URL`)
+    report.check(image?.getAttribute('src') === IMAGE_URL, `${name}: the rendered image must use the host's resolved URL`)
     report.check(!mounted.container.querySelector('.txn-earlier .txn-image-omitted'), `${name}: a resolved image must not render the unavailable placeholder`)
     await mounted.unmount()
   }

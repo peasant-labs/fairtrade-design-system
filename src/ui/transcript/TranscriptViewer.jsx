@@ -1,5 +1,5 @@
 import { formatCount, formatInteger } from '../format.js'
-import { headingTag, pageHeadingLevel } from '../heading.js'
+import { headingTag } from '../heading.js'
 import { Fragment, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
   ChevronRight, ChevronDown, ChevronUp, Clock, Coins, ShieldCheck, FileText,
@@ -12,6 +12,8 @@ import {
 } from 'lucide-react'
 import { isConversationTurn } from '@peasant-labs/schema'
 import ProviderIcon from '../ProviderIcon.jsx'
+import { transcriptHeadingLevel } from './heading.js'
+import { MarkdownContext } from './markdown-context.js'
 import { formatDurationMins, formatDurationMs } from './time.js'
 import { DEFAULT_TRANSCRIPT_FILTERS, categoryCounts, filtersActive as countActiveFilters, projectTurn } from './filters.js'
 import { actionGroups } from './action-groups.js'
@@ -47,6 +49,7 @@ import TranscriptSystemGroup from './SystemGroup.jsx'
 import { systemGroups as groupSystemTurns } from './system-groups.js'
 import { systemGroupFacetKinds, filterSystemGroupMembers, systemGroupFacetKey, systemGroupFacetSelected, toggleSystemGroupFacet } from './system-group-facet.js'
 import { hasImageParts } from './image-parts.js'
+import { useImageUrl } from './image-url.js'
 import TranscriptMinimap from './Minimap.jsx'
 import Scrubber from './Scrubber.jsx'
 import Scorecard from './Scorecard.jsx'
@@ -315,6 +318,7 @@ export default function TranscriptViewer({
   LinkComponent,
   renderTurnPanel,
   renderTurnActions,
+  imageUrl,
   attachmentUrl,
   anchorHref,
   headerActions,
@@ -328,6 +332,7 @@ export default function TranscriptViewer({
   subtitle,
   pullRequests,
   headingLevel,
+  allowMarkdownImages,
   integrity,
   transcriptContentHash,
   contentHash,
@@ -337,12 +342,16 @@ export default function TranscriptViewer({
   onLoadSegment,
   onLoadWindow,
 }) {
+  const resolvedImageUrl = useImageUrl(imageUrl, attachmentUrl)
   if (breadcrumb != null && breadcrumbContext != null) {
     throw new TypeError('TranscriptViewer cannot use breadcrumb and breadcrumbContext together; pass either a complete breadcrumb or ancestor context, not both.')
   }
-  // the transcript's title is the page's h1 when the host mounts the viewer as the whole page; the
-  // phases and the turns move up one level with it
-  const pageLevel = pageHeadingLevel(headingLevel, 'TranscriptViewer')
+  if (allowMarkdownImages !== undefined && typeof allowMarkdownImages !== 'boolean') {
+    throw new TypeError('TranscriptViewer: allowMarkdownImages must be a boolean; pass false to prevent Markdown image requests in a local-only preview.')
+  }
+  // Explore keeps its page-level contract; this viewer also supports nested host panes.
+  const pageLevel = transcriptHeadingLevel(headingLevel)
+  const markdownContext = useMemo(() => ({ allowImages: allowMarkdownImages !== false, turnHeadingLevel: pageLevel + 2 }), [allowMarkdownImages, pageLevel])
   const TitleHeading = headingTag(pageLevel, 0)
   const PhaseHeading = headingTag(pageLevel, 1)
   const EmptyHeading = headingTag(pageLevel, 1)
@@ -1819,6 +1828,7 @@ export default function TranscriptViewer({
             )
 
   return (
+    <MarkdownContext.Provider value={markdownContext}>
     <div
       ref={viewerRef}
       className={'txn-app' + (theme === 'light' ? ' txn-light' : '') + (ledger ? ' txn-ledger' : '') + (ledger && zen ? ' txn-zen' : '') + (mobile ? ' txn-compact' : '') + (heroCondensed ? ' txn-app-condensed' : '')}
@@ -2092,7 +2102,8 @@ export default function TranscriptViewer({
                       toggle={id => setEarlierHistoryOpen(previous => ({ ...previous, [id]: !previous[id] }))}
                       openTools={openTools}
                       toggleTool={toggleTool}
-                      attachmentUrl={attachmentUrl}
+                      imageUrl={resolvedImageUrl}
+                      headingLevel={pageLevel + 2}
                     />
                     {activeFailure && (
                       <div className="txn-held-window" role="alert">
@@ -2166,7 +2177,7 @@ export default function TranscriptViewer({
                             registerRef={registerRef}
                             onLabel={labelTurn}
                             renderActions={renderTurnActions}
-                            attachmentUrl={attachmentUrl}
+                            imageUrl={resolvedImageUrl}
                             savedLabel={savedLabels[t.index]}
                             compact={filters.views.compact}
                             expandAll={filters.views.expandAll}
@@ -2572,5 +2583,6 @@ export default function TranscriptViewer({
         )}
       </footer>
     </div>
+    </MarkdownContext.Provider>
   )
 }

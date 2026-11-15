@@ -118,6 +118,32 @@ const controlled = {
 }
 void controlled
 
+/* Both resolver names remain callable; the replacement has the same input and output contract. */
+_acceptViewerProps({ viewModel: vm, capabilities: caps, imageUrl: (ref) => ref ? `/images/${ref}` : null })
+_acceptViewerProps({ viewModel: vm, capabilities: caps, attachmentUrl: () => undefined })
+_acceptViewerProps({ viewModel: vm, capabilities: caps, imageUrl: () => 'new', attachmentUrl: () => 'old' })
+// @ts-expect-error - a resolver returns a URL or nullish value, not a number
+_acceptViewerProps({ viewModel: vm, capabilities: caps, imageUrl: () => 7 })
+// @ts-expect-error - the deprecated resolver keeps the same return contract
+_acceptViewerProps({ viewModel: vm, capabilities: caps, attachmentUrl: () => 7 })
+
+/** @param {Parameters<typeof import('./index.js').TranscriptTurnCard>[0]} props */
+function _acceptTurnCardProps(props) { void props }
+/** @param {Parameters<typeof import('./index.js').TranscriptImageAttachment>[0]} props */
+function _acceptImageProps(props) { void props }
+/** @param {Parameters<typeof import('./TranscriptContext.jsx').default>[0]} props */
+function _acceptContextProps(props) { void props }
+const contextControls = { open: {}, toggle: () => {}, openTools: {}, toggleTool: () => {} }
+_acceptTurnCardProps({ imageUrl: (ref) => ref, attachmentUrl: () => null })
+_acceptImageProps({ imageUrl: () => undefined, attachmentUrl: (ref) => ref })
+_acceptContextProps({ ...contextControls, imageUrl: (ref) => ref, attachmentUrl: () => null })
+// @ts-expect-error - standalone turn cards have the same resolver contract
+_acceptTurnCardProps({ imageUrl: () => 7 })
+// @ts-expect-error - the standalone image's alias has the same resolver contract
+_acceptImageProps({ attachmentUrl: () => 7 })
+// @ts-expect-error - the retained-history resolver has the same return contract
+_acceptContextProps({ ...contextControls, imageUrl: () => 7 })
+
 /* the presentation union is re-exported from the barrel, so a host can hold the choice in a
    variable without repeating the union. */
 /** @type {Presentation} */
@@ -191,6 +217,15 @@ _acceptViewerProps({ viewModel: vm, capabilities: caps, showSearchTrigger: 1 })
 
 // @ts-expect-error — showOutcome is a boolean, not null
 _acceptViewerProps({ viewModel: vm, capabilities: caps, showOutcome: null })
+
+_acceptViewerProps({ viewModel: vm, capabilities: caps, headingLevel: 3, allowMarkdownImages: false })
+_acceptViewerProps({ viewModel: vm, capabilities: caps, headingLevel: 4 })
+
+// @ts-expect-error — a viewer title may be no deeper than h4, to leave room for phases and turns
+_acceptViewerProps({ viewModel: vm, capabilities: caps, headingLevel: 5 })
+
+// @ts-expect-error — a string must never silently enable resource requests
+_acceptViewerProps({ viewModel: vm, capabilities: caps, allowMarkdownImages: 'false' })
 
 /* ── (5c) NEGATIVE: presentation is a closed union ───────────────────────────────
    The ledger value is the one a consumer opts into; a typo or a widened string must fail. */
