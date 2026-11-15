@@ -318,8 +318,8 @@ jobs:
           name: release-bundles
           path: bundles
 
-      # This checks the plan's chosen candidate and ancestry; it does not
-      # independently recompute freshness or bind an artifact ID for release.
+      # Recompute before fetching the prepared tag: that local tag would
+      # otherwise change the tag set the independent plan reads.
       - name: Verify the prepared tag
         if: needs.plan.outputs.tag-action == 'tag'
         env:
@@ -328,13 +328,37 @@ jobs:
           PLAN_SOURCE: ${{ needs.plan.outputs.plan-source }}
         run: |
           set -euo pipefail
+          git fetch --no-tags origin main
+          git fetch --tags origin
+          TIP="$(git rev-parse origin/main)"
+          plan_file="${RUNNER_TEMP}/verified-plan.txt"
+          "${RUNNER_TEMP}/release-intent" plan --branch origin/main --mode "${{ vars.RELEASE_BATCH_MODE }}" --verdict taggable --floor "${{ vars.RELEASE_BATCH_FLOOR }}" | tee "${plan_file}"
+          plan_value() {
+            awk -v key="$1" '
+              index($0, key "=") == 1 { count++; value = substr($0, length(key) + 2) }
+              END {
+                if (count != 1 || value == "") {
+                  print "::error::Fresh release plan is missing or repeats " key > "/dev/stderr"
+                  exit 1
+                }
+                print value
+              }
+            ' "${plan_file}"
+          }
+          FRESH_ACTION="$(plan_value action)"
+          FRESH_CANDIDATE="$(plan_value candidate)"
+          FRESH_TAG="$(plan_value tag)"
+          FRESH_VERSION="$(plan_value version)"
+          test "${FRESH_ACTION}" = tag || { echo "::error::Fresh release plan does not authorize a tag; wait for the next release run"; exit 1; }
+          test "${FRESH_CANDIDATE}" = "${CANDIDATE}" || { echo "::error::Fresh candidate differs from the prepared tag candidate; wait for the next release run"; exit 1; }
+          test "${FRESH_TAG}" = "${TAG}" || { echo "::error::Fresh tag differs from the prepared tag; wait for the next release run"; exit 1; }
+          echo "Verified ${FRESH_TAG} (${FRESH_VERSION}) against the current main tip."
           git bundle verify bundles/tag.bundle
           git bundle list-heads bundles/tag.bundle | awk -v ref="refs/tags/${TAG}" 'NF != 2 || $2 != ref { exit 1 } END { if (NR != 1) exit 1 }'
           git fetch --no-tags bundles/tag.bundle "refs/tags/${TAG}:refs/tags/${TAG}"
           test "$(git cat-file -t "refs/tags/${TAG}")" = tag
           test "$(git rev-parse "refs/tags/${TAG}^{commit}")" = "${CANDIDATE}"
-          git fetch --no-tags origin main
-          git merge-base --is-ancestor "${PLAN_SOURCE}" origin/main
+          git merge-base --is-ancestor "${PLAN_SOURCE}" "${TIP}"
           git merge-base --is-ancestor "${CANDIDATE}" "${PLAN_SOURCE}"
 
       - name: Verify the prepared release commit
@@ -344,22 +368,24 @@ jobs:
           EXPECTED_TITLE: "release${{ needs.plan.outputs.breaking == 'true' && '!' || '' }}[${{ needs.plan.outputs.level }}]: ${{ needs.plan.outputs.release-tag }}"
         run: |
           set -euo pipefail
+          git fetch --no-tags origin main
+          git fetch --tags origin
+          TIP="$(git rev-parse origin/main)"
+          test "${SOURCE}" = "${TIP}" || { echo "::error::Main advanced after release preparation; wait for the next run to rebuild the release"; exit 1; }
           git bundle verify bundles/release.bundle
           git bundle list-heads bundles/release.bundle | awk 'NF != 2 || $2 != "refs/heads/automation/release" { exit 1 } END { if (NR != 1) exit 1 }'
           git fetch --no-tags bundles/release.bundle refs/heads/automation/release:refs/verification/release
           RELEASE="$(git rev-parse 'refs/verification/release^{commit}')"
-          test "$(git rev-list --parents -n 1 "${RELEASE}")" = "${RELEASE} ${SOURCE}"
-          test "$(git rev-list --count "${SOURCE}..${RELEASE}")" = 1
-          git fetch --no-tags origin main
-          git merge-base --is-ancestor "${SOURCE}" origin/main
-          config="$(git show "${SOURCE}:.github/release-intent.yaml")"
+          test "$(git rev-list --parents -n 1 "${RELEASE}")" = "${RELEASE} ${TIP}"
+          test "$(git rev-list --count "${TIP}..${RELEASE}")" = 1
+          config="$(git show "${TIP}:.github/release-intent.yaml")"
           AUTHOR="$(printf '%s\n' "${config}" | yq -e '.automation_author')"
           BRANCH="$(printf '%s\n' "${config}" | yq -e '.bot_branches.release')"
           TITLE="$(git log -1 --format=%s "${RELEASE}")"
           test "${TITLE}" = "${EXPECTED_TITLE}" || { echo "::error::Prepared release commit title differs from the intended PR title"; exit 1; }
-          printf '%s\n' "${TITLE}" | "${RUNNER_TEMP}/release-intent" check-title --base "${SOURCE}" --head "${RELEASE}" --author "${AUTHOR}" --head-branch "${BRANCH}"
+          printf '%s\n' "${TITLE}" | "${RUNNER_TEMP}/release-intent" check-title --base "${TIP}" --head "${RELEASE}" --author "${AUTHOR}" --head-branch "${BRANCH}"
           git checkout --detach "${RELEASE}"
-          "${RUNNER_TEMP}/release-intent" release-pr --check --branch "${SOURCE}" --floor "${{ vars.RELEASE_BATCH_FLOOR }}"
+          "${RUNNER_TEMP}/release-intent" release-pr --check --branch "${TIP}" --floor "${{ vars.RELEASE_BATCH_FLOOR }}"
 
   release:
     needs: [plan, verify]

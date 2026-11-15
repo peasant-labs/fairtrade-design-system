@@ -163,6 +163,46 @@ workflow:
       find: "          test \"${TITLE}\" = \"${EXPECTED_TITLE}\" || { echo \"::error::Prepared release commit title differs from the intended PR title\"; exit 1; }\n"
       replace: ""
       error_contains: "the verifier must check the prepared commit title"
+    - name: a tag verifier without independent replanning is rejected
+      file: release-batch.yml
+      find: "          \"${RUNNER_TEMP}/release-intent\" plan --branch origin/main --mode \"${{ vars.RELEASE_BATCH_MODE }}\" --verdict taggable --floor \"${{ vars.RELEASE_BATCH_FLOOR }}\" | tee \"${plan_file}\"\n"
+      replace: ""
+      error_contains: "the verifier must independently recompute the tag plan"
+    - name: a tag verifier masking a failed replan is rejected
+      file: release-batch.yml
+      find: "          \"${RUNNER_TEMP}/release-intent\" plan --branch origin/main --mode \"${{ vars.RELEASE_BATCH_MODE }}\" --verdict taggable --floor \"${{ vars.RELEASE_BATCH_FLOOR }}\" | tee \"${plan_file}\"\n"
+      replace: "          \"${RUNNER_TEMP}/release-intent\" plan --branch origin/main --mode \"${{ vars.RELEASE_BATCH_MODE }}\" --verdict taggable --floor \"${{ vars.RELEASE_BATCH_FLOOR }}\" | tee \"${plan_file}\" || true\n"
+      error_contains: "the verifier must independently recompute the tag plan"
+    - name: a tag verifier without the action check is rejected
+      file: release-batch.yml
+      find: "          test \"${FRESH_ACTION}\" = tag || { echo \"::error::Fresh release plan does not authorize a tag; wait for the next release run\"; exit 1; }\n"
+      replace: ""
+      error_contains: "the verifier must require a tag action"
+    - name: a tag verifier that accepts repeated plan outputs is rejected
+      file: release-batch.yml
+      find: "if (count != 1 || value == \"\")"
+      replace: "if (value == \"\")"
+      error_contains: "the verifier must reject missing or repeated fresh plan values"
+    - name: a tag verifier that ignores the recomputed version is rejected
+      file: release-batch.yml
+      find: "          FRESH_VERSION=\"$(plan_value version)\"\n"
+      replace: ""
+      error_contains: "the verifier must parse the recomputed version"
+    - name: a tag verifier without the candidate comparison is rejected
+      file: release-batch.yml
+      find: "          test \"${FRESH_CANDIDATE}\" = \"${CANDIDATE}\" || { echo \"::error::Fresh candidate differs from the prepared tag candidate; wait for the next release run\"; exit 1; }\n"
+      replace: ""
+      error_contains: "the verifier must compare the recomputed candidate"
+    - name: a tag verifier without the tag comparison is rejected
+      file: release-batch.yml
+      find: "          test \"${FRESH_TAG}\" = \"${TAG}\" || { echo \"::error::Fresh tag differs from the prepared tag; wait for the next release run\"; exit 1; }\n"
+      replace: ""
+      error_contains: "the verifier must compare the recomputed tag"
+    - name: a prepared release from an outdated tip is rejected
+      file: release-batch.yml
+      find: "          test \"${SOURCE}\" = \"${TIP}\" || { echo \"::error::Main advanced after release preparation; wait for the next run to rebuild the release\"; exit 1; }\n"
+      replace: ""
+      error_contains: "the verifier must require the prepared source to equal the current tip"
     - name: a Go cache keyed on another module is rejected
       file: ci.yml
       find: "cache-dependency-path: infra-tool/tools/release/go.sum"

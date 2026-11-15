@@ -55,6 +55,14 @@ requiredContractMutationNames:
   - skipping the tag bundle check is rejected
   - skipping the release bundle check is rejected
   - a release commit title not bound to the PR title is rejected
+  - a tag verifier without independent replanning is rejected
+  - a tag verifier masking a failed replan is rejected
+  - a tag verifier without the action check is rejected
+  - a tag verifier that accepts repeated plan outputs is rejected
+  - a tag verifier that ignores the recomputed version is rejected
+  - a tag verifier without the candidate comparison is rejected
+  - a tag verifier without the tag comparison is rejected
+  - a prepared release from an outdated tip is rejected
   - a Go cache keyed on another module is rejected
   - release PR lookup only on push is rejected
   - queue read only on push is rejected
