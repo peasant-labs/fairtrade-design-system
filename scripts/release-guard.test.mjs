@@ -199,10 +199,12 @@ function validateFixtures(f, manifest, workflowFiles, checkedFiles) {
   ]) {
     exactNames(array(f.workflow[list], `workflow.${list}`), required, `workflow.${list}`)
     for (const row of f.workflow[list]) {
-      keys(row, [...fields], `workflow.${list} row`)
+      const expectedError = list === 'contract_mutations' && Object.hasOwn(row, 'error_contains')
+      keys(row, expectedError ? [...fields, 'error_contains'] : [...fields], `workflow.${list} row`)
       fileCheck(row, `workflow.${list}`)
       string(row.find, `workflow.${list}.${row.name}.find`)
       assert.equal(typeof row.replace, 'string', `workflow.${list}.${row.name}.replace must be a string`)
+      if (expectedError) string(row.error_contains, `workflow.${list}.${row.name}.error_contains`)
     }
   }
   for (const row of f.workflow.policy_mutations) string(row.rule, `workflow.policy_mutations.${row.name}.rule`)
@@ -319,6 +321,48 @@ function assertReleaseRunIsNeverCancelled(release) {
 }
 
 /**
+ * The credential job can only run after the separate, read-only bundle check.
+ * A status function in its if would override GitHub's implicit success gate.
+ *
+ * @param {ReturnType<typeof parseWorkflow>} release
+ */
+function assertIndependentBundleVerification(release) {
+  const writer = jobOf(release, roles.release.job)
+  const verify = jobOf(release, 'verify')
+  assert.ok(Array.isArray(writer.needs) && writer.needs.includes('verify'), `${release.file}: the release job must need the independent verifier`)
+  assert.doesNotMatch(normalizeIf(String(writer.if ?? '')), /\b(?:always|cancelled|failure|success)\s*\(/i, `${release.file}: the release job must not bypass the verifier with a status function`)
+  assert.deepEqual(verify.needs, ['plan'], `${release.file}: the verifier must depend on the plan`)
+  assert.equal(normalizeIf(String(verify.if ?? '')), "needs.plan.outputs.proceed == 'true'", `${release.file}: the verifier must run whenever the plan proceeds`)
+  assert.equal(verify['runs-on'], 'ubuntu-latest', `${release.file}: the verifier must use a fresh hosted runner`)
+  assert.equal(verify['timeout-minutes'], 10, `${release.file}: the verifier must have a bounded timeout`)
+  assert.deepEqual(verify.permissions, { contents: 'read' }, `${release.file}: the verifier must have only contents read permission`)
+  assert.doesNotMatch(JSON.stringify(verify), /\$\{\{\s*secrets(?:\.|\[)|actions\/create-github-app-token@/i, `${release.file}: the verifier must not receive App credentials`)
+  assert.equal(verify['continue-on-error'], undefined, `${release.file}: the verifier must not ignore a failure`)
+  for (const step of verify.steps) assert.equal(step['continue-on-error'], undefined, `${release.file}: verifier steps must not ignore a failure`)
+  const checkout = verify.steps.find((/** @type {any} */ step) => step.uses?.startsWith('actions/checkout@') && step.with?.repository === undefined)
+  assert.equal(checkout?.with?.['fetch-depth'], 0, `${release.file}: the verifier must check out full history`)
+  assert.equal(checkout?.with?.['fetch-tags'], true, `${release.file}: the verifier must check out tags`)
+  assert.equal(checkout?.with?.['persist-credentials'], false, `${release.file}: the verifier checkout must not retain credentials`)
+
+  /** @param {string} name @param {string} gate */
+  const check = (name, gate) => {
+    const matches = verify.steps.filter((/** @type {any} */ step) => step.name === name)
+    assert.equal(matches.length, 1, `${release.file}: the verifier must contain exactly one ${name} step`)
+    assert.equal(normalizeIf(String(matches[0].if ?? '')), gate, `${release.file}: ${name} must run on its planned action`)
+    assert.match(String(matches[0].run ?? ''), /^set -euo pipefail\n/, `${release.file}: ${name} must fail closed`)
+    return matches[0]
+  }
+  check('Verify the prepared tag', "needs.plan.outputs.tag-action == 'tag'")
+  const releaseCheck = check('Verify the prepared release commit', "needs.plan.outputs.action == 'open-pr' && needs.plan.outputs.push == 'true'")
+  const open = writer.steps.find((/** @type {any} */ step) => step.name === 'Open the release PR')
+  const update = writer.steps.find((/** @type {any} */ step) => step.name === 'Update the release PR')
+  assert.ok(releaseCheck.env?.EXPECTED_TITLE, `${release.file}: the verifier must receive the intended PR title`)
+  assert.equal(releaseCheck.env.EXPECTED_TITLE, open?.env?.TITLE, `${release.file}: the verifier and open step must use the same intended title`)
+  assert.equal(releaseCheck.env.EXPECTED_TITLE, update?.env?.TITLE, `${release.file}: the verifier and update step must use the same intended title`)
+  assert.match(releaseCheck.run, /^test "\$\{TITLE\}" = "\$\{EXPECTED_TITLE\}" \|\| \{ echo "[^"]+"; exit 1; \}$/m, `${release.file}: the verifier must check the prepared commit title against the intended PR title`)
+}
+
+/**
  * A fresh existing branch still needs a queue decision. Branch writes, unlike
  * queue reads and arm/hold decisions, run only when preparation says to push.
  * The fixture names every step and its complete set of conjunctive gates.
@@ -339,8 +383,8 @@ function assertReleaseRecoveryGates(release) {
 /**
  * Every workflow that builds the release tool checks out the same commit of
  * the same module, and setup-go and the build in each job read that module.
- * The tag-verification job uses a confined, cache-free build; the general
- * guard builds run from the module directory with the module checksum cache.
+ * A confined, cache-free build uses the module via -C; the general guard
+ * builds run from the module directory with the module checksum cache.
  *
  * @param {ReadonlyMap<string, ReturnType<typeof parseWorkflow>>} byFile
  */
@@ -368,10 +412,12 @@ function assertToolCheckouts(byFile) {
       const setup = steps.find((/** @type {any} */ step) => step.with?.['go-version-file'] !== undefined)
       assert.equal(setup?.with?.['go-version-file'], `${moduleDir}/${GoModuleFile.Mod}`, `${where}: setup-go must read the tool module's Go version`)
       assert.ok(build, `${where}: the tool must be built from ${moduleDir}`)
-      if (steps.some((/** @type {any} */ step) => typeof step.run === 'string' && step.run.includes('verify-tag'))) {
-        assert.equal(setup?.with?.cache, false, `${where}: a confined tag-verification build must disable the Go cache`)
+      if (setup?.with?.cache === false || steps.some((/** @type {any} */ step) => typeof step.run === 'string' && step.run.includes('verify-tag'))) {
+        assert.equal(setup?.with?.cache, false, `${where}: a confined verification build must disable the Go cache`)
         assert.equal(setup?.with?.['cache-dependency-path'], undefined, `${where}: a cache-free build must not specify a cache dependency path`)
         assert.equal(build.run, `go build -C ${moduleDir} -o "\${RUNNER_TEMP}/release-intent" ./cmd/release-intent`, `${where}: the confined build must read the tool module`)
+        assert.equal(build.env?.GOWORK, 'off', `${where}: the confined build must disable the Go workspace`)
+        assert.equal(build['working-directory'], undefined, `${where}: the confined build must resolve the module from the checkout root`)
       } else {
         assert.equal(setup?.with?.['cache-dependency-path'], `${moduleDir}/${GoModuleFile.Sum}`, `${where}: setup-go must key its cache on the tool module's checksums`)
         assert.equal(build['working-directory'], moduleDir, `${where}: the tool must build from its module directory ${moduleDir}`)
@@ -394,6 +440,7 @@ function assertWorkflowContract(byFile) {
   assertLibraryBuildContract(at(roles.lib.workflow))
   assertGuardFailsClosed(at(roles.guard.workflow))
   assertReleaseRunIsNeverCancelled(at(roles.release.workflow))
+  assertIndependentBundleVerification(at(roles.release.workflow))
   assertReleaseRecoveryGates(at(roles.release.workflow))
   assertToolCheckouts(byFile)
   assertForbiddenText(byFile)
@@ -469,7 +516,11 @@ test('each contract mutation is caught by its contract assertion', () => {
     const changed = original.text.replaceAll(mutation.find, mutation.replace)
     assert.notEqual(changed, original.text, `${mutation.name}: replacement must change ${mutation.file}`)
     const mutated = new Map(byFile).set(mutation.file, parseWorkflow(mutation.file, changed))
-    assert.throws(() => assertWorkflowContract(mutated), { name: 'AssertionError' }, mutation.name)
+    assert.throws(() => assertWorkflowContract(mutated), (error) => {
+      assert.equal(error.name, 'AssertionError', mutation.name)
+      if (mutation.error_contains) assert.ok(error.message.includes(mutation.error_contains), `${mutation.name}: wrong contract assertion: ${error.message}`)
+      return true
+    }, mutation.name)
   }
 })
 

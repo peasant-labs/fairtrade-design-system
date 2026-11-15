@@ -1,18 +1,14 @@
 # Release batch: the serialized run that keeps the standing bot release PR
 # current and tags it when it lands.
 #
-# Two jobs. `plan` holds no credential and does all the work: it builds the
-# pinned release-intent tool, plans, makes the annotated release tag object,
-# prepares the release commit with `release-pr --commit`, reads the merge queue
-# with the read-only default token and judges it with `queue-gate`. Git bundles
-# are made in the runner's temporary directory to keep the worktree clean, and
-# handed over in one artifact. `release` holds the releaser App token and runs
-# only pinned allowed actions, the bundle
-# fetches, and one git or gh command per step: push the tag, push the
-# release branch, open or edit the release PR, arm or hold auto-merge, or
-# close the PR. Every gh command names the PR by its bot branch, never by a
-# number, and the job runs on a GitHub-hosted runner named literally. Nothing `plan` does can reach `release`: they run on
-# separate runners, and `release` runs no general step.
+# Three jobs. `plan` holds no App credential: it builds the pinned tool, plans,
+# prepares the tag and release commit, and reads and judges the merge queue.
+# It hands over git bundles in an artifact. `verify`, without an App credential
+# on a separate hosted runner, checks the bundles and release content before
+# any push. `release` holds the releaser App token and needs both jobs; it runs
+# only pinned allowed actions, bundle fetches, and one git or gh command per
+# step. Every gh command names the PR by its bot branch, never by a number.
+# The jobs use separate runners, and `release` runs no general step.
 #
 # The tool decides; the workflow only carries out the one action `plan`
 # prints. Every step that can write runs only under an `if:` on one action
@@ -58,11 +54,14 @@ jobs:
       proceed: ${{ steps.precheck.outputs.proceed }}
       tag-action: ${{ steps.plan.outputs.action }}
       tag: ${{ steps.plan.outputs.tag }}
+      candidate: ${{ steps.plan.outputs.candidate }}
+      plan-source: ${{ steps.plan.outputs.source }}
       action: ${{ steps.replan.outputs.action }}
       level: ${{ steps.replan.outputs.level }}
       breaking: ${{ steps.replan.outputs.breaking }}
       release-tag: ${{ steps.replan.outputs.tag }}
       push: ${{ steps.write.outputs.push }}
+      source: ${{ steps.write.outputs.source }}
       number: ${{ steps.find.outputs.number }}
       pr: ${{ steps.entry.outputs.pr }}
       queued: ${{ steps.entry.outputs.queued }}
@@ -134,6 +133,8 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --no-tags origin main
+          SOURCE="$(git rev-parse origin/main)"
+          echo "source=${SOURCE}" >> "${GITHUB_OUTPUT}"
           release-intent plan --branch origin/main --mode "${{ vars.RELEASE_BATCH_MODE }}" --verdict taggable --floor "${{ vars.RELEASE_BATCH_FLOOR }}" | tee -a "${GITHUB_STEP_SUMMARY}"
 
       # The annotated tag object is made here, without a credential, and
@@ -176,6 +177,8 @@ jobs:
             current=(--current origin/automation/release)
           fi
           git checkout -q -B automation/release origin/main
+          SOURCE="$(git rev-parse HEAD)"
+          echo "source=${SOURCE}" >> "${GITHUB_OUTPUT}"
           release-intent release-pr --commit --branch origin/main "${current[@]}" --floor "${{ vars.RELEASE_BATCH_FLOOR }}"
 
       - name: Bundle the release branch
@@ -272,8 +275,94 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-  release:
+  verify:
     needs: [plan]
+    if: needs.plan.outputs.proceed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the repository (full history and tags)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: Check out the release-intent tool
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          repository: peasant-labs/infra
+          ref: f9bdadb2f359c90336fca71ea3afd1fe59a046ce
+          path: infra-tool
+          sparse-checkout: |
+            tools/release
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: infra-tool/tools/release/go.mod
+          cache: false
+
+      - name: Build release-intent
+        env:
+          GOWORK: "off"
+        run: go build -C infra-tool/tools/release -o "${RUNNER_TEMP}/release-intent" ./cmd/release-intent
+
+      - name: Download the bundles to verify
+        if: needs.plan.outputs.tag-action == 'tag' || (needs.plan.outputs.action == 'open-pr' && needs.plan.outputs.push == 'true')
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: release-bundles
+          path: bundles
+
+      # This checks the plan's chosen candidate and ancestry; it does not
+      # independently recompute freshness or bind an artifact ID for release.
+      - name: Verify the prepared tag
+        if: needs.plan.outputs.tag-action == 'tag'
+        env:
+          TAG: ${{ needs.plan.outputs.tag }}
+          CANDIDATE: ${{ needs.plan.outputs.candidate }}
+          PLAN_SOURCE: ${{ needs.plan.outputs.plan-source }}
+        run: |
+          set -euo pipefail
+          git bundle verify bundles/tag.bundle
+          git bundle list-heads bundles/tag.bundle | awk -v ref="refs/tags/${TAG}" 'NF != 2 || $2 != ref { exit 1 } END { if (NR != 1) exit 1 }'
+          git fetch --no-tags bundles/tag.bundle "refs/tags/${TAG}:refs/tags/${TAG}"
+          test "$(git cat-file -t "refs/tags/${TAG}")" = tag
+          test "$(git rev-parse "refs/tags/${TAG}^{commit}")" = "${CANDIDATE}"
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor "${PLAN_SOURCE}" origin/main
+          git merge-base --is-ancestor "${CANDIDATE}" "${PLAN_SOURCE}"
+
+      - name: Verify the prepared release commit
+        if: needs.plan.outputs.action == 'open-pr' && needs.plan.outputs.push == 'true'
+        env:
+          SOURCE: ${{ needs.plan.outputs.source }}
+          EXPECTED_TITLE: "release${{ needs.plan.outputs.breaking == 'true' && '!' || '' }}[${{ needs.plan.outputs.level }}]: ${{ needs.plan.outputs.release-tag }}"
+        run: |
+          set -euo pipefail
+          git bundle verify bundles/release.bundle
+          git bundle list-heads bundles/release.bundle | awk 'NF != 2 || $2 != "refs/heads/automation/release" { exit 1 } END { if (NR != 1) exit 1 }'
+          git fetch --no-tags bundles/release.bundle refs/heads/automation/release:refs/verification/release
+          RELEASE="$(git rev-parse 'refs/verification/release^{commit}')"
+          test "$(git rev-list --parents -n 1 "${RELEASE}")" = "${RELEASE} ${SOURCE}"
+          test "$(git rev-list --count "${SOURCE}..${RELEASE}")" = 1
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor "${SOURCE}" origin/main
+          config="$(git show "${SOURCE}:.github/release-intent.yaml")"
+          AUTHOR="$(printf '%s\n' "${config}" | yq -e '.automation_author')"
+          BRANCH="$(printf '%s\n' "${config}" | yq -e '.bot_branches.release')"
+          TITLE="$(git log -1 --format=%s "${RELEASE}")"
+          test "${TITLE}" = "${EXPECTED_TITLE}" || { echo "::error::Prepared release commit title differs from the intended PR title"; exit 1; }
+          printf '%s\n' "${TITLE}" | "${RUNNER_TEMP}/release-intent" check-title --base "${SOURCE}" --head "${RELEASE}" --author "${AUTHOR}" --head-branch "${BRANCH}"
+          git checkout --detach "${RELEASE}"
+          "${RUNNER_TEMP}/release-intent" release-pr --check --branch "${SOURCE}" --floor "${{ vars.RELEASE_BATCH_FLOOR }}"
+
+  release:
+    needs: [plan, verify]
     # The default-branch check belongs before the mint, in this job's own if:
     # a dispatch on any other branch runs that branch's copy of this file,
     # and it must never hold the App key.

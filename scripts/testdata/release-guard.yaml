@@ -128,6 +128,41 @@ workflow:
       file: release-batch.yml
       find: "  cancel-in-progress: false"
       replace: "  cancel-in-progress: true"
+    - name: a release without the independent verifier is rejected
+      file: release-batch.yml
+      find: "  release:\n    needs: [plan, verify]\n"
+      replace: "  release:\n    needs: [plan]\n"
+      error_contains: "the release job must need the independent verifier"
+    - name: a status function bypassing the verifier is rejected
+      file: release-batch.yml
+      find: "if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && needs.plan.outputs.proceed == 'true'\n    runs-on: ubuntu-latest\n"
+      replace: "if: always() && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && needs.plan.outputs.proceed == 'true'\n    runs-on: ubuntu-latest\n"
+      error_contains: "the release job must not bypass the verifier"
+    - name: a self-hosted bundle verifier is rejected
+      file: release-batch.yml
+      find: "  verify:\n    needs: [plan]\n    if: needs.plan.outputs.proceed == 'true'\n    runs-on: ubuntu-latest\n"
+      replace: "  verify:\n    needs: [plan]\n    if: needs.plan.outputs.proceed == 'true'\n    runs-on: self-hosted\n"
+      error_contains: "the verifier must use a fresh hosted runner"
+    - name: a bundle verifier with App credentials is rejected
+      file: release-batch.yml
+      find: "  verify:\n    needs: [plan]\n"
+      replace: "  verify:\n    env:\n      APP_KEY: ${{ secrets.PEASANT_RELEASER_APP_PRIVATE_KEY }}\n    needs: [plan]\n"
+      error_contains: "the verifier must not receive App credentials"
+    - name: skipping the tag bundle check is rejected
+      file: release-batch.yml
+      find: "      - name: Verify the prepared tag\n        if: needs.plan.outputs.tag-action == 'tag'\n"
+      replace: "      - name: Verify the prepared tag\n        if: false\n"
+      error_contains: "Verify the prepared tag must run on its planned action"
+    - name: skipping the release bundle check is rejected
+      file: release-batch.yml
+      find: "      - name: Verify the prepared release commit\n        if: needs.plan.outputs.action == 'open-pr' && needs.plan.outputs.push == 'true'\n"
+      replace: "      - name: Verify the prepared release commit\n        if: false\n"
+      error_contains: "Verify the prepared release commit must run on its planned action"
+    - name: a release commit title not bound to the PR title is rejected
+      file: release-batch.yml
+      find: "          test \"${TITLE}\" = \"${EXPECTED_TITLE}\" || { echo \"::error::Prepared release commit title differs from the intended PR title\"; exit 1; }\n"
+      replace: ""
+      error_contains: "the verifier must check the prepared commit title"
     - name: a Go cache keyed on another module is rejected
       file: ci.yml
       find: "cache-dependency-path: infra-tool/tools/release/go.sum"

@@ -134,14 +134,13 @@ workflow may do with a credential") lists the exact rules:
 - every workflow and every job declares `permissions:` (read-only except where
   a job publishes), and every `actions/checkout` sets
   `persist-credentials: false`;
-- release-batch.yml and cut-release.yml are each two jobs. The first job
-  (`plan`, `prepare`) holds no credential and does all the work: it builds the
-  tool, plans, makes the annotated tag and the release commit, reads open PRs
-  and the merge queue with the read-only default token, and hands over through
-  job outputs and one artifact of git bundles. The second job (`release`,
-  `cut`) mints the releaser App token and runs only pinned allowed actions
-  (checkout, download-artifact, create-github-app-token), the bundle fetches,
-  and one `git push` or `gh` command per step;
+- release-batch.yml has three jobs: `plan` holds no App credential and prepares
+  the tag and release commit, reads the queue, and hands over outputs and git
+  bundles; `verify` holds no App credential and independently checks the
+  bundles before a push; `release` needs both jobs, mints the releaser App
+  token, and runs only pinned allowed actions, bundle fetches, and one `git
+  push` or `gh` command per step. cut-release.yml has two jobs: `prepare`
+  holds no credential and `cut` mints the App token with the same restrictions;
 - a job that holds a credential runs on one literal GitHub-hosted label
   (`ubuntu-latest`), never the runner router's output or a self-hosted label:
   a hosted runner is a fresh machine per job. Jobs without a credential may

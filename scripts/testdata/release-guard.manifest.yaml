@@ -48,6 +48,13 @@ requiredContractMutationNames:
   - a content build that also runs on the release PR is rejected
   - warn-and-pass group resolution is rejected
   - a cancellable release run is rejected
+  - a release without the independent verifier is rejected
+  - a status function bypassing the verifier is rejected
+  - a self-hosted bundle verifier is rejected
+  - a bundle verifier with App credentials is rejected
+  - skipping the tag bundle check is rejected
+  - skipping the release bundle check is rejected
+  - a release commit title not bound to the PR title is rejected
   - a Go cache keyed on another module is rejected
   - release PR lookup only on push is rejected
   - queue read only on push is rejected
