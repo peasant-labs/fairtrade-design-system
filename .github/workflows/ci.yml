@@ -130,34 +130,31 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           GROUP_REF: ${{ github.ref }}
           GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
-          GROUP_HEAD_SHA: ${{ github.event.merge_group.head_sha }}
           EVENT_PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           EVENT_PR_BRANCH: ${{ github.event.pull_request.head.ref }}
           EVENT_PR_BASE: ${{ github.event.pull_request.base.sha }}
-          EVENT_PR_HEAD: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
           # The PR that adopts the release config has no config at its base.
-          # Classify it against its head, where its author and head branch are
-          # not a configured bot branch; check-title applies the same rule.
+          # Read the config from the checked-out commit, which carries the
+          # adopted file; its author and head branch are not a configured bot.
           classify_rev() {
             rev="$1"
-            head="$2"
             if ! git cat-file -e "${rev}:.github/release-intent.yaml" 2>/dev/null; then
-              rev="${head}"
+              rev="$(git rev-parse HEAD)"
             fi
             printf '%s' "${rev}"
           }
           kind=ordinary
           if [ "${EVENT_NAME}" = "pull_request" ]; then
-            classified="$(release-intent classify --author "${EVENT_PR_AUTHOR}" --head-branch "${EVENT_PR_BRANCH}" --rev "$(classify_rev "${EVENT_PR_BASE}" "${EVENT_PR_HEAD}")")"
+            classified="$(release-intent classify --author "${EVENT_PR_AUTHOR}" --head-branch "${EVENT_PR_BRANCH}" --rev "$(classify_rev "${EVENT_PR_BASE}")")"
             kind="${classified#kind=}"
           elif [ "${EVENT_NAME}" = "merge_group" ]; then
             resolved="$(release-intent group-pr --ref "${GROUP_REF}")"
             number="${resolved#pr=}"
             if [ -n "${number}" ]; then
               payload="$(gh pr view "${number}" --repo "${GITHUB_REPOSITORY}" --json author,headRefName)"
-              classified="$(release-intent classify --author "$(printf '%s' "${payload}" | jq -r .author.login)" --head-branch "$(printf '%s' "${payload}" | jq -r .headRefName)" --rev "$(classify_rev "${GROUP_BASE_SHA}" "${GROUP_HEAD_SHA}")")"
+              classified="$(release-intent classify --author "$(printf '%s' "${payload}" | jq -r .author.login)" --head-branch "$(printf '%s' "${payload}" | jq -r .headRefName)" --rev "$(classify_rev "${GROUP_BASE_SHA}")")"
               kind="${classified#kind=}"
             fi
           fi
