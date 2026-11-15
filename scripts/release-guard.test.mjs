@@ -481,21 +481,21 @@ function readWorkflows() { return new Map([...checkedFiles].map((file) => [file,
 /* ── the release tool's own checks, as title-guard runs them ─────────────── */
 
 /**
- * The guard's config and policy checks: the steps that name this
- * repository's release config and queue policy. Their run text is the one
- * spelling of the tool invocation.
+ * The guard's config and policy checks: the steps that invoke the tool's
+ * config and policy commands. Naming a repository file elsewhere in the job
+ * (for example, the adopting-PR config probe) is not a second check.
  */
 function guardCheckSteps() {
   const steps = jobOf(readWorkflow(roles.guard.workflow), roles.guard.job).steps
-  /** @param {string} file */
-  const naming = (file) => {
-    const found = steps.filter((/** @type {any} */ step) => typeof step.run === 'string' && step.run.includes(file))
-    assert.equal(found.length, 1, `${roles.guard.workflow} job ${roles.guard.job} must run exactly one check over ${file}`)
+  /** @param {string} command @param {string} file */
+  const naming = (command, file) => {
+    const found = steps.filter((/** @type {any} */ step) => typeof step.run === 'string' && step.run.includes(`release-intent ${command}`) && step.run.includes(file))
+    assert.equal(found.length, 1, `${roles.guard.workflow} job ${roles.guard.job} must run exactly one ${command} over ${file}`)
     return found[0]
   }
-  const policyStep = naming(RepoPath.QueuePolicy)
+  const policyStep = naming('check-workflows', RepoPath.QueuePolicy)
   assert.ok(policyStep.run.includes(RepoPath.Workflows), `${roles.guard.workflow}: the policy check must read ${RepoPath.Workflows}`)
-  return Object.freeze({ config: naming(RepoPath.ReleaseConfig), policy: policyStep })
+  return Object.freeze({ config: naming('check-config', RepoPath.ReleaseConfig), policy: policyStep })
 }
 
 /**

@@ -147,9 +147,17 @@ jobs:
           PR_AUTHOR: ${{ steps.pr.outputs.author }}
           PR_BRANCH: ${{ steps.pr.outputs.head_branch }}
           PR_BASE: ${{ steps.pr.outputs.base_sha }}
+          PR_HEAD: ${{ steps.pr.outputs.head_sha }}
         run: |
           set -euo pipefail
-          release-intent classify --author "${PR_AUTHOR}" --head-branch "${PR_BRANCH}" --rev "${PR_BASE}"
+          # The PR that adopts the release config has no config at its base.
+          # Classify it against its head, where its author and head branch are
+          # not a configured bot branch; check-title applies the same rule.
+          rev="${PR_BASE}"
+          if ! git cat-file -e "${PR_BASE}:.github/release-intent.yaml" 2>/dev/null; then
+            rev="${PR_HEAD}"
+          fi
+          release-intent classify --author "${PR_AUTHOR}" --head-branch "${PR_BRANCH}" --rev "${rev}"
 
       - name: Check the pull request title
         env:
