@@ -1,6 +1,7 @@
 import { mkdirSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { withAxeRetry } from './lib/assertions.mjs'
 import { loadFixturePair, loadStrictYaml, ROOT } from '../mounted-parts.mjs'
 import { integrityFlagged } from '../../src/mockups/inuse/integrity-fixture.js'
 import { INTEGRITY_COPY } from '../../src/ui/transcript/integrity.js'
@@ -285,7 +286,7 @@ for (const row of fixture.cases) {
     if (row.kind === 'axe-panel') {
       await badge.tap()
       await expect(panel).toBeVisible()
-      const results = await new AxeBuilder({ page }).include('#inuse .txn-header').analyze()
+      const results = await withAxeRetry(() => new AxeBuilder({ page }).include('#inuse .txn-header').analyze())
       expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`), `${context}: axe on the open panel`).toEqual([])
       await capture()
     }
