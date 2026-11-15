@@ -1,0 +1,42 @@
+# Synthetic URLs are deliberately sensitive-looking. They must never be requested in local mode.
+payload:
+  id: synthetic-local-preview
+  harness: claude-code
+  startTime: '2026-10-06T12:00:00Z'
+  endTime: '2026-10-06T12:10:00Z'
+  durationMins: 10
+  totalTokens: 0
+  tokensIn: 0
+  tokensOut: 0
+  turnCount: 3
+  toolCallCount: 0
+  turns:
+    - {index: 0, role: user, content: "# Main heading\n\n![main](https://example.invalid/SECRET-main)", timestamp: '2026-10-06T12:00:00Z', depth: 0}
+    - index: 1
+      role: assistant
+      content: 'ordered text parts'
+      timestamp: '2026-10-06T12:01:00Z'
+      depth: 0
+      contentParts:
+        - {type: text, text: "# First part\n\n![part-one](https://example.invalid/SECRET-one)"}
+        - {type: text, text: "## Second part\n\n![part-two](https://example.invalid/SECRET-two)"}
+    - {index: 2, role: system, content: "# System heading\n\n![system](https://example.invalid/SECRET-system)", timestamp: '2026-10-06T12:02:00Z', depth: 0}
+    - {index: 3, role: user, content: 'another prompt', timestamp: '2026-10-06T12:03:00Z', depth: 0}
+    - {index: 4, role: system, controlKind: custom-title, content: "# Control heading\n\n![control](https://example.invalid/SECRET-control)", timestamp: '2026-10-06T12:04:00Z', depth: 0}
+  earlierHistory:
+    - state: uncertain_unresolved
+      turns:
+        - {index: 0, role: user, content: "# Earlier heading\n\n![earlier](https://example.invalid/SECRET-earlier)", timestamp: '2026-10-06T11:59:00Z', depth: 0}
+paths:
+  - {name: main-turn-body, selector: '#turn-0 .txn-body', alt: main, heading: Main heading, level: 7}
+  - {name: first-ordered-text-part, selector: '#turn-1 .txn-body:nth-of-type(1)', alt: part-one, heading: First part, level: 7}
+  - {name: second-ordered-text-part, selector: '#turn-1 .txn-body:nth-of-type(2)', alt: part-two, heading: Second part, level: 8}
+  - {name: system-row-body, selector: '#turn-2 .txn-systemrow-body', alt: system, heading: System heading, level: 7}
+  - {name: control-row-body, selector: '#turn-4 .txn-control-body', alt: control, heading: Control heading, level: 7}
+  - {name: earlier-history-body, selector: '.txn-earlier .txn-body', alt: earlier, heading: Earlier heading, level: 7}
+policies:
+  - {name: private-preview-blocks-all-markdown-images, allow: false, images: false}
+  - {name: omitted-policy-keeps-existing-host-images, images: true}
+unsafe:
+  - {name: javascript-image-has-no-empty-source, source: '![unsafe](javascript:alert)', alt: unsafe}
+  - {name: empty-image-has-no-empty-source, source: '![empty]()', alt: empty}

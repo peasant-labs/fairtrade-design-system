@@ -1,10 +1,8 @@
 # Publish @peasant-labs/fairtrade to npm when a release tag is pushed.
 #
-# Trigger: a `fairtrade-vX.Y.Z[-rcN]` annotated tag minted by release-pr.yml
-# after a valid maintainer-authored release PR merges to main. The releaser App
-# pushes the tag so this OIDC consumer runs; the default workflow token would
-# not trigger this workflow. Pushing the tag replaces the old interactive
-# `pnpm publish` + OTP step.
+# Trigger: a `fairtrade-vX.Y.Z[-rcN]` annotated tag minted by release-batch.yml
+# on the landed release commit. The releaser App pushes the tag so this OIDC
+# consumer runs; the default workflow token would not trigger this workflow.
 #
 # Gates: `npm publish` runs this package's `prepack`: metadata validation,
 # library/declaration build, contrast, and pack-content assertion. Behavior,
@@ -38,7 +36,52 @@ permissions:
   contents: read
 
 jobs:
+  verify:
+    name: verify the tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+    steps:
+      - name: Check out the repository (full history and tags)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: Check out the release-intent tool
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          repository: peasant-labs/infra
+          ref: f9bdadb2f359c90336fca71ea3afd1fe59a046ce
+          path: infra-tool
+          sparse-checkout: |
+            tools/release
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: infra-tool/tools/release/go.mod
+          cache: false
+
+      - name: Build release-intent
+        env:
+          GOWORK: "off"
+        run: go build -C infra-tool/tools/release -o "${RUNNER_TEMP}/release-intent" ./cmd/release-intent
+
+      # Pushing a tag needs only the right to write tags, so the tag may name a
+      # commit that never landed. The tool checks the name against the
+      # default branch's release config and that the default branch reaches
+      # the tag's commit; nothing publishes until it passes.
+      - name: Verify the tag is a release tag on the default branch
+        run: '"${RUNNER_TEMP}/release-intent" verify-tag --tag "${GITHUB_REF_NAME}" --branch "origin/${DEFAULT_BRANCH}"'
+
   npm-publish:
+    needs: verify
     name: publish npm package
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -67,26 +110,42 @@ jobs:
       - name: Install (frozen lockfile)
         run: pnpm install --frozen-lockfile
 
-      - name: Guard canonical Fairtrade release tag grammar
-        run: node scripts/release-guard.mjs parse-tag "$TAG"
-
-      - name: Guard tag <-> package.json version consistency
+      # The release config is the one place the tag prefix is written; the
+      # parsed version below is the only version the later steps read.
+      - name: Read the release config
+        id: config
         run: |
           set -euo pipefail
-          tag_version="${TAG#fairtrade-v}"
+          tag_prefix="$(yq -e '.tag_prefix' .github/release-intent.yaml)"
+          echo "tag_prefix=${tag_prefix}" >> "$GITHUB_OUTPUT"
+
+      - name: Guard canonical Fairtrade release tag grammar
+        id: tag
+        env:
+          TAG_PREFIX: ${{ steps.config.outputs.tag_prefix }}
+        run: node scripts/release-guard.mjs parse-tag "$TAG" "$TAG_PREFIX"
+
+      - name: Guard tag <-> package.json version consistency
+        env:
+          VERSION: ${{ steps.tag.outputs.version }}
+        run: |
+          set -euo pipefail
+          tag_version="${VERSION}"
           pkg_version="$(node -p "require('./package.json').version")"
           if [ "${tag_version}" != "${pkg_version}" ]; then
-            echo "::error::tag ${TAG} names version ${tag_version} but package.json is ${pkg_version}; retag the release commit or fix the version bump"
+            echo "::error::tag ${TAG} names version ${tag_version} but package.json is ${pkg_version}; tags are append-only, so do not move the tag: land a fix-forward change and let the release job tag the corrected commit"
             exit 1
           fi
 
       - name: Determine the npm dist-tag from the version kind
         id: disttag
+        env:
+          VERSION: ${{ steps.tag.outputs.version }}
         run: |
           set -euo pipefail
           # A prerelease version (any -suffix, e.g. 0.1.0-rc1) publishes under
           # `next`; a final X.Y.Z takes `latest`.
-          version="${TAG#fairtrade-v}"
+          version="${VERSION}"
           case "${version}" in
             *-*) echo "tag=next"    >> "$GITHUB_OUTPUT" ;;
             *)   echo "tag=latest"  >> "$GITHUB_OUTPUT" ;;
@@ -95,18 +154,21 @@ jobs:
       # npm (not pnpm) for the publish step only — see the header comment.
       # prepack builds and checks the package; CI owns the library test suite.
       - name: Publish @peasant-labs/fairtrade to npm (OIDC trusted publishing)
+        env:
+          VERSION: ${{ steps.tag.outputs.version }}
         run: |
           set -euo pipefail
           npm publish --access public --tag "${{ steps.disttag.outputs.tag }}"
-          echo "::notice::published @peasant-labs/fairtrade@${TAG#fairtrade-v} under dist-tag ${{ steps.disttag.outputs.tag }} via OIDC trusted publishing"
+          echo "::notice::published @peasant-labs/fairtrade@${VERSION} under dist-tag ${{ steps.disttag.outputs.tag }} via OIDC trusted publishing"
 
       - name: Verify the published provenance result
         env:
           PROVENANCE_ERROR_FILE: ${{ runner.temp }}/fairtrade-provenance-npm-view-error
           REPOSITORY_VISIBILITY: ${{ github.repository_visibility }}
+          VERSION: ${{ steps.tag.outputs.version }}
         run: |
           set -euo pipefail
-          package="@peasant-labs/fairtrade@${TAG#fairtrade-v}"
+          package="@peasant-labs/fairtrade@${VERSION}"
           case "${REPOSITORY_VISIBILITY}" in
             # Accepted uploads can remain unavailable while npm processes them.
             # Keep provenance required, allowing up to ten minutes within this job.

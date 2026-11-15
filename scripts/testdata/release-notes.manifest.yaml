@@ -10,6 +10,7 @@ requiredValidNames:
   - a version whose digits are a prefix of another version's digits does not cross-match (0.0.1 vs 0.0.10)
   - the longer version does not cross-match back onto the shorter one (0.0.10 vs 0.0.1)
   - an rc version header extracts cleanly
+  - a generated release section extracts cleanly (intent.Generate bare style)
 
 requiredInvalidNames:
   - a version with no matching section fails closed
@@ -31,3 +32,27 @@ mutations:
     replace: "if (false) {"
     probeGroup: invalid
     probeCaseName: a section header present but with an empty body fails closed
+
+requiredWorkflowTextNames:
+  - the job looks the release up first
+
+requiredWorkflowCommandNames:
+  - a re-run updates the existing release for the triggering tag
+  - the release is created once, for the triggering tag, and never makes a tag
+
+requiredForbiddenWorkflowTextNames:
+  - the workflow pushes nothing
+  - the workflow makes no tag
+  - the workflow names no tag ref
+  - the workflow writes no pull request
+
+requiredWorkflowMutationNames:
+  - a hard-coded changelog path is rejected
+  - a hard-coded tag prefix is rejected
+  - a trigger off the configured tag prefix is rejected
+  - a release created without --verify-tag is rejected
+  - a guard that cannot load the parser's imports is rejected
+  - a candidate published as the latest release is rejected
+  - release notes read from another file are rejected
+  - a notes job holding a write token is rejected
+  - a publish job that runs before the notes arrive is rejected

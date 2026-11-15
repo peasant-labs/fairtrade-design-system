@@ -1,3 +1,14 @@
+/* Release guard tests: the tag parser the tag-triggered workflows call, the
+   fairtrade-owned merge-queue workflow contract, the release-intent tool's own
+   policy check over those workflows, and git's release-tag immutability.
+
+   Nothing here restates the release contract. The tag prefix, the bot kinds,
+   and the workflow files are read from the release config and the queue policy
+   through scripts/release-config.mjs. Rules the release-intent tool owns are
+   judged by running the policy and config checks title-guard runs, spelled once
+   in title-guard.yml, over this repository and over each policy mutation. Cases
+   live in scripts/testdata/release-guard.yaml; the required-name manifest is
+   scripts/testdata/release-guard.manifest.yaml. */
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
@@ -5,257 +16,578 @@ import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
 import YAML from 'yaml'
-import { GitHubReleaseClient, isMaintainerPermission, parseFairtradeTag, parseReleaseTitle, reduceLatestReviewApproval, titleToFairtradeTag, validateMergedPullRequest, validatePackageVersion } from './release-guard.mjs'
+import { closed } from '../src/ui/closed-value.js'
+import { ALL_RELEASE_KINDS, parseReleaseKind, parseReleaseTag } from './release-guard.mjs'
+import { REPO_ROOT, RepoPath, loadQueuePolicy, loadReleaseConfig, parseWorkflow, readPackageManifest, readWorkflow } from './release-config.mjs'
 
-const root = path.resolve(import.meta.dirname, '..')
-const fixturePath = path.join(import.meta.dirname, 'testdata/release-guard.yaml')
+const FIXTURE_RELATIVE_PATH = 'testdata/release-guard.yaml'
+const MANIFEST_RELATIVE_PATH = 'testdata/release-guard.manifest.yaml'
+const fixturePath = path.join(import.meta.dirname, FIXTURE_RELATIVE_PATH)
+const manifestPath = path.join(import.meta.dirname, MANIFEST_RELATIVE_PATH)
 /** Per-command ceiling for one throwaway-repository git call, in ms. */
 const GIT_COMMAND_TIMEOUT_MS = 10000
 /** Ceiling for the whole release-tag case, in ms: a regression fails instead of hanging. */
 const RELEASE_TAG_CASE_TIMEOUT_MS = 60000
-const requiredNativeStackMutations = new Map([
-  ['non-main stack trunk', 'stack_trunk'],
-  ['requested PR is not a member', 'wrong_member'],
-  ['member repository differs', 'wrong_repository'],
-  ['member is unmerged', 'unmerged_member'],
-  ['merged timeline SHA is missing', 'missing_sha'],
-  ['merged timeline repository differs', 'timeline_repository'],
-  ['merged commit is disconnected from main', 'disconnected_commit'],
-  ['ordinary non-main PR is rejected', 'direct_non_main'],
-])
-const requiredResolveMutations = new Map([
-  ['missing merged timeline event', 'missing_merged'],
-  ['merged timeline repository differs', 'resolve_timeline_repository'],
-  ['merged commit is disconnected from main', 'resolve_disconnected_commit'],
-])
-const requiredGitMutations = new Map([
-  ['a forced push moves the release tag', 'force_push'],
-  ['a delete and re-push moves the release tag', 'delete_then_push'],
-])
-const requiredWorkflowMutations = new Map([
-  ['unconditional prefix', 'tag_if'],
-  ['missing merged condition', 'tag_if'],
-  ['weakened validate condition', 'validate_if'],
-  ['re-adding edited to ci.yml is rejected', 'ci_pr_types'],
-  ['re-gating prepack on the title is rejected', 'prepack_if'],
-  ['cancelling in-progress runs on edited is rejected', 'release_concurrency'],
-  ['merge path shares the gates group is rejected', 'release_group'],
-  ['cancel-in-progress false is rejected', 'release_concurrency'],
-  ['cancel-in-progress ${{ true }} is rejected', 'release_concurrency'],
-  ['closed cancels in-progress is rejected', 'release_concurrency'],
-  ['validate runs on a closed PR is rejected', 'validate_if'],
-  ['dropping pack:check from prepack is rejected', 'prepack_packcheck'],
-])
+/** Ceiling for one release-tool policy or config check, in ms. */
+const TOOL_CHECK_TIMEOUT_MS = 30000
+/** The job id the queue policy names the library build by; the CI contract reads that job. */
+const LIB_JOB = 'lib'
+/** The package manager every package-script step runs through. */
+const PACKAGE_MANAGER = 'pnpm'
+/** Step ids this contract reads in the repository's own workflows. */
+const WorkflowStepId = Object.freeze({
+  /** title-guard: resolves the merge-group entry PR and must fail closed. */
+  GroupEntry: 'entry',
+})
+/** The files a Go module checkout carries that setup-go reads or caches. */
+const GoModuleFile = Object.freeze({ Mod: 'go.mod', Sum: 'go.sum' })
+/** The release tool is built from this module in the shared infra repository. */
+const RELEASE_TOOL_REPOSITORY = 'peasant-labs/infra'
+const RELEASE_TOOL_MODULE = 'tools/release'
+/** The status bash reports when the command it runs is not on PATH. */
+const COMMAND_NOT_FOUND = 127
+/** CI builds the release tool before the tests, so a missing tool there is a failure, not a skip. */
+const IN_CI = process.env.CI === 'true'
+/** Runner files a step appends to; a check run from a test must never write the test step's own. */
+const RUNNER_STEP_FILES = Object.freeze(['GITHUB_OUTPUT', 'GITHUB_STEP_SUMMARY', 'GITHUB_ENV', 'GITHUB_PATH'])
 
-function object(value, where) { assert.ok(value && typeof value === 'object' && !Array.isArray(value), `${where} must be an object`); return value }
-function array(value, where, min) { assert.ok(Array.isArray(value) && value.length >= min, `${where} must contain at least ${min} rows`); return value }
-function string(value, where) { assert.ok(typeof value === 'string' && value.length > 0, `${where} must be a non-empty string`); return value }
-function keys(value, allowed, where) { object(value, where); assert.deepEqual(Object.keys(value).sort(), [...allowed].sort(), `${where} keys drifted`) }
-function named(rows, where) { const names = rows.map((row, index) => string(row.name, `${where}[${index}].name`)); assert.equal(new Set(names).size, names.length, `${where} names must be unique`) }
+/**
+ * A comparison in a step-level `if:` that reads one step output against one
+ * quoted value.
+ */
+const Comparison = Object.freeze({
+  Equal: closed('==', 'equals'),
+  NotEqual: closed('!=', 'differs from'),
+})
+const ALL_COMPARISONS = Object.freeze([Comparison.Equal, Comparison.NotEqual])
+/** @type {Readonly<Record<string, (typeof ALL_COMPARISONS)[number]>>} */
+const COMPARISON_BY_WIRE = Object.freeze(Object.fromEntries(ALL_COMPARISONS.map((comparison) => [comparison.wire, comparison])))
+const STEP_OUTPUT_GATE = new RegExp(`^steps\\.([A-Za-z0-9_-]+)\\.outputs\\.([A-Za-z0-9_-]+) (${ALL_COMPARISONS.map((comparison) => comparison.wire).join('|')}) '([^']*)'$`)
 
-function validateFixtures(f) {
-  keys(f, ['titles', 'tags', 'permissions', 'reviews', 'metadata', 'github', 'workflow', 'git'], 'root')
-  for (const kind of ['titles', 'tags']) {
-    keys(f[kind], ['valid', 'invalid'], kind); named(array(f[kind].valid, `${kind}.valid`, 3), `${kind}.valid`); named(array(f[kind].invalid, `${kind}.invalid`, kind === 'titles' ? 11 : 8), `${kind}.invalid`)
-    for (const row of f[kind].valid) { keys(row, kind === 'titles' ? ['name', 'input', 'version', 'tag'] : ['name', 'input'], `${kind}.valid row`); string(row.input, `${kind}.valid input`) }
-    for (const row of f[kind].invalid) { keys(row, ['name', 'input'], `${kind}.invalid row`); string(row.input, `${kind}.invalid input`) }
-  }
-  keys(f.permissions, ['allowed', 'denied'], 'permissions'); array(f.permissions.allowed, 'permissions.allowed', 2); array(f.permissions.denied, 'permissions.denied', 4)
-  named(array(f.reviews, 'reviews', 3), 'reviews'); for (const row of f.reviews) { keys(row, ['name', 'maintainers', 'reviews', 'approved'], 'reviews row'); array(row.maintainers, 'maintainers', 1); array(row.reviews, 'reviews', 1); assert.equal(typeof row.approved, 'boolean'); for (const review of row.reviews) keys(review, ['user', 'state'], 'review') }
-  keys(f.metadata, ['valid', 'invalid'], 'metadata'); keys(f.metadata.valid, ['number', 'state', 'merged', 'title', 'user', 'base', 'merge_commit_sha'], 'metadata.valid'); named(array(f.metadata.invalid, 'metadata.invalid', 4), 'metadata.invalid'); for (const row of f.metadata.invalid) { const allowed = row.payload === undefined ? ['name', 'patch'] : ['name', 'payload']; keys(row, allowed, 'metadata.invalid row') }
-  keys(f.github, ['resolve', 'malformed_response', 'native_stack', 'pagination'], 'github'); keys(f.github.resolve, ['responses', 'expected_merge_sha', 'expected_paths', 'invalid'], 'github.resolve'); array(f.github.resolve.responses, 'github.resolve.responses', 4); array(f.github.resolve.expected_paths, 'github.resolve.expected_paths', 4)
-  named(array(f.github.resolve.invalid, 'github.resolve.invalid', 1), 'github.resolve.invalid')
-  const resolveCases = new Map()
-  for (const row of f.github.resolve.invalid) { keys(row, ['name', 'mutation'], 'github.resolve.invalid row'); assert.ok([...requiredResolveMutations.values()].includes(row.mutation), `github.resolve.invalid.${row.name} has unknown mutation ${row.mutation}`); resolveCases.set(row.name, row.mutation) }
-  for (const [name, mutation] of requiredResolveMutations) assert.equal(resolveCases.get(name), mutation, `github.resolve.invalid must retain required scenario ${name} with mutation ${mutation}`)
-  keys(f.github.malformed_response, ['body'], 'github.malformed_response')
-  keys(f.github.native_stack, ['valid', 'invalid', 'loader_invalid'], 'github.native_stack'); keys(f.github.native_stack.valid, ['name', 'responses', 'expected_paths', 'expected_merge_sha'], 'github.native_stack.valid'); array(f.github.native_stack.valid.responses, 'github.native_stack.valid.responses', 5); array(f.github.native_stack.valid.expected_paths, 'github.native_stack.valid.expected_paths', 5)
-  named(array(f.github.native_stack.invalid, 'github.native_stack.invalid', 1), 'github.native_stack.invalid')
-  const nativeStackCases = new Map()
-  for (const row of f.github.native_stack.invalid) { keys(row, ['name', 'mutation'], 'github.native_stack.invalid row'); string(row.mutation, `github.native_stack.invalid.${row.name}.mutation`); assert.ok([...requiredNativeStackMutations.values()].includes(row.mutation), `github.native_stack.invalid.${row.name} has unknown mutation ${row.mutation}`); nativeStackCases.set(row.name, row.mutation) }
-  for (const [name, mutation] of requiredNativeStackMutations) assert.equal(nativeStackCases.get(name), mutation, `github.native_stack.invalid must retain required scenario ${name} with mutation ${mutation}`)
-  named(array(f.github.native_stack.loader_invalid, 'github.native_stack.loader_invalid', 4), 'github.native_stack.loader_invalid')
-  for (const row of f.github.native_stack.loader_invalid) { keys(row, ['name', 'operation', 'scenario', 'replacement'], 'github.native_stack.loader_invalid row'); string(row.operation, `github.native_stack.loader_invalid.${row.name}.operation`); string(row.scenario, `github.native_stack.loader_invalid.${row.name}.scenario`); assert.ok(requiredNativeStackMutations.has(row.scenario), `github.native_stack.loader_invalid.${row.name} scenario must name a required case`); assert.ok(['delete', 'replace', 'unknown_dispatch'].includes(row.operation), `github.native_stack.loader_invalid.${row.name} operation is unknown`); if (row.operation === 'delete') assert.equal(row.replacement, null, `github.native_stack.loader_invalid.${row.name}.replacement must be null`); else string(row.replacement, `github.native_stack.loader_invalid.${row.name}.replacement`) }
-  named(array(f.github.pagination, 'github.pagination', 2), 'github.pagination')
-  for (const row of f.github.pagination) { keys(row, ['name', 'responses', 'approved', 'expected_paths'], 'pagination row'); array(row.responses, 'pagination responses', 3); array(row.expected_paths, 'pagination expected_paths', 3); for (const response of row.responses) keys(response, response.link === undefined ? ['body'] : ['body', 'link'], 'response') }
-  keys(f.workflow, ['ci_pr_types', 'validate_if', 'tag_if', 'release_group', 'release_concurrency', 'release_needles', 'publish_needles', 'mutations'], 'workflow'); string(f.workflow.validate_if, 'workflow.validate_if'); string(f.workflow.tag_if, 'workflow.tag_if'); string(f.workflow.release_group, 'workflow.release_group'); string(f.workflow.release_concurrency, 'workflow.release_concurrency'); array(f.workflow.release_needles, 'workflow.release_needles', 10); array(f.workflow.publish_needles, 'workflow.publish_needles', 2); named(array(f.workflow.mutations, 'workflow.mutations', 12), 'workflow.mutations'); for (const row of f.workflow.mutations) keys(row, ['name', 'target', 'replacement'], 'workflow mutation')
-  assert.deepEqual([...f.workflow.ci_pr_types].sort(), ['opened', 'reopened', 'synchronize'], 'CI runs on open, synchronize, and reopen without rechecking title edits')
-  const workflowCases = new Map()
-  for (const row of f.workflow.mutations) { string(row.name, `workflow.mutations.${row.name}.name`); string(row.target, `workflow.mutations.${row.name}.target`); assert.ok(['tag_if', 'validate_if', 'ci_pr_types', 'prepack_if', 'release_group', 'release_concurrency', 'prepack_packcheck'].includes(row.target), `workflow.mutations.${row.name} has unknown target ${row.target}`); if (row.target === 'ci_pr_types') assert.ok(Array.isArray(row.replacement), `workflow.mutations.${row.name} replacement must be an array`); else if (row.target === 'release_concurrency') assert.ok(typeof row.replacement === 'boolean' || typeof row.replacement === 'string', `workflow.mutations.${row.name} replacement must be a boolean or a string`); else string(row.replacement, `workflow.mutations.${row.name}.replacement`); workflowCases.set(row.name, row.target) }
-  for (const [name, target] of requiredWorkflowMutations) assert.equal(workflowCases.get(name), target, `workflow.mutations must retain required scenario ${name} with target ${target}`)
-  keys(f.git, ['tag', 'first_message', 'second_message', 'mutations'], 'git'); for (const field of ['tag', 'first_message', 'second_message']) string(f.git[field], `git.${field}`)
-  named(array(f.git.mutations, 'git.mutations', 2), 'git.mutations')
-  const gitCases = new Map()
-  for (const row of f.git.mutations) { keys(row, ['name', 'operation'], 'git.mutations row'); string(row.operation, `git.mutations.${row.name}.operation`); assert.ok([...requiredGitMutations.values()].includes(row.operation), `git.mutations.${row.name} has unknown operation ${row.operation}`); gitCases.set(row.name, row.operation) }
-  for (const [name, operation] of requiredGitMutations) assert.equal(gitCases.get(name), operation, `git.mutations must retain required scenario ${name} with operation ${operation}`)
-  return f
+/**
+ * Parse `steps.<id>.outputs.<key> <op> '<value>'`; anything else fails.
+ *
+ * @param {unknown} expression
+ * @param {string} where
+ */
+function parseStepOutputGate(expression, where) {
+  const match = STEP_OUTPUT_GATE.exec(normalizeIf(String(expression ?? '')))
+  assert.ok(match, `${where}: expected one step-output comparison (steps.<id>.outputs.<key> ${ALL_COMPARISONS.map((comparison) => comparison.wire).join(' or ')} '<value>'), found ${JSON.stringify(expression)}`)
+  return Object.freeze({ step: match[1], key: match[2], comparison: COMPARISON_BY_WIRE[match[3]], value: match[4] })
 }
 
-function loadFixtures(source = fs.readFileSync(fixturePath, 'utf8')) {
+/**
+ * How one fixture row checks a package script. The row carries exactly one of
+ * these keys; its value is the operand.
+ */
+const ScriptCheck = Object.freeze({
+  Includes: closed('includes', 'contains', { holds: (/** @type {unknown} */ script, /** @type {unknown} */ operand) => typeof script === 'string' && script.includes(String(operand)) }),
+  Excludes: closed('excludes', 'does not contain', { holds: (/** @type {unknown} */ script, /** @type {unknown} */ operand) => typeof script === 'string' && !script.includes(String(operand)) }),
+  Equals: closed('equals', 'equals', { holds: (/** @type {unknown} */ script, /** @type {unknown} */ operand) => script === operand }),
+  Absent: closed('absent', 'is not defined', { holds: (/** @type {unknown} */ script) => script === undefined }),
+})
+const ALL_SCRIPT_CHECKS = Object.freeze([ScriptCheck.Includes, ScriptCheck.Excludes, ScriptCheck.Equals, ScriptCheck.Absent])
+
+/**
+ * The controls of the release-tag case: each one moves the remote tag the way
+ * a guard-free push would, so the plain-push refusal is shown to be the guard.
+ */
+const GitTagMutation = Object.freeze({
+  ForcePush: closed('force_push', 'a forced push', {
+    /** @param {{ remote: string, work: string }} pair @param {Record<string, string>} env @param {string} tag @param {string} name */
+    apply(pair, env, tag, name) {
+      assert.equal(pushReleaseTag(pair, env, tag, ['--force']).status, 0, `${name}: a forced push must move the tag, or the non-force refusal proves nothing`)
+    },
+  }),
+  DeleteThenPush: closed('delete_then_push', 'a delete and re-push', {
+    /** @param {{ remote: string, work: string }} pair @param {Record<string, string>} env @param {string} tag @param {string} name */
+    apply(pair, env, tag, name) {
+      assert.equal(gitOk(pair.work, env, ['push', '--quiet', 'origin', `:refs/tags/${tag}`]).status, 0, `${name}: deleting the remote tag must be accepted`)
+      assert.equal(pushReleaseTag(pair, env, tag).status, 0, `${name}: re-pushing the recreated tag must be accepted`)
+    },
+  }),
+})
+const ALL_GIT_TAG_MUTATIONS = Object.freeze([GitTagMutation.ForcePush, GitTagMutation.DeleteThenPush])
+/** @type {Readonly<Record<string, (typeof ALL_GIT_TAG_MUTATIONS)[number]>>} */
+const GIT_TAG_MUTATION_BY_WIRE = Object.freeze(Object.fromEntries(ALL_GIT_TAG_MUTATIONS.map((mutation) => [mutation.wire, mutation])))
+
+/** @param {unknown} raw @param {string} where */
+function parseGitTagMutation(raw, where) {
+  assert.ok(typeof raw === 'string' && Object.hasOwn(GIT_TAG_MUTATION_BY_WIRE, raw), `${where}: operation ${JSON.stringify(raw)} is not one of ${ALL_GIT_TAG_MUTATIONS.map((mutation) => mutation.wire).join(', ')}`)
+  return GIT_TAG_MUTATION_BY_WIRE[/** @type {string} */ (raw)]
+}
+
+/* ── fixture loading ─────────────────────────────────────────────────────── */
+
+/** @param {unknown} value @param {string} where @returns {any} */
+function object(value, where) { assert.ok(value && typeof value === 'object' && !Array.isArray(value), `${where} must be an object`); return value }
+/** @param {unknown} value @param {string} where @returns {any[]} */
+function array(value, where) { assert.ok(Array.isArray(value) && value.length > 0, `${where} must be a non-empty list`); return value }
+/** @param {unknown} value @param {string} where @returns {string} */
+function string(value, where) { assert.ok(typeof value === 'string' && value.length > 0, `${where} must be a non-empty string`); return value }
+/** @param {unknown} value @param {readonly string[]} allowed @param {string} where */
+function keys(value, allowed, where) { object(value, where); assert.deepEqual(Object.keys(/** @type {object} */ (value)).sort(), [...allowed].sort(), `${where} keys drifted`) }
+/** @param {{ name: unknown }[]} rows @param {unknown} required @param {string} where */
+function exactNames(rows, required, where) {
+  const names = rows.map((row, index) => string(row.name, `${where}[${index}].name`))
+  assert.equal(new Set(names).size, names.length, `${where} names must be unique`)
+  assert.deepEqual(new Set(names), new Set(array(required, `manifest for ${where}`)), `${where} must name exactly the scenarios ${path.relative(REPO_ROOT, manifestPath)} requires`)
+}
+
+/** @param {string} source @param {string} where */
+function strictYaml(source, where) {
   const document = YAML.parseDocument(source, { strict: true, uniqueKeys: true })
-  if (document.errors.length) throw new Error(`fixture YAML invalid: ${document.errors.map((error) => error.message).join('; ')}`)
-  if (YAML.parseAllDocuments(source, { strict: true, uniqueKeys: true }).length !== 1) throw new Error('fixture YAML must contain exactly one document')
-  return validateFixtures(document.toJS())
+  if (document.errors.length) throw new Error(`${where}: fixture YAML invalid: ${document.errors.map((error) => error.message).join('; ')}`)
+  if (YAML.parseAllDocuments(source, { strict: true, uniqueKeys: true }).length !== 1) throw new Error(`${where}: fixture YAML must contain exactly one document`)
+  return document.toJS()
+}
+
+/**
+ * Validate the fixture against the manifest and the queue policy's workflow
+ * files, and parse every typed field at this boundary.
+ *
+ * @param {any} f
+ * @param {any} manifest
+ * @param {ReadonlySet<string>} workflowFiles the workflows the queue policy names
+ * @param {ReadonlySet<string>} checkedFiles every workflow the policy check reads
+ */
+function validateFixtures(f, manifest, workflowFiles, checkedFiles) {
+  keys(manifest, ['requiredValidTagNames', 'requiredInvalidTagNames', 'requiredPackageScriptNames', 'requiredForbiddenTextNames', 'requiredRecoveryGateNames', 'requiredContractMutationNames', 'requiredPolicyMutationNames', 'requiredGitMutationNames'], 'manifest')
+  keys(f, ['tags', 'package', 'workflow', 'git'], 'root')
+  keys(f.tags, ['valid', 'invalid'], 'tags')
+  exactNames(array(f.tags.valid, 'tags.valid'), manifest.requiredValidTagNames, 'tags.valid')
+  const valid = f.tags.valid.map((/** @type {any} */ row) => { keys(row, ['name', 'version', 'kind'], 'tags.valid row'); return Object.freeze({ name: row.name, version: string(row.version, `tags.valid.${row.name}.version`), kind: parseReleaseKind(row.kind) }) })
+  assert.deepEqual(new Set(valid.map((/** @type {any} */ row) => row.kind)), new Set(ALL_RELEASE_KINDS), 'tags.valid must cover every release kind')
+  exactNames(array(f.tags.invalid, 'tags.invalid'), manifest.requiredInvalidTagNames, 'tags.invalid')
+  for (const row of f.tags.invalid) { keys(row, ['name', 'input'], 'tags.invalid row'); string(row.input, `tags.invalid.${row.name}.input`) }
+
+  keys(f.package, ['release_build', 'content_build', 'test', 'test_env', 'scripts'], 'package')
+  for (const field of ['release_build', 'content_build', 'test']) string(f.package[field], `package.${field}`)
+  object(f.package.test_env, 'package.test_env')
+  exactNames(array(f.package.scripts, 'package.scripts'), manifest.requiredPackageScriptNames, 'package.scripts')
+  const scripts = f.package.scripts.map((/** @type {any} */ row) => {
+    const present = ALL_SCRIPT_CHECKS.filter((check) => Object.hasOwn(row, check.wire))
+    assert.equal(present.length, 1, `package.scripts.${row.name} must carry exactly one of ${ALL_SCRIPT_CHECKS.map((check) => check.wire).join(', ')}`)
+    const [check] = present
+    keys(row, ['name', 'script', check.wire], `package.scripts.${row.name}`)
+    if (check === ScriptCheck.Absent) assert.equal(row[check.wire], true, `package.scripts.${row.name}.${check.wire} must be true`)
+    else string(row[check.wire], `package.scripts.${row.name}.${check.wire}`)
+    return Object.freeze({ name: row.name, script: string(row.script, `package.scripts.${row.name}.script`), check, operand: row[check.wire] })
+  })
+
+  keys(f.workflow, ['ci_skipped_activity_types', 'forbidden_text', 'recovery_gates', 'contract_mutations', 'policy_mutations'], 'workflow')
+  array(f.workflow.ci_skipped_activity_types, 'workflow.ci_skipped_activity_types').forEach((type, index) => string(type, `workflow.ci_skipped_activity_types[${index}]`))
+  /** @param {any} row @param {string} where */
+  const knownFile = (row, where) => assert.ok(workflowFiles.has(row.file), `${where}.${row.name}.file ${JSON.stringify(row.file)} is not a workflow the queue policy names (${[...workflowFiles].join(', ')})`)
+  /** @param {any} row @param {string} where */
+  const checkedFile = (row, where) => assert.ok(checkedFiles.has(row.file), `${where}.${row.name}.file ${JSON.stringify(row.file)} is not a workflow in ${RepoPath.Workflows} (${[...checkedFiles].join(', ')})`)
+  exactNames(array(f.workflow.forbidden_text, 'workflow.forbidden_text'), manifest.requiredForbiddenTextNames, 'workflow.forbidden_text')
+  for (const row of f.workflow.forbidden_text) { keys(row, ['name', 'file', 'text'], 'workflow.forbidden_text row'); knownFile(row, 'workflow.forbidden_text'); string(row.text, `workflow.forbidden_text.${row.name}.text`) }
+  exactNames(array(f.workflow.recovery_gates, 'workflow.recovery_gates'), manifest.requiredRecoveryGateNames, 'workflow.recovery_gates')
+  for (const row of f.workflow.recovery_gates) {
+    keys(row, ['name', 'job', 'step', 'clauses'], 'workflow.recovery_gates row')
+    string(row.job, `workflow.recovery_gates.${row.name}.job`)
+    string(row.step, `workflow.recovery_gates.${row.name}.step`)
+    const clauses = array(row.clauses, `workflow.recovery_gates.${row.name}.clauses`)
+    clauses.forEach((clause, index) => string(clause, `workflow.recovery_gates.${row.name}.clauses[${index}]`))
+    assert.equal(new Set(clauses).size, clauses.length, `workflow.recovery_gates.${row.name}.clauses must be unique`)
+  }
+  // A contract mutation breaks a workflow this contract reads; a policy
+  // mutation may break any workflow the policy check reads, and names the
+  // tool rule that must refuse it.
+  for (const [list, required, fields, fileCheck] of [
+    ['contract_mutations', manifest.requiredContractMutationNames, ['name', 'file', 'find', 'replace'], knownFile],
+    ['policy_mutations', manifest.requiredPolicyMutationNames, ['name', 'file', 'find', 'replace', 'rule'], checkedFile],
+  ]) {
+    exactNames(array(f.workflow[list], `workflow.${list}`), required, `workflow.${list}`)
+    for (const row of f.workflow[list]) {
+      const expectedError = list === 'contract_mutations' && Object.hasOwn(row, 'error_contains')
+      keys(row, expectedError ? [...fields, 'error_contains'] : [...fields], `workflow.${list} row`)
+      fileCheck(row, `workflow.${list}`)
+      string(row.find, `workflow.${list}.${row.name}.find`)
+      assert.equal(typeof row.replace, 'string', `workflow.${list}.${row.name}.replace must be a string`)
+      if (expectedError) string(row.error_contains, `workflow.${list}.${row.name}.error_contains`)
+    }
+  }
+  for (const row of f.workflow.policy_mutations) string(row.rule, `workflow.policy_mutations.${row.name}.rule`)
+
+  keys(f.git, ['version', 'first_message', 'second_message', 'mutations'], 'git')
+  for (const field of ['version', 'first_message', 'second_message']) string(f.git[field], `git.${field}`)
+  exactNames(array(f.git.mutations, 'git.mutations'), manifest.requiredGitMutationNames, 'git.mutations')
+  const gitMutations = f.git.mutations.map((/** @type {any} */ row) => { keys(row, ['name', 'operation'], 'git.mutations row'); return Object.freeze({ name: row.name, operation: parseGitTagMutation(row.operation, `git.mutations.${row.name}`) }) })
+  assert.deepEqual(new Set(gitMutations.map((/** @type {any} */ row) => row.operation)), new Set(ALL_GIT_TAG_MUTATIONS), 'git.mutations must exercise every control')
+
+  return Object.freeze({ ...f, tags: Object.freeze({ valid, invalid: f.tags.invalid }), package: Object.freeze({ ...f.package, scripts }), git: Object.freeze({ ...f.git, mutations: gitMutations }) })
+}
+
+const config = loadReleaseConfig()
+const policy = loadQueuePolicy()
+/** Every workflow file the queue policy names: the files this contract reads. */
+const workflowFiles = new Set([...policy.required.map((check) => check.workflow), policy.releaseJob.workflow, ...policy.botJobs.map((job) => job.workflow)])
+/** Every workflow file the policy check reads: the whole workflows directory. */
+const checkedFiles = new Set(fs.readdirSync(path.join(REPO_ROOT, RepoPath.Workflows)).filter((file) => /\.ya?ml$/.test(file)))
+
+/** @param {string} [source] */
+function loadFixtures(source = fs.readFileSync(fixturePath, 'utf8')) {
+  return validateFixtures(strictYaml(source, fixturePath), strictYaml(fs.readFileSync(manifestPath, 'utf8'), manifestPath), workflowFiles, checkedFiles)
 }
 
 const fixtures = loadFixtures()
-const response = (entry) => ({ ok: true, headers: { get: (name) => name === 'link' ? entry.link ?? null : null }, json: async () => entry.body })
+
+/* ── the roles the queue policy assigns ──────────────────────────────────── */
+
+/**
+ * The library build check, the title guard, and the release job's kind, all
+ * read from the queue policy and the release config.
+ */
+function workflowRoles() {
+  const lib = policy.required.find((check) => check.job === LIB_JOB)
+  assert.ok(lib, `${RepoPath.QueuePolicy} must list the ${LIB_JOB} job as a required check: the library build runs the release PR's publish build`)
+  const guards = policy.required.filter((check) => check.guard)
+  assert.equal(guards.length, 1, `${RepoPath.QueuePolicy} must mark exactly one required check as the guard`)
+  // The release config's bot kinds that no bot job owns: what is left is the
+  // kind of the PR the release job opens. Exactly one must be left, or the
+  // library build cannot tell which bot PR carries the release content.
+  const botJobKinds = new Set(policy.botJobs.map((job) => job.kind))
+  const releaseKinds = [...config.botKinds].filter((kind) => !botJobKinds.has(kind))
+  assert.equal(releaseKinds.length, 1, `${RepoPath.ReleaseConfig} bot kinds ${[...config.botKinds].join(', ')} minus the bot jobs' kinds in ${RepoPath.QueuePolicy} must leave exactly the release job's kind, found ${releaseKinds.join(', ') || 'none'}`)
+  return Object.freeze({ lib, guard: guards[0], release: policy.releaseJob, releasePRKind: releaseKinds[0] })
+}
+
+const roles = workflowRoles()
+
+/** @param {string} value */
+function normalizeIf(value) { return value.replace(/\s+/g, ' ').trim() }
+
+/** @param {any} step @param {string} script */
+function runsScript(step, script) { return step.run === `${PACKAGE_MANAGER} ${script}` || step.run === `${PACKAGE_MANAGER} run ${script}` }
+
+/** @param {any} job @param {string} script @param {string} where */
+function scriptStep(job, script, where) {
+  const step = job.steps.find((/** @type {any} */ candidate) => runsScript(candidate, script))
+  assert.ok(step, `${where} must run the ${script} package script`)
+  return step
+}
+
+/** @param {ReturnType<typeof parseWorkflow>} parsed @param {string} jobId */
+function jobOf(parsed, jobId) { return object(parsed.workflow.jobs?.[jobId], `${parsed.file} job ${jobId}`) }
+
+/* ── fairtrade-owned contract ────────────────────────────────────────────── */
+
+/**
+ * The library build: the release PR (the release job's kind, decided by the
+ * classifier step) runs the publish build, every other PR the plain library
+ * build, and the tests run after either one.
+ *
+ * @param {ReturnType<typeof parseWorkflow>} ci
+ */
+function assertLibraryBuildContract(ci) {
+  const types = ci.trigger.pull_request?.types ?? []
+  for (const skipped of fixtures.workflow.ci_skipped_activity_types) assert.ok(!types.includes(skipped), `${ci.file} must not run on pull_request ${skipped}: a title or body edit would restart the library gate`)
+  const where = `${ci.file} job ${roles.lib.job}`
+  const lib = jobOf(ci, roles.lib.job)
+  const releaseBuild = scriptStep(lib, fixtures.package.release_build, where)
+  const contentBuild = scriptStep(lib, fixtures.package.content_build, where)
+  const tests = scriptStep(lib, fixtures.package.test, where)
+  const releaseGate = parseStepOutputGate(releaseBuild.if, `${where} ${fixtures.package.release_build} step`)
+  const contentGate = parseStepOutputGate(contentBuild.if, `${where} ${fixtures.package.content_build} step`)
+  assert.equal(releaseGate.comparison, Comparison.Equal, `${where}: the ${fixtures.package.release_build} step runs only on the release PR`)
+  assert.equal(contentGate.comparison, Comparison.NotEqual, `${where}: the ${fixtures.package.content_build} step runs on every other PR`)
+  assert.deepEqual([contentGate.step, contentGate.key, contentGate.value], [releaseGate.step, releaseGate.key, releaseGate.value], `${where}: both builds must read the same classifier output against the same kind, so exactly one of them runs`)
+  assert.equal(releaseGate.value, roles.releasePRKind, `${where}: the ${fixtures.package.release_build} step must run for the release job's PR kind ${roles.releasePRKind}`)
+  const classifier = lib.steps.findIndex((/** @type {any} */ step) => step.id === releaseGate.step)
+  assert.ok(classifier >= 0 && classifier < Math.min(lib.steps.indexOf(releaseBuild), lib.steps.indexOf(contentBuild)), `${where}: step ${releaseGate.step} must classify the PR before either build reads it`)
+  assert.equal(tests.if, undefined, `${where}: ${fixtures.package.test} runs unconditionally after the build`)
+  for (const [name, value] of Object.entries(fixtures.package.test_env)) assert.equal(tests.env?.[name], value, `${where}: ${fixtures.package.test} must set ${name}`)
+  assert.ok(lib.steps.indexOf(tests) > Math.max(lib.steps.indexOf(releaseBuild), lib.steps.indexOf(contentBuild)), `${where}: tests run after the build they exercise`)
+}
+
+/**
+ * The merge-group entry resolution fails closed: an entry PR that cannot be
+ * identified fails the guard instead of warning and passing.
+ *
+ * @param {ReturnType<typeof parseWorkflow>} guard
+ */
+function assertGuardFailsClosed(guard) {
+  const job = jobOf(guard, roles.guard.job)
+  const entry = job.steps.find((/** @type {any} */ step) => step.id === WorkflowStepId.GroupEntry)
+  assert.ok(entry, `${guard.file} job ${roles.guard.job} must keep step ${WorkflowStepId.GroupEntry}, which resolves the merge-group entry PR`)
+  const run = string(entry.run, `${guard.file} step ${WorkflowStepId.GroupEntry} run`)
+  assert.doesNotMatch(run, /\bexit 0\b/, `${guard.file} step ${WorkflowStepId.GroupEntry} must never exit 0 on an unresolved entry`)
+  assert.match(run, /\bexit [1-9][0-9]*\b/, `${guard.file} step ${WorkflowStepId.GroupEntry} must fail closed when the entry PR cannot be resolved`)
+}
+
+/** @param {ReturnType<typeof parseWorkflow>} release */
+function assertReleaseRunIsNeverCancelled(release) {
+  assert.equal(release.workflow.concurrency?.['cancel-in-progress'], false, `${release.file}: a release run is never cancelled by a later one`)
+}
+
+/**
+ * The credential job can only run after the separate, read-only bundle check.
+ * A status function in its if would override GitHub's implicit success gate.
+ *
+ * @param {ReturnType<typeof parseWorkflow>} release
+ */
+function assertIndependentBundleVerification(release) {
+  const writer = jobOf(release, roles.release.job)
+  const verify = jobOf(release, 'verify')
+  assert.ok(Array.isArray(writer.needs) && writer.needs.includes('verify'), `${release.file}: the release job must need the independent verifier`)
+  assert.doesNotMatch(normalizeIf(String(writer.if ?? '')), /\b(?:always|cancelled|failure|success)\s*\(/i, `${release.file}: the release job must not bypass the verifier with a status function`)
+  assert.deepEqual(verify.needs, ['plan'], `${release.file}: the verifier must depend on the plan`)
+  assert.equal(normalizeIf(String(verify.if ?? '')), "needs.plan.outputs.proceed == 'true'", `${release.file}: the verifier must run whenever the plan proceeds`)
+  assert.equal(verify['runs-on'], 'ubuntu-latest', `${release.file}: the verifier must use a fresh hosted runner`)
+  assert.equal(verify['timeout-minutes'], 10, `${release.file}: the verifier must have a bounded timeout`)
+  assert.deepEqual(verify.permissions, { contents: 'read' }, `${release.file}: the verifier must have only contents read permission`)
+  assert.doesNotMatch(JSON.stringify(verify), /\$\{\{\s*secrets(?:\.|\[)|actions\/create-github-app-token@/i, `${release.file}: the verifier must not receive App credentials`)
+  assert.equal(verify['continue-on-error'], undefined, `${release.file}: the verifier must not ignore a failure`)
+  for (const step of verify.steps) assert.equal(step['continue-on-error'], undefined, `${release.file}: verifier steps must not ignore a failure`)
+  const checkout = verify.steps.find((/** @type {any} */ step) => step.uses?.startsWith('actions/checkout@') && step.with?.repository === undefined)
+  assert.equal(checkout?.with?.['fetch-depth'], 0, `${release.file}: the verifier must check out full history`)
+  assert.equal(checkout?.with?.['fetch-tags'], true, `${release.file}: the verifier must check out tags`)
+  assert.equal(checkout?.with?.['persist-credentials'], false, `${release.file}: the verifier checkout must not retain credentials`)
+
+  /** @param {string} name @param {string} gate */
+  const check = (name, gate) => {
+    const matches = verify.steps.filter((/** @type {any} */ step) => step.name === name)
+    assert.equal(matches.length, 1, `${release.file}: the verifier must contain exactly one ${name} step`)
+    assert.equal(normalizeIf(String(matches[0].if ?? '')), gate, `${release.file}: ${name} must run on its planned action`)
+    assert.match(String(matches[0].run ?? ''), /^set -euo pipefail\n/, `${release.file}: ${name} must fail closed`)
+    return matches[0]
+  }
+  const tagCheck = check('Verify the prepared tag', "needs.plan.outputs.tag-action == 'tag'")
+  const releaseCheck = check('Verify the prepared release commit', "needs.plan.outputs.action == 'open-pr' && needs.plan.outputs.push == 'true'")
+  assert.equal(tagCheck.env?.CANDIDATE, '${{ needs.plan.outputs.candidate }}', `${release.file}: the verifier must compare the planned candidate`)
+  assert.equal(tagCheck.env?.TAG, '${{ needs.plan.outputs.tag }}', `${release.file}: the verifier must compare the planned tag`)
+  const plan = '"${RUNNER_TEMP}/release-intent" plan --branch origin/main --mode "${{ vars.RELEASE_BATCH_MODE }}" --verdict taggable --floor "${{ vars.RELEASE_BATCH_FLOOR }}" | tee "${plan_file}"'
+  const planAt = tagCheck.run.indexOf(plan)
+  assert.ok(tagCheck.run.split('\n').includes(plan), `${release.file}: the verifier must independently recompute the tag plan without masking failures`)
+  assert.match(tagCheck.run, /^plan_file="\$\{RUNNER_TEMP\}\/verified-plan.txt"$/m, `${release.file}: the verifier must capture the fresh plan`)
+  assert.ok(tagCheck.run.indexOf('git fetch --no-tags origin main') >= 0 && tagCheck.run.indexOf('git fetch --no-tags origin main') < planAt, `${release.file}: the verifier must fetch main before recomputing`)
+  assert.ok(tagCheck.run.indexOf('git fetch --tags origin') >= 0 && tagCheck.run.indexOf('git fetch --tags origin') < planAt, `${release.file}: the verifier must fetch tags before recomputing`)
+  assert.ok(tagCheck.run.indexOf('TIP="$(git rev-parse origin/main)"') >= 0 && tagCheck.run.indexOf('TIP="$(git rev-parse origin/main)"') < planAt, `${release.file}: the verifier must record the fetched tip before recomputing`)
+  assert.ok(tagCheck.run.indexOf('git fetch --no-tags bundles/tag.bundle') > planAt, `${release.file}: the verifier must recompute before fetching the prepared tag`)
+  assert.match(tagCheck.run, /index\(\$0, key "="\) == 1/, `${release.file}: the verifier must parse the fresh plan by exact key`)
+  assert.match(tagCheck.run, /if \(count != 1 \|\| value == ""\)/, `${release.file}: the verifier must reject missing or repeated fresh plan values`)
+  assert.match(tagCheck.run, /^  ' "\$\{plan_file\}"$/m, `${release.file}: the verifier must read the captured fresh plan`)
+  assert.match(tagCheck.run, /^FRESH_ACTION="\$\(plan_value action\)"$/m, `${release.file}: the verifier must parse the recomputed action`)
+  assert.match(tagCheck.run, /^FRESH_CANDIDATE="\$\(plan_value candidate\)"$/m, `${release.file}: the verifier must parse the recomputed candidate`)
+  assert.match(tagCheck.run, /^FRESH_TAG="\$\(plan_value tag\)"$/m, `${release.file}: the verifier must parse the recomputed tag`)
+  assert.match(tagCheck.run, /^FRESH_VERSION="\$\(plan_value version\)"$/m, `${release.file}: the verifier must parse the recomputed version`)
+  assert.match(tagCheck.run, /^test "\$\{FRESH_ACTION\}" = tag \|\| \{ echo "[^"]+"; exit 1; \}$/m, `${release.file}: the verifier must require a tag action`)
+  assert.match(tagCheck.run, /^test "\$\{FRESH_CANDIDATE\}" = "\$\{CANDIDATE\}" \|\| \{ echo "[^"]+"; exit 1; \}$/m, `${release.file}: the verifier must compare the recomputed candidate`)
+  assert.match(tagCheck.run, /^test "\$\{FRESH_TAG\}" = "\$\{TAG\}" \|\| \{ echo "[^"]+"; exit 1; \}$/m, `${release.file}: the verifier must compare the recomputed tag`)
+  assert.ok(tagCheck.run.indexOf('test "${FRESH_ACTION}" = tag') < tagCheck.run.indexOf('git fetch --no-tags bundles/tag.bundle'), `${release.file}: the action check must precede the bundle fetch`)
+  assert.ok(tagCheck.run.indexOf('test "${FRESH_CANDIDATE}" = "${CANDIDATE}"') < tagCheck.run.indexOf('git fetch --no-tags bundles/tag.bundle'), `${release.file}: the candidate comparison must precede the bundle fetch`)
+  assert.ok(tagCheck.run.indexOf('test "${FRESH_TAG}" = "${TAG}"') < tagCheck.run.indexOf('git fetch --no-tags bundles/tag.bundle'), `${release.file}: the tag comparison must precede the bundle fetch`)
+  assert.equal(releaseCheck.env?.SOURCE, '${{ needs.plan.outputs.source }}', `${release.file}: the verifier must receive the prepared source`)
+  assert.match(releaseCheck.run, /^test "\$\{SOURCE\}" = "\$\{TIP\}" \|\| \{ echo "[^"]+"; exit 1; \}$/m, `${release.file}: the verifier must require the prepared source to equal the current tip`)
+  assert.ok(releaseCheck.run.indexOf('git fetch --no-tags origin main') >= 0 && releaseCheck.run.indexOf('git fetch --no-tags origin main') < releaseCheck.run.indexOf('TIP="$(git rev-parse origin/main)"'), `${release.file}: the verifier must fetch main before recording the release tip`)
+  assert.ok(releaseCheck.run.indexOf('git fetch --tags origin') >= 0 && releaseCheck.run.indexOf('git fetch --tags origin') < releaseCheck.run.indexOf('TIP="$(git rev-parse origin/main)"'), `${release.file}: the verifier must fetch tags before checking release content`)
+  assert.ok(releaseCheck.run.indexOf('TIP="$(git rev-parse origin/main)"') < releaseCheck.run.indexOf('test "${SOURCE}" = "${TIP}"') && releaseCheck.run.indexOf('test "${SOURCE}" = "${TIP}"') < releaseCheck.run.indexOf('git bundle verify bundles/release.bundle'), `${release.file}: the verifier must compare the current tip before checking the bundle`)
+  assert.match(releaseCheck.run, /check-title --base "\$\{TIP\}" --head "\$\{RELEASE\}"/, `${release.file}: the title check must use the fetched tip`)
+  assert.match(releaseCheck.run, /release-pr --check --branch "\$\{TIP\}"/, `${release.file}: the release content check must use the fetched tip`)
+  const open = writer.steps.find((/** @type {any} */ step) => step.name === 'Open the release PR')
+  const update = writer.steps.find((/** @type {any} */ step) => step.name === 'Update the release PR')
+  assert.ok(releaseCheck.env?.EXPECTED_TITLE, `${release.file}: the verifier must receive the intended PR title`)
+  assert.equal(releaseCheck.env.EXPECTED_TITLE, open?.env?.TITLE, `${release.file}: the verifier and open step must use the same intended title`)
+  assert.equal(releaseCheck.env.EXPECTED_TITLE, update?.env?.TITLE, `${release.file}: the verifier and update step must use the same intended title`)
+  assert.match(releaseCheck.run, /^test "\$\{TITLE\}" = "\$\{EXPECTED_TITLE\}" \|\| \{ echo "[^"]+"; exit 1; \}$/m, `${release.file}: the verifier must check the prepared commit title against the intended PR title`)
+}
+
+/**
+ * A fresh existing branch still needs a queue decision. Branch writes, unlike
+ * queue reads and arm/hold decisions, run only when preparation says to push.
+ * The fixture names every step and its complete set of conjunctive gates.
+ *
+ * @param {ReturnType<typeof parseWorkflow>} release
+ */
+function assertReleaseRecoveryGates(release) {
+  for (const row of fixtures.workflow.recovery_gates) {
+    const job = jobOf(release, row.job)
+    const matching = job.steps.filter((/** @type {any} */ step) => step.name === row.step)
+    assert.equal(matching.length, 1, `${release.file} job ${row.job} must contain exactly one step named ${row.step}: ${row.name}`)
+    const clauses = normalizeIf(string(matching[0].if, `${release.file} step ${row.step} if`)).split(/\s*&&\s*/)
+    assert.equal(new Set(clauses).size, clauses.length, `${release.file} step ${row.step} must not repeat a gate: ${row.name}`)
+    assert.deepEqual(new Set(clauses), new Set(row.clauses.map(normalizeIf)), `${release.file} step ${row.step} has the wrong gates: ${row.name}`)
+  }
+}
+
+/**
+ * Every workflow that builds the release tool checks out the same commit of
+ * the same module, and setup-go and the build in each job read that module.
+ * A confined, cache-free build uses the module via -C; the general guard
+ * builds run from the module directory with the module checksum cache.
+ *
+ * @param {ReadonlyMap<string, ReturnType<typeof parseWorkflow>>} byFile
+ */
+function assertToolCheckouts(byFile) {
+  /** @type {any[]} */
+  const checkouts = []
+  /** @type {Set<string>} */
+  const building = new Set()
+  for (const parsed of byFile.values()) {
+    for (const [jobId, job] of Object.entries(/** @type {Record<string, any>} */ (parsed.workflow.jobs ?? {}))) {
+      const steps = job.steps ?? []
+      const where = `${parsed.file} job ${jobId}`
+      const checkout = steps.find((/** @type {any} */ step) => step.with?.repository !== undefined)
+      const build = steps.find((/** @type {any} */ step) => typeof step.run === 'string' && /^\s*go build\b/m.test(step.run) && step.run.includes('./cmd/release-intent'))
+      if (!checkout) {
+        assert.equal(build, undefined, `${where}: a release-tool build must check out the pinned tool module`)
+        continue
+      }
+      checkouts.push(checkout.with)
+      building.add(parsed.file)
+      const sparse = string(checkout.with['sparse-checkout'], `${where} tool checkout sparse-checkout`).trim()
+      assert.equal(checkout.with.repository, RELEASE_TOOL_REPOSITORY, `${where}: the tool must come from the shared infra repository`)
+      assert.equal(sparse, RELEASE_TOOL_MODULE, `${where}: the checkout must read the release tool module`)
+      const moduleDir = `${checkout.with.path}/${sparse}`
+      const setup = steps.find((/** @type {any} */ step) => step.with?.['go-version-file'] !== undefined)
+      assert.equal(setup?.with?.['go-version-file'], `${moduleDir}/${GoModuleFile.Mod}`, `${where}: setup-go must read the tool module's Go version`)
+      assert.ok(build, `${where}: the tool must be built from ${moduleDir}`)
+      if (setup?.with?.cache === false || steps.some((/** @type {any} */ step) => typeof step.run === 'string' && step.run.includes('verify-tag'))) {
+        assert.equal(setup?.with?.cache, false, `${where}: a confined verification build must disable the Go cache`)
+        assert.equal(setup?.with?.['cache-dependency-path'], undefined, `${where}: a cache-free build must not specify a cache dependency path`)
+        assert.equal(build.run, `go build -C ${moduleDir} -o "\${RUNNER_TEMP}/release-intent" ./cmd/release-intent`, `${where}: the confined build must read the tool module`)
+        assert.equal(build.env?.GOWORK, 'off', `${where}: the confined build must disable the Go workspace`)
+        assert.equal(build['working-directory'], undefined, `${where}: the confined build must resolve the module from the checkout root`)
+      } else {
+        assert.equal(setup?.with?.['cache-dependency-path'], `${moduleDir}/${GoModuleFile.Sum}`, `${where}: setup-go must key its cache on the tool module's checksums`)
+        assert.equal(build['working-directory'], moduleDir, `${where}: the tool must build from its module directory ${moduleDir}`)
+      }
+    }
+  }
+  assert.ok(building.has(roles.guard.workflow), `${roles.guard.workflow} must build the release tool its checks run`)
+  for (const checkout of checkouts) assert.deepEqual(checkout, checkouts[0], 'every workflow must check out the same release tool module at the same commit')
+}
+
+/** @param {ReadonlyMap<string, ReturnType<typeof parseWorkflow>>} byFile */
+function assertForbiddenText(byFile) {
+  for (const row of fixtures.workflow.forbidden_text) assert.ok(!byFile.get(row.file)?.text.includes(row.text), `${row.file} must not contain ${JSON.stringify(row.text)}: ${row.name}`)
+}
+
+/** @param {ReadonlyMap<string, ReturnType<typeof parseWorkflow>>} byFile */
+function assertWorkflowContract(byFile) {
+  /** @param {string} file */
+  const at = (file) => { const parsed = byFile.get(file); assert.ok(parsed, `${file} must exist in ${RepoPath.Workflows}`); return parsed }
+  assertLibraryBuildContract(at(roles.lib.workflow))
+  assertGuardFailsClosed(at(roles.guard.workflow))
+  assertReleaseRunIsNeverCancelled(at(roles.release.workflow))
+  assertIndependentBundleVerification(at(roles.release.workflow))
+  assertReleaseRecoveryGates(at(roles.release.workflow))
+  assertToolCheckouts(byFile)
+  assertForbiddenText(byFile)
+}
+
+function readWorkflows() { return new Map([...checkedFiles].map((file) => [file, readWorkflow(file)])) }
+
+/* ── the release tool's own checks, as title-guard runs them ─────────────── */
+
+/**
+ * The guard's config and policy checks: the steps that invoke the tool's
+ * config and policy commands. Naming a repository file elsewhere in the job
+ * (for example, the adopting-PR config probe) is not a second check.
+ */
+function guardCheckSteps() {
+  const steps = jobOf(readWorkflow(roles.guard.workflow), roles.guard.job).steps
+  /** @param {string} command @param {string} file */
+  const naming = (command, file) => {
+    const found = steps.filter((/** @type {any} */ step) => typeof step.run === 'string' && step.run.includes(`release-intent ${command}`) && step.run.includes(file))
+    assert.equal(found.length, 1, `${roles.guard.workflow} job ${roles.guard.job} must run exactly one ${command} over ${file}`)
+    return found[0]
+  }
+  const policyStep = naming('check-workflows', RepoPath.QueuePolicy)
+  assert.ok(policyStep.run.includes(RepoPath.Workflows), `${roles.guard.workflow}: the policy check must read ${RepoPath.Workflows}`)
+  return Object.freeze({ config: naming('check-config', RepoPath.ReleaseConfig), policy: policyStep })
+}
+
+/**
+ * Run one guard step's script with bash in a directory, never writing the
+ * test step's own runner files.
+ *
+ * @param {string} run
+ * @param {string} cwd
+ */
+function runGuardStep(run, cwd) {
+  const env = { ...process.env }
+  for (const name of RUNNER_STEP_FILES) delete env[name]
+  const result = spawnSync('bash', ['-c', `set -euo pipefail\n${run}`], { cwd, env, encoding: 'utf8', timeout: TOOL_CHECK_TIMEOUT_MS, killSignal: 'SIGKILL' })
+  if (result.error) assert.fail(`release-guard test: ${JSON.stringify(run)} could not run in ${cwd} (${result.error.message}); keep bash on PATH and the check under ${TOOL_CHECK_TIMEOUT_MS}ms.`)
+  return { status: result.status, output: `${result.stdout}${result.stderr}` }
+}
+
+/* ── tests ───────────────────────────────────────────────────────────────── */
 
 test('fixture loader is strict and rejects unknown keys', () => { assert.throws(() => loadFixtures(`${fs.readFileSync(fixturePath, 'utf8')}\nunknown: true\n`), /keys drifted/) })
 
-test('release title and tag grammar is canonical SemVer', () => {
-  for (const row of fixtures.titles.valid) { const parsed = parseReleaseTitle(row.input); assert.equal(parsed.version, row.version, row.name); assert.equal(parsed.tag, row.tag, row.name); assert.equal(titleToFairtradeTag(row.input), row.tag); assert.equal(parseFairtradeTag(row.tag).version, row.version); assert.equal(validatePackageVersion(row.input, row.version), row.version) }
-  for (const row of fixtures.titles.invalid) assert.throws(() => parseReleaseTitle(row.input), /expected exactly/, row.name)
-  for (const row of fixtures.tags.invalid) assert.throws(() => parseFairtradeTag(row.input), /expected exactly/, row.name)
-  assert.throws(() => validatePackageVersion(fixtures.titles.valid[0].input, '9.9.9'), /does not match/)
+test('release tag grammar follows the release config prefix', () => {
+  for (const row of fixtures.tags.valid) {
+    const tag = `${config.tagPrefix}${row.version}`
+    const parsed = parseReleaseTag(tag, config.tagPrefix)
+    assert.equal(parsed.tag, tag, row.name)
+    assert.equal(parsed.version, row.version, row.name)
+    assert.equal(parsed.kind, row.kind, row.name)
+  }
+  for (const row of fixtures.tags.invalid) assert.throws(() => parseReleaseTag(row.input, config.tagPrefix), /expected exactly/, row.name)
+  assert.throws(() => parseReleaseTag(`${config.tagPrefix}${fixtures.tags.valid[0].version}`, ''), /tag prefix/, 'an empty prefix fails closed instead of accepting any tag')
 })
 
-test('maintainer authority and review reduction fail closed', () => {
-  for (const value of fixtures.permissions.allowed) assert.equal(isMaintainerPermission(value), true)
-  for (const value of fixtures.permissions.denied) assert.equal(isMaintainerPermission(value), false)
-  for (const row of fixtures.reviews) assert.equal(reduceLatestReviewApproval(row.reviews, new Set(row.maintainers)), row.approved, row.name)
+test('the package scripts keep the build and test composition', () => {
+  const scripts = object(readPackageManifest().scripts, `${RepoPath.PackageManifest} scripts`)
+  for (const row of fixtures.package.scripts) assert.ok(row.check.holds(scripts[row.script], row.operand), `${RepoPath.PackageManifest} script ${row.script} ${row.check.label} ${JSON.stringify(row.operand)}: ${row.name}`)
 })
 
-test('merged pull request API metadata is validated', async () => {
-  assert.equal(validateMergedPullRequest(fixtures.metadata.valid, 'maintain').tag, 'fairtrade-v0.0.11')
-  for (const row of fixtures.metadata.invalid) assert.throws(() => validateMergedPullRequest(row.payload ?? { ...fixtures.metadata.valid, ...row.patch }, 'maintain'), Error, row.name)
-  assert.throws(() => validateMergedPullRequest(fixtures.metadata.valid, 'write'), /only admin or maintain/)
-  const queue = [...fixtures.github.resolve.responses]; const paths = []
-  const client = new GitHubReleaseClient({ token: 'test', repository: 'peasant-labs/fairtrade-design-system', fetchImpl: async (url, options) => { assert.equal(options.headers['x-github-api-version'], '2026-03-10'); paths.push(new URL(url).pathname.replace('/repos/peasant-labs/fairtrade-design-system', '') + new URL(url).search); return response(queue.shift()) } })
-  assert.equal((await client.resolveMergedPullRequest(16)).mergeSha, fixtures.github.resolve.expected_merge_sha)
-  assert.deepEqual(paths, fixtures.github.resolve.expected_paths)
-  for (const row of fixtures.github.resolve.invalid) await assert.rejects(() => runResolve(row.mutation), Error, row.name)
-  const malformed = new GitHubReleaseClient({ token: 'test', repository: 'peasant-labs/fairtrade-design-system', fetchImpl: async () => response(fixtures.github.malformed_response) })
-  await assert.rejects(() => malformed.resolveMergedPullRequest(16), /user.login/); await assert.rejects(() => malformed.reviews(16), /reviews page 1 must be an array/)
+test('the merge-queue workflows keep the fairtrade-owned contract', () => {
+  assertWorkflowContract(readWorkflows())
 })
 
-function resolveResponses(mutation) {
-  const responses = structuredClone(fixtures.github.resolve.responses)
-  if (mutation === 'missing_merged') responses[2].body = []
-  if (mutation === 'resolve_timeline_repository') responses[2].body[0].commit_url = 'https://api.github.com/repos/other/project/commits/cccccccccccccccccccccccccccccccccccccccc'
-  if (mutation === 'resolve_disconnected_commit') { responses[3].body.status = 'diverged'; responses[3].body.merge_base_commit.sha = 'dddddddddddddddddddddddddddddddddddddddd' }
-  if (![...requiredResolveMutations.values()].includes(mutation)) throw new Error(`resolve fixture mutation ${mutation} is unknown; add it to the required mutation inventory before using it`)
-  return responses
-}
+test('each contract mutation is caught by its contract assertion', () => {
+  const byFile = readWorkflows()
+  for (const mutation of fixtures.workflow.contract_mutations) {
+    const original = /** @type {ReturnType<typeof parseWorkflow>} */ (byFile.get(mutation.file))
+    assert.ok(original.text.includes(mutation.find), `${mutation.name}: find text is stale against ${mutation.file}`)
+    const changed = original.text.replaceAll(mutation.find, mutation.replace)
+    assert.notEqual(changed, original.text, `${mutation.name}: replacement must change ${mutation.file}`)
+    const mutated = new Map(byFile).set(mutation.file, parseWorkflow(mutation.file, changed))
+    assert.throws(() => assertWorkflowContract(mutated), (error) => {
+      assert.equal(error.name, 'AssertionError', mutation.name)
+      if (mutation.error_contains) assert.ok(error.message.includes(mutation.error_contains), `${mutation.name}: wrong contract assertion: ${error.message}`)
+      return true
+    }, mutation.name)
+  }
+})
 
-function runResolve(mutation) {
-  const repository = 'peasant-labs/fairtrade-design-system'
-  const queue = [...resolveResponses(mutation)]
-  const client = new GitHubReleaseClient({ token: 'test', repository, fetchImpl: async () => response(queue.shift()) })
-  return client.resolveMergedPullRequest(16)
-}
-
-function nativeStackResponses(mutation) {
-  const responses = structuredClone(fixtures.github.native_stack.valid.responses)
-  if (mutation === 'stack_trunk') { responses[0].body.stack.base.ref = 'develop'; responses[2].body.base.ref = 'develop' }
-  if (mutation === 'wrong_member') responses[2].body.pull_requests[1].number = 80
-  if (mutation === 'wrong_repository') responses[2].body.pull_requests[1].head.repo.id = 99
-  if (mutation === 'unmerged_member') { responses[2].body.pull_requests[1].state = 'open'; responses[2].body.pull_requests[1].merged_at = null }
-  if (mutation === 'missing_sha') responses[3].body[0].commit_id = ''
-  if (mutation === 'timeline_repository') responses[3].body[0].commit_url = 'https://api.github.com/repos/other/project/commits/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
-  if (mutation === 'disconnected_commit') { responses[4].body.status = 'diverged'; responses[4].body.merge_base_commit.sha = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' }
-  if (mutation === 'direct_non_main') { delete responses[0].body.stack; responses.length = 2 }
-  if (![...requiredNativeStackMutations.values()].includes(mutation)) throw new Error(`native stack fixture mutation ${mutation} is unknown; add it to the required mutation inventory before using it`)
-  return responses
-}
-
-test('native stack fixture loader rejects required-case deletion, replacement, and unknown mutations', () => {
-  for (const row of fixtures.github.native_stack.loader_invalid) {
-    if (row.operation === 'unknown_dispatch') {
-      assert.throws(() => nativeStackResponses(row.replacement), /fixture mutation .* is unknown/, row.name)
-      continue
+test('the release tool accepts this repository and refuses each policy mutation', (t) => {
+  const steps = guardCheckSteps()
+  const configCheck = runGuardStep(steps.config.run, REPO_ROOT)
+  if (configCheck.status === COMMAND_NOT_FOUND) {
+    const message = `the release tool title-guard runs is not on PATH (${JSON.stringify(steps.config.run)} exited ${COMMAND_NOT_FOUND}). Build it as ${roles.guard.workflow} does, from the tool checkout every workflow pins, and put it on PATH.`
+    if (IN_CI) assert.fail(`${message} CI builds it before the library tests, so this is a broken build step.`)
+    t.skip(message)
+    return
+  }
+  assert.equal(configCheck.status, 0, `${JSON.stringify(steps.config.run)} must accept ${RepoPath.ReleaseConfig}:\n${configCheck.output}`)
+  const policyCheck = runGuardStep(steps.policy.run, REPO_ROOT)
+  assert.equal(policyCheck.status, 0, `${JSON.stringify(steps.policy.run)} must accept ${RepoPath.Workflows}:\n${policyCheck.output}`)
+  for (const mutation of fixtures.workflow.policy_mutations) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fairtrade-release-policy-'))
+    try {
+      for (const relative of [RepoPath.ReleaseConfig, RepoPath.QueuePolicy, RepoPath.Workflows]) fs.cpSync(path.join(REPO_ROOT, relative), path.join(dir, relative), { recursive: true })
+      const file = path.join(dir, RepoPath.Workflows, mutation.file)
+      const original = fs.readFileSync(file, 'utf8')
+      assert.ok(original.includes(mutation.find), `${mutation.name}: find text is stale against ${mutation.file}`)
+      fs.writeFileSync(file, original.replaceAll(mutation.find, mutation.replace))
+      const result = runGuardStep(steps.policy.run, dir)
+      assert.notEqual(result.status, 0, `${mutation.name}: the policy check must refuse the mutated ${mutation.file}, but it passed:\n${result.output}`)
+      assert.ok(result.output.includes(mutation.file), `${mutation.name}: the refusal must name ${mutation.file}, the file the row mutated:\n${result.output}`)
+      assert.ok(result.output.includes(`rule ${mutation.rule} in ${mutation.file}`), `${mutation.name}: the refusal must come from rule ${mutation.rule} in ${mutation.file}, the rule the row breaks:\n${result.output}`)
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true })
     }
-    const changed = structuredClone(fixtures)
-    const index = changed.github.native_stack.invalid.findIndex((scenario) => scenario.name === row.scenario)
-    assert.notEqual(index, -1, row.name)
-    if (row.operation === 'delete') changed.github.native_stack.invalid.splice(index, 1)
-    else changed.github.native_stack.invalid[index].mutation = row.replacement
-    assert.throws(() => loadFixtures(YAML.stringify(changed)), /must retain required scenario|unknown mutation/, row.name)
   }
 })
 
-test('canonical native stack metadata resolves the merged release commit and fails closed', async () => {
-  const repository = 'peasant-labs/fairtrade-design-system'
-  const run = async (responses, paths = []) => {
-    const queue = [...responses]
-    const client = new GitHubReleaseClient({ token: 'test', repository, fetchImpl: async (url, options) => { assert.equal(options.headers['x-github-api-version'], '2026-03-10'); paths.push(new URL(url).pathname.replace(`/repos/${repository}`, '') + new URL(url).search); return response(queue.shift()) } })
-    return client.resolveMergedPullRequest(78)
-  }
-  const paths = []
-  assert.equal((await run(fixtures.github.native_stack.valid.responses, paths)).mergeSha, fixtures.github.native_stack.valid.expected_merge_sha)
-  assert.deepEqual(paths, fixtures.github.native_stack.valid.expected_paths)
-  for (const row of fixtures.github.native_stack.invalid) await assert.rejects(() => run(nativeStackResponses(row.mutation)), Error, row.name)
-})
-
-test('paginated latest review state wins in API order', async () => {
-  for (const scenario of fixtures.github.pagination) {
-    const queue = [...scenario.responses]; const paths = []
-    const client = new GitHubReleaseClient({ token: 'test', repository: 'peasant-labs/fairtrade-design-system', fetchImpl: async (url) => { paths.push(new URL(url).pathname.replace('/repos/peasant-labs/fairtrade-design-system', '') + new URL(url).search); return response(queue.shift()) } })
-    assert.equal(await client.hasMaintainerApproval(16), scenario.approved, scenario.name); assert.deepEqual(paths, scenario.expected_paths, scenario.name)
-  }
-})
-
-function normalizeIf(value) { return value.replace(/\s+/g, ' ').trim() }
-function assertPrepackComposition(scripts) {
-  assert.match(scripts.prepack, /assert-package-provenance/)
-  assert.match(scripts.prepack, /\bpnpm build:lib\b/)
-  assert.match(scripts.prepack, /\bpnpm pack:check\b/)
-  assert.doesNotMatch(scripts.prepack, /\btest:/)
-  assert.doesNotMatch(scripts['build:lib'], /\btest:|\.test\./)
-  assert.equal(scripts['prebuild:lib'], undefined)
-}
-function assertLibContract(ci) {
-  assert.deepEqual(ci.on.pull_request.types, fixtures.workflow.ci_pr_types)
-  const lib = ci.jobs.lib
-  const builds = lib.steps.filter(step => ['pnpm prepack', 'pnpm build:lib'].includes(step.run))
-  assert.deepEqual(builds.map(step => step.run), ['pnpm prepack'])
-  assert.equal(builds[0].if, undefined)
-  assert.notEqual(lib['continue-on-error'], true)
-  for (const step of builds) assert.notEqual(step['continue-on-error'], true)
-  assert.ok(!lib.steps.some(step => step.run === 'pnpm pack:check'))
-  const tests = lib.steps.find(step => step.run === 'pnpm test:lib')
-  assert.ok(tests); assert.equal(tests.if, undefined)
-  assert.equal(tests.env?.NODE_COMPILE_CACHE, '${{ runner.temp }}/node-compile-cache')
-  assert.notEqual(tests['continue-on-error'], true)
-  assert.ok(lib.steps.indexOf(tests) > Math.max(...builds.map(step => lib.steps.indexOf(step))))
-  const scripts = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).scripts
-  assert.equal(scripts['test:lib'], 'node scripts/run-test-lib.mjs')
-  assert.ok(scripts['test:lib:serial'].includes('pnpm test:pi-transcript:mounted'))
-  assert.ok(scripts['test:lib:serial'].includes('pnpm test:vitest'))
-  assertPrepackComposition(scripts)
-}
-test('required library CI runs canonical prepack on every pull request', () => {
-  const ci = YAML.parse(fs.readFileSync(path.join(root, '.github/workflows/ci.yml'), 'utf8'))
-  assertLibContract(ci)
-})
-
-function assertWorkflowContract(release, publish, releaseText, publishText) {
-  const trigger = release.on ?? release.true; assert.deepEqual(trigger.pull_request.types, ['opened', 'edited', 'synchronize', 'reopened', 'closed']); assert.deepEqual(trigger.pull_request.branches, ['main'])
-  assert.deepEqual(Object.keys(trigger.workflow_dispatch.inputs), ['pr_number']); assert.deepEqual(trigger.workflow_dispatch.inputs.pr_number, { description: 'Already-merged release PR number to retry', required: true, type: 'number' })
-  assert.deepEqual(release.permissions, { contents: 'read', 'pull-requests': 'read' }); assert.equal(normalizeIf(release.jobs.validate.if), fixtures.workflow.validate_if); assert.equal(normalizeIf(release.jobs.tag.if), fixtures.workflow.tag_if)
-  assert.equal(normalizeIf(String(release.concurrency.group)), fixtures.workflow.release_group)
-  assert.equal(normalizeIf(String(release.concurrency['cancel-in-progress'])), fixtures.workflow.release_concurrency)
-  for (const needle of fixtures.workflow.release_needles) assert.ok(releaseText.includes(needle), `missing release workflow contract: ${needle}`)
-  assert.doesNotMatch(releaseText, /git (?:push|tag)[^\n]*(?:--force|-f\b)/)
-  const publishTrigger = publish.on ?? publish.true; assert.deepEqual(publishTrigger.push.tags, ['fairtrade-v*']); assert.equal(publish.jobs['npm-publish'].environment, 'npm-publish'); assert.equal(publish.jobs['npm-publish'].permissions['id-token'], 'write')
-  for (const needle of fixtures.workflow.publish_needles) assert.ok(publishText.includes(needle), `missing publish workflow contract: ${needle}`)
-}
-
-test('workflow control flow and release invariants are exact and mutation-proven', () => {
-  const ciText = fs.readFileSync(path.join(root, '.github/workflows/ci.yml'), 'utf8'); const ci = YAML.parse(ciText)
-  const releaseText = fs.readFileSync(path.join(root, '.github/workflows/release-pr.yml'), 'utf8'); const publishText = fs.readFileSync(path.join(root, '.github/workflows/npm-publish.yml'), 'utf8'); const release = YAML.parse(releaseText); const publish = YAML.parse(publishText)
-  assertLibContract(ci)
-  assertWorkflowContract(release, publish, releaseText, publishText)
-  for (const mutation of fixtures.workflow.mutations) {
-    if (mutation.target === 'tag_if' || mutation.target === 'validate_if') { const changed = structuredClone(release); changed.jobs[mutation.target === 'tag_if' ? 'tag' : 'validate'].if = mutation.replacement; assert.throws(() => assertWorkflowContract(changed, publish, YAML.stringify(changed), publishText), { name: 'AssertionError' }, mutation.name) }
-    else if (mutation.target === 'ci_pr_types') { const changedCi = structuredClone(ci); changedCi.on.pull_request.types = mutation.replacement; assert.throws(() => assertLibContract(changedCi), { name: 'AssertionError' }, mutation.name) }
-    else if (mutation.target === 'prepack_if') { const changedCi = structuredClone(ci); changedCi.jobs.lib.steps.find(step => step.run === 'pnpm prepack').if = mutation.replacement; assert.throws(() => assertLibContract(changedCi), { name: 'AssertionError' }, mutation.name) }
-    else if (mutation.target === 'release_concurrency') { const changed = structuredClone(release); changed.concurrency['cancel-in-progress'] = mutation.replacement; assert.throws(() => assertWorkflowContract(changed, publish, YAML.stringify(changed), publishText), { name: 'AssertionError' }, mutation.name) }
-    else if (mutation.target === 'release_group') { const changed = structuredClone(release); changed.concurrency.group = mutation.replacement; assert.throws(() => assertWorkflowContract(changed, publish, YAML.stringify(changed), publishText), { name: 'AssertionError' }, mutation.name) }
-    else if (mutation.target === 'prepack_packcheck') { const scripts = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).scripts; scripts.prepack = mutation.replacement; assert.throws(() => assertPrepackComposition(scripts), { name: 'AssertionError' }, mutation.name) }
-    else throw new Error(`workflow mutation ${mutation.name} has unknown target ${mutation.target}`)
-  }
-})
+/** The release tag the immutability case pushes: the fixture version under the release config's prefix. */
+const RELEASE_TAG = `${config.tagPrefix}${fixtures.git.version}`
 
 /** Per-command signing opt-out, so no throwaway-repository git call can reach a signing agent. */
 const NO_SIGNING = ['-c', 'tag.gpgsign=false', '-c', 'commit.gpgsign=false', '-c', 'user.signingKey=']
@@ -345,13 +677,13 @@ function seedReleaseTagPair(parent, env) {
   fs.writeFileSync(path.join(work, 'file'), 'one')
   gitOk(work, env, ['add', 'file'])
   gitOk(work, env, ['commit', '--quiet', '-m', 'one'])
-  gitOk(work, env, ['tag', '-a', fixtures.git.tag, '-m', fixtures.git.first_message])
-  gitOk(work, env, ['push', '--quiet', 'origin', `refs/tags/${fixtures.git.tag}`])
+  gitOk(work, env, ['tag', '-a', RELEASE_TAG, '-m', fixtures.git.first_message])
+  gitOk(work, env, ['push', '--quiet', 'origin', `refs/tags/${RELEASE_TAG}`])
   return {
     remote,
     work,
-    firstObject: gitOk(parent, env, ['--git-dir', remote, 'rev-parse', fixtures.git.tag]).stdout.trim(),
-    firstCommit: gitOk(parent, env, ['--git-dir', remote, 'rev-parse', `${fixtures.git.tag}^{}`]).stdout.trim(),
+    firstObject: gitOk(parent, env, ['--git-dir', remote, 'rev-parse', RELEASE_TAG]).stdout.trim(),
+    firstCommit: gitOk(parent, env, ['--git-dir', remote, 'rev-parse', `${RELEASE_TAG}^{}`]).stdout.trim(),
   }
 }
 
@@ -365,20 +697,21 @@ function seedReleaseTagPair(parent, env) {
 function retagReleaseTag(pair, env) {
   fs.writeFileSync(path.join(pair.work, 'file'), 'two')
   gitOk(pair.work, env, ['commit', '--quiet', '-am', 'two'])
-  gitOk(pair.work, env, ['tag', '--delete', fixtures.git.tag])
-  gitOk(pair.work, env, ['tag', '-a', fixtures.git.tag, '-m', fixtures.git.second_message])
-  return gitOk(pair.work, env, ['rev-parse', `${fixtures.git.tag}^{}`]).stdout.trim()
+  gitOk(pair.work, env, ['tag', '--delete', RELEASE_TAG])
+  gitOk(pair.work, env, ['tag', '-a', RELEASE_TAG, '-m', fixtures.git.second_message])
+  return gitOk(pair.work, env, ['rev-parse', `${RELEASE_TAG}^{}`]).stdout.trim()
 }
 
 /**
- * Move the remote tag without force, the exact command the release workflow runs.
+ * Move the remote tag without force, the exact command the release job runs.
  * @param {{ remote: string, work: string }} pair the seeded pair
  * @param {Record<string, string>} env the substituted environment
+ * @param {string} tag the release tag to push
  * @param {string[]} extraArgs additional push arguments, empty for a plain push
  * @returns {{ status: number, stdout: string, stderr: string }} the captured push
  */
-function pushReleaseTag(pair, env, extraArgs = []) {
-  return hermeticGit(pair.work, env, ['push', ...extraArgs, 'origin', `refs/tags/${fixtures.git.tag}`])
+function pushReleaseTag(pair, env, tag, extraArgs = []) {
+  return hermeticGit(pair.work, env, ['push', ...extraArgs, 'origin', `refs/tags/${tag}`])
 }
 
 test('an annotated remote release tag cannot be moved or deleted by a plain push', { timeout: RELEASE_TAG_CASE_TIMEOUT_MS }, () => {
@@ -398,34 +731,27 @@ test('an annotated remote release tag cannot be moved or deleted by a plain push
     // contributor whose global config turns it on.
     for (const setting of ['tag.gpgsign', 'commit.gpgsign']) {
       assert.equal(gitOk(pair.work, env, ['config', '--get', setting]).stdout.trim(), 'false', `the scratch repository must opt out of ${setting} at step "release tag scratch repository"; repair: keep ${setting}=false in the NO_SIGNING per-command opt-out so the case cannot block on a signing agent.`)
+      assert.equal(gitOk(pair.work, env, ['config', '--get', 'user.signingKey']).stdout.trim(), '', 'the scratch repository must carry no signing key at step "release tag scratch repository"; repair: keep the empty user.signingKey in the NO_SIGNING per-command opt-out so no key material is required.')
     }
-    assert.equal(gitOk(pair.work, env, ['config', '--get', 'user.signingKey']).stdout.trim(), '', 'the scratch repository must carry no signing key at step "release tag scratch repository"; repair: keep the empty user.signingKey in the NO_SIGNING per-command opt-out so no key material is required.')
     const globalScopes = gitOk(pair.work, env, ['config', '--list', '--show-scope']).stdout.split('\n').filter((line) => line.startsWith('global\t'))
     assert.deepEqual(globalScopes, [], `the scratch repository must see no global-scope config, so a contributor's signing settings cannot reach it; got ${globalScopes.join(' | ')}`)
     retagReleaseTag(pair, env)
-    const refused = pushReleaseTag(pair, env)
-    assert.notEqual(refused.status, 0, `a plain push of the existing release tag ${fixtures.git.tag} must be refused; got status 0 and ${refused.stdout}${refused.stderr}`)
+    const refused = pushReleaseTag(pair, env, RELEASE_TAG)
+    assert.notEqual(refused.status, 0, `a plain push of the existing release tag ${RELEASE_TAG} must be refused; got status 0 and ${refused.stdout}${refused.stderr}`)
     assert.match(refused.stderr, /already exists/, `the refusal must come from the receiver refusing to move an existing tag, not from an unrelated error; got ${refused.stderr}`)
-    assert.equal(gitOk(dir, env, ['--git-dir', pair.remote, 'rev-parse', fixtures.git.tag]).stdout.trim(), pair.firstObject, 'the remote release tag object must be unchanged after the refused push')
-    assert.equal(gitOk(dir, env, ['--git-dir', pair.remote, 'rev-parse', `${fixtures.git.tag}^{}`]).stdout.trim(), pair.firstCommit, 'the remote release tag must still point at the first release commit after the refused push')
+    assert.equal(gitOk(dir, env, ['--git-dir', pair.remote, 'rev-parse', RELEASE_TAG]).stdout.trim(), pair.firstObject, 'the remote release tag object must be unchanged after the refused push')
+    assert.equal(gitOk(dir, env, ['--git-dir', pair.remote, 'rev-parse', `${RELEASE_TAG}^{}`]).stdout.trim(), pair.firstCommit, 'the remote release tag must still point at the first release commit after the refused push')
 
     // The controls: git moves the very same tag the moment the guard is dropped,
     // so the refusal above is the receiver's immutability, not an incidental
     // failure that would have made the assertion pass anyway.
     for (const row of fixtures.git.mutations) {
-      const control = path.join(dir, `control-${row.operation}`)
+      const control = path.join(dir, `control-${row.operation.wire}`)
       fs.mkdirSync(control, { recursive: true })
       const pair = seedReleaseTagPair(control, env)
       const secondCommit = retagReleaseTag(pair, env)
-      if (row.operation === 'force_push') {
-        assert.equal(pushReleaseTag(pair, env, ['--force']).status, 0, `${row.name}: a forced push must move the tag, or the non-force refusal proves nothing`)
-      } else if (row.operation === 'delete_then_push') {
-        assert.equal(gitOk(pair.work, env, ['push', '--quiet', 'origin', `:refs/tags/${fixtures.git.tag}`]).status, 0, `${row.name}: deleting the remote tag must be accepted`)
-        assert.equal(pushReleaseTag(pair, env).status, 0, `${row.name}: re-pushing the recreated tag must be accepted`)
-      } else {
-        throw new Error(`release-guard test: git fixture operation ${row.operation} is unknown; add it to requiredGitMutations before using it`)
-      }
-      assert.equal(gitOk(dir, env, ['--git-dir', pair.remote, 'rev-parse', `${fixtures.git.tag}^{}`]).stdout.trim(), secondCommit, `${row.name}: the remote release tag must have moved, so the plain-push refusal is the guard and not an unrelated failure`)
+      row.operation.apply(pair, env, RELEASE_TAG, row.name)
+      assert.equal(gitOk(dir, env, ['--git-dir', pair.remote, 'rev-parse', `${RELEASE_TAG}^{}`]).stdout.trim(), secondCommit, `${row.name}: the remote release tag must have moved, so the plain-push refusal is the guard and not an unrelated failure`)
     }
   } finally {
     fs.rmSync(dir, { recursive: true, force: true })

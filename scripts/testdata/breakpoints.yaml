@@ -22,6 +22,14 @@ exceptions:
       rail grid motion belongs only to the visible-rail band, complementary to the existing
       width < 1080px layout exception; using 1024px would animate hidden rails at 1024-1079px.
       the motion preference keeps reduced-motion readers on the static path.
+  - name: setup panes need enough height for internal scrolling
+    file: src/index.css
+    condition: '@media (width >= 1024px) and (height >= 45rem)'
+    reason: >-
+      the selection tree and embedded transcript share a constrained remaining height only when
+      the viewport has enough vertical room for their controls; shorter windows retain natural
+      page scrolling rather than compressing the reading pane. Width tokens do not express this
+      vertical threshold, and the rem unit follows the reader's base text size.
 
 # Preludes fed through lintViewportQuery (the same code the build runs), or the @import media
 # condition when `statement` is present (the extracted condition must equal `media`). `expect` lists

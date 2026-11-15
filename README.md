@@ -77,6 +77,27 @@ pnpm build-storybook # compile every component + story
   `public/tokens.json` (w3c dtcg) + `public/components.json` + `packages/tokens/*` (kept fresh by
   `pnpm gen:check`).
 
+## transcript previews and fenced code
+
+`TranscriptViewer` defaults to a level-two title. A nested host can set `headingLevel` to
+1, 2, 3 or 4; phase, turn and authored Markdown headings then follow that hierarchy. An
+authored heading deeper than level six keeps its depth as an ARIA heading.
+
+Markdown images keep their existing default behavior. A local-only host must explicitly pass
+`allowMarkdownImages={false}` to prevent Markdown image requests and show a text placeholder.
+That policy reaches turn bodies, ordered text parts, system and control rows and earlier
+history. It does not govern image attachments resolved by a host's `imageUrl` callback,
+external links a reader chooses to follow, host data fetching, or explicit copy actions. A
+local host must also keep its source reads, browser storage and network handling private.
+
+Fenced code in transcript Markdown highlights TypeScript (`ts`, `typescript`), JavaScript
+(`js`, `javascript`), Python (`py`, `python`), Go, JSON, YAML (`yaml`, `yml`), shell
+(`bash`, `sh`, `shell`, `zsh`), CSS and HTML. Grammar and engine modules load on demand;
+tokenization runs on the main thread and is limited to 8,192 UTF-16 code units, 1,024 per
+line, 256 lines and 4,096 output tokens. Unknown languages, oversize inputs, malformed
+results and failures render the original plain text. No transcript text is retained in a
+global highlighter cache. Mermaid has its own explicit viewer and copy-source control.
+
 ## data table compatibility
 
 `DataTable` renders all supplied rows by default, with sorting and selection but

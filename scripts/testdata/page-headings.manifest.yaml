@@ -4,10 +4,13 @@
 requiredCaseNames:
   - the viewer is a section by default
   - the viewer as the page has one h1
+  - the viewer nests below a page section
+  - the viewer nests below a wizard stop
   - explore is a section by default
   - explore as the page has one h1
 requiredInvalidNames:
-  - the viewer refuses another level
+  - the viewer refuses a level that leaves no room for turns
+  - explore still refuses the viewer pane level
   - explore refuses another level
 
 requiredMutationNames:
@@ -23,8 +26,8 @@ mutations:
     expectedDiagnostic: "the viewer as the page has one h1: headings"
   - name: the turns keep h4 under a page h1
     file: src/ui/transcript/TranscriptViewer.jsx
-    find: "headingLevel={pageLevel + 2}"
-    replace: "headingLevel={4}"
+    find: "headingLevel={pageLevel + 2}\n                            presentation={presentation}"
+    replace: "headingLevel={4}\n                            presentation={presentation}"
     expectedDiagnostic: "the viewer as the page has one h1: headings"
   - name: explore ignores the page level
     file: src/ui/commons/Explore.jsx

@@ -9,24 +9,23 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import YAML from 'yaml'
+import { ProbeGroup, RELEASE_NOTES_FIXTURE_PATH, RELEASE_NOTES_MANIFEST_PATH, loadStrictYaml, parsedMutations } from './release-notes-fixture.mjs'
 
 const ROOT = resolve(new URL('..', import.meta.url).pathname)
 const SOURCE_PATH = resolve(ROOT, 'scripts/release-notes.mjs')
-const manifest = loadStrictYaml('testdata/release-notes.manifest.yaml')
-const fixture = loadStrictYaml('testdata/release-notes.yaml')
+const manifest = loadStrictYaml(RELEASE_NOTES_MANIFEST_PATH)
+const fixture = loadStrictYaml(RELEASE_NOTES_FIXTURE_PATH)
 
 const baseline = readFileSync(SOURCE_PATH, 'utf8')
 let killed = 0
 
-for (const mutation of manifest.mutations) {
+for (const mutation of parsedMutations(manifest)) {
   const occurrences = baseline.split(mutation.find).length - 1
   if (occurrences !== 1) throw new Error(`${mutation.name}: find string must occur exactly once in release-notes.mjs, found ${occurrences}`)
   const mutated = baseline.split(mutation.find).join(mutation.replace)
 
-  const pool = mutation.probeGroup === 'valid' ? fixture.validCases : fixture.invalidCases
-  const probeCase = pool.find((c) => c.name === mutation.probeCaseName)
-  if (!probeCase) throw new Error(`${mutation.name}: probe case ${JSON.stringify(mutation.probeCaseName)} not found in ${mutation.probeGroup}Cases`)
+  const probeCase = mutation.probeGroup.cases(fixture).find((c) => c.name === mutation.probeCaseName)
+  if (!probeCase) throw new Error(`${mutation.name}: probe case ${JSON.stringify(mutation.probeCaseName)} not found in the ${mutation.probeGroup.label}`)
 
   const dir = mkdtempSync(join(tmpdir(), 'fairtrade-release-notes-mutation-'))
   const mutatedPath = join(dir, 'release-notes.mutated.mjs')
@@ -34,7 +33,7 @@ for (const mutation of manifest.mutations) {
   try {
     const { extractChangelogSection } = await import(`file://${mutatedPath}?cachebust=${mutation.name.replace(/\W+/g, '-')}`)
 
-    if (mutation.probeGroup === 'valid') {
+    if (mutation.probeGroup === ProbeGroup.Valid) {
       let actual
       let threw = false
       try {
@@ -66,12 +65,3 @@ for (const mutation of manifest.mutations) {
 }
 
 console.log(`release notes mutations: all ${killed} production-point mutation(s) were killed.`)
-
-function loadStrictYaml(relativePath) {
-  const source = readFileSync(new URL(relativePath, import.meta.url), 'utf8')
-  const document = YAML.parseDocument(source, { strict: true, uniqueKeys: true })
-  if (document.errors.length > 0 || (source.match(/^---\s*$/gm) ?? []).length > 0) {
-    throw new Error(`${relativePath}: expected one strict YAML document with unique keys`)
-  }
-  return document.toJS()
-}

@@ -5,16 +5,23 @@ on:
     branches: [main, 'tier-**']
   pull_request:
     types: [opened, synchronize, reopened]
+  merge_group:
   workflow_dispatch:
 
-# read-only: this workflow validates the gates, it never deploys or writes Pages
+# read-only: this workflow validates the gates, it never deploys or writes Pages.
+# Every job also declares its own permissions, which replace these: the pool
+# jobs keep `actions: read` so the runner-timing capture can read the Actions
+# timestamps.
 permissions:
   contents: read
   actions: read
+  pull-requests: read
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# The classifier builds from the pinned infra release tool checkout below.
 
 jobs:
   # The run places four pool jobs at once (lib, fairtest, two journeys).
@@ -23,6 +30,7 @@ jobs:
   # almost never use the four-slot pool, and a typical slot wait (1-4
   # minutes) is about the pool speed advantage.
   determine-runner:
+    permissions: {contents: read, actions: read}
     uses: peasant-labs/infra/.github/workflows/runner-router.yml@4329b5ebd38a0270f08da3826b59ecda67eb1a40
     with:
       fallback: '["ubuntu-latest"]'
@@ -38,6 +46,7 @@ jobs:
   # tarball that would publish, on every PR/push, independent of who publishes.
   lib:
     needs: determine-runner
+    permissions: {contents: read, actions: read}
     runs-on: ${{ fromJson(needs.determine-runner.outputs.runner) }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -81,8 +90,83 @@ jobs:
       # step runs unconditionally and needs no `edited` trigger. Re-targeting a
       # PR to a new base needs a push or a re-run to re-validate against that
       # base, since `edited` no longer triggers CI.
+      #
+      # Which PR is the release PR is decided by `release-intent classify`
+      # from the PR's author and head branch against the base revision's
+      # release config, never by a branch literal and never by the title
+      # (authors may now use the `release` type). A group build has no
+      # pull-request event; it resolves its entry PR with `group-pr` and reads
+      # that PR's author and head branch through the API. A push to main is
+      # not a PR, so it builds like any content PR. The release PR's PR events
+      # and its group build run canonical `pnpm prepack`; every other PR runs
+      # `build:lib` (the same compile, minus the provenance and tarball
+      # assertions, which only the release content must satisfy).
+      - name: Check out the release-intent tool
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          repository: peasant-labs/infra
+          ref: f9bdadb2f359c90336fca71ea3afd1fe59a046ce
+          path: infra-tool
+          sparse-checkout: |
+            tools/release
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: infra-tool/tools/release/go.mod
+          cache-dependency-path: infra-tool/tools/release/go.sum
+
+      - name: Build release-intent
+        working-directory: infra-tool/tools/release
+        run: |
+          go build -o "${RUNNER_TEMP}/release-intent" ./cmd/release-intent
+          echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
+
+      - name: Classify the pull request
+        id: kind
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          GROUP_REF: ${{ github.ref }}
+          GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
+          EVENT_PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          EVENT_PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+          EVENT_PR_BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          # The PR that adopts the release config has no config at its base.
+          # Read the config from the checked-out commit, which carries the
+          # adopted file; its author and head branch are not a configured bot.
+          classify_rev() {
+            rev="$1"
+            if ! git cat-file -e "${rev}:.github/release-intent.yaml" 2>/dev/null; then
+              rev="$(git rev-parse HEAD)"
+            fi
+            printf '%s' "${rev}"
+          }
+          kind=ordinary
+          if [ "${EVENT_NAME}" = "pull_request" ]; then
+            classified="$(release-intent classify --author "${EVENT_PR_AUTHOR}" --head-branch "${EVENT_PR_BRANCH}" --rev "$(classify_rev "${EVENT_PR_BASE}")")"
+            kind="${classified#kind=}"
+          elif [ "${EVENT_NAME}" = "merge_group" ]; then
+            resolved="$(release-intent group-pr --ref "${GROUP_REF}")"
+            number="${resolved#pr=}"
+            if [ -n "${number}" ]; then
+              payload="$(gh pr view "${number}" --repo "${GITHUB_REPOSITORY}" --json author,headRefName)"
+              classified="$(release-intent classify --author "$(printf '%s' "${payload}" | jq -r .author.login)" --head-branch "$(printf '%s' "${payload}" | jq -r .headRefName)" --rev "$(classify_rev "${GROUP_BASE_SHA}")")"
+              kind="${classified#kind=}"
+            fi
+          fi
+          echo "kind=${kind}" >> "${GITHUB_OUTPUT}"
+
       - name: Build library (publishable artifact)
+        if: steps.kind.outputs.kind == 'release'
         run: pnpm prepack
+
+      - name: Build library (content pull request)
+        if: steps.kind.outputs.kind != 'release'
+        run: pnpm run build:lib
 
       - name: Test library (behavior, mutations, and built rendering)
         env:
@@ -91,6 +175,7 @@ jobs:
 
   fairtest:
     needs: determine-runner
+    permissions: {contents: read, actions: read}
     runs-on: ${{ fromJson(needs.determine-runner.outputs.runner) }}
     timeout-minutes: 40
     # The official Playwright image carries the browsers and their system
@@ -225,6 +310,7 @@ jobs:
 
   journeys:
     needs: determine-runner
+    permissions: {contents: read, actions: read}
     runs-on: ${{ fromJson(needs.determine-runner.outputs.runner) }}
     timeout-minutes: 40
     strategy:
@@ -330,6 +416,8 @@ jobs:
     # job or any journey shard fails. It uses the hosted runner, not the pool.
     needs: [fairtest, journeys]
     if: always()
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
