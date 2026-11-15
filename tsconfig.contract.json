@@ -32,6 +32,7 @@
     "src/ui/groupPageRows.js",
     "src/ui/transcript-library-table.contract.type-test.js",
     "src/ui/ui-exports.contract.type-test.js",
+    "src/ui/step-wizard.contract.type-test.js",
     "src/ui/app-sidebar.contract.type-test.js",
     "src/ui/transcript/contract.type-test.js",
     "src/ui/transcript/earlier-history-state.contract.type-test.js",

@@ -4,22 +4,37 @@ on:
   push:
     branches: [main, 'tier-**']
   pull_request:
-    types: [opened, synchronize, reopened, edited]
+    types: [opened, synchronize, reopened]
+  merge_group:
   workflow_dispatch:
 
-# read-only: this workflow validates the gates, it never deploys or writes Pages
+# read-only: this workflow validates the gates, it never deploys or writes Pages.
+# Every job also declares its own permissions, which replace these: the pool
+# jobs keep `actions: read` so the runner-timing capture can read the Actions
+# timestamps.
 permissions:
   contents: read
+  actions: read
+  pull-requests: read
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# The classifier builds from the pinned infra release tool checkout below.
 
 jobs:
+  # The run places four pool jobs at once (lib, fairtest, two journeys).
+  # required_slots 2 admits the pool when at least half can start at once
+  # and the rest wait for the next free slot. Requiring all four free would
+  # almost never use the four-slot pool, and a typical slot wait (1-4
+  # minutes) is about the pool speed advantage.
   determine-runner:
-    uses: peasant-labs/infra/.github/workflows/runner-router.yml@71e687cef7eede9a63659be98ce9adac3c563398
+    permissions: {contents: read, actions: read}
+    uses: peasant-labs/infra/.github/workflows/runner-router.yml@4329b5ebd38a0270f08da3826b59ecda67eb1a40
     with:
       fallback: '["ubuntu-latest"]'
+      required_slots: 2
     secrets:
       RUNNER_STATUS_TOKEN: ${{ secrets.RUNNER_STATUS_TOKEN }}
 
@@ -31,6 +46,7 @@ jobs:
   # tarball that would publish, on every PR/push, independent of who publishes.
   lib:
     needs: determine-runner
+    permissions: {contents: read, actions: read}
     runs-on: ${{ fromJson(needs.determine-runner.outputs.runner) }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -47,6 +63,19 @@ jobs:
       - name: Install (frozen lockfile)
         run: pnpm install --frozen-lockfile
 
+      # Static guard against stringly-typed values. It runs before the build so
+      # a new hit fails in the first minute with a file and line.
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version: '1.24.x'
+          cache-dependency-path: package.json
+
+      - name: Install ast-grep
+        run: npm install --global @ast-grep/cli@0.51.2
+
+      - name: Static guard (unstring)
+        run: pnpm run lint:unstring --format github
+
       # Contract gate: checkJs + strict + noImplicitAny on the transcript wire
       # contract / TranscriptViewModel type-test. Runs first so a contract leak
       # fails early with a clear attribution (not buried in the Vite/tsc build).
@@ -55,25 +84,98 @@ jobs:
       - name: Contract type gate (wire contract + VM leak assertions)
         run: pnpm test:contract
 
-      # Build the library and declarations before testing the built artifact.
-      - name: Build library (publishable artifact)
-        if: "!(github.event_name == 'pull_request' && startsWith(github.event.pull_request.title, 'release('))"
-        run: pnpm build:lib
+      # Every PR and push validates the same packaging path npm publication uses:
+      # prepack is assert-package-provenance + build:lib + pack:check. The
+      # provenance assertion reads no title, version, or environment, so the
+      # step runs unconditionally and needs no `edited` trigger. Re-targeting a
+      # PR to a new base needs a push or a re-run to re-validate against that
+      # base, since `edited` no longer triggers CI.
+      #
+      # Which PR is the release PR is decided by `release-intent classify`
+      # from the PR's author and head branch against the base revision's
+      # release config, never by a branch literal and never by the title
+      # (authors may now use the `release` type). A group build has no
+      # pull-request event; it resolves its entry PR with `group-pr` and reads
+      # that PR's author and head branch through the API. A push to main is
+      # not a PR, so it builds like any content PR. The release PR's PR events
+      # and its group build run canonical `pnpm prepack`; every other PR runs
+      # `build:lib` (the same compile, minus the provenance and tarball
+      # assertions, which only the release content must satisfy).
+      - name: Check out the release-intent tool
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          repository: peasant-labs/infra
+          ref: 1135fac2e509a9cada081d8824df1f09308b4bcb
+          path: infra-tool
+          sparse-checkout: |
+            tools/release
+          persist-credentials: false
 
-      # Release PRs validate the same packaging path npm publication uses.
-      - name: Validate release package (canonical prepack)
-        if: github.event_name == 'pull_request' && startsWith(github.event.pull_request.title, 'release(')
+      - name: Set up Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: infra-tool/tools/release/go.mod
+          cache-dependency-path: infra-tool/tools/release/go.sum
+
+      - name: Build release-intent
+        working-directory: infra-tool/tools/release
+        run: |
+          go build -o "${RUNNER_TEMP}/release-intent" ./cmd/release-intent
+          echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
+
+      - name: Classify the pull request
+        id: kind
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          GROUP_REF: ${{ github.ref }}
+          GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
+          EVENT_PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          EVENT_PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+          EVENT_PR_BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          # The PR that adopts the release config has no config at its base.
+          # Read the config from the checked-out commit, which carries the
+          # adopted file; its author and head branch are not a configured bot.
+          classify_rev() {
+            rev="$1"
+            if ! git cat-file -e "${rev}:.github/release-intent.yaml" 2>/dev/null; then
+              rev="$(git rev-parse HEAD)"
+            fi
+            printf '%s' "${rev}"
+          }
+          kind=ordinary
+          if [ "${EVENT_NAME}" = "pull_request" ]; then
+            classified="$(release-intent classify --author "${EVENT_PR_AUTHOR}" --head-branch "${EVENT_PR_BRANCH}" --rev "$(classify_rev "${EVENT_PR_BASE}")")"
+            kind="${classified#kind=}"
+          elif [ "${EVENT_NAME}" = "merge_group" ]; then
+            resolved="$(release-intent group-pr --ref "${GROUP_REF}")"
+            number="${resolved#pr=}"
+            if [ -n "${number}" ]; then
+              payload="$(gh pr view "${number}" --repo "${GITHUB_REPOSITORY}" --json author,headRefName)"
+              classified="$(release-intent classify --author "$(printf '%s' "${payload}" | jq -r .author.login)" --head-branch "$(printf '%s' "${payload}" | jq -r .headRefName)" --rev "$(classify_rev "${GROUP_BASE_SHA}")")"
+              kind="${classified#kind=}"
+            fi
+          fi
+          echo "kind=${kind}" >> "${GITHUB_OUTPUT}"
+
+      - name: Build library (publishable artifact)
+        if: steps.kind.outputs.kind == 'release'
         run: pnpm prepack
 
-      # Belt-and-suspenders: assert the npm tarball file set matches exports[].
-      - name: Assert pack contents (exports <-> tarball)
-        run: pnpm pack:check
+      - name: Build library (content pull request)
+        if: steps.kind.outputs.kind != 'release'
+        run: pnpm run build:lib
 
       - name: Test library (behavior, mutations, and built rendering)
+        env:
+          NODE_COMPILE_CACHE: ${{ runner.temp }}/node-compile-cache
         run: pnpm test:lib
 
   fairtest:
     needs: determine-runner
+    permissions: {contents: read, actions: read}
     runs-on: ${{ fromJson(needs.determine-runner.outputs.runner) }}
     timeout-minutes: 40
     # The official Playwright image carries the browsers and their system
@@ -84,6 +186,7 @@ jobs:
       options: --ipc=host --init
     env:
       TMPDIR: /tmp
+      ROUTER_REASON: ${{ needs.determine-runner.outputs.reason }}
       # The one Fairtest run identity and the one run root. Every Fairtest
       # command in this job reads exactly these.
       FAIRTEST_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
@@ -97,6 +200,14 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
+
+      - name: Capture Fairtest runner facts
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RUNNER_JOB_NAME: fairtest
+          ROUTER_REASON: ${{ needs.determine-runner.outputs.reason }}
+        run: node scripts/journey/runner-facts.mjs capture
 
       - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
 
@@ -176,8 +287,26 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      - name: Prepare Fairtest timing report
+        if: always()
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/fairtest-timing
+          node scripts/journey/runner-facts.mjs merge /tmp/fairtest-timing/report.json
+
+      - name: Upload Fairtest timing report
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: fairtest-timing-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/fairtest-timing/report.json
+          if-no-files-found: warn
+          retention-days: 7
+
   journeys:
     needs: determine-runner
+    permissions: {contents: read, actions: read}
     runs-on: ${{ fromJson(needs.determine-runner.outputs.runner) }}
     timeout-minutes: 40
     strategy:
@@ -191,10 +320,20 @@ jobs:
       options: --ipc=host --init
     env:
       TMPDIR: /tmp
+      JOURNEY_SCREENSHOT: "off"
+      ROUTER_REASON: ${{ needs.determine-runner.outputs.reason }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
+
+      - name: Capture journey runner facts
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RUNNER_JOB_NAME: journeys (${{ matrix.project }})
+          ROUTER_REASON: ${{ needs.determine-runner.outputs.reason }}
+        run: node scripts/journey/runner-facts.mjs capture
 
       - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
 
@@ -213,9 +352,18 @@ jobs:
       - name: Build Storybook
         run: pnpm build-storybook
 
+      - name: Journey catalog name manifest
+        run: |
+          node scripts/journey/catalog-gate.mjs
+          node --test scripts/journey/catalog-gate.test.mjs scripts/journey/runner-facts.test.mjs scripts/journey/recording-policy.test.mjs scripts/journey/theme-rows.test.mjs scripts/journey/check-light-transparency.test.mjs
+
       # Each theme runs its complete catalog at the measured 3-worker optimum.
       - name: Journey gates
         run: pnpm journey:ci --workers=3 --project=${{ matrix.project }}
+
+      - name: Verify light transparency ran
+        if: matrix.project == 'light'
+        run: node scripts/journey/check-light-transparency.mjs
 
       # The timeline route gate does not fan out: one project runs it so the
       # production probe and source mutation are not duplicated.
@@ -226,11 +374,36 @@ jobs:
           test -x "$CHROME_PATH"
           pnpm test:timeline-rendered && pnpm test:timeline-session-route:mutations
 
+      - name: Prepare journey timing report
+        if: always()
+        continue-on-error: true
+        run: |
+          mkdir -p scripts/journey/.artifacts
+          node scripts/journey/runner-facts.mjs merge scripts/journey/.artifacts/report.json
+
+      - name: Upload journey timing report
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: journey-timing-${{ matrix.project }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: scripts/journey/.artifacts/report.json
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload journey artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: journey-artifacts-${{ matrix.project }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: scripts/journey/.artifacts
+          retention-days: 7
+
       - name: Upload Storybook build on failure
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: storybook-static-${{ matrix.project }}
+          name: storybook-static-${{ matrix.project }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: storybook-static
           retention-days: 7
 
@@ -239,6 +412,8 @@ jobs:
     # job or any journey shard fails. It uses the hosted runner, not the pool.
     needs: [fairtest, journeys]
     if: always()
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

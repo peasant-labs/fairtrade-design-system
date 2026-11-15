@@ -39,8 +39,8 @@ cases:
     query: app=transcript
     width: 390
     root: .txn-app
-    text: [9 turns, 18.4k tokens, 3 turns, fairtrade-design-system]
-    absent: [8 turns, turns 0–2, transcript-browser]
+    text: [8 turns, 18.4k tokens, 3 turns, fairtrade-design-system]
+    absent: [9 turns, turns 0–2, transcript-browser]
     tabular: .txn-app .rng
     marks: ['#turn-1 .txn-roleico [data-brand="claude"]']
     focus: .txn-turn
@@ -48,7 +48,7 @@ cases:
     query: app=commons&commons=transcript-detail
     width: 1440
     root: .txn-app
-    text: [Port the transcript canvas into the shared package, 9 turns]
+    text: [Port the transcript canvas into the shared package, 8 turns]
     absent: [Fix flaky ingest test]
     marks: ['#turn-1 .txn-roleico [data-brand="claude"]']
     focus: .txn-turn

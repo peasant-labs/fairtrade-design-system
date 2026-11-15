@@ -80,6 +80,8 @@ pnpm journey         # both themes, artifacts under scripts/journey/.artifacts
 pnpm journey:ci      # CI shape: JSON report, no HTML report copy
 ```
 
+Local failures keep trace and video; CI records them from the first retry.
+
 ## Conventions a consumer harness follows
 
 - **Bind theme by row key, not by project name.** Mounted rows use one project

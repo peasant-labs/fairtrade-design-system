@@ -1,0 +1,30 @@
+contractVersion: '1.0'
+kind: session_detail
+sessionDetail:
+  id: published-images
+  harness: codex
+  startTime: '2026-09-01T10:00:00Z'
+  endTime: '2026-09-01T10:01:00Z'
+  durationMins: 1
+  totalTokens: 0
+  tokensIn: 0
+  tokensOut: 0
+  turnCount: 2
+  toolCallCount: 0
+  inputSubmissionCount: 1
+  turns:
+    - index: 0
+      role: user
+      depth: 0
+      content: 'look at this'
+      timestamp: '2026-09-01T10:00:00Z'
+      sourceEntryRef: entry-image
+      contentParts:
+        - {type: text, text: 'look at this'}
+        - {type: image, image: {omittedReason: not_published}}
+    - index: 1
+      role: assistant
+      depth: 0
+      content: 'I cannot see the image.'
+      timestamp: '2026-09-01T10:00:30Z'
+      sourceEntryRef: entry-response

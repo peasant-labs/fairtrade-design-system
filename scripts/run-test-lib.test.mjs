@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import test from 'node:test'
@@ -17,6 +17,7 @@ import {
   splitCommands,
 } from './run-test-lib.mjs'
 import { scanSource, scanTestFiles } from './test-lib-source-scan.mjs'
+import { assertFields, loadFixturePair } from './mounted-parts.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..')
@@ -84,7 +85,7 @@ test('the tracked-source scanner reads every supported write form', () => {
 test('the summary counts gates, not the synthetic source guard', () => {
   assert.deepEqual(countExecuted([{ ok: true }, { ok: false }, { ok: false, synthetic: true }], 2), { executed: 2, skipped: 0 })
   assert.deepEqual(countExecuted([{ ok: true }, { ok: false, synthetic: true }], 2), { executed: 1, skipped: 1 })
-  assert.deepEqual(countExecuted([], 147), { executed: 0, skipped: 147 })
+  assert.deepEqual(countExecuted([], 155), { executed: 0, skipped: 155 })
 })
 
 test('SIGINT stops scheduling, reports the interruption, and exits 130', async () => {
@@ -130,6 +131,29 @@ test('lane weights stay inside the global budget', () => {
   assert.equal(LANES.bench.weight, GLOBAL_WEIGHT)
   for (const [name, lane] of Object.entries(LANES)) {
     assert.ok(lane.weight >= 1 && lane.weight <= GLOBAL_WEIGHT, `${name} weight ${lane.weight} must be between 1 and ${GLOBAL_WEIGHT}`)
+  }
+})
+
+// Tests mounted-parts.mjs here to avoid moving the library gate inventory.
+test('mounted reports stop only at the expected mutation diagnostic', () => {
+  const { fixture } = loadFixturePair('scripts/testdata/mounted-report.yaml', 'scripts/testdata/mounted-report.manifest.yaml')
+  for (const entry of fixture.cases) {
+    assertFields(entry, ['name', 'mutation', 'checks', 'ran', 'failures'], entry.name, ['passed', 'status'])
+    const env = { ...process.env }
+    delete env.FAIRTRADE_PARTS_MUTATION
+    if (entry.mutation !== null) env.FAIRTRADE_PARTS_MUTATION = entry.mutation
+    const source = `import { createReport } from './scripts/mounted-parts.mjs';
+      const { check, finish } = createReport('fixture gate');
+      for (const message of ${JSON.stringify(entry.checks)}) { console.log('ran: ' + JSON.stringify(message)); check(${Boolean(entry.passed)}, message) }
+      finish('done');`
+    const result = spawnSync(process.execPath, ['--input-type=module', '-e', source], { cwd: ROOT, env, encoding: 'utf8', timeout: 10_000 })
+    assert.equal(result.error, undefined, `${entry.name}: ${result.error?.code ?? ''}`)
+    assert.equal(result.status, entry.status ?? 1, `${entry.name}: ${result.stderr}`)
+    // The harness prints before each check: ran counts attempts, paired with exact stderr.
+    assert.equal(result.stdout.split('\n').filter((line) => line.startsWith('ran: ')).length, entry.ran, entry.name)
+    const expectedError = entry.failures.length ? `fixture gate failed:\n${entry.failures.map((message) => `- ${message}`).join('\n')}\n` : ''
+    assert.equal(result.stderr, expectedError, entry.name)
+    if (entry.status === 0) assert.match(result.stdout, new RegExp(`fixture gate: ${entry.ran} checks passed; done\\n$`), entry.name)
   }
 })
 

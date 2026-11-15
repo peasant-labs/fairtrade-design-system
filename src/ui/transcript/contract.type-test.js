@@ -183,3 +183,52 @@ void _pinCoreArrays
   // @ts-expect-error — gitContext is NOT on the bare payload; only on TranscriptWireInput (widened)
   void payload.gitContext
 }
+
+/* ── (10) POSITIVE: a served segment directory is a directory view model ───────────
+   A host hands the viewer the directory its server validated. The contract's ref and
+   directory must stay assignable to the view models, position fields included, so a
+   renamed or retyped field fails here and not in a reader's caption. */
+/** @typedef {import('./index.js').TranscriptSegmentDirectory} TranscriptSegmentDirectory */
+/** @typedef {import('./index.js').TranscriptSegmentRef} TranscriptSegmentRef */
+/** @typedef {import('./index.js').SegmentDirectoryVM} SegmentDirectoryVM */
+/** @typedef {import('./index.js').SegmentRefVM} SegmentRefVM */
+/** @typedef {import('./index.js').ConversationTurnSpanVM} ConversationTurnSpanVM */
+/** @typedef {import('./index.js').ConversationPositionVM} ConversationPositionVM */
+/** @typedef {import('./index.js').SegmentBoundaryVM} SegmentBoundaryVM */
+/** @typedef {import('./index.js').ScrubberTick} ScrubberTick */
+{
+  const servedRef = /** @type {TranscriptSegmentRef} */ (/** @type {unknown} */ (null))
+  /** @type {SegmentRefVM} */
+  const ref = servedRef
+  void ref
+  const servedDirectory = /** @type {TranscriptSegmentDirectory} */ (/** @type {unknown} */ (null))
+  /** @type {SegmentDirectoryVM} */
+  const directory = servedDirectory
+  /** @type {number | undefined} */
+  const total = directory.totalConversationTurns
+  void total
+  /** @type {ConversationTurnSpanVM} */
+  const span = { before: 19, count: 24 }
+  /** @type {ConversationPositionVM} */
+  const position = { ...span, total: 77 }
+  const boundary = /** @type {SegmentBoundaryVM} */ (/** @type {unknown} */ (null))
+  /** @type {ConversationPositionVM | null} */
+  const boundaryPosition = boundary.position
+  const tick = /** @type {ScrubberTick} */ (/** @type {unknown} */ (null))
+  /** @type {ConversationPositionVM | null} */
+  const tickPosition = tick.position
+  void position
+  void boundaryPosition
+  void tickPosition
+  // @ts-expect-error a span is counts only: it carries no turn identity
+  void span.firstTurn
+}
+
+/* ── (11) POSITIVE: the session carries the count a reader is shown ──────────────── */
+{
+  /** @type {SessionVM} */
+  const session = /** @type {any} */ ({})
+  /** @type {number | undefined} */
+  const shown = session.conversationTurnCount
+  void shown
+}

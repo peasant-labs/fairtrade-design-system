@@ -713,6 +713,7 @@ function inspectWorkflowOrder(text) {
 function inspectJourneyWorkflow(text) {
   const job = jobByName(text, 'journeys')
   const steps = Array.isArray(job.steps) ? job.steps : []
+  if (job.env?.JOURNEY_SCREENSHOT !== 'off') workflowFail('JOURNEY_SCREENSHOT', 'journeys must retain screenshots on failure only')
   inspectBuilds(steps, 'journeys')
   const projects = job.strategy?.matrix?.project
   if (!Array.isArray(projects) || projects.length !== 2 || projects[0] !== 'dark' || projects[1] !== 'light') {
@@ -740,7 +741,7 @@ function inspectJourneyWorkflow(text) {
     if (steps.indexOf(stepByName(steps, name)) > steps.indexOf(journey)) workflowFail(name, `the ${name} step must precede the journey`)
   }
   const artifacts = steps.filter((entry) => entry.name === 'Upload Storybook build on failure')
-  if (artifacts.length !== 1 || artifacts[0].with?.name !== 'storybook-static-${{ matrix.project }}') {
+  if (artifacts.length !== 1 || artifacts[0].with?.name !== 'storybook-static-${{ matrix.project }}-${{ github.run_id }}-${{ github.run_attempt }}') {
     workflowFail('storybook-static', 'the Storybook failure artifact must be unique to each project')
   }
   const timelines = steps.filter((entry) => entry.name === 'Timeline route gate (production build + source mutation)' || (typeof entry.run === 'string' && entry.run.includes('pnpm test:timeline-rendered')))
@@ -751,6 +752,35 @@ function inspectJourneyWorkflow(text) {
   if (timeline.run?.trim() !== timelineCommand || timeline['continue-on-error'] !== undefined) {
     workflowFail('pnpm test:timeline-rendered', 'the timeline gate must run both probes and preserve failures')
   }
+}
+
+/** @param {string} text workflow source @returns {void} */
+function inspectTimingWorkflow(text) {
+  if (YAML.parse(text)?.permissions?.actions !== 'read') workflowFail('permissions.actions', 'runner timing must have read access to Actions timestamps')
+  for (const [jobName, captureName, jobIdentity, reportPath, uploadName, artifactName] of [
+    ['fairtest', 'Capture Fairtest runner facts', 'fairtest', '/tmp/fairtest-timing/report.json', 'Upload Fairtest timing report', 'fairtest-timing-${{ github.run_id }}-${{ github.run_attempt }}'],
+    ['journeys', 'Capture journey runner facts', 'journeys (${{ matrix.project }})', 'scripts/journey/.artifacts/report.json', 'Upload journey timing report', 'journey-timing-${{ matrix.project }}-${{ github.run_id }}-${{ github.run_attempt }}'],
+  ]) {
+    const job = jobByName(text, jobName)
+    /** @type {Parameters<typeof stepByName>[0]} */
+    const steps = Array.isArray(job.steps) ? job.steps : []
+    if (job.env?.ROUTER_REASON !== '${{ needs.determine-runner.outputs.reason }}') workflowFail('ROUTER_REASON', 'the merge fallback must also receive the router reason')
+    const capture = stepByName(steps, captureName)
+    if (capture.run !== 'node scripts/journey/runner-facts.mjs capture' || capture.if !== undefined || capture['continue-on-error'] !== true || capture.env?.RUNNER_JOB_NAME !== jobIdentity || capture.env?.ROUTER_REASON !== '${{ needs.determine-runner.outputs.reason }}' || capture.env?.GITHUB_TOKEN !== '${{ github.token }}' || steps.indexOf(capture) > steps.findIndex((step) => step.name === 'Install (frozen lockfile)')) workflowFail(captureName, 'runner capture must precede installation and remain non-blocking with the job identity, router reason and GitHub token')
+    const merge = steps.find((step) => String(step.run || '').includes(`node scripts/journey/runner-facts.mjs merge ${reportPath}`))
+    if (!merge || merge.if !== 'always()' || merge['continue-on-error'] !== true || steps.indexOf(merge) < steps.indexOf(capture)) workflowFail('timing merge', 'the report must include captured facts on every run without blocking the gate')
+    const upload = stepByName(steps, uploadName)
+    if (upload.if !== 'always()' || upload['continue-on-error'] !== true || upload.uses !== `${UPLOAD_PIN.action}@${UPLOAD_PIN.sha}` || upload.with?.name !== artifactName || upload.with?.path !== reportPath || upload.with?.['if-no-files-found'] !== 'warn' || steps.indexOf(upload) < steps.indexOf(merge)) workflowFail(uploadName, 'the per-job timing report must upload on every run without blocking the gate')
+  }
+  const journeyJob = jobByName(text, 'journeys')
+  /** @type {Parameters<typeof stepByName>[0]} */
+  const journeySteps = Array.isArray(journeyJob.steps) ? journeyJob.steps : []
+  const catalog = stepByName(journeySteps, 'Journey catalog name manifest')
+  if (catalog.if !== undefined || !catalog.run?.includes('node scripts/journey/catalog-gate.mjs') || !catalog.run?.includes('node --test scripts/journey/catalog-gate.test.mjs scripts/journey/runner-facts.test.mjs scripts/journey/recording-policy.test.mjs scripts/journey/theme-rows.test.mjs scripts/journey/check-light-transparency.test.mjs') || journeySteps.indexOf(catalog) > journeySteps.findIndex((step) => step.name === 'Journey gates')) workflowFail('catalog manifest', 'the catalog, fixture guards and recording mutations must precede journeys')
+  const light = stepByName(journeySteps, 'Verify light transparency ran')
+  if (light.if !== "matrix.project == 'light'" || light.run !== 'node scripts/journey/check-light-transparency.mjs' || light['continue-on-error'] !== undefined || journeySteps.indexOf(light) < journeySteps.findIndex((step) => step.name === 'Journey gates')) workflowFail('light transparency', 'the light project must prove the mounted check ran after journeys')
+  const artifact = stepByName(journeySteps, 'Upload journey artifacts on failure')
+  if (artifact.if !== 'failure()' || artifact.uses !== `${UPLOAD_PIN.action}@${UPLOAD_PIN.sha}` || artifact.with?.name !== 'journey-artifacts-${{ matrix.project }}-${{ github.run_id }}-${{ github.run_attempt }}' || artifact.with?.path !== 'scripts/journey/.artifacts') workflowFail('journey artifacts', 'failure artifacts must upload the per-project Playwright directory')
 }
 
 /**
@@ -810,6 +840,7 @@ function inspectWorkflow(text) {
   inspectWorkflowBudget(text)
   inspectJourneyWorkflow(text)
   inspectWorkflowAggregator(text)
+  inspectTimingWorkflow(text)
 }
 
 /* ── case dispatch ────────────────────────────────────────────────────── */
@@ -1229,6 +1260,11 @@ test('run-envelope: workflow mutations fail for their intended field', () => {
     assert.ok(message, `${mutation.name}: mutated workflow passed the guard instead of failing`)
     assert.ok(message.includes(mutation.expectedField), `${mutation.name}: diagnostic names the wrong field; expected ${mutation.expectedField}, received ${message}`)
   }
+})
+
+test('run-envelope: timing and catalog workflow wiring', () => {
+  inspectTimingWorkflow(workflowSource)
+  inspectJourneyWorkflow(workflowSource)
 })
 
 /**

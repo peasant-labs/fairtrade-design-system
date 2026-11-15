@@ -9,12 +9,13 @@ import { useEffect, useRef } from 'react'
 
    Segment mode (`ticks` supplied): the transcript has no page and never mounts a node per turn.
    The host passes a fixed `min(200, totalSegments)` sample from `segments.js`; each tick is keyed
-   by segment index and labelled with its turn range, and activating one takes the same path as a
-   boundary's load-more. `onSeekTick(tick)` receives the chosen sample entry.
+   by segment index and titled with its conversation turns (or its segment ordinal when the
+   directory sent no positions), and activating one takes the same path as a boundary's load-more. `onSeekTick(tick)` receives the chosen sample entry.
 
    Exported as `TranscriptScrubber`. */
 
 /** @typedef {import('./view-model.js').TurnVM} TurnVM */
+/** @typedef {import('./segments.js').ScrubberTick} ScrubberTick */
 
 /**
  * @param {object} props
@@ -81,7 +82,7 @@ export default function Scrubber({ turns = [], ticks, active = 0, activeTick = 0
       aria-valuemax={Math.max(1, count)}
       aria-valuenow={activeIdx + 1}
       aria-valuetext={segmentMode
-        ? `${activeTickEntry?.label ?? 'turn 0'} of ${count} ${count === 1 ? 'segment' : 'segments'}`
+        ? activeTickEntry?.valueText ?? 'no segments'
         : 'turn ' + (activeIdx + 1) + ' of ' + count}
       tabIndex={0}
       onMouseDown={down}
@@ -107,5 +108,3 @@ export default function Scrubber({ turns = [], ticks, active = 0, activeTick = 0
     </div>
   )
 }
-
-/** @typedef {{key: string, index: number, firstTurn: number, lastTurn: number, label: string, leftPct: number}} ScrubberTick */

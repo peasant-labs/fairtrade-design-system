@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { Boxes, MessagesSquare, ListTree, Filter } from 'lucide-react'
 import {
   StepWizard,
   StepIndicator,
+  StepWizardFrame,
+  Button,
   RailShell,
   RailSection,
   SplitRail,
@@ -22,6 +25,44 @@ const WIZARD_STEPS = [
   { id: 'redact', label: 'redact' },
   { id: 'submit', label: 'submit' },
 ]
+
+/* a host driving the frame (copied from the Controlled story): the host owns the current step
+   and the footer actions, so a server-driven flow renders the step the server chose. three steps
+   is the case that used to push the first label past the frame's left edge. */
+const FRAME_STEPS = [
+  { id: 'choose', label: 'choose' },
+  { id: 'labels', label: 'labels' },
+  { id: 'review', label: 'review' },
+]
+
+function HostedFrame() {
+  const [current, setCurrent] = useState('choose')
+  const index = FRAME_STEPS.findIndex((step) => step.id === current)
+  const completed = new Set(FRAME_STEPS.slice(0, index).map((step) => step.id))
+  const reachable = new Set(FRAME_STEPS.slice(0, index + 1).map((step) => step.id))
+  return (
+    <StepWizardFrame
+      steps={FRAME_STEPS}
+      current={current}
+      completed={completed}
+      reachable={reachable}
+      onJump={setCurrent}
+      aria-label="set up the commons"
+      footStart={(
+        <Button variant="ghost" disabled={index === 0} onClick={() => setCurrent(FRAME_STEPS[index - 1].id)}>
+          back
+        </Button>
+      )}
+      footEnd={(
+        <Button variant="primary" disabled={index === FRAME_STEPS.length - 1} onClick={() => setCurrent(FRAME_STEPS[index + 1].id)}>
+          continue
+        </Button>
+      )}
+    >
+      <p>{FRAME_STEPS[index].label}: the body is whatever the host renders for this step.</p>
+    </StepWizardFrame>
+  )
+}
 
 /* ── RailShell: the shared node-inspector rail (copied from the RailShell story) ──────── */
 
@@ -215,6 +256,11 @@ export function FlowsSection() {
             <p>review and redact anything sensitive before it leaves your machine.</p>
             <p>submit your contribution. thank you for feeding the collective.</p>
           </StepWizard>
+
+          <span className="label" style={{ marginTop: 'var(--sp-6)', marginBottom: 'var(--sp-3)' }}>step wizard frame (controlled: the host owns the step and the footer)</span>
+          {/* the same frame with no state of its own: continue and back are the host's buttons, and
+              the labels stay inside the rail at any width and step count. */}
+          <HostedFrame />
         </div>
       </div>
 

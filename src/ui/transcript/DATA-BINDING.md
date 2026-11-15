@@ -24,6 +24,12 @@ present; nullable canonical `turns` becomes an empty list. Both data modules car
 `adaptTranscript(durablePayload, annotations, analytics, options)` validates the complete
 evidence-bearing value with schema's `parseSessionDetailPayloadValue` before filtering. Hosts
 must still use the canonical text parser at the network boundary for lexical JSON validation.
+For published content, hosts must first validate the complete envelope using schema's
+`parseTranscriptContentText`, then pass its `sessionDetail` with
+`{ payloadMode: 'published' }` as the adapter's fourth argument. Published mode trusts that
+validated detail and skips the incompatible local parser; it must not be used on unvalidated
+input. The default is `local`. `TranscriptViewer` accepts only the resulting `viewModel`, not
+wire payloads, so it needs no payload-mode prop.
 Do not pass the flat read DTO as durable content: separate `relationshipNavigation` into
 `options.relationshipNavigation`. Village supplies this option from metadata, not from `/content`.
 
@@ -42,9 +48,14 @@ into `TurnVM.contentParts` in the recorded order. `content` stays the text fallb
 no parts renders exactly as before, and a part kind this contract does not render is dropped rather
 than guessed at. An image-bearing turn is retained even when its text is empty (an image-only
 prompt is content, not an empty legacy banner), and equal-text collapse never merges two image
-turns. The renderer resolves a present image's `ref` through the host's `attachmentUrl` prop; an
-omitted image (too large, unsupported, missing, or `not_published`) renders its reason and never
-requests bytes.
+turns. The renderer resolves a present image's `ref` through the host's `imageUrl(ref)` prop,
+which returns a URL or `null`/`undefined` when it cannot resolve the image. With no resolver or no
+URL, the viewer renders an unavailable placeholder and requests no bytes. An omitted image (too
+large, unsupported, missing, or `not_published`) renders its reason and never calls the resolver.
+The deprecated `attachmentUrl` alias remains supported; use `imageUrl` in new hosts. If both are
+supplied, `imageUrl` takes precedence, even when it returns no URL, and a development-only warning
+asks the host to remove the alias. The resolver reaches both main turns and earlier history. The
+standalone `TranscriptTurnCard` and `TranscriptImageAttachment` exports accept the same props.
 
 Cooked `TurnVM.identity` is scoped by `partition` (`main` or `earlier-N`) plus source ref, falling
 back to the index only for legacy rows. Refs/provenance and folded refs/provenance are retained.

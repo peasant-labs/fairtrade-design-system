@@ -7,7 +7,7 @@ import { createRoot } from 'react-dom/client'
 import YAML from 'yaml'
 import TranscriptViewer from '../../src/ui/transcript/TranscriptViewer.jsx'
 import { adaptTranscript } from '../../src/ui/transcript/adapter.js'
-import { buildDirectory, makeSegments } from '../../scripts/transcript-segment-fixture.mjs'
+import { buildDirectory, buildPositionDirectory, makePositionSegments, makeSegments } from '../../scripts/transcript-segment-fixture.mjs'
 
 // The standalone gate and this mounted gate consume the same named cases and
 // segment constructor, so the reader-facing evidence has one fixture source.
@@ -106,8 +106,24 @@ describe('TranscriptViewer segment evidence under Vitest', () => {
     const def = directoryFor(phase)
     const mounted = await mount(viewer({ directory: buildDirectory(def), segments: makeSegments(def, phase.loaded) }, { analytics: { phases: [phase.phase] } }))
     expect(text(mounted.querySelector('.txn-phase .rng'))).toBe(phase.caption)
+  })
+
+  // No surface names a conversation turn past the header total. The comparison parses
+  // the header and every range a boundary names; it is never a string match alone.
+  const positions = selected('positionCases', 'positions')
+  it(positions.name, async () => {
+    const def = fixture.positionDirectories.find(row => row.name === positions.directory)
+    const mounted = await mount(viewer({ directory: buildPositionDirectory(def, positions), segments: makePositionSegments(def, positions.loaded, positions), onLoadSegment: () => {} }))
+    const header = text(mounted.querySelector('.txn-trace-count'))
+    expect(header).toBe(positions.expect.header)
     const captions = [...mounted.querySelectorAll('.txn-segboundary-caption')].map(text)
-    expect(captions.length).toBeGreaterThan(0)
-    for (const caption of captions) expect(caption).not.toMatch(/\bturns?\s+\d|\b\d[\d,]*\s+turns?\b/i)
+    expect(captions).toEqual(positions.expect.captions)
+    const labels = [...mounted.querySelectorAll('.txn-segboundary-load')].map(node => node.getAttribute('aria-label'))
+    expect(labels).toEqual(positions.expect.labels)
+    const integer = digits => Number(digits.replaceAll(',', ''))
+    const total = integer(/(\d[\d,]*) turns?$/.exec(header)[1])
+    const upperBounds = [...captions, ...labels].flatMap(copy => [...copy.matchAll(/\bturns? (\d[\d,]*)(?:–(\d[\d,]*))?/g)].map(match => integer(match[2] ?? match[1])))
+    expect(upperBounds.length).toBeGreaterThan(0)
+    for (const upper of upperBounds) expect(upper).toBeLessThanOrEqual(total)
   })
 })

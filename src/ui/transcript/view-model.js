@@ -85,7 +85,8 @@
  * @property {number} totalTokens
  * @property {number} tokensIn
  * @property {number} tokensOut
- * @property {number} turnCount
+ * @property {number} turnCount             folded turns of the main partition, system and tool rows included; not the count a reader is shown
+ * @property {number} [conversationTurnCount] the count a reader is shown; absent means unmeasured, and the hero then prints `turnCount`
  * @property {number} [inputSubmissionCount] absent means unmeasured, never inferred from turns
  * @property {boolean} [hasNormalizedEvidence] prevents legacy prompt-derived title inference
  * @property {import('@peasant-labs/schema').SessionPurpose} [purpose]
@@ -190,7 +191,7 @@ export const TOOL_GROUPS = Object.freeze([
 /**
  * One cooked image block of a turn, in source order. `image` is the producer's recorded part:
  * a content reference plus metadata, or an omission reason that explains the missing bytes.
- * The host resolves `image.ref` to a URL through the viewer's `attachmentUrl` prop.
+ * The host resolves `image.ref` to a URL through the viewer's `imageUrl` prop.
  * @typedef {object} ImagePartVM
  * @property {'image'} type
  * @property {import('@peasant-labs/schema').ImagePart} image

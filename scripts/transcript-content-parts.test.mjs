@@ -9,15 +9,17 @@
    guessed at. The rendered order is asserted on the REAL TurnCard through vite, not on a copy.
    Cases: scripts/testdata/content-parts.yaml (+ .manifest.yaml).
    Run: pnpm test:transcript-content-parts */
-import { loadFixturePair, withMountedSource, createReport } from './mounted-parts.mjs'
+import { assertFields, loadFixturePair, withMountedSource, createReport } from './mounted-parts.mjs'
 
 const FIXTURE = 'scripts/testdata/content-parts.yaml'
 const MANIFEST = 'scripts/testdata/content-parts.manifest.yaml'
-const { fixture } = loadFixturePair(FIXTURE, MANIFEST, { cases: 'requiredCaseNames' })
+const { fixture } = loadFixturePair(FIXTURE, MANIFEST, { cases: 'requiredCaseNames', resolverCases: 'requiredResolverCaseNames' })
 
 const report = createReport('transcript content parts')
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
 const ATTACHMENT_URL = 'data:image/png;base64,iVBORw0KGgo='
+const IMAGE_URL = 'data:image/png;base64,aW1hZ2U='
+const CAPABILITIES = { canEdit: false, canLabel: false, canContribute: false, canChangeVisibility: false, canExport: false }
 
 const payloadOf = (row) => ({
   id: 'content-parts',
@@ -35,6 +37,8 @@ await withMountedSource(async ({ load, mount, React }) => {
   const { adaptTranscript, prefilterTurns } = await load('/src/ui/transcript/adapter.js')
   const { imageAltText } = await load('/src/ui/transcript/image-parts.js')
   const { default: TurnCard } = await load('/src/ui/transcript/TurnCard.jsx')
+  const { default: TranscriptImageAttachment } = await load('/src/ui/transcript/ImageAttachment.jsx')
+  const { default: TranscriptViewer } = await load('/src/ui/transcript/TranscriptViewer.jsx')
 
   for (const row of fixture.cases) {
     if (row.kind === 'decode') {
@@ -58,7 +62,7 @@ await withMountedSource(async ({ load, mount, React }) => {
       const mounted = await mount(React.createElement(TurnCard, {
         turn: cooked,
         presentation: 'classic',
-        attachmentUrl: () => ATTACHMENT_URL,
+        imageUrl: () => IMAGE_URL,
       }))
       /* the body's direct children in order: a Markdown block for each text part and a figure
          for each image part. Read the rendered sequence, not the model. */
@@ -74,6 +78,61 @@ await withMountedSource(async ({ load, mount, React }) => {
       throw new Error(`${FIXTURE}: unknown case kind ${row.kind}`)
     }
   }
+
+  const viewModel = adaptTranscript(payloadOf(fixture.resolverInput))
+  const turn = viewModel.turns[0]
+  const imagePart = turn.contentParts[0]
+  const ref = imagePart.image.ref
+  const originalWarn = console.warn
+  const originalFetch = globalThis.fetch
+  const originalNodeEnv = process.env.NODE_ENV
+  try {
+    for (const row of fixture.resolverCases) {
+      assertFields(row, ['name', 'component', 'imageUrl', 'attachmentUrl', 'expected', 'warnings'], `${FIXTURE} ${row.name}`, ['environment', 'imagePropNull', 'imageResult'])
+      if (!['image', 'attachment', 'unavailable'].includes(row.expected)) throw new Error(`${FIXTURE}: unknown resolver expectation ${row.expected}`)
+      process.env.NODE_ENV = row.environment ?? 'development'
+      const calls = { image: [], attachment: [] }
+      const warnings = []
+      let fetches = 0
+      console.warn = (...args) => warnings.push(args.map(String).join(' '))
+      globalThis.fetch = (...args) => { fetches++; throw new Error(`${row.name}: unexpected fetch ${args[0]}`) }
+      const resolveImage = value => {
+        calls.image.push(value)
+        if (row.imageResult === 'undefined') return undefined
+        return 'imageResult' in row ? row.imageResult : IMAGE_URL
+      }
+      const props = {
+        ...(row.imageUrl ? { imageUrl: resolveImage } : row.imagePropNull ? { imageUrl: null } : {}),
+        ...(row.attachmentUrl ? { attachmentUrl: value => { calls.attachment.push(value); return ATTACHMENT_URL } } : {}),
+      }
+      let element
+      if (row.component === 'viewer') element = React.createElement(TranscriptViewer, { viewModel, capabilities: CAPABILITIES, ...props })
+      else if (row.component === 'turn') element = React.createElement(TurnCard, { turn, ...props })
+      else if (row.component === 'image') element = React.createElement(TranscriptImageAttachment, { part: imagePart, ...props })
+      else throw new Error(`${FIXTURE}: unknown resolver component ${row.component}`)
+      const mounted = await mount(element)
+      try {
+        // A repeated render must not repeat the conflict warning or switch resolvers.
+        await mounted.rerender(React.cloneElement(element))
+        const img = mounted.container.querySelector('.txn-image-thumb')
+        const expectedURL = row.expected === 'image' ? IMAGE_URL : row.expected === 'attachment' ? ATTACHMENT_URL : null
+        report.check((img?.getAttribute('src') ?? null) === expectedURL, `${row.name}: expected img src ${JSON.stringify(expectedURL)}, received ${JSON.stringify(img?.getAttribute('src') ?? null)}`)
+        report.check(expectedURL !== null || !!mounted.container.querySelector('[data-image-omitted="unavailable"]'), `${row.name}: an unresolved image must show the unavailable placeholder`)
+        report.check(row.imageUrl ? calls.image.length > 0 && calls.image.every(value => value === ref) : calls.image.length === 0, `${row.name}: imageUrl must receive only the recorded ref`)
+        report.check(row.attachmentUrl && !row.imageUrl ? calls.attachment.length > 0 && calls.attachment.every(value => value === ref) : calls.attachment.length === 0, `${row.name}: attachmentUrl must be called only as the fallback`)
+        report.check(fetches === 0, `${row.name}: the viewer must not fetch image bytes itself`)
+        report.check(warnings.length === row.warnings, `${row.name}: expected ${row.warnings} conflict warnings, received ${warnings.length}`)
+        if (row.warnings) report.check(!!warnings[0]?.includes('imageUrl') && warnings[0].includes('attachmentUrl'), `${row.name}: the warning must name both props`)
+      } finally {
+        await mounted.unmount()
+      }
+    }
+  } finally {
+    console.warn = originalWarn
+    globalThis.fetch = originalFetch
+    if (originalNodeEnv === undefined) delete process.env.NODE_ENV
+    else process.env.NODE_ENV = originalNodeEnv
+  }
 })
 
-report.finish(`${fixture.cases.length} cases over ordered turn content parts.`)
+report.finish(`${fixture.cases.length} content-part cases and ${fixture.resolverCases.length} resolver cases.`)

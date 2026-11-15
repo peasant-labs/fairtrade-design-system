@@ -1,0 +1,79 @@
+cases:
+  - name: typescript-is-highlighted
+    language: ts
+    source: 'export const days = 30'
+    highlighted: true
+  - name: python-is-highlighted
+    language: python
+    source: 'return "hello"'
+    highlighted: true
+  - {name: go-is-highlighted, language: go, source: 'func main() {}', highlighted: true}
+  - {name: json-is-highlighted, language: json, source: '{"value": 3}', highlighted: true}
+  - {name: yaml-is-highlighted, language: yaml, source: 'answer: 42', highlighted: true}
+  - {name: shell-is-highlighted, language: bash, source: 'echo hello', highlighted: true}
+  - {name: css-is-highlighted, language: css, source: 'body { color: red; }', highlighted: true}
+  - {name: html-is-highlighted, language: html, source: '<p>hello</p>', highlighted: true}
+  - name: unknown-language-keeps-plain-source
+    language: unrecognized-lang
+    source: 'the source stays readable'
+    highlighted: false
+  - name: omitted-language-keeps-plain-source
+    language: ''
+    source: 'the source has no declared language'
+    highlighted: false
+  - name: oversized-line-keeps-plain-source
+    language: ts
+    source: x
+    repeat: 9000
+    highlighted: false
+  - name: executable-looking-code-stays-text
+    language: javascript
+    source: 'const example = "<img src=x onerror=alert(1)>"'
+    highlighted: true
+  - name: multiline-code-preserves-blank-lines
+    language: ts
+    source: "const first = 1\n\nconst second = 2"
+    highlighted: true
+invalid:
+  - name: changed-token-text-is-refused
+    source: alpha
+    tokens:
+      - [{content: beta, color: 'var(--shiki-foreground)'}]
+  - name: untrusted-token-style-is-refused
+    source: alpha
+    tokens:
+      - [{content: alpha, color: 'url(https://example.invalid/secret)'}]
+  - name: non-text-token-is-refused
+    source: alpha
+    tokens:
+      - [{content: 12, color: 'var(--shiki-foreground)'}]
+  - name: missing-token-line-is-refused
+    source: "first\nsecond"
+    tokens:
+      - [{content: first, color: 'var(--shiki-foreground)'}]
+  - name: invalid-line-shape-is-refused
+    source: alpha
+    tokens: [invalid]
+  - name: excessive-token-output-is-refused
+    source: x
+    sourceRepeat: 4097
+    token: {content: x, color: 'var(--shiki-foreground)'}
+    tokenRepeat: 4097
+preservation:
+  - {name: carriage-return-line-endings-preserved, language: ts, source: "const a = 1\r\nconst b = 2\r\n"}
+  - {name: trailing-and-leading-blank-lines-preserved, language: ts, source: "\nconst x = 1\n\n"}
+budgets:
+  - {name: overlong-line-never-invokes-tokenizer, language: ts, source: x, repeat: 1025}
+  - {name: too-many-lines-never-invokes-tokenizer, language: ts, source: "x\n", repeat: 257}
+  - {name: too-much-source-never-invokes-tokenizer, language: ts, source: "xxxxxxxx\n", repeat: 1000}
+searches:
+  - {name: search-crosses-token-spans, language: ts, source: 'const answer = 42', query: 'const answer'}
+failures:
+  - name: tokenizer-error-retains-plain-source
+    language: ts
+    source: 'let answer = 42'
+rerenders:
+  - name: changing-the-source-never-shows-old-tokens
+    language: ts
+    first: 'const FIRST_SOURCE = 1'
+    second: 'const SECOND_SOURCE = 2'

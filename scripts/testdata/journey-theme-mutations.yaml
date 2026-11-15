@@ -1,0 +1,4 @@
+cases:
+  - {name: unknown-theme, kind: unknown, expected: 'unknown theme'}
+  - {name: matches-both-projects, kind: both, expected: 'executes 2 times'}
+  - {name: matches-no-project, kind: neither, expected: 'executes 0 times'}

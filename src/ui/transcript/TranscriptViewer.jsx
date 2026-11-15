@@ -1,5 +1,5 @@
 import { formatCount, formatInteger } from '../format.js'
-import { headingTag, pageHeadingLevel } from '../heading.js'
+import { headingTag } from '../heading.js'
 import { Fragment, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
   ChevronRight, ChevronDown, ChevronUp, Clock, Coins, ShieldCheck, FileText,
@@ -10,7 +10,10 @@ import {
   CornerDownRight, Check, X, PanelLeftClose, PanelLeftOpen,
   PanelRightClose, PanelRightOpen, Menu as MenuIcon,
 } from 'lucide-react'
+import { isConversationTurn } from '@peasant-labs/schema'
 import ProviderIcon from '../ProviderIcon.jsx'
+import { transcriptHeadingLevel } from './heading.js'
+import { MarkdownContext } from './markdown-context.js'
 import { formatDurationMins, formatDurationMs } from './time.js'
 import { DEFAULT_TRANSCRIPT_FILTERS, categoryCounts, filtersActive as countActiveFilters, projectTurn } from './filters.js'
 import { actionGroups } from './action-groups.js'
@@ -26,7 +29,9 @@ import {
   regionBoundaries,
   scrubberTicks,
   turnsFromSegments,
+  turnUnit,
   windowCoverage,
+  windowFailureCaption,
 } from './segments.js'
 import TranscriptBoundary from './TranscriptBoundary.jsx'
 import { turnAtReadingLine } from './scroll-position.js'
@@ -44,6 +49,7 @@ import TranscriptSystemGroup from './SystemGroup.jsx'
 import { systemGroups as groupSystemTurns } from './system-groups.js'
 import { systemGroupFacetKinds, filterSystemGroupMembers, systemGroupFacetKey, systemGroupFacetSelected, toggleSystemGroupFacet } from './system-group-facet.js'
 import { hasImageParts } from './image-parts.js'
+import { useImageUrl } from './image-url.js'
 import TranscriptMinimap from './Minimap.jsx'
 import Scrubber from './Scrubber.jsx'
 import Scorecard from './Scorecard.jsx'
@@ -224,7 +230,7 @@ function PhaseDivider({ phase, heading: Heading = 'h3' }) {
   return (
     <div className="phase txn-phase">
       <Heading className="lbl"><Icon size={14} aria-hidden="true" /> {phase.label}</Heading>
-      {(phase.turnCount != null || phase.errors) && <span className="rng tnum">{phase.turnCount != null ? `${formatInteger(phase.turnCount)} ${phase.turnCount === 1 ? 'turn' : 'turns'}` : ''}{phase.errors ? `${phase.turnCount != null ? ', ' : ''}${formatInteger(phase.errors)} error` : ''}</span>}
+      {(phase.turnCount != null || phase.errors) && <span className="rng tnum">{phase.turnCount != null ? `${formatInteger(phase.turnCount)} ${turnUnit(phase.turnCount)}` : ''}{phase.errors ? `${phase.turnCount != null ? ', ' : ''}${formatInteger(phase.errors)} error` : ''}</span>}
     </div>
   )
 }
@@ -312,6 +318,7 @@ export default function TranscriptViewer({
   LinkComponent,
   renderTurnPanel,
   renderTurnActions,
+  imageUrl,
   attachmentUrl,
   anchorHref,
   headerActions,
@@ -325,6 +332,7 @@ export default function TranscriptViewer({
   subtitle,
   pullRequests,
   headingLevel,
+  allowMarkdownImages,
   integrity,
   transcriptContentHash,
   contentHash,
@@ -334,12 +342,16 @@ export default function TranscriptViewer({
   onLoadSegment,
   onLoadWindow,
 }) {
+  const resolvedImageUrl = useImageUrl(imageUrl, attachmentUrl)
   if (breadcrumb != null && breadcrumbContext != null) {
     throw new TypeError('TranscriptViewer cannot use breadcrumb and breadcrumbContext together; pass either a complete breadcrumb or ancestor context, not both.')
   }
-  // the transcript's title is the page's h1 when the host mounts the viewer as the whole page; the
-  // phases and the turns move up one level with it
-  const pageLevel = pageHeadingLevel(headingLevel, 'TranscriptViewer')
+  if (allowMarkdownImages !== undefined && typeof allowMarkdownImages !== 'boolean') {
+    throw new TypeError('TranscriptViewer: allowMarkdownImages must be a boolean; pass false to prevent Markdown image requests in a local-only preview.')
+  }
+  // Explore keeps its page-level contract; this viewer also supports nested host panes.
+  const pageLevel = transcriptHeadingLevel(headingLevel)
+  const markdownContext = useMemo(() => ({ allowImages: allowMarkdownImages !== false, turnHeadingLevel: pageLevel + 2 }), [allowMarkdownImages, pageLevel])
   const TitleHeading = headingTag(pageLevel, 0)
   const PhaseHeading = headingTag(pageLevel, 1)
   const EmptyHeading = headingTag(pageLevel, 1)
@@ -621,7 +633,7 @@ export default function TranscriptViewer({
       setWindowFailure(current => current ?? { ...previous, kind: 'window' })
     }
     if (windowKey && activeFailure?.kind === 'window' && (!previous || previous.key !== windowKey) && windowProp.anchorTurn === activeFailure.anchor) setWindowFailure(null)
-    previousWindowRef.current = windowKey ? { key: windowKey, anchor: windowProp.anchorTurn, sessionId: session.id, incomplete: !rawCoverage?.complete, missing: rawCoverage?.missing ?? [] } : null
+    previousWindowRef.current = windowKey ? { key: windowKey, anchor: windowProp.anchorTurn, segments: windowProp.segments ?? [], sessionId: session.id, incomplete: !rawCoverage?.complete, missing: rawCoverage?.missing ?? [] } : null
   }, [windowKey, rawCoverage?.complete, session.id, windowProp, activeFailure])
   useEffect(() => {
     if (!segmentMode || !windowKey) {
@@ -637,7 +649,7 @@ export default function TranscriptViewer({
       if (held.has(index) || windowRequestRef.current.indexes.has(index)) continue
       windowRequestRef.current.indexes.add(index)
       const fail = () => {
-        if (windowRequestRef.current === request) setWindowFailure({ key: windowKey, anchor: windowProp.anchorTurn, sessionId: session.id, kind: 'segment' })
+        if (windowRequestRef.current === request) setWindowFailure({ key: windowKey, anchor: windowProp.anchorTurn, segments: windowProp.segments ?? [], sessionId: session.id, kind: 'segment' })
       }
       try {
         const result = onLoadSegment(index)
@@ -881,12 +893,30 @@ export default function TranscriptViewer({
   }, [turns, filters, commits, vm, searchReveal, systemReveal, session.id])
   const actionLayout = useMemo(() => actionGroups(turns, visibleTurns), [turns, visibleTurns])
 
-  /* Conversation turns. The ratified rule: a system entry is harness bookkeeping,
-     not a turn, so every turn COUNT reports this set. The system filter still
-     reveals the entries, and the system category's badge keeps their entry count.
-     Mirrors the canonical producer rule (`role !== system`). */
-  const conversationTurns = useMemo(() => turns.filter((turn) => turn.role !== 'system'), [turns])
-  const visibleConversationCount = useMemo(() => visibleTurns.filter((turn) => turn.role !== 'system').length, [visibleTurns])
+  /* Conversation turns. Every turn COUNT reports this set, and the contract owns the
+     rule (`isConversationTurn`): a top-level user or assistant entry of text or image.
+     System entries, tool rows and thinking rows are not conversation turns. The filters
+     still reveal them, and each category's badge keeps its own entry count. */
+  const conversationTurns = useMemo(() => turns.filter(isConversationTurn), [turns])
+  const visibleConversationCount = useMemo(() => visibleTurns.filter(isConversationTurn).length, [visibleTurns])
+  /* The trace header's count. With a directory total the header stays in one unit while
+     segments load: the total alone once every segment is held and no filter hides a held
+     conversation turn, otherwise the visible count against it. Neither client count is
+     compared with the total, because the adapter can drop or merge legacy turns. The
+     unit agrees with the number beside it: the total in an "of" pair, as in the boundary
+     caption "turn 20 of 77". */
+  const traceCountText = useMemo(() => {
+    const total = scope?.totalConversationTurns
+    if (total != null) {
+      return scope.complete && visibleConversationCount === conversationTurns.length
+        ? `${formatInteger(total)} ${turnUnit(total)}`
+        : `${formatInteger(visibleConversationCount)} of ${formatInteger(total)} ${turnUnit(total)}`
+    }
+    if (segmentMode && scope && !scope.complete) return `${formatInteger(visibleConversationCount)} of ${formatInteger(scope.totalTurns)} ${turnUnit(scope.totalTurns)}`
+    return visibleConversationCount === conversationTurns.length
+      ? `${formatInteger(conversationTurns.length)} ${turnUnit(conversationTurns.length)}`
+      : `${formatInteger(visibleConversationCount)} of ${formatInteger(conversationTurns.length)} ${turnUnit(conversationTurns.length)}`
+  }, [segmentMode, scope, visibleConversationCount, conversationTurns.length])
 
   /* Runs of consecutive visible system turns. Ledger-only: classic keeps its full cards, so
      there is nothing to fold there. */
@@ -1798,6 +1828,7 @@ export default function TranscriptViewer({
             )
 
   return (
+    <MarkdownContext.Provider value={markdownContext}>
     <div
       ref={viewerRef}
       className={'txn-app' + (theme === 'light' ? ' txn-light' : '') + (ledger ? ' txn-ledger' : '') + (ledger && zen ? ' txn-zen' : '') + (mobile ? ' txn-compact' : '') + (heroCondensed ? ' txn-app-condensed' : '')}
@@ -1905,7 +1936,7 @@ export default function TranscriptViewer({
           {session.model && <span className="chip mono">{session.model}</span>}
           {session.git?.author && <Term className="metaitem" def="git author"><User size={14} aria-hidden="true" /> {session.git.author}</Term>}
           {formatDurationMins(session.durationMins) && <span className="metaitem"><Clock size={14} aria-hidden="true" /> <b className="tnum">{formatDurationMins(session.durationMins)}</b></span>}
-          {session.turnCount != null && <span className="metaitem"><ListTree size={14} aria-hidden="true" /> <b className="tnum">{session.turnCount}</b> turns</span>}
+          {(session.conversationTurnCount ?? session.turnCount) != null && <span className="metaitem"><ListTree size={14} aria-hidden="true" /> <b className="tnum">{session.conversationTurnCount ?? session.turnCount}</b> turns</span>}
           {/* a figure that was not measured is left out, never shown as unknown or as zero */}
           {session.inputSubmissionCount != null && <span className="metaitem"><MessageSquareText size={14} aria-hidden="true" /> <b className="tnum">{session.inputSubmissionCount}</b> {session.inputSubmissionCount === 1 ? 'prompt' : 'prompts'}</span>}
           {session.toolCallCount != null && <span className="metaitem"><Wrench size={14} aria-hidden="true" /> <b className="tnum">{session.toolCallCount}</b> tools</span>}
@@ -2033,11 +2064,7 @@ export default function TranscriptViewer({
                 </div>
               </Collapsible>
               <div className={"txn-trace-head" + (viewMode === 'graph' ? ' txn-trace-head-graph' : '')}>
-                <span className="txn-trace-count tnum">
-                  {segmentMode && scope && !scope.complete
-                    ? `${visibleConversationCount} of ${scope.totalTurns} turns`
-                    : visibleConversationCount === conversationTurns.length ? `${conversationTurns.length} turns` : `${visibleConversationCount} of ${conversationTurns.length} turns`}
-                </span>
+                <span className="txn-trace-count tnum">{traceCountText}</span>
                 <div className="txn-trace-actions">
                   <div className="bs-seg txn-viewtoggle" role="group" aria-label="view mode">
                     <button type="button" className="bs-seg-opt" aria-pressed={viewMode === 'list'} onClick={() => setViewMode('list')}><List size={14} aria-hidden="true" /> list</button>
@@ -2075,11 +2102,12 @@ export default function TranscriptViewer({
                       toggle={id => setEarlierHistoryOpen(previous => ({ ...previous, [id]: !previous[id] }))}
                       openTools={openTools}
                       toggleTool={toggleTool}
-                      attachmentUrl={attachmentUrl}
+                      imageUrl={resolvedImageUrl}
+                      headingLevel={pageLevel + 2}
                     />
                     {activeFailure && (
                       <div className="txn-held-window" role="alert">
-                        <span>could not load the window around turn {formatInteger(activeFailure.anchor)}.</span>{' '}
+                        <span>{windowFailureCaption(directory, activeFailure)}</span>{' '}
                         {(typeof onLoadWindow === 'function' || (typeof onLoadSegment === 'function' && (windowKey || activeFailure.missing?.length))) && (
                           <button type="button" className="txn-segboundary-load" onClick={retryWindow}>try again</button>
                         )}
@@ -2149,7 +2177,7 @@ export default function TranscriptViewer({
                             registerRef={registerRef}
                             onLabel={labelTurn}
                             renderActions={renderTurnActions}
-                            attachmentUrl={attachmentUrl}
+                            imageUrl={resolvedImageUrl}
                             savedLabel={savedLabels[t.index]}
                             compact={filters.views.compact}
                             expandAll={filters.views.expandAll}
@@ -2555,5 +2583,6 @@ export default function TranscriptViewer({
         )}
       </footer>
     </div>
+    </MarkdownContext.Provider>
   )
 }

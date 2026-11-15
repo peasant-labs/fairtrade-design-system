@@ -53,6 +53,8 @@ export const FAIRTEST_EVIDENCE_ROW_KEYS = Object.freeze([
   'component-images-unavailable-light',
   'component-selection-tree-dark',
   'component-selection-tree-light',
+  'component-step-wizard-dark',
+  'component-step-wizard-light',
 ])
 
 /**
@@ -133,6 +135,8 @@ export function fairtestEvidencePolicyInput(runId) {
       { key: 'component-images-unavailable-light', kind: 'component', theme: 'light', root: COMPONENT_PROVENANCE_SOURCE.root },
       { key: 'component-selection-tree-dark', kind: 'component', theme: 'dark', root: COMPONENT_PROVENANCE_SOURCE.root },
       { key: 'component-selection-tree-light', kind: 'component', theme: 'light', root: COMPONENT_PROVENANCE_SOURCE.root },
+      { key: 'component-step-wizard-dark', kind: 'component', theme: 'dark', root: COMPONENT_PROVENANCE_SOURCE.root },
+      { key: 'component-step-wizard-light', kind: 'component', theme: 'light', root: COMPONENT_PROVENANCE_SOURCE.root },
     ],
     duplicateScopes: ['same-key', 'cross-row', 'cross-theme'],
     maxAgeMs: FAIRTEST_EVIDENCE_MAX_AGE_MS,

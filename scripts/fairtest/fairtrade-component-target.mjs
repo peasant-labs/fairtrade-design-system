@@ -231,8 +231,9 @@ export const COMPONENT_RENDER_PHASES = Object.freeze({
  * of the value fields is declared per fact.
  * @typedef {object} ComponentExpectation
  * @property {string} name what the fact is, used in the record and diagnostics
- * @property {string} [selector] element selector inside the story root
- * @property {{ role: string, name: string, exact?: boolean }} [role] element found by role and accessible name
+ * @property {string} [scope] selector of the element the lookup is made inside, when the fact is about one part of the story root
+ * @property {string} [selector] element selector inside the story root (or inside `scope`)
+ * @property {{ role: string, name: string, exact?: boolean }} [role] element found by role and accessible name (inside `scope` when given). The role lookup leaves out content hidden with `display` or `visibility`, so the name it matches is the accessible name a reader gets
  * @property {string} [matches] selector the found element must also match
  * @property {string} [attribute] attribute read on the first match, with `value`
  * @property {string | null} [value] expected attribute value; null means the attribute is absent
@@ -240,6 +241,8 @@ export const COMPONENT_RENDER_PHASES = Object.freeze({
  * @property {readonly string[]} [texts] expected trimmed texts of every match, in order
  * @property {number} [count] expected match count
  * @property {boolean} [focused] whether the first match must hold focus
+ * @property {string} [inside] selector of the ancestor each match must lie inside: every match's box sits within the box of its closest ancestor that matches, to half a pixel
+ * @property {{ to: string, edge: 'left' | 'right' | 'center' }} [flush] where each match sits against its closest ancestor that matches `to`: its left edge on that ancestor's left edge, its right edge on the right edge, or its centre on the centre, to half a pixel
  */
 
 /**
@@ -343,6 +346,25 @@ const IMAGE_INLINE_ALT = Object.freeze({ name: 'described image thumbnails', sel
 const IMAGE_INLINE_OPENERS = Object.freeze({ name: 'inline image openers', selector: '#turn-0 .txn-image-open', count: 2 })
 const IMAGE_EXPANDED = Object.freeze({ name: 'expanded image', selector: '.txn-image-full', count: 1 })
 const IMAGE_EXPANDED_DIALOG = Object.freeze({ name: 'expanded image dialog', role: Object.freeze({ role: 'dialog', name: 'image 1 of 2' }), count: 1 })
+
+// The step wizard label matrix: one frame per step count from 1 to 10 at two widths. Each frame
+// of n steps holds n labels, and the place a label is given follows from its index: a lone step
+// is `only`; otherwise the first is `start`, the last is `end`, and the n - 2 between are `middle`.
+const STEP_WIZARD_FRAMES = 20
+const STEP_WIZARD_LABELS = 110
+const STEP_WIZARD_FRAME_FACT = Object.freeze({ name: 'frames', selector: '.swz', count: STEP_WIZARD_FRAMES })
+const STEP_WIZARD_LABELS_INSIDE = Object.freeze({ name: 'labels-inside-rails', selector: '.swz-label', inside: '.swz-rail', count: STEP_WIZARD_LABELS })
+const STEP_WIZARD_LONE_LABELS = Object.freeze({ name: 'lone-labels-flush-left', selector: '.swz-label--only', flush: Object.freeze({ to: '.swz-step', edge: 'left' }), count: 2 })
+const STEP_WIZARD_FIRST_LABELS = Object.freeze({ name: 'first-labels-flush-left', selector: '.swz-label--start', flush: Object.freeze({ to: '.swz-step', edge: 'left' }), count: 18 })
+const STEP_WIZARD_LAST_LABELS = Object.freeze({ name: 'last-labels-flush-right', selector: '.swz-label--end', flush: Object.freeze({ to: '.swz-step', edge: 'right' }), count: 18 })
+const STEP_WIZARD_MIDDLE_LABELS = Object.freeze({ name: 'middle-labels-centred', selector: '.swz-label--middle', flush: Object.freeze({ to: '.swz-step', edge: 'center' }), count: 72 })
+// The narrow ten-step frame hides every label from sight. Each marker's accessible name still holds
+// its label: the first label (`start`), a middle one, and the last (`end`), asked for by role and name
+// inside that one frame. A label hidden with `visibility` would drop out of the name and out of these.
+const STEP_WIZARD_TEN_NARROW = '.swz[aria-label="10 steps, narrow"]'
+const STEP_WIZARD_NAMED_START = Object.freeze({ name: 'narrow-ten-start-label-named', scope: STEP_WIZARD_TEN_NARROW, role: Object.freeze({ role: 'button', name: 'welcome', exact: false }), count: 1 })
+const STEP_WIZARD_NAMED_MIDDLE = Object.freeze({ name: 'narrow-ten-middle-label-named', scope: STEP_WIZARD_TEN_NARROW, role: Object.freeze({ role: 'button', name: 'review', exact: false }), count: 1 })
+const STEP_WIZARD_NAMED_END = Object.freeze({ name: 'narrow-ten-end-label-named', scope: STEP_WIZARD_TEN_NARROW, role: Object.freeze({ role: 'button', name: 'done', exact: false }), count: 1 })
 
 /**
  * The mounted story rows, in row order. Floors are measured on the real built
@@ -643,6 +665,36 @@ export const COMPONENT_STORIES = Object.freeze([
       Object.freeze({ name: 'labelCase', selector: '.st-label', property: 'textTransform', equals: 'none' }),
     ]),
     floors: Object.freeze({ descendants: 8, textLength: 24, ariaChars: 40, screenshotBytes: 800 }),
+  }),
+  Object.freeze({
+    key: 'step-wizard',
+    rowPrefix: 'component-step-wizard',
+    targetId: 'fairtrade-step-wizard-story',
+    storyId: 'in-use-stepwizard--labels-inside-frame',
+    layout: 'fullscreen',
+    before: Object.freeze([
+      STEP_WIZARD_FRAME_FACT,
+      STEP_WIZARD_LABELS_INSIDE,
+      STEP_WIZARD_LONE_LABELS,
+      STEP_WIZARD_FIRST_LABELS,
+      STEP_WIZARD_LAST_LABELS,
+      STEP_WIZARD_MIDDLE_LABELS,
+      STEP_WIZARD_NAMED_START,
+      STEP_WIZARD_NAMED_MIDDLE,
+      STEP_WIZARD_NAMED_END,
+    ]),
+    action: null,
+    after: Object.freeze([]),
+    gateTie: Object.freeze({ field: 'labelsInsideRails', expectation: STEP_WIZARD_LABELS_INSIDE }),
+    computed: Object.freeze([
+      Object.freeze({ name: 'labelFontFamily', selector: '.swz-label', property: 'fontFamily', token: '--font-mono' }),
+      Object.freeze({ name: 'labelCase', selector: '.swz-label', property: 'textTransform', equals: 'lowercase' }),
+      Object.freeze({ name: 'frameSquare', selector: '.swz', property: 'borderRadius', equals: '0px' }),
+      Object.freeze({ name: 'countFontVariantNumeric', selector: '.swz-count .tnum', property: 'fontVariantNumeric', includes: 'tabular-nums' }),
+    ]),
+    // the 20-frame label matrix measured 891 descendants, 1470 characters, a 5267-character ARIA
+    // snapshot, and a 135970-byte capture; a blank root holds none of those.
+    floors: Object.freeze({ descendants: 600, textLength: 1000, ariaChars: 3000, screenshotBytes: 60000 }),
   }),
 ])
 

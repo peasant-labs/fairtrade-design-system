@@ -38,6 +38,7 @@ requiredImportables:
   - SelectionNodeState
   - parseNodeKind
   - parseNodeState
+  - StepWizardFrame
   - RedactionReview
   - SignInProviders
   - LOCAL_APP_SECTIONS

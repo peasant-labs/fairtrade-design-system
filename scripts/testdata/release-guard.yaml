@@ -1,25 +1,23 @@
-titles:
-  valid:
-    - {name: final, input: "release(v1.2.3): final release", version: "1.2.3", tag: "fairtrade-v1.2.3"}
-    - {name: candidate, input: "release(v1.2.3-rc4): release candidate", version: "1.2.3-rc4", tag: "fairtrade-v1.2.3-rc4"}
-    - {name: zero core, input: "release(v0.0.0): zero core", version: "0.0.0", tag: "fairtrade-v0.0.0"}
-  invalid:
-    - {name: missing v, input: "release(1.2.3): missing v"}
-    - {name: short core, input: "release(v1.2): short version"}
-    - {name: empty subject, input: "release(v1.2.3):"}
-    - {name: extra separator, input: "release(v1.2.3):  double separator"}
-    - {name: prefix, input: "prefix release(v1.2.3): subject"}
-    - {name: beta, input: "release(v1.2.3-beta1): unsupported prerelease"}
-    - {name: leading zero major, input: "release(v01.2.3): bad major"}
-    - {name: leading zero minor, input: "release(v1.02.3): bad minor"}
-    - {name: leading zero patch, input: "release(v1.2.03): bad patch"}
-    - {name: rc zero, input: "release(v1.2.3-rc0): bad rc"}
-    - {name: rc padded, input: "release(v1.2.3-rc01): bad rc"}
+# Fixture inventory for scripts/release-guard.test.mjs. The required-name
+# manifest is scripts/testdata/release-guard.manifest.yaml: every list below
+# must carry exactly the names it records (deletion protection by name set,
+# never by count).
+#
+# Nothing here restates the release contract. The tag prefix, the changelog
+# path, the bot kinds, and the workflow files come from the release config and
+# the queue policy; the release-intent tool's own vocabulary (commands, flags,
+# output keys, gates, verdicts) is judged by the tool itself, through the
+# policy check title-guard runs. Literal text appears only as the input of a
+# row that must fail.
+
 tags:
+  # A valid row is a version under the release config's tag prefix and the
+  # release kind the parser must report for it.
   valid:
-    - {name: final, input: "fairtrade-v1.2.3"}
-    - {name: candidate, input: "fairtrade-v1.2.3-rc4"}
-    - {name: zero core, input: "fairtrade-v0.0.0"}
+    - {name: final, version: "1.2.3", kind: final}
+    - {name: candidate, version: "1.2.3-rc4", kind: rc}
+    - {name: zero core, version: "0.0.0", kind: final}
+  # An invalid row is a whole tag the parser must refuse.
   invalid:
     - {name: missing namespace, input: "v1.2.3"}
     - {name: missing v, input: "fairtrade-1.2.3"}
@@ -29,126 +27,354 @@ tags:
     - {name: leading zero patch, input: "fairtrade-v1.2.03"}
     - {name: rc zero, input: "fairtrade-v1.2.3-rc0"}
     - {name: rc padded, input: "fairtrade-v1.2.3-rc01"}
-permissions:
-  allowed: [admin, maintain]
-  denied: [write, triage, read, none]
-reviews:
-  - name: latest approval wins
-    maintainers: [alice]
-    reviews: [{user: alice, state: CHANGES_REQUESTED}, {user: alice, state: APPROVED}]
-    approved: true
-  - name: approval revoked
-    maintainers: [alice]
-    reviews: [{user: alice, state: APPROVED}, {user: alice, state: CHANGES_REQUESTED}]
-    approved: false
-  - name: non-maintainer ignored
-    maintainers: [alice]
-    reviews: [{user: bob, state: APPROVED}]
-    approved: false
-metadata:
-  valid: {number: 16, state: closed, merged: true, title: "release(v0.0.11): publish final schema support", user: {login: alice}, base: {ref: main}, merge_commit_sha: abc123}
-  invalid:
-    - {name: unmerged, patch: {merged: false}}
-    - {name: wrong base, patch: {base: {ref: develop}}}
-    - {name: empty SHA, patch: {merge_commit_sha: ""}}
-    - {name: malformed payload, payload: []}
-github:
-  resolve:
-    responses:
-      - {body: {number: 16, state: closed, merged: true, title: "release(v0.0.11): publish final schema support", user: {login: alice}, base: {ref: main}}}
-      - {body: {permission: admin}}
-      - body: [{event: merged, commit_id: cccccccccccccccccccccccccccccccccccccccc, commit_url: "https://api.github.com/repos/peasant-labs/fairtrade-design-system/commits/cccccccccccccccccccccccccccccccccccccccc"}]
-      - {body: {status: identical, merge_base_commit: {sha: cccccccccccccccccccccccccccccccccccccccc}}}
-    expected_merge_sha: cccccccccccccccccccccccccccccccccccccccc
-    expected_paths: ["/pulls/16", "/collaborators/alice/permission", "/issues/16/timeline?per_page=100", "/compare/cccccccccccccccccccccccccccccccccccccccc...main"]
-    invalid:
-      - {name: missing merged timeline event, mutation: missing_merged}
-      - {name: merged timeline repository differs, mutation: resolve_timeline_repository}
-      - {name: merged commit is disconnected from main, mutation: resolve_disconnected_commit}
-  malformed_response: {body: {}}
-  native_stack:
-    valid:
-      name: merged member on main trunk
-      responses:
-        - body: {number: 78, state: closed, merged: true, title: "release(v0.0.19): render Pi transcripts", user: {login: alice}, base: {ref: feature, repo: {id: 42, full_name: peasant-labs/fairtrade-design-system}}, head: {repo: {id: 42}}, stack: {number: 79, base: {ref: main}}, merge_commit_sha: null}
-        - {body: {permission: admin}}
-        - body: {number: 79, open: false, base: {ref: main}, pull_requests: [{number: 77, state: closed, merged_at: "2026-09-08T06:37:10Z", head: {repo: {id: 42}}, base: {repo: {id: 42}}}, {number: 78, state: closed, merged_at: "2026-09-08T06:37:11Z", head: {repo: {id: 42}}, base: {repo: {id: 42}}}]}
-        - body: [{event: merged, commit_id: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, commit_url: "https://api.github.com/repos/peasant-labs/fairtrade-design-system/commits/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]
-        - body: {status: identical, merge_base_commit: {sha: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}}
-      expected_paths: ["/pulls/78", "/collaborators/alice/permission", "/stacks/79", "/issues/78/timeline?per_page=100", "/compare/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa...main"]
-      expected_merge_sha: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-    invalid:
-      - {name: non-main stack trunk, mutation: stack_trunk}
-      - {name: requested PR is not a member, mutation: wrong_member}
-      - {name: member repository differs, mutation: wrong_repository}
-      - {name: member is unmerged, mutation: unmerged_member}
-      - {name: merged timeline SHA is missing, mutation: missing_sha}
-      - {name: merged timeline repository differs, mutation: timeline_repository}
-      - {name: merged commit is disconnected from main, mutation: disconnected_commit}
-      - {name: ordinary non-main PR is rejected, mutation: direct_non_main}
-    loader_invalid:
-      - {name: deleting required trunk scenario is rejected, operation: delete, scenario: non-main stack trunk, replacement: null}
-      - {name: replacing trunk scenario with duplicate mutation is rejected, operation: replace, scenario: non-main stack trunk, replacement: missing_sha}
-      - {name: replacing trunk scenario with unknown mutation is rejected, operation: replace, scenario: non-main stack trunk, replacement: misspelled_mutation}
-      - {name: mutation dispatcher rejects unknown discriminator, operation: unknown_dispatch, scenario: non-main stack trunk, replacement: misspelled_mutation}
-  pagination:
-    - name: page two revokes approval
-      responses:
-        - body: [{user: {login: alice}, state: APPROVED}]
-          link: '<https://api.github.com/repos/peasant-labs/fairtrade-design-system/pulls/16/reviews?per_page=100&page=2>; rel="next"'
-        - body: [{user: {login: alice}, state: CHANGES_REQUESTED}]
-        - body: {permission: maintain}
-      approved: false
-      expected_paths: ["/pulls/16/reviews?per_page=100", "/pulls/16/reviews?per_page=100&page=2", "/collaborators/alice/permission"]
-    - name: page two grants approval
-      responses:
-        - body: [{user: {login: alice}, state: CHANGES_REQUESTED}]
-          link: '<https://api.github.com/repos/peasant-labs/fairtrade-design-system/pulls/16/reviews?per_page=100&page=2>; rel="next"'
-        - body: [{user: {login: alice}, state: APPROVED}]
-        - body: {permission: maintain}
-      approved: true
-      expected_paths: ["/pulls/16/reviews?per_page=100", "/pulls/16/reviews?per_page=100&page=2", "/collaborators/alice/permission"]
+    - {name: unknown kind, input: "fairtrade-v1.2.3-final1"}
+
+package:
+  # The library build split in CI: the release PR runs the canonical publish
+  # build, every other PR runs the plain library build, and the tests run after
+  # either one. These are this package's own script names.
+  release_build: prepack
+  content_build: build:lib
+  test: test:lib
+  test_env: {NODE_COMPILE_CACHE: "${{ runner.temp }}/node-compile-cache"}
+  # Each row checks one package script: exactly one of includes, excludes,
+  # equals, or absent.
+  scripts:
+    - {name: prepack asserts the package provenance, script: prepack, includes: assert-package-provenance}
+    - {name: prepack builds the library, script: prepack, includes: pnpm build:lib}
+    - {name: prepack checks the packed contents, script: prepack, includes: pnpm pack:check}
+    - {name: prepack runs no tests, script: prepack, excludes: "test:"}
+    - {name: build:lib runs no test script, script: build:lib, excludes: "test:"}
+    - {name: build:lib runs no test file, script: build:lib, excludes: ".test."}
+    - {name: build:lib has no pre-hook, script: "prebuild:lib", absent: true}
+    - {name: test:lib runs the lane runner, script: test:lib, equals: node scripts/run-test-lib.mjs}
+    - {name: the serial lane renders the mounted pi transcript, script: "test:lib:serial", includes: pnpm test:pi-transcript:mounted}
+    - {name: the serial lane runs vitest, script: "test:lib:serial", includes: pnpm test:vitest}
+
 workflow:
-  ci_pr_types: [opened, synchronize, reopened, edited]
-  prepack_if: "github.event_name == 'pull_request' && startsWith(github.event.pull_request.title, 'release(')"
-  build_if: "!(github.event_name == 'pull_request' && startsWith(github.event.pull_request.title, 'release('))"
-  ci_selection:
-    - {name: final release PR, event_name: pull_request, title: "release(v1.2.3): final release", command: pnpm prepack}
-    - {name: candidate release PR, event_name: pull_request, title: "release(v1.2.3-rc4): candidate", command: pnpm prepack}
-    - {name: release prefix still requires exact release guard, event_name: pull_request, title: "release(invalid): invalid version", command: pnpm prepack}
-    - {name: ordinary PR, event_name: pull_request, title: "fix: render usage labels", command: "pnpm build:lib"}
-    - {name: embedded release title, event_name: pull_request, title: "fix: release(v1.2.3): embedded", command: "pnpm build:lib"}
-    - {name: push without PR metadata, event_name: push, title: null, command: "pnpm build:lib"}
-    - {name: manual run without PR metadata, event_name: workflow_dispatch, title: null, command: "pnpm build:lib"}
-  validate_if: "github.event_name == 'pull_request' && github.event.action != 'closed' && startsWith(github.event.pull_request.title, 'release(')"
-  tag_if: "github.event_name == 'workflow_dispatch' || (github.event.action == 'closed' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.title, 'release('))"
-  release_needles:
-    - "PEASANT_RELEASER_APP_ID"
-    - "PEASANT_RELEASER_APP_PRIVATE_KEY"
-    - "actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1"
-    - "owner: peasant-labs"
-    - "repositories: fairtrade-design-system"
-    - 'ref: ${{ steps.release.outputs.mergeSha }}'
-    - 'git merge-base --is-ancestor "$MERGE_SHA" origin/main'
-    - "node scripts/release-guard.mjs check-package package.json"
-    - 'git tag -a "$TAG" "$MERGE_SHA" -m "$PR_TITLE"'
-    - "git rev-parse -q --verify"
-    - "git ls-remote --exit-code --tags"
-  publish_needles:
-    - 'node scripts/release-guard.mjs parse-tag "$TAG"'
-    - "npm publish --access public"
-  mutations:
-    - {name: unconditional prefix, target: tag_if, replacement: "true || github.event_name == 'workflow_dispatch'"}
-    - {name: missing merged condition, target: tag_if, replacement: "github.event_name == 'workflow_dispatch' || github.event.action == 'closed'"}
-    - {name: weakened validate condition, target: validate_if, replacement: "true || github.event_name == 'pull_request'"}
+  # CI must not restart on a title or body edit: a re-run there cancels the
+  # library gate and the release jobs (see the ci.yml trigger comment).
+  ci_skipped_activity_types: [edited]
+  # Text a workflow must never contain.
+  forbidden_text:
+    - {name: the hold rule never dequeues a queued release PR, file: release-batch.yml, text: dequeuePullRequest}
+    - {name: the release job leaves the GitHub Release to the tag-triggered workflow, file: release-batch.yml, text: gh release}
+  # Complete conjunctions for the recovery path. A prepared but unchanged
+  # branch still needs queue reads and arm/hold decisions; only branch writes
+  # need push=true. The test also rejects any extra push=true gate on recovery.
+  recovery_gates:
+    - name: find a release PR after either preparation result
+      job: plan
+      step: Find the open release PR
+      clauses: &prepared ["steps.precheck.outputs.proceed == 'true'", "steps.replan.outputs.action == 'open-pr'", "steps.write.outputs.push != ''"]
+    - {name: read the queue after either preparation result, job: plan, step: Read the merge queue, clauses: *prepared}
+    - name: find an existing release PR in the queue
+      job: plan
+      step: Find the release PR in the queue
+      clauses: ["steps.precheck.outputs.proceed == 'true'", "steps.replan.outputs.action == 'open-pr'", "steps.write.outputs.push != ''", "steps.find.outputs.number != ''"]
+    - name: judge the queue after either preparation result
+      job: plan
+      step: Judge the hold rule
+      clauses: ["steps.precheck.outputs.proceed == 'true'", "steps.replan.outputs.action == 'open-pr'", "steps.write.outputs.push != ''", "steps.entry.outputs.pr != ''"]
+    - name: bundle only a changed branch
+      job: plan
+      step: Bundle the release branch
+      clauses: ["steps.precheck.outputs.proceed == 'true'", "steps.replan.outputs.action == 'open-pr'", "steps.write.outputs.push == 'true'"]
+    - name: fetch only a changed branch
+      job: release
+      step: Fetch the release branch
+      clauses: &push ["needs.plan.outputs.action == 'open-pr'", "needs.plan.outputs.push == 'true'"]
+    - {name: push only a changed branch, job: release, step: Push the release branch, clauses: *push}
+    - name: open a PR only for a changed branch
+      job: release
+      step: Open the release PR
+      clauses: ["needs.plan.outputs.action == 'open-pr'", "needs.plan.outputs.push == 'true'", "needs.plan.outputs.number == ''"]
+    - name: update a PR only for a changed branch
+      job: release
+      step: Update the release PR
+      clauses: ["needs.plan.outputs.action == 'open-pr'", "needs.plan.outputs.push == 'true'", "needs.plan.outputs.number != ''"]
+    - name: arm an unchanged unarmed release PR
+      job: release
+      step: Arm auto-merge on the release PR
+      clauses: ["needs.plan.outputs.action == 'open-pr'", "needs.plan.outputs.gate == 'arm'"]
+    - name: hold an unchanged armed release PR
+      job: release
+      step: Take the arming back while a releasing PR is ahead
+      clauses: ["needs.plan.outputs.action == 'open-pr'", "needs.plan.outputs.gate == 'hold'", "needs.plan.outputs.queued != 'true'", "needs.plan.outputs.armed == 'true'"]
+  # Each row breaks one fairtrade-owned contract; the test proves the matching
+  # assertion in release-guard.test.mjs catches it.
+  contract_mutations:
+    - name: re-adding edited to ci.yml is rejected
+      file: ci.yml
+      find: "types: [opened, synchronize, reopened]"
+      replace: "types: [opened, edited, synchronize, reopened]"
+    - name: unconditional prepack is rejected
+      file: ci.yml
+      find: "        if: steps.kind.outputs.kind == 'release'\n        run: pnpm prepack"
+      replace: "        run: pnpm prepack"
+    - name: prepack on a bot PR that is not the release PR is rejected
+      file: ci.yml
+      find: "        if: steps.kind.outputs.kind == 'release'\n        run: pnpm prepack"
+      replace: "        if: steps.kind.outputs.kind == 'cut-release'\n        run: pnpm prepack"
+    - name: a content build that also runs on the release PR is rejected
+      file: ci.yml
+      find: "        if: steps.kind.outputs.kind != 'release'\n        run: pnpm run build:lib"
+      replace: "        run: pnpm run build:lib"
+    - name: warn-and-pass group resolution is rejected
+      file: title-guard.yml
+      find: "failing closed so an unidentified entry never lands unchecked.\"\n            exit 1"
+      replace: "failing closed so an unidentified entry never lands unchecked.\"\n            exit 0"
+    - name: a cancellable release run is rejected
+      file: release-batch.yml
+      find: "  cancel-in-progress: false"
+      replace: "  cancel-in-progress: true"
+    - name: a release without the independent verifier is rejected
+      file: release-batch.yml
+      find: "  release:\n    needs: [plan, verify]\n"
+      replace: "  release:\n    needs: [plan]\n"
+      error_contains: "the release job must need the independent verifier"
+    - name: a status function bypassing the verifier is rejected
+      file: release-batch.yml
+      find: "if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && needs.plan.outputs.proceed == 'true'\n    runs-on: ubuntu-latest\n"
+      replace: "if: always() && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && needs.plan.outputs.proceed == 'true'\n    runs-on: ubuntu-latest\n"
+      error_contains: "the release job must not bypass the verifier"
+    - name: a self-hosted bundle verifier is rejected
+      file: release-batch.yml
+      find: "  verify:\n    needs: [plan]\n    if: needs.plan.outputs.proceed == 'true'\n    runs-on: ubuntu-latest\n"
+      replace: "  verify:\n    needs: [plan]\n    if: needs.plan.outputs.proceed == 'true'\n    runs-on: self-hosted\n"
+      error_contains: "the verifier must use a fresh hosted runner"
+    - name: a bundle verifier with App credentials is rejected
+      file: release-batch.yml
+      find: "  verify:\n    needs: [plan]\n"
+      replace: "  verify:\n    env:\n      APP_KEY: ${{ secrets.PEASANT_RELEASER_APP_PRIVATE_KEY }}\n    needs: [plan]\n"
+      error_contains: "the verifier must not receive App credentials"
+    - name: skipping the tag bundle check is rejected
+      file: release-batch.yml
+      find: "      - name: Verify the prepared tag\n        if: needs.plan.outputs.tag-action == 'tag'\n"
+      replace: "      - name: Verify the prepared tag\n        if: false\n"
+      error_contains: "Verify the prepared tag must run on its planned action"
+    - name: skipping the release bundle check is rejected
+      file: release-batch.yml
+      find: "      - name: Verify the prepared release commit\n        if: needs.plan.outputs.action == 'open-pr' && needs.plan.outputs.push == 'true'\n"
+      replace: "      - name: Verify the prepared release commit\n        if: false\n"
+      error_contains: "Verify the prepared release commit must run on its planned action"
+    - name: a release commit title not bound to the PR title is rejected
+      file: release-batch.yml
+      find: "          test \"${TITLE}\" = \"${EXPECTED_TITLE}\" || { echo \"::error::Prepared release commit title differs from the intended PR title\"; exit 1; }\n"
+      replace: ""
+      error_contains: "the verifier must check the prepared commit title"
+    - name: a tag verifier without independent replanning is rejected
+      file: release-batch.yml
+      find: "          \"${RUNNER_TEMP}/release-intent\" plan --branch origin/main --mode \"${{ vars.RELEASE_BATCH_MODE }}\" --verdict taggable --floor \"${{ vars.RELEASE_BATCH_FLOOR }}\" | tee \"${plan_file}\"\n"
+      replace: ""
+      error_contains: "the verifier must independently recompute the tag plan"
+    - name: a tag verifier masking a failed replan is rejected
+      file: release-batch.yml
+      find: "          \"${RUNNER_TEMP}/release-intent\" plan --branch origin/main --mode \"${{ vars.RELEASE_BATCH_MODE }}\" --verdict taggable --floor \"${{ vars.RELEASE_BATCH_FLOOR }}\" | tee \"${plan_file}\"\n"
+      replace: "          \"${RUNNER_TEMP}/release-intent\" plan --branch origin/main --mode \"${{ vars.RELEASE_BATCH_MODE }}\" --verdict taggable --floor \"${{ vars.RELEASE_BATCH_FLOOR }}\" | tee \"${plan_file}\" || true\n"
+      error_contains: "the verifier must independently recompute the tag plan"
+    - name: a tag verifier without the action check is rejected
+      file: release-batch.yml
+      find: "          test \"${FRESH_ACTION}\" = tag || { echo \"::error::Fresh release plan does not authorize a tag; wait for the next release run\"; exit 1; }\n"
+      replace: ""
+      error_contains: "the verifier must require a tag action"
+    - name: a tag verifier that accepts repeated plan outputs is rejected
+      file: release-batch.yml
+      find: "if (count != 1 || value == \"\")"
+      replace: "if (value == \"\")"
+      error_contains: "the verifier must reject missing or repeated fresh plan values"
+    - name: a tag verifier that ignores the recomputed version is rejected
+      file: release-batch.yml
+      find: "          FRESH_VERSION=\"$(plan_value version)\"\n"
+      replace: ""
+      error_contains: "the verifier must parse the recomputed version"
+    - name: a tag verifier without the candidate comparison is rejected
+      file: release-batch.yml
+      find: "          test \"${FRESH_CANDIDATE}\" = \"${CANDIDATE}\" || { echo \"::error::Fresh candidate differs from the prepared tag candidate; wait for the next release run\"; exit 1; }\n"
+      replace: ""
+      error_contains: "the verifier must compare the recomputed candidate"
+    - name: a tag verifier without the tag comparison is rejected
+      file: release-batch.yml
+      find: "          test \"${FRESH_TAG}\" = \"${TAG}\" || { echo \"::error::Fresh tag differs from the prepared tag; wait for the next release run\"; exit 1; }\n"
+      replace: ""
+      error_contains: "the verifier must compare the recomputed tag"
+    - name: a prepared release from an outdated tip is rejected
+      file: release-batch.yml
+      find: "          test \"${SOURCE}\" = \"${TIP}\" || { echo \"::error::Main advanced after release preparation; wait for the next run to rebuild the release\"; exit 1; }\n"
+      replace: ""
+      error_contains: "the verifier must require the prepared source to equal the current tip"
+    - name: a Go cache keyed on another module is rejected
+      file: ci.yml
+      find: "cache-dependency-path: infra-tool/tools/release/go.sum"
+      replace: "cache-dependency-path: go.sum"
+    - name: release PR lookup only on push is rejected
+      file: release-batch.yml
+      find: "        id: find\n        if: steps.precheck.outputs.proceed == 'true' && steps.replan.outputs.action == 'open-pr' && steps.write.outputs.push != ''\n"
+      replace: "        id: find\n        if: steps.precheck.outputs.proceed == 'true' && steps.replan.outputs.action == 'open-pr' && steps.write.outputs.push == 'true'\n"
+    - name: queue read only on push is rejected
+      file: release-batch.yml
+      find: "        id: queue\n        if: steps.precheck.outputs.proceed == 'true' && steps.replan.outputs.action == 'open-pr' && steps.write.outputs.push != ''\n"
+      replace: "        id: queue\n        if: steps.precheck.outputs.proceed == 'true' && steps.replan.outputs.action == 'open-pr' && steps.write.outputs.push == 'true'\n"
+    - name: queue entry lookup only on push is rejected
+      file: release-batch.yml
+      find: "steps.write.outputs.push != '' && steps.find.outputs.number != ''"
+      replace: "steps.write.outputs.push == 'true' && steps.find.outputs.number != ''"
+    - name: queue decision only on push is rejected
+      file: release-batch.yml
+      find: "steps.write.outputs.push != '' && steps.entry.outputs.pr != ''"
+      replace: "steps.write.outputs.push == 'true' && steps.entry.outputs.pr != ''"
+    - name: arming only on push is rejected
+      file: release-batch.yml
+      find: "needs.plan.outputs.action == 'open-pr' && needs.plan.outputs.gate == 'arm'"
+      replace: "needs.plan.outputs.action == 'open-pr' && needs.plan.outputs.push == 'true' && needs.plan.outputs.gate == 'arm'"
+    - name: holding only on push is rejected
+      file: release-batch.yml
+      find: "needs.plan.outputs.action == 'open-pr' && needs.plan.outputs.gate == 'hold'"
+      replace: "needs.plan.outputs.action == 'open-pr' && needs.plan.outputs.push == 'true' && needs.plan.outputs.gate == 'hold'"
+    - name: pushing an unchanged branch is rejected
+      file: release-batch.yml
+      find: "        id: push\n        if: needs.plan.outputs.action == 'open-pr' && needs.plan.outputs.push == 'true'\n"
+      replace: "        id: push\n        if: needs.plan.outputs.action == 'open-pr'\n"
+  # Each row breaks one rule the release-intent tool owns. The test runs the
+  # policy check title-guard runs over a copy of the workflows with the row
+  # applied and proves the tool refuses it under that rule, naming the
+  # mutated file. A row may mutate any workflow the policy check reads.
+  policy_mutations:
+    - name: cancelling ci on every event is rejected
+      file: ci.yml
+      find: "cancel-in-progress: ${{ github.event_name == 'pull_request' }}"
+      replace: "cancel-in-progress: true"
+      rule: required-workflows-concurrency-per-ref
+    - name: dropping merge_group from ci is rejected
+      file: ci.yml
+      find: "  merge_group:\n  workflow_dispatch:"
+      replace: "  workflow_dispatch:"
+      rule: merge-group-on-required-workflows
+    - name: comparing a bot branch literally is rejected
+      file: ci.yml
+      find: "if: steps.kind.outputs.kind == 'release'"
+      replace: "if: github.head_ref == 'automation/release'"
+      rule: bot-branch-via-classify
+    - name: dropping edited from title-guard is rejected
+      file: title-guard.yml
+      find: "types: [opened, edited, synchronize, reopened]"
+      replace: "types: [opened, synchronize, reopened]"
+      rule: title-guard-no-early-success
+    - name: a job-level if on the guard job is rejected
+      file: title-guard.yml
+      find: "  title-guard:\n    runs-on: ubuntu-latest"
+      replace: "  title-guard:\n    if: github.event_name == 'pull_request'\n    runs-on: ubuntu-latest"
+      rule: title-guard-no-early-success
+    - name: interpolating a title is rejected
+      file: title-guard.yml
+      find: "PR_TITLE: ${{ steps.pr.outputs.title }}"
+      replace: "PR_TITLE: ${{ github.event.pull_request.title }}"
+      rule: titles-never-interpolated
+    - name: a range reader without the floor is rejected
+      file: title-guard.yml
+      find: " --floor \"${{ vars.RELEASE_BATCH_FLOOR }}\""
+      replace: ""
+      rule: range-readers-take-the-floor
+    - name: a weakened release-batch verdict is rejected
+      file: release-batch.yml
+      find: "--verdict taggable"
+      replace: "--verdict rejected"
+      rule: release-actions-gated
+    - name: arming without the gate is rejected
+      file: release-batch.yml
+      find: "needs.plan.outputs.gate == 'arm'"
+      replace: "needs.plan.outputs.action == 'open-pr'"
+      rule: release-actions-gated
+    - name: an ungated tag is rejected
+      file: release-batch.yml
+      find: "        id: tag\n        if: needs.plan.outputs.tag-action == 'tag'\n"
+      replace: "        id: tag\n"
+      rule: release-actions-gated
+    - name: a major cut-release level is rejected
+      file: cut-release.yml
+      find: "options: [patch, minor]"
+      replace: "options: [patch, minor, major]"
+      rule: cut-release-is-dispatch-only
+    - name: a cut-release on any branch is rejected
+      file: cut-release.yml
+      find: "    needs: [prepare]\n    if: github.ref == 'refs/heads/main' && vars.RELEASE_BATCH_MODE == 'tag'\n"
+      replace: "    needs: [prepare]\n    if: vars.RELEASE_BATCH_MODE == 'tag'\n"
+      rule: token-mint-ref-check
+    - name: a cut-release write without tag mode is rejected
+      file: cut-release.yml
+      find: "      - name: Push the bot branch\n        if: vars.RELEASE_BATCH_MODE == 'tag'\n"
+      replace: "      - name: Push the bot branch\n        if: github.ref == 'refs/heads/main'\n"
+      rule: cut-release-is-dispatch-only
+    - name: editing another bot PR is rejected
+      file: cut-release.yml
+      find: "run: gh pr close automation/cut-release"
+      replace: "run: gh pr edit automation/release --title \"x\""
+      rule: credential-steps-run-one-template
+    - name: arming another branch is rejected
+      file: cut-release.yml
+      find: "gh pr merge --auto --squash automation/cut-release"
+      replace: "gh pr merge --auto --squash automation/release"
+      rule: credential-steps-run-one-template
+    - name: a cut-release tag push is rejected
+      file: cut-release.yml
+      find: "push --force-with-lease origin automation/cut-release"
+      replace: "push --force-with-lease origin automation/cut-release\n          git push origin refs/tags/v0.0.0"
+      rule: credential-steps-run-one-template
+    - name: a self-hosted runner for the credential job is rejected
+      file: release-batch.yml
+      find: "    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && needs.plan.outputs.proceed == 'true'\n    runs-on: ubuntu-latest\n"
+      replace: "    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && needs.plan.outputs.proceed == 'true'\n    runs-on: [self-hosted, linux]\n"
+      rule: credential-jobs-run-no-general-steps
+    - name: a credential job on a runner an expression picks is rejected
+      file: release-batch.yml
+      find: "    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && needs.plan.outputs.proceed == 'true'\n    runs-on: ubuntu-latest\n"
+      replace: "    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && needs.plan.outputs.proceed == 'true'\n    runs-on: ${{ fromJson(needs.plan.outputs.runner) }}\n"
+      rule: credential-jobs-run-no-general-steps
+    - name: naming the release PR by a number from the plan job is rejected
+      file: release-batch.yml
+      find: "        run: gh pr merge --auto --squash -- automation/release"
+      replace: "          PR_NUMBER: ${{ needs.plan.outputs.pr }}\n        run: gh pr merge --auto --squash -- \"${PR_NUMBER}\""
+      rule: credential-steps-run-one-template
+    - name: a checkout that keeps its credentials is rejected
+      file: title-guard.yml
+      find: "persist-credentials: false"
+      replace: "persist-credentials: true"
+      rule: default-token-read-only
+    - name: a GitHub Release published without the tag check is rejected
+      file: release.yml
+      find: "    needs: [guard, verify, notes]\n"
+      replace: "    needs: [guard, notes]\n"
+      rule: tag-publish-verifies-the-tag
+    - name: an npm publish without the tag check is rejected
+      file: npm-publish.yml
+      find: "  npm-publish:\n    needs: verify\n"
+      replace: "  npm-publish:\n"
+      rule: tag-publish-verifies-the-tag
+    - name: checking the tag against another branch is rejected
+      file: npm-publish.yml
+      find: "--branch \"origin/${DEFAULT_BRANCH}\""
+      replace: "--branch origin/automation/release"
+      rule: tag-publish-verifies-the-tag
+    - name: a tag check that may fail is rejected
+      file: release.yml
+      find: "      - name: Verify the tag is a release tag on the default branch\n"
+      replace: "      - name: Verify the tag is a release tag on the default branch\n        continue-on-error: true\n"
+      rule: tag-publish-verifies-the-tag
+    - name: publishing after a failed tag check is rejected
+      file: release.yml
+      find: "    needs: [guard, verify, notes]\n"
+      replace: "    needs: [guard, verify, notes]\n    if: always()\n"
+      rule: tag-publish-verifies-the-tag
+
 git:
   # The release-tag invariant stated in AGENTS.md: never move or delete a
   # release tag. A plain push of an existing tag is refused by the receiver, so
-  # the exact command the release workflow runs cannot rewrite a published tag.
-  # The rows below are the controls that make that refusal specific: git moves
-  # the same tag the moment the guard is dropped, so a passing case is observing
+  # the exact command the release job runs cannot rewrite a published tag. The
+  # tag is this version under the release config's tag prefix. The mutation
+  # rows are the controls that make that refusal specific: git moves the very
+  # same tag the moment the guard is dropped, so a passing case is observing
   # immutability rather than an incidental push failure.
-  tag: fairtrade-v1.2.3
+  version: "1.2.3"
   first_message: first release
   second_message: attempted replacement
   mutations:

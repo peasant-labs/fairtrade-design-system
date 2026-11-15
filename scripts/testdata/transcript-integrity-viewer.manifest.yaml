@@ -131,3 +131,10 @@ mutations:
     replace: ""
     expectedDiagnostic: "a flagged prose turn with work draws one outline"
 requiredRetainedImageCaseName: retained history resolves its image through the host
+requiredRetainedResolverCaseNames:
+  - earlier-history-uses-image-url
+  - earlier-history-uses-the-deprecated-alias
+  - earlier-history-prefers-image-url
+  - earlier-history-without-a-resolver-does-not-load-an-image
+  - context-accepts-image-url-directly
+  - context-accepts-the-deprecated-alias-directly

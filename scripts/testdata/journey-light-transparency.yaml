@@ -1,0 +1,4 @@
+cases:
+  - {name: passed-light, status: passed, theme: light}
+  - {name: skipped-light, status: skipped, theme: light, error: 'did not execute'}
+  - {name: wrong-theme, status: passed, theme: dark, error: 'mounted light'}

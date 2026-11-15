@@ -7,6 +7,7 @@
 requiredExceptionNames:
   - the transcript rails need more than the tablet token
   - transcript rail motion complements the rail layout boundary
+  - setup panes need enough height for internal scrolling
 
 requiredCaseNames:
   - the phone boundary

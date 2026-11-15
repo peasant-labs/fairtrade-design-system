@@ -3,7 +3,9 @@
    The driving app mounts the viewer exactly as a host does: a directory, the
    segments it has loaded, and a window descriptor when the reader jumps. Segments
    are cut on clean turn boundaries, so the demo exercises the real viewer contract
-   without a second fixture language.
+   without a second fixture language. The demo stands in for the producer, so it
+   also states each segment's place in the conversation turns and the session total,
+   counted with the contract's own rule.
 
    Two models ship here:
      • the reading session, cut into small segments for ordinary browsing;
@@ -14,6 +16,7 @@
        turns on each side that a post-run user turn's window leaves unloaded
        segments before and after it. */
 
+import { isConversationTurn } from '@peasant-labs/schema'
 import { adaptTranscript } from '../../ui/transcript/adapter.js'
 import { readingPayload } from './reading-fixture.js'
 
@@ -49,12 +52,22 @@ function buildModel(payload, ranges) {
       turns: segmentTurns,
     }
   })
+  /* The producer's running count: each ref states the conversation turns before it and
+     the conversation turns it holds. */
+  let before = 0
+  const refs = segments.map(({ index, firstTurn, lastTurn, byteLength, turns: held }) => {
+    const count = held.filter(isConversationTurn).length
+    const ref = { index, firstTurn, lastTurn, byteLength, conversationTurns: { before, count } }
+    before += count
+    return ref
+  })
   const directory = {
     sessionId: payload.id,
     revision: '1',
     totalTurns: turns.length,
     totalSegments: segments.length,
-    segments: segments.map(({ index, firstTurn, lastTurn, byteLength }) => ({ index, firstTurn, lastTurn, byteLength })),
+    totalConversationTurns: before,
+    segments: refs,
   }
 
   /** The window read's descriptor: ten assistant turns per side, plus the anchor and
@@ -144,26 +157,27 @@ export function buildLargeRunModel({ jump = false } = {}) {
   /** @type {any[]} */
   const turns = jump
     ? [
-      { index: 0, role: 'user', content: 'open the large session' },
-      { index: 1, role: 'assistant', content: 'a short response before the long run.' },
-      ...Array.from({ length: 14 }, (_, offset) => ({ index: 2 + offset, role: 'assistant', content: '', toolCalls: [runCall(2 + offset, 2600)] })),
-      { index: 16, role: 'user', content: 'the follow-up request after the long run' },
-      ...Array.from({ length: 14 }, (_, offset) => ({ index: 17 + offset, role: 'assistant', content: '', toolCalls: [runCall(17 + offset, 1500)] })),
-      { index: 31, role: 'user', content: 'a later request that keeps the tail unloaded' },
-      { index: 32, role: 'assistant', content: 'a short tail response.' },
-      { index: 33, role: 'assistant', content: 'another short tail response.' },
+      { index: 0, role: 'user', entryType: 'text', content: 'open the large session' },
+      { index: 1, role: 'assistant', entryType: 'text', content: 'a short response before the long run.' },
+      ...Array.from({ length: 14 }, (_, offset) => ({ index: 2 + offset, role: 'assistant', entryType: 'tool_use', content: '', toolCalls: [runCall(2 + offset, 2600)] })),
+      { index: 16, role: 'user', entryType: 'text', content: 'the follow-up request after the long run' },
+      ...Array.from({ length: 14 }, (_, offset) => ({ index: 17 + offset, role: 'assistant', entryType: 'tool_use', content: '', toolCalls: [runCall(17 + offset, 1500)] })),
+      { index: 31, role: 'user', entryType: 'text', content: 'a later request that keeps the tail unloaded' },
+      { index: 32, role: 'assistant', entryType: 'text', content: 'a short tail response.' },
+      { index: 33, role: 'assistant', entryType: 'text', content: 'another short tail response.' },
     ]
     : [
-      { index: 0, role: 'user', content: 'open the large session' },
-      { index: 1, role: 'assistant', content: 'a short response before the long run.' },
-      ...Array.from({ length: 6 }, (_, offset) => ({ index: 2 + offset, role: 'assistant', content: '', toolCalls: [runCall(2 + offset, 7000)] })),
-      { index: 8, role: 'user', content: 'the follow-up request after the long run' },
+      { index: 0, role: 'user', entryType: 'text', content: 'open the large session' },
+      { index: 1, role: 'assistant', entryType: 'text', content: 'a short response before the long run.' },
+      ...Array.from({ length: 6 }, (_, offset) => ({ index: 2 + offset, role: 'assistant', entryType: 'tool_use', content: '', toolCalls: [runCall(2 + offset, 7000)] })),
+      { index: 8, role: 'user', entryType: 'text', content: 'the follow-up request after the long run' },
     ]
   const payload = {
     id: jump ? 'large-run-jump' : 'large-run',
     title: 'a session with a long model-action run',
     harness: 'claude-code',
-    turns,
+    // every row is a top-level entry, stated as the wire states it
+    turns: turns.map((turn) => ({ depth: 0, ...turn })),
   }
   const ranges = jump
     ? [[0, 1], [2, 4], [5, 7], [8, 10], [11, 13], [14, 16], [17, 19], [20, 22], [23, 25], [26, 28], [29, 33]]

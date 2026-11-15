@@ -28,19 +28,56 @@ without a second hand list.
 | `pure` | 6 | 1 | Node-only fixture and source tests |
 | `ssr` | 3 | 1 | built-export and static-render tests |
 | `mounted` | 2 | 3 | Vite + jsdom mounts and browser probes |
-| `mutation` | 3 | 2 | mutation orchestrators in their own child processes |
-| `source-mutation` | 1 | 8 | gates that rewrite a tracked source file and restore it |
+| `mutation` | 4 | 2 | mutation orchestrators in their own child processes |
+| `source-mutation` | 1 | 10 | gates that rewrite a tracked source file and restore it |
 | `pack` | 1 | 1 | tarball and packed-content checks (shared pnpm store) |
-| `bench` | 1 | 8 | the timing benchmark (absolute ceilings, so it runs alone) |
+| `bench` | 1 | 10 | the timing benchmark (absolute ceilings, so it runs alone) |
 | `vitest` | 1 | 1 | the Vitest pilot project |
 
-A weighted semaphore (capacity 8) bounds total memory across lanes. The
+A weighted semaphore (capacity 10) bounds the scheduling budget across lanes.
+Weights are shares of that budget, not memory measurements. The
 `source-mutation` lane holds the whole budget, so `timeline-a11y`,
 `timeline-ghosts`, and `timeline-highlight` cannot expose a half-applied
 `src/ui/graph` mutation to a reader such as `insight-panel`. A post-run `src/`
 snapshot also fails the gate if a timed-out mutation left a tracked file
 changed. `scripts/run-test-lib.test.mjs` keeps that inventory honest and pins
 the lane classification.
+
+### Mutation lane cost
+
+Hosted `main` run 42984162482 spent 934s in the library test step. Of 2831
+gate-seconds, 2439 (86%) were mutation gates, 259 (9%) mounted gates and 133
+(5%) everything else. Each parts mutation starts a fresh Node process: local
+measurements put imports at roughly 400ms and Vite graph load at roughly 500ms,
+before checks execute. The isolation remains intentional.
+
+In mutation mode only, a failed check now exits as soon as it prints the
+expected diagnostic; ordinary runs still collect every failure. An interleaved
+local A/B of 36 orchestrator pairs measured 815.0s before and 639.9s after,
+with the same 360 mutants killed and `NODE_COMPILE_CACHE` unset in both arms.
+The CI test step also uses a job-local Node
+compile cache, without restoring or saving it between jobs; local warm samples
+saved roughly 100-150ms per mutant. Local A/B measurements are one sample per
+arm, not CI acceptance. The mutation lane runs four orchestrators at a time.
+A same-commit paired measurement on `ubuntu-latest` ran the `Test library`
+step three times per arm: the step median was 741s at three against 540s at
+four, with overlapping ranges, while mutation gate-seconds were unchanged
+(median 1880 against 1810) and every mutant stayed killed. The microVM class
+was not measured.
+The mutation lane runs with the compile cache in CI, and all 360 orchestrated
+mutants remain killed with it enabled. If `NODE_COMPILE_CACHE` points at an
+unusable path, Node can hang rather than fail fast; check `runner.temp` if a
+`lib` job hangs with empty output.
+
+Hosted `ubuntu-latest` runners have 4 vCPU, 16 GB and AMD EPYC processors; the
+self-hosted microVM pool has 6 vCPU and 8 GB on a Ryzen 9 7950X3D host shared
+with the maintainer's desktop, so pool timings move with host load. Main-only
+`Test library` step baselines are 578-935s hosted (runs 42955960572: 578s,
+42910632182: 637s, 42925571988: 903s, 42943798857: 913s, 42984162482: 935s)
+and 455-507s microVM (42965809546: 455s, 42952865597: 505s, 42958501661:
+507s). Measure CI wall time and the paired per-gate mutation-lane ratio after
+the PR runs, always against a baseline on the same runner class, never across
+classes.
 
 ## Fairtest mounted rows
 
@@ -70,6 +107,67 @@ The required `gates` check aggregates Fairtest and the complete journey matrix
 and fails if either is not successful. Alongside `lib` and Fairtest, the two
 projects use all four pool slots. Each of the three browser jobs builds the app
 and Storybook independently, trading duplicate build time for isolation.
+
+The journey config records trace and video on the first retry in CI and retains
+them on failure locally, where journeys have zero retries.
+`JOURNEY_TRACE=1` and `JOURNEY_VIDEO=1` force recording on every attempt. Journey
+CI sets `JOURNEY_SCREENSHOT=off`, which means only-on-failure screenshots, not
+disabling explicitly requested evidence screenshots. Journey CI retries remain one,
+so failure traces and videos come from the retry attempt. Fairtest keeps its
+zero-retry contract and always retains trace and video on failure by default,
+in both CI and local runs. The same force-on overrides apply to Fairtest. CI
+uploads each project's Playwright artifact directory on failure, and its
+`report.json` on every run.
+
+Every browser job captures `nproc`, CPU model, memory bytes, load averages,
+router reason, run creation and job start timestamps, and their difference in
+seconds. It also records the current attempt start and the interval from that
+start to the job start. On a re-run, the run-creation interval includes earlier
+attempts, while the attempt interval does not. It prints these facts and
+attaches them to its uploaded `report.json`. The job timestamps come from the
+Actions API; the job token has `actions: read` plus `contents: read`.
+If the API or timestamps are unavailable, `queueSeconds` is null and `apiError`
+explains why; local machine facts are still recorded. Timing collection and
+uploads do not fail a browser gate. The Fairtest timing report is separate from
+its immutable evidence root.
+
+The browser-free `node scripts/journey/catalog-gate.mjs` lists the actual
+Playwright catalog without starting either server and compares exact
+project/full-title pairs with `scripts/testdata/journey-catalog.json`. Its
+fixture-driven mutations prove dropped, duplicated and renamed tests and a
+missing project fail. The catalog retains 282 named entries per project; a
+runtime project guard eliminates duplicate fixture rows without deleting names.
+The same theme predicate is checked against both project names while listing,
+so an unknown theme or a row that runs more than once fails before browsers
+start. After an intentional catalog change, run
+`node scripts/journey/catalog-gate.mjs --write` and review the manifest diff.
+The light project's report must also prove that the reduced-transparency test
+executed and saw a mounted light theme; a skip does not satisfy that check.
+
+### Focused duplicate measurements
+
+On this Linux workstation, single-worker focused runs on 2026-11-11 used the
+same built artifacts, isolated ports 26017/25180 and CI retries. Times below are
+whole-command wall seconds, one sample per cell, not a CI performance claim.
+The baseline's retain-on-failure policy recorded every first attempt; the after
+run forced trace and video on to keep first-attempt recording comparable. The
+envelope guard also ran during part of the after run, so the samples are noisy.
+
+| file | project | before (passed) | after (passed, duplicate skips) |
+| --- | --- | --- | --- |
+| publish | dark | 58s (6) | 33s (3, 3) |
+| publish | light | 57s (6) | 33s (3, 3) |
+| context-share | dark | 6s (2) | 5s (1, 1) |
+| context-share | light | 6s (2) | 5s (1, 1) |
+| app-validate | dark | 46s (2) | 48s (2, 0) |
+| app-validate | light | 45s (2) | 4s (1, 1) |
+
+Publish and context-share fixtures explicitly set each row's theme; each row now
+runs in its matching project instead of in both. The twenty-check interaction
+sweep opens the same unthemed dark app in either project and runs once on dark;
+the separate reduced-transparency assertion still runs in both pinned themes.
+The paired per-test CI duration ratio is measured **after merge**, separately for
+hosted and pool runners. No local number is presented as that acceptance result.
 
 ## Vitest pilot
 
@@ -126,9 +224,8 @@ runs (100 per theme), 400/400 disclosure cases at 20 repeats per theme, and
 320/320 rail/shell cases at 20 repeats per theme. The job ceiling rises to 40
 minutes so the slower fallback runner has headroom.
 
-The current serial chain expands to 147 unique gates: the 146-gate row records
-the measurement taken when the lane runner landed, and the generated-artifact
-freshness test adds one more gate without changing the lane budget.
+The current serial chain expands to 155 unique gates, nine more than the
+146-gate row below; the lane budget is unchanged.
 
 ## Known limitation
 

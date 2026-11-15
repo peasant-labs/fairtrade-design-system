@@ -26,6 +26,8 @@
   /* the presentation page's centered, width-capped content column. The library ships no bare
      section rule: a consumer's <section> fills its host. */
   section { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }
+  /* a library component that is a real <section> fills its host, as it does for a consumer. */
+  section.swz { max-width: none; margin-inline: 0; padding-inline: 0; }
 }
 
 @layer components {

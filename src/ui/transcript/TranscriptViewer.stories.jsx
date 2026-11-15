@@ -694,7 +694,7 @@ export const HostOwnedHeader = {
    A turn's contentParts are the producer's blocks in source order. The viewer draws
    each text block as Markdown and each image block inline, as a bounded thumbnail that
    opens a larger view from the same control by mouse or keyboard. The host owns the
-   route: `attachmentUrl` resolves one content reference to something the browser can
+   route: `imageUrl` resolves one content reference to something the browser can
    load. These stories serve a drawn placeholder image so a capture shows the renderer,
    not a network dependency. */
 const imageSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400" viewBox="0 0 640 400">
@@ -703,7 +703,7 @@ const imageSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="40
   <circle cx="512" cy="120" r="38" fill="#d6ae66"/>
   <path d="M40 278 L200 180 L320 262 L440 142 L600 278" fill="none" stroke="#8fae7a" stroke-width="6"/>
 </svg>`
-const storyAttachmentUrl = () => `data:image/svg+xml;utf8,${encodeURIComponent(imageSvg)}`
+const storyImageUrl = () => `data:image/svg+xml;utf8,${encodeURIComponent(imageSvg)}`
 const pngRef = 'a'.repeat(64)
 const jpegRef = 'b'.repeat(64)
 
@@ -772,7 +772,7 @@ const omittedPayload = {
   ],
 }
 
-const imageArgs = { viewModel: adaptTranscript(imagePayload), capabilities: readOnlyCaps, attachmentUrl: storyAttachmentUrl }
+const imageArgs = { viewModel: adaptTranscript(imagePayload), capabilities: readOnlyCaps, imageUrl: storyImageUrl }
 
 /** The shared play: two bounded, lazily loaded thumbnails with alt text, and the first opens a
     larger view from the thumbnail control by click and then by keyboard. */
@@ -803,7 +803,7 @@ async function imageRenderPlay({ canvasElement }) {
 export const ImagesInline = { args: imageArgs, play: imageRenderPlay }
 
 export const ImagesOmitted = {
-  args: { viewModel: adaptTranscript(omittedPayload), capabilities: readOnlyCaps, attachmentUrl: storyAttachmentUrl },
+  args: { viewModel: adaptTranscript(omittedPayload), capabilities: readOnlyCaps, imageUrl: storyImageUrl },
   play: async ({ canvasElement }) => {
     const notices = canvasElement.querySelectorAll('.txn-image-omitted')
     await expect(notices.length).toBe(4)
@@ -819,7 +819,7 @@ export const ImagesOmitted = {
 }
 
 export const ImageOnlyTurn = {
-  args: { viewModel: adaptTranscript(imageOnlyPayload), capabilities: readOnlyCaps, attachmentUrl: storyAttachmentUrl },
+  args: { viewModel: adaptTranscript(imageOnlyPayload), capabilities: readOnlyCaps, imageUrl: storyImageUrl },
   play: async ({ canvasElement }) => {
     const card = canvasElement.querySelector('#turn-0 .txn-turn')
     await expect(card).not.toBeNull()
@@ -834,7 +834,7 @@ export const ImageOnlyTurn = {
     instead of leaving a broken glyph. The data URL is a valid scheme with undecodable bytes, so
     the load fails deterministically with no network. */
 export const ImagesUnavailable = {
-  args: { viewModel: adaptTranscript(imagePayload), capabilities: readOnlyCaps, attachmentUrl: () => 'data:image/png;base64,not-an-image' },
+  args: { viewModel: adaptTranscript(imagePayload), capabilities: readOnlyCaps, imageUrl: () => 'data:image/png;base64,not-an-image' },
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(canvasElement.querySelectorAll('.txn-image-omitted').length).toBe(2))
     for (const notice of canvasElement.querySelectorAll('.txn-image-omitted')) {

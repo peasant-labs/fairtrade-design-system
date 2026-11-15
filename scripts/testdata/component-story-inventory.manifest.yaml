@@ -14,3 +14,4 @@ requiredCaseNames:
   - image-only-turn
   - images-unavailable
   - selection-tree
+  - step-wizard

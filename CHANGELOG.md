@@ -4,9 +4,49 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.69
+
+- `SelectionTree` gains the preview contract. With `onPreview` and a host-owned `previewId`, a row's title is its own button outside the checkbox's label: the title previews and never selects, the checkbox selects and never previews, and the caret still folds. The previewed row's title carries `aria-pressed` and the row carries the amber selection inset over a quiet fill, so the mark is not colour alone. Every row kind previews, locked rows included. With no `onPreview` the title stays inside the checkbox label and a click on it toggles the row, as before.
+- A `SelectionTree` row's count names the kind of its child rows: `project: 6 branches`, `branch: 1 session`, `project: 3 sessions` for a project whose child rows are sessions, and `session: 2 child sessions` for the sessions a session started. Child rows of mixed kinds keep `child` or `children`, the noun is singular at one, and a row with no count still draws none. The noun is read off the child rows the tree already holds; the number stays the host's `childCount`.
+- `SelectionTree` draws the measured connector fairtrade's helper tree draws, from one shared module: one hairline in `--rule-strong` through the centre of every mounted row's checkbox, one column per depth, hidden from assistive technology and taking no pointer events, painted above the row's hover and preview fills. A folded row mounts no children, so its connector is not drawn. `HelperGroup`'s tree draws the same connector through that module with no change to its look.
+- `StepIndicator` no longer breaks a label inside a word. Each word is an unbreakable run and the spaces between words are the only break points, and the rail shows its labels only while every word fits its share of the rail. When a word does not fit, or its first and last labels cannot hold five characters, every label hides together and stays in the accessible name. A lone step takes the whole rail as its share: it shows while its own word fits the rail and hides, keeping its name, when that word is wider than the rail, instead of leaving a clipped part of it on screen. At ten steps peasant's own stop titles hide the rail's labels instead of breaking `publication` or `auto-ingest` mid-word.
+- `StepWizardFrame` can place a compact step rail in its footer. Hosts may supply short visual labels while the markers retain their full accessible names; the labels hide together when they do not fit. On phones the rail leaves the keyboard order and the accessible step count remains.
+- `TranscriptViewer` supports nested title headings and can block Markdown image requests for local previews. Fenced code uses structured syntax highlighting with bounded input and plain-text fallback; raw highlighter HTML is never injected. Hosts remain responsible for source reads, attachment resolvers, storage and network handling.
+- The in-use demo draws the local app's setup wizard at `?app=graph&view=kickstart`, with the selection tree and transcript viewer together. It uses synthetic sessions and its sign-in answers are visual only. It is reached by route only, so the local app's section registry is unchanged.
+
+## 0.0.68
+
+- Count conversation turns with the contract's `isConversationTurn` from `@peasant-labs/schema@0.51.0`. The trace header, the full trace tab, and each phase chip count top-level user and assistant entries of text or image. System entries, tool rows, thinking rows, and nested helper turns are not counted. A turn with no `entryType` is not counted, so a host that builds turns by hand must set it.
+- Name conversation-turn positions on a segmented transcript when the directory carries them. `SegmentDirectoryVM` gains `totalConversationTurns` and `SegmentRefVM` gains `conversationTurns` (`before`, `count`). A boundary caption reads `turns 20–43 of 77`, `turn 20 of 77` for one turn, and `no conversation turns, 1 segment, 12 KiB` for a gap that holds none. A gap that reaches into a directory page not yet received, or holds a ref with no span, keeps the segment and byte caption. The viewer checks that a span is present and does no arithmetic check on it: a host passes a directory its server validated.
+- The trace header stays in one unit while segments load: `40 of 77 turns`, then `77 turns` once every segment is held and no filter hides a held conversation turn. The Files tab sentence uses the same unit.
+- A scrubber tick is titled with its conversation turns (`turns 36–60`), or with `segment 3 of 12` when its ref carries no position. The slider's value text follows the active tick. `ScrubberTick` gains `position` and `valueText`.
+- The jump-failure alert names the conversation turns it could not load (`could not load the window around turns 36–60.`). Without a position it reads `could not load that part of the transcript.` and no longer prints a turn identity.
+- `SessionVM` gains `conversationTurnCount`, copied by `adaptTranscript`. The hero prints it, and prints `turnCount` when the producer measured none.
+- Export the `ConversationTurnSpanVM`, `ConversationPositionVM` and `ScrubberTick` types. `SegmentBoundaryVM` gains `position`. A directory without the new fields renders exactly as before.
+
+## 0.0.67
+
+- Add `StepWizardFrame`, the controlled step-wizard shell. The host owns the current step and the footer actions; the frame draws the rail, a body, and a foot with a start slot, the "step n / m" count (spoken as "step n of m"), and an end slot. `StepWizard` is now built on the frame, so its footer count is spoken too. Peasant /kickstart and /selection consume it after release and drop their local copy of the frame.
+- `StepIndicator` keeps every label inside its rail at any width and step count. The first label starts at the first marker's left edge, the last ends at the last marker's right edge, and the rest are centred; a lone step starts at its marker and may take the whole rail. Each label wraps inside its share of the rail and breaks a word longer than that share, so neighbours never overlap. A rail too narrow for its first and last labels to hold five characters hides the labels from sight and keeps them in the accessible name.
+- A rail of many steps shrinks until its markers touch instead of overflowing: the connector paints its own gap to its marker rather than reserving one in the layout.
+- `StepWizard`'s rail is now named `<aria-label> progress`, or `step wizard progress` with no label, the name a `StepWizardFrame` gives its rail. It was named the same as the wizard itself, or `progress` with no label. A standalone `StepIndicator` keeps `progress`.
+- The `StepIndicator` rail is the container its label shares are measured against (`container-type: inline-size`), so it needs a host with a definite inline size: a block, a grid track, or a flex item that has a width. In a shrink-to-fit host (an inline-flex box, or an absolutely positioned box with `width: auto`) it collapses to zero width.
+
+## 0.0.66
+
+- Pin `@peasant-labs/schema@0.49.0`, which publishes the kickstart node sets and the six additional harness identities. The provider policy and its brand marks already carried Grok Build, Devin Desktop, Cline, and Kiro; the older pin left those entries unreachable.
+- Replace the selection node-set tripwire with both-ways contract assertions: every schema member must be present on the client, every client member must be a legal schema value, and both lists stay assignable in the other direction.
+
+## 0.0.65
+
+- Accept a detail the host has already validated from the published envelope. `adaptTranscript` takes `payloadMode: 'published'`, which trusts a payload that came through the schema's published parser and skips the local-mode re-parse; the default stays `'local'`. A published image part carries `omittedReason: 'not_published'`, which the local parser rejects, so a host reading published transcripts renders the canonical omitted card instead of rewriting those parts to text.
+
 ## 0.0.64
 
 - Add `SelectionTree`, a server-grouped selection forest. The host supplies each node's kind, tri-state, and lock; the tree reports selected session ids and does not roll state up or regroup. Kinds and states are a frozen projection (`wire` and `label`) with boundary parsers. Unknown values are dropped and counted. Peasant /kickstart and /selection consume it after release; Village is not a consumer.
+- Own a versioned system-toggle filter intent. The host stores the reader's deviation from the default as `{version: 1, system?}` and replays it through `applyFilterIntent`; an unknown version, a non-object, or a non-boolean value degrades to the default and never throws. Checkpoints, views, tags, and tool groups are never stored.
+- Filter a system-entry group by the kinds it actually holds, so a reader can reach one recorded kind without revealing the group.
+- Render ordered image content parts inline with a larger view, in retained history as well as the root, and show each omitted part's own reason without requesting its bytes.
 
 ## 0.0.63
 

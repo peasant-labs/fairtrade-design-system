@@ -169,3 +169,157 @@ cases:
       labels: [Parse raw events, Backfill partitions]
       forbiddenProps: [page, pageSize, pageIndex, cursor, nextCursor, limit, offset, paging]
       noStorage: true
+
+  # The count: the host's number, then the noun named from the kinds of the row's child rows.
+  # `facts` is the kind and the count as drawn, in that order.
+  - name: count-names-branches-under-a-project
+    nodes:
+      - {id: project-a, kind: project, state: none, label: peasant-labs/peasant, childCount: 6}
+      - {id: branch-a, parentId: project-a, kind: branch, state: none, label: develop, childCount: 6}
+      - {id: branch-b, parentId: project-a, kind: branch, state: none, label: feat/kickstart, childCount: 2}
+      - {id: session-a, parentId: branch-a, kind: session, state: none, label: Wire the scan progress bar}
+      - {id: session-b, parentId: branch-b, kind: session, state: none, label: Draft the stops}
+    expect:
+      facts:
+        project-a: "project: 6 branches"
+
+  - name: count-names-sessions-under-a-branch
+    nodes:
+      - {id: branch-a, kind: branch, state: none, label: develop, childCount: 6}
+      - {id: session-a, parentId: branch-a, kind: session, state: none, label: Wire the scan progress bar}
+      - {id: session-b, parentId: branch-a, kind: session, state: none, label: Fix the retention copy}
+    expect:
+      facts:
+        branch-a: "branch: 6 sessions"
+
+  - name: count-names-sessions-under-a-branchless-project
+    nodes:
+      - {id: project-a, kind: project, state: none, label: notes, childCount: 3}
+      - {id: session-a, parentId: project-a, kind: session, state: none, label: Summarise the reading list}
+      - {id: session-b, parentId: project-a, kind: session, state: none, label: Outline the talk}
+    expect:
+      facts:
+        project-a: "project: 3 sessions"
+
+  - name: count-is-singular-at-one
+    nodes:
+      - {id: project-a, kind: project, state: none, label: peasant-labs/peasant, childCount: 1}
+      - {id: branch-a, parentId: project-a, kind: branch, state: none, label: feat/kickstart, childCount: 1}
+      - {id: session-a, parentId: branch-a, kind: session, state: none, label: Draft the stops, childCount: 1}
+    expect:
+      facts:
+        project-a: "project: 1 branch"
+        branch-a: "branch: 1 session"
+        session-a: "session: 1 child session"
+
+  - name: count-keeps-children-for-mixed-kinds
+    nodes:
+      - {id: project-a, kind: project, state: none, label: IngestPipeline, childCount: 2}
+      - {id: group-a, parentId: project-a, kind: group, state: none, label: local clone}
+      - {id: session-a, parentId: project-a, kind: session, state: none, label: Parse raw events}
+      - {id: project-b, kind: project, state: none, label: Empty, childCount: 1}
+    expect:
+      facts:
+        project-a: "project: 2 children"
+        project-b: "project: 1 child"
+
+  - name: session-count-names-child-sessions
+    nodes:
+      - {id: session-a, kind: session, state: none, label: Rebase the selection page, childCount: 2}
+      - {id: session-b, kind: session, state: none, label: No children}
+    expect:
+      facts:
+        session-a: "session: 2 child sessions"
+        session-b: "session"
+
+  # The preview contract: with onPreview the title is its own button. `click` names the control
+  # pressed on row `target`; `previews` are the ids onPreview received, `emitted` the selections.
+  - name: title-click-previews-and-reports-no-selection
+    nodes:
+      - {id: branch-a, kind: branch, state: none, label: develop, childCount: 1}
+      - {id: session-a, parentId: branch-a, kind: session, state: none, label: Fix the retention copy}
+    preview: {click: title, target: session-a}
+    expect:
+      previews: [session-a]
+      emitted: []
+
+  - name: checkbox-click-selects-and-reports-no-preview
+    nodes:
+      - {id: session-a, kind: session, state: none, label: Fix the retention copy}
+    preview: {click: checkbox, target: session-a}
+    expect:
+      previews: []
+      emittedIds: [session-a]
+
+  - name: previewed-row-is-marked-without-colour
+    nodes:
+      - {id: branch-a, kind: branch, state: none, label: develop, childCount: 2}
+      - {id: session-a, parentId: branch-a, kind: session, state: none, label: Wire the scan progress bar}
+      - {id: session-b, parentId: branch-a, kind: session, state: all, label: Fix the retention copy}
+    preview: {previewId: session-b}
+    value: [session-b]
+    expect:
+      pressed:
+        branch-a: false
+        session-a: false
+        session-b: true
+      titleNames:
+        session-b: preview Fix the retention copy
+      checkboxNames:
+        session-b: Fix the retention copy
+
+  - name: no-onpreview-keeps-label-toggle
+    nodes:
+      - {id: session-a, kind: session, state: none, label: Fix the retention copy}
+    labelClick: session-a
+    expect:
+      titleButtons: 0
+      emittedIds: [session-a]
+
+  - name: locked-row-title-still-previews
+    nodes:
+      - {id: project-a, kind: project, state: none, label: peasant-labs/peasant, childCount: 1}
+      - {id: session-locked, parentId: project-a, kind: session, state: none, label: Ambiguous branch, locked: true}
+    preview: {click: title, target: session-locked}
+    expect:
+      previews: [session-locked]
+      emitted: []
+      checkboxNames:
+        session-locked: Ambiguous branch, locked
+
+  # The rail: one measured connector through the mounted rows' checkboxes. `anchors` is the
+  # connector's anchor count after mount, `foldedAnchors` after folding `fold`.
+  - name: rail-drawn-for-each-open-level
+    nodes:
+      - {id: project-a, kind: project, state: none, label: peasant-labs/peasant, childCount: 2}
+      - {id: branch-a, parentId: project-a, kind: branch, state: none, label: develop, childCount: 2}
+      - {id: session-a, parentId: branch-a, kind: session, state: none, label: Wire the scan progress bar}
+      - {id: session-b, parentId: branch-a, kind: session, state: none, label: Fix the retention copy}
+      - {id: branch-b, parentId: project-a, kind: branch, state: none, label: feat/kickstart, childCount: 1}
+      - {id: session-c, parentId: branch-b, kind: session, state: none, label: Draft the stops}
+    rail: {}
+    expect:
+      anchors: 6
+      depths: [0, 1, 2, 2, 1, 2]
+
+  - name: rail-absent-under-a-folded-row
+    nodes:
+      - {id: project-a, kind: project, state: none, label: peasant-labs/peasant, childCount: 2}
+      - {id: branch-a, parentId: project-a, kind: branch, state: none, label: develop, childCount: 2}
+      - {id: session-a, parentId: branch-a, kind: session, state: none, label: Wire the scan progress bar}
+      - {id: session-b, parentId: branch-a, kind: session, state: none, label: Fix the retention copy}
+      - {id: branch-b, parentId: project-a, kind: branch, state: none, label: feat/kickstart, childCount: 1}
+      - {id: session-c, parentId: branch-b, kind: session, state: none, label: Draft the stops}
+    rail: {fold: branch-a}
+    expect:
+      anchors: 6
+      foldedAnchors: 4
+
+  - name: rail-is-hidden-from-assistive-tech
+    nodes:
+      - {id: branch-a, kind: branch, state: none, label: develop, childCount: 1}
+      - {id: session-a, parentId: branch-a, kind: session, state: none, label: Wire the scan progress bar}
+    rail: {}
+    expect:
+      anchors: 2
+      railHidden: true

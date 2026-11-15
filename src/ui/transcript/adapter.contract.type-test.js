@@ -88,6 +88,9 @@ void readCanonicalTurnModel
 /* ── (1) adaptTranscript(payload) → TranscriptViewModel ─────────────────────── */
 /** @type {TranscriptViewModel} */
 const vm1 = adaptTranscript(wire)
+adaptTranscript(wire, undefined, undefined, { payloadMode: 'published' })
+// @ts-expect-error unsupported payload modes fail at the public boundary
+adaptTranscript(wire, undefined, undefined, { payloadMode: 'unknown' })
 /** @type {import('@peasant-labs/schema').UsageDetail | undefined} */
 const detailedUsage = vm1.turns[0]?.usage
 /** @type {string | undefined} */
