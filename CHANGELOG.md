@@ -4,6 +4,11 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.0.70
+
+- cut a release (#287)
+- cut a release (#290)
+
 ## 0.0.69
 
 - `SelectionTree` gains the preview contract. With `onPreview` and a host-owned `previewId`, a row's title is its own button outside the checkbox's label: the title previews and never selects, the checkbox selects and never previews, and the caret still folds. The previewed row's title carries `aria-pressed` and the row carries the amber selection inset over a quiet fill, so the mark is not colour alone. Every row kind previews, locked rows included. With no `onPreview` the title stays inside the checkbox label and a click on it toggles the row, as before.
