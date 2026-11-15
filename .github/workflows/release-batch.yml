@@ -80,7 +80,7 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           repository: peasant-labs/infra
-          ref: f9bdadb2f359c90336fca71ea3afd1fe59a046ce
+          ref: 1135fac2e509a9cada081d8824df1f09308b4bcb
           path: infra-tool
           sparse-checkout: |
             tools/release
@@ -294,7 +294,7 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           repository: peasant-labs/infra
-          ref: f9bdadb2f359c90336fca71ea3afd1fe59a046ce
+          ref: 1135fac2e509a9cada081d8824df1f09308b4bcb
           path: infra-tool
           sparse-checkout: |
             tools/release
@@ -440,7 +440,7 @@ jobs:
           APP_TOKEN: ${{ steps.mint.outputs.token }}
           TAG: ${{ needs.plan.outputs.tag }}
         run: |
-          git -c http.extraheader="AUTHORIZATION: bearer ${APP_TOKEN}" push origin "refs/tags/${TAG}:refs/tags/${TAG}"
+          git -c credential.helper='!f() { echo "username=x-access-token"; echo "password=${APP_TOKEN}"; }; f' push origin "refs/tags/${TAG}:refs/tags/${TAG}"
 
       - name: Fetch the release branch
         if: needs.plan.outputs.action == 'open-pr' && needs.plan.outputs.push == 'true'
@@ -452,7 +452,7 @@ jobs:
         env:
           APP_TOKEN: ${{ steps.mint.outputs.token }}
         run: |
-          git -c http.extraheader="AUTHORIZATION: bearer ${APP_TOKEN}" push --force-with-lease origin automation/release
+          git -c credential.helper='!f() { echo "username=x-access-token"; echo "password=${APP_TOKEN}"; }; f' push --force-with-lease origin automation/release
 
       - name: Open the release PR
         if: needs.plan.outputs.action == 'open-pr' && needs.plan.outputs.push == 'true' && needs.plan.outputs.number == ''
