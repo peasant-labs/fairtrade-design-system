@@ -276,7 +276,7 @@
     "test:step-wizard:mutations": "node scripts/parts-mutations.mjs scripts/step-wizard.test.mjs scripts/testdata/step-wizard.manifest.yaml"
   },
   "dependencies": {
-    "@peasant-labs/schema": "0.51.0",
+    "@peasant-labs/schema": "0.54.0",
     "@shikijs/core": "4.6.0",
     "@shikijs/engine-javascript": "4.6.0",
     "@shikijs/langs": "4.6.0",

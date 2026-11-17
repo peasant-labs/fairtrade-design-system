@@ -72,7 +72,7 @@ mutations:
     target: provider-policy
     strategy: omit-strike-inventory
     expectedFailedCheckCount: 3
-    expectedError: "mounted legend: expected 14 rows, received 13"
+    expectedError: "mounted legend: expected 16 rows, received 15"
   - name: arbitrary-string-provider-cannot-pass-validation
     target: provider-policy
     strategy: accept-arbitrary-string
