@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@peasant-labs/schema':
-        specifier: 0.51.0
-        version: 0.51.0
+        specifier: 0.54.0
+        version: 0.54.0
       '@shikijs/core':
         specifier: 4.6.0
         version: 4.6.0
@@ -738,8 +738,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@peasant-labs/schema@0.51.0':
-    resolution: {integrity: sha512-KTsPgo542k9ZT8tlbIiZbsr2M5+mpeEWTj/fAxZiGOO7QTADGqwrfxvkc9zR5je7fo+kH2wc3wGuJds1Yfv9jg==}
+  '@peasant-labs/schema@0.54.0':
+    resolution: {integrity: sha512-dqFEuUV87NX4FcKrGwKZozuA9FV3fCWfJoXx+PIIDd1N8fdjx2bgfcOdwG92QnGKaBSt7ls9LiI16kJ6PmLeSg==}
     engines: {node: '>=26'}
 
   '@playwright/test@1.63.0':
@@ -3574,7 +3574,7 @@ snapshots:
   '@oxc-resolver/binding-win32-x64-msvc@11.21.3':
     optional: true
 
-  '@peasant-labs/schema@0.51.0':
+  '@peasant-labs/schema@0.54.0':
     dependencies:
       yaml: 2.9.0
       zod: 4.4.3

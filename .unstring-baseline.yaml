@@ -19,7 +19,7 @@ rules:
     playwright.journey.config.mjs: 1
     scripts/app-sidebar.test.mjs: 10
     scripts/change-annotation-capabilities.test.mjs: 1
-    scripts/code-map-interactions.test.mjs: 5
+    scripts/code-map-interactions.test.mjs: 15
     scripts/code-map-state.test.mjs: 3
     scripts/css-token-lint.mjs: 1
     scripts/diag.mjs: 1
@@ -35,7 +35,7 @@ rules:
     scripts/fairtest/list-fairtest.mjs: 1
     scripts/fairtest/product-adapter.test.mjs: 12
     scripts/fairtest/product-mutations.test.mjs: 1
-    scripts/fairtest/product-producer.mjs: 2
+    scripts/fairtest/product-producer.mjs: 3
     scripts/fairtest/run-envelope.test.mjs: 9
     scripts/fairtest/run-mounted.mjs: 2
     scripts/fairtest/worktree-state.mjs: 1
@@ -50,7 +50,7 @@ rules:
     scripts/journey/card-insets.journey.mjs: 2
     scripts/journey/catalog-gate.test.mjs: 1
     scripts/journey/check-light-transparency.mjs: 2
-    scripts/journey/datatable.journey.mjs: 2
+    scripts/journey/datatable.journey.mjs: 5
     scripts/journey/dense-type.journey.mjs: 5
     scripts/journey/lib/fixtures.mjs: 1
     scripts/journey/phone-header.journey.mjs: 1
@@ -105,6 +105,7 @@ rules:
     scripts/transcript-segments.test.mjs: 2
     scripts/transcript-session-records.test.mjs: 3
     scripts/transcript-system-groups.test.mjs: 8
+    scripts/transcript-trail-rule.mjs: 1
     scripts/transcript-viewer-format.test.mjs: 1
     scripts/turns-to-flow-edges.test.mjs: 1
     scripts/validate.mjs: 3
@@ -180,7 +181,7 @@ rules:
     src/ui/graph/Changes.stories.jsx: 4
     src/ui/graph/CodeMap.jsx: 1
     src/ui/graph/CodeMapComposition.jsx: 6
-    src/ui/graph/CodeMapComposition.stories.jsx: 5
+    src/ui/graph/CodeMapComposition.stories.jsx: 7
     src/ui/graph/CodeMapNavigator.jsx: 2
     src/ui/graph/GhostCommitNode.jsx: 1
     src/ui/graph/codeMapState.js: 12
@@ -191,6 +192,7 @@ rules:
     src/ui/table/align-class.js: 2
     src/ui/transcript/DiffEntryCard.jsx: 2
     src/ui/transcript/FiltersRail.jsx: 6
+    src/ui/transcript/MermaidBlock.jsx: 1
     src/ui/transcript/Minimap.jsx: 2
     src/ui/transcript/OutlineRail.jsx: 7
     src/ui/transcript/Scorecard.jsx: 2
@@ -210,7 +212,7 @@ rules:
     src/ui/transcript/filters.js: 7
     src/ui/transcript/graph/GraphLegend.jsx: 4
     src/ui/transcript/graph/GraphTurnNode.jsx: 5
-    src/ui/transcript/graph/engine/TrajectoryGraph.jsx: 8
+    src/ui/transcript/graph/engine/TrajectoryGraph.jsx: 7
     src/ui/transcript/graph/engine/nodes/TurnCardNode.jsx: 5
     src/ui/transcript/graph/engine/turnsToFlow.js: 4
     src/ui/transcript/graph/engine/useCanvasSync.js: 2
@@ -223,6 +225,7 @@ rules:
     src/ui/transcript/usage.js: 2
     src/ui/transcript/useReaderWidthAnchor.js: 1
     src/ui/transcript/work-summary.js: 5
+    vite.config.js: 1
   copy-query-literal:
     scripts/journey/accessibility.journey.mjs: 1
     scripts/journey/app-sidebar.journey.mjs: 18

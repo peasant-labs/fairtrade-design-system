@@ -25,6 +25,8 @@ export const PROVIDER_DISPLAY_NAMES = Object.freeze({
   kiro: 'Kiro',
   'kiro-cli': 'Kiro CLI',
   'kiro-crew': 'Kiro Crew',
+  'antigravity-cli': 'Antigravity CLI',
+  'antigravity-ide': 'Antigravity IDE',
 })
 
 /** @type {Readonly<Record<Harness, ProviderBrand>>} */
@@ -43,6 +45,8 @@ export const PROVIDER_BRANDS = Object.freeze({
   kiro: 'kiro',
   'kiro-cli': 'kiro',
   'kiro-crew': 'kiro',
+  'antigravity-cli': 'gemini',
+  'antigravity-ide': 'gemini',
 })
 
 /** @type {Readonly<Record<Harness, ProviderAccent>>} */
@@ -61,6 +65,8 @@ export const PROVIDER_ACCENTS = Object.freeze({
   kiro: 'mauve',
   'kiro-cli': 'mauve',
   'kiro-crew': 'mauve',
+  'antigravity-cli': 'teal',
+  'antigravity-ide': 'teal',
 })
 
 /**

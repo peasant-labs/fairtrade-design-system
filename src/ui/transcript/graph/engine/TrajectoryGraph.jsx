@@ -20,6 +20,7 @@ import {
   useReactFlow,
   ReactFlowProvider,
 } from '@xyflow/react'
+import { Role } from '@peasant-labs/schema'
 import { turnsToFlow, computeLaneHeaders } from './turnsToFlow.js'
 import { useCanvasSync } from './useCanvasSync.js'
 import { NODE_DIMENSIONS, EDGE_DEFAULTS } from './constants.js'
@@ -211,8 +212,8 @@ function TrajectoryGraphCanvas({
         const hasErr = d.annotations?.some?.((a) => a.type === 'error')
         if (hasErr) return 'var(--danger)'
         if (d.isFilteredOut) return 'var(--rule)'
-        if (d.turn.role === 'user') return 'var(--teal)'
-        if (d.turn.role === 'assistant') return 'var(--amber)'
+        if (d.turn.role === Role.User) return 'var(--teal)'
+        if (d.turn.role === Role.Assistant) return 'var(--amber)'
         return 'var(--ink-2)'
       }
       if (n.type === 'toolCall') return 'var(--ink-3)'
