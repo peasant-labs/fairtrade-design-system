@@ -6,8 +6,10 @@ import YAML from 'yaml'
 import { assertExactNames } from './css-source.mjs'
 import { checkDirectory } from './assert-unstring-eslint-enabled.mjs'
 
-const fixture = YAML.parse(await readFile(new URL('./testdata/unstring-eslint-guard.yaml', import.meta.url), 'utf8'))
-const manifest = YAML.parse(await readFile(new URL('./testdata/unstring-eslint-guard.manifest.yaml', import.meta.url), 'utf8'))
+const FIXTURE = new URL('./testdata/unstring-eslint-guard.yaml', import.meta.url)
+const MANIFEST = new URL('./testdata/unstring-eslint-guard.manifest.yaml', import.meta.url)
+const fixture = YAML.parse(await readFile(FIXTURE, 'utf8'))
+const manifest = YAML.parse(await readFile(MANIFEST, 'utf8'))
 assertExactNames(fixture.cases.map((entry) => entry.name), manifest.requiredCaseNames, 'ESLint guard cases')
 
 const directory = await mkdtemp(join(tmpdir(), 'unstring-eslint-guard-'))
