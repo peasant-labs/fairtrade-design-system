@@ -918,6 +918,7 @@ export function adaptTranscript(payload, annotations, analytics, options) {
   vm.earlierHistory = (payload.earlierHistory ?? []).map((section, index) => {
     const id = `earlier-${index}`
     const earlier = cookPartition(payload, section.turns, section.nativeMetadata, id)
+    if (incompleteTail) for (const turn of earlier.turns) delete turn.isFinal
     return {
       id, state: historyStates[index],
       turns: earlier.turns,
