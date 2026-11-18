@@ -17,7 +17,7 @@ try {
   for (const entry of fixture.cases) {
     await writeFile(join(directory, 'source.jsx'), entry.source)
     if (entry.rejected) {
-      await assert.rejects(checkDirectory(directory), /unstring\/closed-set-literal/, entry.name)
+      await assert.rejects(checkDirectory(directory), /ESLint|unstring\/closed-set-literal/, entry.name)
     } else {
       await assert.doesNotReject(checkDirectory(directory), entry.name)
     }

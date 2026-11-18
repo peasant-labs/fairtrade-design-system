@@ -10,3 +10,8 @@ requiredCaseNames:
   - inline-rule-config
   - clean-source
   - unrelated-rule-with-reason
+  - hooks-disable-with-reason
+  - hooks-disable-without-reason
+  - unrelated-inline-rule-config
+  - named-disable-with-reason
+  - empty-reason

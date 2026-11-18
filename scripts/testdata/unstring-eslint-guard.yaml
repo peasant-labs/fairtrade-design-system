@@ -43,3 +43,22 @@ cases:
     source: |
       // eslint-disable-next-line other/rule -- documented reason
       const value = 1
+  - name: hooks-disable-with-reason
+    rejected: false
+    source: |
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- preserve the mount snapshot
+      const value = 1
+  - name: hooks-disable-without-reason
+    rejected: true
+    source: |
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      const value = 1
+  - name: unrelated-inline-rule-config
+    rejected: true
+    source: '/* eslint react-hooks/exhaustive-deps: "off" */'
+  - name: named-disable-with-reason
+    rejected: true
+    source: '/* eslint-disable unstring/closed-set-literal -- forbidden */'
+  - name: empty-reason
+    rejected: true
+    source: '// eslint-disable-line other/rule -- '
