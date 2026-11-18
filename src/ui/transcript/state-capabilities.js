@@ -43,8 +43,10 @@
 /**
  * How the composite presents: `classic` (the bordered-turn reading surface) or
  * `ledger` (the default reading-first surface: role-led turns with one grouped work panel,
- * system turns as single rows, and the ledger chrome). @typedef {'classic' | 'ledger'} Presentation
+ * system turns as single rows, and the ledger chrome).
  */
+export const Presentation = Object.freeze({ Classic: 'classic', Ledger: 'ledger' })
+/** @typedef {(typeof Presentation)[keyof typeof Presentation]} Presentation */
 
 /**
  * A per-turn saved label (the LabelPopover's output). `outcome` is the verdict

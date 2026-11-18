@@ -1,3 +1,4 @@
+import { MapNodeKind } from '@peasant-labs/schema'
 import { useMemo, useRef } from 'react'
 import MapCanvas from '../MapCanvas.jsx'
 import { codeMapStatesEqual, createCodeMapState, deriveCodeMapView, reduceCodeMapState } from './codeMapState.js'
@@ -140,7 +141,7 @@ export function codeMapPayloadToMapData(payload) {
     nodes: nodes.map((node) => ({
       id: node.id,
       label: node.name || node.id,
-      kind: node.kind === 'file' ? 'file' : 'folder',
+      kind: node.kind === MapNodeKind.File ? 'file' : 'folder',
       loc: node.loc ?? 0,
       coverage: coverageStep(node.recordedFiles, node.totalFiles),
       parent: node.parent || undefined,

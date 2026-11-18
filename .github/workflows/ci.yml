@@ -76,6 +76,9 @@ jobs:
       - name: Static guard (unstring)
         run: pnpm run lint:unstring --format github
 
+      - name: Typed ESLint guard
+        run: pnpm run lint:eslint
+
       # Contract gate: checkJs + strict + noImplicitAny on the transcript wire
       # contract / TranscriptViewModel type-test. Runs first so a contract leak
       # fails early with a clear attribution (not buried in the Vite/tsc build).

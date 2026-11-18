@@ -5,6 +5,7 @@ import {
 import { useEffect, useRef } from 'react'
 import StepsWaterfall, { formatDuration } from '../StepsWaterfall.jsx'
 import { Term } from '../Explainer.jsx'
+import { Presentation as PresentationValue } from './state-capabilities.js'
 
 /* OutlineRail — the left rail's per-tab outline, lifted verbatim from the canonical mockup
    (src/mockups/inuse/TranscriptApp.jsx:1691). DUMB: it reads the cooked slices off the
@@ -190,7 +191,7 @@ export default function OutlineRail({ viewModel, tab, onJump = () => {}, present
   /* trace in the ledger presentation → one card per task: its #turn, its duration, and the
      prompt the reader is jumping to. The card covering the active turn is marked current. A
      task with no first turn offers no destination, so it is skipped rather than sent to turn 0. */
-  if (tab === 'trace' && presentation === 'ledger') {
+  if (tab === 'trace' && presentation === PresentationValue.Ledger) {
     return (
       <LedgerTurnCards viewModel={viewModel} activeTurn={activeTurn} onJump={onJump} />
     )

@@ -1,3 +1,4 @@
+import { Role } from '@peasant-labs/schema'
 import { useEffect, useRef } from 'react'
 
 /* Scrubber — the condensed position track in the pinned trace header, lifted verbatim from the
@@ -100,7 +101,7 @@ export default function Scrubber({ turns = [], ticks, active = 0, activeTick = 0
         : turns.map((turn, i) => (
           <span
             key={turn.index}
-            className={'txn-scrub-tick' + (turn.role === 'user' ? ' txn-tick-user' : '') + (turn.isError ? ' txn-tick-err' : '') + (active === turn.index ? ' txn-tick-on' : '')}
+            className={'txn-scrub-tick' + (turn.role === Role.User ? ' txn-tick-user' : '') + (turn.isError ? ' txn-tick-err' : '') + (active === turn.index ? ' txn-tick-on' : '')}
             style={{ left: (last > 0 ? (i / last) * 100 : 0) + '%' }}
           />
         ))}

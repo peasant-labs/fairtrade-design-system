@@ -204,11 +204,18 @@ export const ANALYTICS_SESSION_OUTCOMES = Object.freeze(['resolved', 'partial', 
 
 /**
  * The dashboard's toggleable sections.
- * @typedef {'summary' | 'sessionsPerWeek' | 'weeklyActiveContributors'
- *   | 'newContributorVelocity' | 'avgDurationPerActiveWeek'
- *   | 'outcomeDistribution' | 'sessionStats' | 'contributorTable'
- * } ProjectOverviewSectionKey
  */
+export const ProjectOverviewSectionKey = Object.freeze({
+  Summary: 'summary',
+  SessionsPerWeek: 'sessionsPerWeek',
+  WeeklyActiveContributors: 'weeklyActiveContributors',
+  NewContributorVelocity: 'newContributorVelocity',
+  AvgDurationPerActiveWeek: 'avgDurationPerActiveWeek',
+  OutcomeDistribution: 'outcomeDistribution',
+  SessionStats: 'sessionStats',
+  ContributorTable: 'contributorTable',
+})
+/** @typedef {(typeof ProjectOverviewSectionKey)[keyof typeof ProjectOverviewSectionKey]} ProjectOverviewSectionKey */
 
 /**
  * The dashboard's sections: canonical keys paired with their visible chip
@@ -218,14 +225,14 @@ export const ANALYTICS_SESSION_OUTCOMES = Object.freeze(['resolved', 'partial', 
  * @type {ReadonlyArray<{ key: ProjectOverviewSectionKey, label: string }>}
  */
 export const PROJECT_OVERVIEW_SECTION_DEFS = Object.freeze([
-  { key: 'summary', label: 'summary' },
-  { key: 'sessionsPerWeek', label: 'sessions/week' },
-  { key: 'weeklyActiveContributors', label: 'active' },
-  { key: 'newContributorVelocity', label: 'new' },
-  { key: 'avgDurationPerActiveWeek', label: 'duration' },
-  { key: 'outcomeDistribution', label: 'outcomes' },
-  { key: 'sessionStats', label: 'typical' },
-  { key: 'contributorTable', label: 'table' },
+  { key: ProjectOverviewSectionKey.Summary, label: 'summary' },
+  { key: ProjectOverviewSectionKey.SessionsPerWeek, label: 'sessions/week' },
+  { key: ProjectOverviewSectionKey.WeeklyActiveContributors, label: 'active' },
+  { key: ProjectOverviewSectionKey.NewContributorVelocity, label: 'new' },
+  { key: ProjectOverviewSectionKey.AvgDurationPerActiveWeek, label: 'duration' },
+  { key: ProjectOverviewSectionKey.OutcomeDistribution, label: 'outcomes' },
+  { key: ProjectOverviewSectionKey.SessionStats, label: 'typical' },
+  { key: ProjectOverviewSectionKey.ContributorTable, label: 'table' },
 ])
 
 /** Canonical section keys, in render order (derived). @type {readonly ProjectOverviewSectionKey[]} */

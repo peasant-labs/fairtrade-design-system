@@ -1,4 +1,5 @@
 // @ts-check
+import { ReadAttributionState, ReadStateGrade } from '@peasant-labs/schema'
 import { assertRankingContractValues } from './graphContractPolicy.js'
 
 /*
@@ -16,8 +17,6 @@ import { assertRankingContractValues } from './graphContractPolicy.js'
    COVERAGE_CAP) declared beside it.
  */
 
-/** @typedef {import('@peasant-labs/schema').ReadAttributionState} ReadAttributionState */
-/** @typedef {import('@peasant-labs/schema').ReadStateGrade} ReadStateGrade */
 /** @typedef {'relevance'|'debt'|'churn'} RankMode */
 /** @typedef {'unknown'|'none'|'reviewed'|'partial-read'|'viewed'|'no-recorded-read'} DebtState */
 
@@ -97,14 +96,14 @@ const HONESTY_PROMPT = 'Use this as a prompt to inspect recorded evidence, not a
  */
 export function debtState(node) {
   if (node.agentEditedCount === 0) return 'none'
-  if (node.readAttribution === 'unavailable') return 'unknown'
+  if (node.readAttribution === ReadAttributionState.Unavailable) return 'unknown'
   const hasUnattributed = node.changedRegionCount > node.attributedRegionCount
   const hunkFrac = node.attributedRegionCount > 0 ? node.reviewedRegionCount / node.attributedRegionCount : 0
   const clears = node.attributedRegionCount > 0 && hunkFrac === 1 && !hasUnattributed
-  const fileReviewed = node.readState === 'reviewed' || node.readState === 'reviewed_in_detail'
+  const fileReviewed = node.readState === ReadStateGrade.Reviewed || node.readState === ReadStateGrade.ReviewedInDetail
   if (fileReviewed || clears) return 'reviewed'
   if (node.attributedRegionCount > 0 && node.reviewedRegionCount > 0) return 'partial-read'
-  if (node.readState === 'viewed') return 'viewed'
+  if (node.readState === ReadStateGrade.Viewed) return 'viewed'
   if (node.readCount === 0) return 'no-recorded-read'
   return 'partial-read' // mechanical fallback: read>0, edited>0, no hunk relationship
 }

@@ -68,7 +68,6 @@ function useSpiedSection(sections, enabled) {
     }, { rootMargin: '-15% 0px -65% 0px' })
     for (const target of targets) observer.observe(target.el)
     return () => observer.disconnect()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [anchors, enabled])
   return [spied, setSpied]
 }

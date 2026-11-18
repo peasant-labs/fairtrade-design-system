@@ -645,7 +645,6 @@ export default function MapCanvas({
 
   useEffect(() => {
     if (!canonicalControlled && expandedIds !== undefined) setLocalExpanded(toIdSet(expandedIds))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canonicalControlled, expandedIdsKey])
 
   useEffect(() => {
@@ -725,7 +724,6 @@ export default function MapCanvas({
   const visible = useMemo(() => {
     if (canonicalVisibleIds === undefined) return visibleNodes(tree, GRAIN_DEPTH[grain], expanded)
     return Array.from(canonicalVisibleIds, (id) => tree.byId.get(id)).filter(Boolean)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tree, grain, expanded, canonicalVisibleKey])
   const visibleIds = useMemo(() => new Set(visible.map((n) => n.id)), [visible])
 
@@ -767,7 +765,6 @@ export default function MapCanvas({
       if (visibleId) out.add(visibleId)
     }
     return out
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [highlightedIdsKey, tree.parentIdByChild, visibleIds])
 
   /* ----- search matches (a path-substring combobox) ----- */
@@ -907,7 +904,6 @@ export default function MapCanvas({
     // out via the breadcrumb left the canvas zoomed into the now-closed
     // folder's old scoped-fit framing instead of reframing the wider view.
     fit(hasCanonicalViewport)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visKey, viewportOwnershipKey])
 
   /* ----- zoom about the viewport centre (so +/- feel anchored) ----- */

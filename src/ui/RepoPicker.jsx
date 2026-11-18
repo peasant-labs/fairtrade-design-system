@@ -62,7 +62,6 @@ export default function RepoPicker({ open, onClose, owners, initialSelected = []
     if (!open) return
     setSelected(new Set(initialSelected))
     setQuery('')
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
   const all = useMemo(() => owners.flatMap((owner) => owner.repos), [owners])
   const visibleOwners = owners
