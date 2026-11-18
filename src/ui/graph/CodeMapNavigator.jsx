@@ -240,6 +240,10 @@ export default function CodeMapNavigator({
   )
 }
 
+/**
+ * @param {object} props
+ * @param {import('./codeMapState.js').CodeMapNavigatorRow} props.row
+ */
 function NavigatorRow({ row, hasDisclosure, isExpanded, selected, tabbable, setRef, onFocus, onSelect, onToggle, onKeyDown, lineCounts }) {
   return (
     <div
