@@ -20,6 +20,7 @@ try {
     .replaceAll("from './time.js'", `from '${new URL('../src/ui/transcript/time.js', import.meta.url).href}'`)
     .replaceAll("from './title.js'", `from '${new URL('../src/ui/transcript/title.js', import.meta.url).href}'`)
     .replaceAll("from './earlier-history-state.js'", `from '${new URL('../src/ui/transcript/earlier-history-state.js', import.meta.url).href}'`)
+    .replaceAll("from './continuation-values.js'", `from '${new URL('../src/ui/transcript/continuation-values.js', import.meta.url).href}'`)
     .replace("from '@peasant-labs/schema'", `from '${pathToFileURL(resolve('node_modules/@peasant-labs/schema/dist/index.js')).href}'`)
     .replace(find, '')
   writeFileSync(artifact, rewritten)

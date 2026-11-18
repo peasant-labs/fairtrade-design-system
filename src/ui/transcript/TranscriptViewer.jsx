@@ -10,8 +10,10 @@ import {
   CornerDownRight, Check, X, PanelLeftClose, PanelLeftOpen,
   PanelRightClose, PanelRightOpen, Menu as MenuIcon,
 } from 'lucide-react'
-import { isConversationTurn } from '@peasant-labs/schema'
+import { isConversationTurn, Role } from '@peasant-labs/schema'
+import { TranscriptContinuationState, TranscriptContinuationLabels } from './continuation-values.js'
 import { Presentation } from './state-capabilities.js'
+import { buildDiffs } from './adapter.js'
 import ProviderIcon from '../ProviderIcon.jsx'
 import { transcriptHeadingLevel } from './heading.js'
 import { MarkdownContext } from './markdown-context.js'
@@ -194,6 +196,7 @@ function measureReaderFull(stream) {
 /* the five session views (count badges come off the cooked VM). */
 const TAB_ORDER = /** @type {const} */ (['highlights', 'trace', 'diffs', 'files', 'annotations'])
 const TAB_LABEL = { highlights: 'highlights', trace: 'full trace', diffs: 'diffs', files: 'files', annotations: 'annotations' }
+const CONTINUATION_STATES = new Set(Object.values(TranscriptContinuationState))
 
 /* phase id/key → glyph (PhaseVM carries a semantic key, not a component). */
 const PHASE_ICON = { exploration: FileSearch, debugging: AlertTriangle, implementation: Pencil, planning: ListTree, review: ShieldCheck }
@@ -334,6 +337,7 @@ export default function TranscriptViewer({
   pullRequests,
   headingLevel,
   allowMarkdownImages,
+  allowClipboard = true,
   integrity,
   transcriptContentHash,
   contentHash,
@@ -342,7 +346,11 @@ export default function TranscriptViewer({
   window: windowProp,
   onLoadSegment,
   onLoadWindow,
+  continuation: continuationProp,
 }) {
+  if (continuationProp != null && !CONTINUATION_STATES.has(continuationProp.state)) {
+    throw new TypeError(`TranscriptViewer refused continuation.state ${String(continuationProp.state)}: pass one of ${[...CONTINUATION_STATES].join(', ')} to describe the segment continuation.`)
+  }
   const resolvedImageUrl = useImageUrl(imageUrl, attachmentUrl)
   if (breadcrumb != null && breadcrumbContext != null) {
     throw new TypeError('TranscriptViewer cannot use breadcrumb and breadcrumbContext together; pass either a complete breadcrumb or ancestor context, not both.')
@@ -352,7 +360,7 @@ export default function TranscriptViewer({
   }
   // Explore keeps its page-level contract; this viewer also supports nested host panes.
   const pageLevel = transcriptHeadingLevel(headingLevel)
-  const markdownContext = useMemo(() => ({ allowImages: allowMarkdownImages !== false, turnHeadingLevel: pageLevel + 2 }), [allowMarkdownImages, pageLevel])
+  const markdownContext = useMemo(() => ({ allowImages: allowMarkdownImages !== false, allowClipboard, turnHeadingLevel: pageLevel + 2 }), [allowMarkdownImages, allowClipboard, pageLevel])
   const TitleHeading = headingTag(pageLevel, 0)
   const PhaseHeading = headingTag(pageLevel, 1)
   const EmptyHeading = headingTag(pageLevel, 1)
@@ -377,8 +385,23 @@ export default function TranscriptViewer({
       : []),
     [segmentMode, heldWindow, loadedSegments, coverage],
   )
-  const segmentTurns = useMemo(() => (segmentMode ? turnsFromSegments(renderedSegments) : null), [segmentMode, renderedSegments])
-  const allSegmentTurns = useMemo(() => (segmentMode ? turnsFromSegments(loadedSegments) : null), [segmentMode, loadedSegments])
+  const previewSegments = segmentMode && continuationProp != null
+  const incompleteTail = segmentMode && directory?.complete === false
+  const allSegmentTurns = useMemo(() => {
+    if (!segmentMode) return null
+    const list = turnsFromSegments(loadedSegments)
+    if (!incompleteTail && !previewSegments) return list
+    const latest = [...list].reverse().find(turn => turn.role === Role.Assistant && turn.depth === 0 && turn.content?.trim())
+    return list.map(turn => {
+      const { isFinal: _final, ...withoutFinal } = turn
+      return !incompleteTail && turn.index === latest?.index ? { ...withoutFinal, isFinal: true } : withoutFinal
+    })
+  }, [segmentMode, loadedSegments, incompleteTail, previewSegments])
+  const segmentTurns = useMemo(() => {
+    if (!segmentMode) return null
+    const rendered = new Set(renderedSegments.map(segment => segment.index))
+    return (allSegmentTurns ?? []).filter(turn => rendered.has(turn.segmentIndex))
+  }, [segmentMode, renderedSegments, allSegmentTurns])
   const vm = useMemo(() => (segmentMode ? { ...viewModel, turns: segmentTurns } : viewModel), [segmentMode, viewModel, segmentTurns])
   /* The region model is the segments in hand, including a window run that is still
      arriving: a loaded segment is never reported as unloaded just because its window
@@ -822,13 +845,16 @@ export default function TranscriptViewer({
     [segmentMode, allSegmentTurns, vm?.files],
   )
   const diffs = useMemo(
-    () => (segmentMode ? (vm?.diffs ?? []).filter((diff) => inLoadedTurns(diff.turn)) : vm?.diffs ?? []),
-    [segmentMode, vm?.diffs, inLoadedTurns],
+    () => (previewSegments ? buildDiffs(allSegmentTurns ?? []) : segmentMode ? (vm?.diffs ?? []).filter(diff => inLoadedTurns(diff.turn)) : vm?.diffs ?? []),
+    [segmentMode, vm?.diffs, allSegmentTurns, previewSegments, inLoadedTurns],
   )
-  const highlights = useMemo(
-    () => (segmentMode ? (vm?.highlights ?? []).filter((highlight) => inLoadedTurns(highlight.turn)) : vm?.highlights ?? []),
-    [segmentMode, vm?.highlights, inLoadedTurns],
-  )
+  const highlights = useMemo(() => {
+    const existing = segmentMode ? (vm?.highlights ?? []).filter((highlight) => inLoadedTurns(highlight.turn)) : vm?.highlights ?? []
+    if (!previewSegments) return existing
+    const latest = [...(allSegmentTurns ?? [])].reverse().find(turn => turn.role === Role.Assistant && turn.depth === 0 && turn.content?.trim())
+    const others = existing.filter(highlight => highlight.id !== 'hl-final')
+    return latest ? [...others, { id: 'hl-final', kind: 'final', icon: 'final', turn: latest.index, title: incompleteTail ? 'latest loaded response' : 'final response', sub: latest.content }] : others
+  }, [segmentMode, vm?.highlights, inLoadedTurns, incompleteTail, previewSegments, allSegmentTurns])
   const scorecardBands = vm?.analytics?.scorecardBands ?? []
   // eslint-disable-next-line react-hooks/exhaustive-deps -- stabilizing empty commits would stop visible and system-hidden turn projections recomputing when commits are absent
   const commits = session?.git?.commits ?? []
@@ -904,6 +930,11 @@ export default function TranscriptViewer({
      still reveal them, and each category's badge keeps its own entry count. */
   const conversationTurns = useMemo(() => turns.filter(isConversationTurn), [turns])
   const visibleConversationCount = useMemo(() => visibleTurns.filter(isConversationTurn).length, [visibleTurns])
+  const traceBadgeCount = segmentMode
+    ? scope?.complete && scope.totalConversationTurns != null && visibleConversationCount === conversationTurns.length
+      ? scope.totalConversationTurns
+      : (allSegmentTurns ?? []).filter(isConversationTurn).length
+    : conversationTurns.length
   /* The trace header's count. With a directory total the header stays in one unit while
      segments load: the total alone once every segment is held and no filter hides a held
      conversation turn, otherwise the visible count against it. Neither client count is
@@ -911,6 +942,18 @@ export default function TranscriptViewer({
      unit agrees with the number beside it: the total in an "of" pair, as in the boundary
      caption "turn 20 of 77". */
   const traceCountText = useMemo(() => {
+    if (directory?.complete === false) {
+      const refs = directory.segments ?? []
+      const first = refs[0]?.conversationTurns
+      const last = refs[refs.length - 1]?.conversationTurns
+      if (first && last && last.before + last.count > first.before) {
+        const start = first.before + 1
+        const end = last.before + last.count
+        return `${turnUnit(end - start + 1)} ${formatInteger(start)}${start === end ? '' : `–${formatInteger(end)}`} loaded so far`
+      }
+      const bytes = refs.reduce((sum, ref) => sum + (ref.byteLength || 0), 0)
+      return `${formatInteger(refs.length)} ${refs.length === 1 ? 'segment' : 'segments'}, ${formatByteExtent(bytes)} loaded so far`
+    }
     const total = scope?.totalConversationTurns
     if (total != null) {
       return scope.complete && visibleConversationCount === conversationTurns.length
@@ -921,7 +964,7 @@ export default function TranscriptViewer({
     return visibleConversationCount === conversationTurns.length
       ? `${formatInteger(conversationTurns.length)} ${turnUnit(conversationTurns.length)}`
       : `${formatInteger(visibleConversationCount)} of ${formatInteger(conversationTurns.length)} ${turnUnit(conversationTurns.length)}`
-  }, [segmentMode, scope, visibleConversationCount, conversationTurns.length])
+  }, [directory?.complete, directory?.segments, segmentMode, scope, visibleConversationCount, conversationTurns.length])
 
   /* Runs of consecutive visible system turns. Ledger-only: classic keeps its full cards, so
      there is nothing to fold there. */
@@ -1771,7 +1814,7 @@ export default function TranscriptViewer({
       {TAB_ORDER.map((id) => {
         const on = tab === id
         const count = id === 'highlights' ? highlights.length
-          : id === 'trace' ? conversationTurns.length
+          : id === 'trace' ? traceBadgeCount
           : id === 'diffs' ? diffs.length
           : id === 'files' ? files.length
           : annotations.length
@@ -1901,12 +1944,12 @@ export default function TranscriptViewer({
                     {caps.canContribute && (
                       <li><button type="button" className="menu-item" role="menuitem" onClick={() => { setShareOpen(false); callbacks.onContribute && callbacks.onContribute() }}><Users size={14} aria-hidden="true" /><span className="menu-text">contribute</span></button></li>
                     )}
-                    <li>
+                    {allowClipboard && <li>
                       <button type="button" className="menu-item" role="menuitem" onClick={() => { setShareOpen(false); copyLink() }}>
                         {copiedLink ? <Check size={14} aria-hidden="true" /> : <LinkIcon size={14} aria-hidden="true" />}
                         <span className="menu-text">{copiedLink ? 'copied' : 'copy link'}</span>
                       </button>
-                    </li>
+                    </li>}
                     {caps.canChangeVisibility && (
                       <li><button type="button" className="menu-item" role="menuitem" onClick={() => { setShareOpen(false); callbacks.onChangeVisibility && callbacks.onChangeVisibility() }}><Eye size={14} aria-hidden="true" /><span className="menu-text">visibility</span></button></li>
                     )}
@@ -2040,6 +2083,7 @@ export default function TranscriptViewer({
                          transcript never mounts one tick per turn in either presentation */
                       <Scrubber
                         ticks={scrubTicks}
+                        loadedSoFar={directory?.complete === false}
                         activeTick={activeSegmentTick}
                         onSeekTick={seekScrubTick}
                         draggingRef={draggingRef}
@@ -2059,6 +2103,7 @@ export default function TranscriptViewer({
                       {activeModel && <span className="txn-sticky-model mono">{activeModel}</span>}
                       <Scrubber
                         turns={turns}
+                        loadedSoFar={segmentMode && directory?.complete === false}
                         ticks={segmentMode ? scrubTicks : undefined}
                         active={activeTurn}
                         activeTick={segmentMode ? activeSegmentTick : 0}
@@ -2120,7 +2165,7 @@ export default function TranscriptViewer({
                         )}
                       </div>
                     )}
-                    {segmentMode && (directory?.totalSegments ?? 0) === 0 && (
+                    {segmentMode && directory?.complete !== false && (directory?.totalSegments ?? 0) === 0 && (
                       <div className="empty txn-not-indexed" data-not-indexed="true">
                         <div className="ring"><FileText size={20} aria-hidden="true" /></div>
                         <EmptyHeading>not indexed</EmptyHeading>
@@ -2179,7 +2224,8 @@ export default function TranscriptViewer({
                             revealRequest={searchReveal?.turn === t.index ? searchReveal.sequence : 0}
                             openTools={openTools}
                             toggleTool={toggleTool}
-                            onCopyAnchor={copyAnchor}
+                            onCopyAnchor={allowClipboard ? copyAnchor : undefined}
+                            allowClipboard={allowClipboard}
                             copied={copiedTurn === t.index}
                             registerRef={registerRef}
                             onLabel={labelTurn}
@@ -2300,6 +2346,16 @@ export default function TranscriptViewer({
                         })}
                           {heldBefore(trailing?.firstTurn ?? Infinity)}
                           {trailing && <TranscriptBoundary boundary={trailing} loading={loadingSegment === trailing.loadSegment} onLoadMore={() => loadBoundary(trailing)} />}
+                          {segmentMode && continuationProp && (
+                            <div className="txn-segboundary txn-segboundary-newer" data-transcript-continuation>
+                              <span className="txn-segboundary-rule" aria-hidden="true" />
+                              <div className="txn-segboundary-controls">
+                                {(continuationProp.state === TranscriptContinuationState.More || continuationProp.state === TranscriptContinuationState.Loading)
+                                  ? <button type="button" className="txn-segboundary-load" aria-label={TranscriptContinuationLabels.LoadMore} disabled={continuationProp.state === TranscriptContinuationState.Loading || typeof continuationProp.onLoadMore !== 'function'} onClick={continuationProp.onLoadMore}>{continuationProp.state === TranscriptContinuationState.Loading ? 'loading' : 'load more'}</button>
+                                  : continuationProp.notice}
+                              </div>
+                            </div>
+                          )}
                         </>
                       )
                     })()}
@@ -2365,6 +2421,7 @@ export default function TranscriptViewer({
 
           {tab === 'diffs' && (
             <div className="txn-diffs">
+              {directory?.complete === false && <p className="txn-scope">in the loaded part of the session</p>}
               <div className="txn-diffs-head">
                 <span className="txn-diffs-count tnum">{diffs.length} {diffs.length === 1 ? 'edit' : 'edits'} across {diffsByPath.length} {diffsByPath.length === 1 ? 'file' : 'files'}</span>
                 <div className="txn-diffs-actions">
@@ -2485,6 +2542,7 @@ export default function TranscriptViewer({
               </button>
             </div>
             <div className="txn-rail-body" id="txn-rail-right-body">
+              {directory?.complete === false && <p className="txn-scope">in the loaded part of the session</p>}
               <FiltersRail
                 tab={tab}
                 filters={filters}
@@ -2533,6 +2591,7 @@ export default function TranscriptViewer({
             <button type="button" aria-label="close drawer" onClick={closeMobileDrawer}><X size={14} aria-hidden="true" /></button>
           </div>
           <div className="txn-mobile-drawer-body">
+            {mobileDrawer === 'filters' && directory?.complete === false && <p className="txn-scope">in the loaded part of the session</p>}
             {(mobileDrawer || exitingMobileDrawer) === 'outline'
               ? <OutlineRail viewModel={railViewModel} tab={tab} presentation={presentation} activeTurn={activeTurn} onJump={(idx) => { jumpTo(idx, { switchTab: false }); closeMobileDrawer() }} />
               : <FiltersRail tab={tab} filters={filters} onFiltersChange={setFilters} counts={counts} checkpoints={commits} filtersActive={filtersActive}

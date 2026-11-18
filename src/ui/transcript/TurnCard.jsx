@@ -59,6 +59,7 @@ function turnTimeLabel(ts) {
  * @property {Record<string, boolean>} [openTools]   tool id → open?
  * @property {(id: string) => void} [toggleTool]
  * @property {(turnIndex: number) => void} [onCopyAnchor]
+ * @property {boolean} [allowClipboard]
  * @property {boolean} [copied]
  * @property {(turnIndex: number, el: HTMLElement | null) => void} [registerRef]
  * @property {(turnIndex: number) => void} [onLabel]   omit to hide the "label" affordance
@@ -90,6 +91,7 @@ export default function TurnCard({
   openTools = {},
   toggleTool = () => {},
   onCopyAnchor = () => {},
+  allowClipboard = true,
   copied = false,
   registerRef = () => {},
   onLabel,
@@ -162,7 +164,7 @@ export default function TurnCard({
   ) : (
     <Wrench size={14} aria-hidden="true" />
   )
-  const anchorButton = !isEarlier ? (
+  const anchorButton = !isEarlier && allowClipboard ? (
     <button
       type="button"
       className="txn-anchor"

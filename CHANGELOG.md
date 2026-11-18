@@ -4,6 +4,10 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.1.0
+
+- page a loading transcript in with a manual load more control (#303)
+
 ## 0.0.71
 
 - bump to 0.54.0 and widen the harness surface (#295)
