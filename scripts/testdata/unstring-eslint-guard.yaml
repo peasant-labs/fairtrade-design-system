@@ -16,6 +16,17 @@ cases:
       /* eslint-disable
        * unstring/closed-set-literal
        */
+  - name: bare-disable-with-reason
+    rejected: true
+    source: '/* eslint-disable -- temporary exception */'
+  - name: bare-disable-line-with-reason
+    rejected: true
+    source: 'const value = 1 // eslint-disable-line -- temporary exception'
+  - name: bare-disable-next-line-with-reason
+    rejected: true
+    source: |
+      // eslint-disable-next-line -- temporary exception
+      const value = 1
   - name: bare-disable
     rejected: true
     source: '/* eslint-disable */'

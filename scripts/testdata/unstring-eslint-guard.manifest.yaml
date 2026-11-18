@@ -4,6 +4,9 @@ requiredCaseNames:
   - named-disable-next-line
   - named-block-multiline
   - bare-disable
+  - bare-disable-with-reason
+  - bare-disable-line-with-reason
+  - bare-disable-next-line-with-reason
   - bare-disable-line
   - bare-disable-next-line
   - bare-block-multiline
