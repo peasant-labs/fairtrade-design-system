@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import YAML from 'yaml'
-import { parseSessionDetailPayloadText } from '@peasant-labs/schema'
+import { parseSessionDetailPayloadText, UsageScope } from '@peasant-labs/schema'
 import { COST_FIELDS } from '../src/ui/transcript/usage.js'
 const adapterModule = process.env.FAIRTRADE_PI_ADAPTER_MODULE
   ? pathToFileURL(process.env.FAIRTRADE_PI_ADAPTER_MODULE).href
@@ -78,7 +78,7 @@ for (const c of cases) {
   assert.equal(assistant.ownerCount, 2)
   assert.deepEqual(assistant.tokens[0], { label: 'input', value: '0', completeness: c.equalOwners ? 'complete' : 'partial' })
   assert.equal(assistant.cost.find(field => field.label === COST_FIELDS.output).value, c.equalOwners ? '0.60000000000000008' : '0.30000000000000004')
-  assert.equal(vm.usageScopes.find(scope => scope.scope === 'summary').tokens[0].value, c.completeScopes ? '1' : 'unknown')
+  assert.equal(vm.usageScopes.find(scope => scope.scope === UsageScope.Summary).tokens[0].value, c.completeScopes ? '1' : 'unknown')
   if (c.completeScopes) assert.equal(vm.usageScopes.find(scope => scope.scope === 'tool').tokens.find(field => field.label === 'total tokens').value, '10')
   assert.deepEqual(adaptTranscript(input, undefined, undefined, { visibleTurnIndices: [0] }).usageScopes, vm.usageScopes)
   if (process.env.PI_MOUNTED_TEST) {

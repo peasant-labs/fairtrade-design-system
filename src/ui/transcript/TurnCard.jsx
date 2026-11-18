@@ -1,4 +1,5 @@
 import { Role } from '@peasant-labs/schema'
+import { Presentation } from './state-capabilities.js'
 import { CornerDownRight, User, Wrench, Check, Link as LinkIcon, AlertTriangle, Coins } from 'lucide-react'
 import { useId, useLayoutEffect, useState } from 'react'
 import ProviderIcon from '../ProviderIcon.jsx'
@@ -113,7 +114,7 @@ export default function TurnCard({
   /* the hidden suffix that makes a flagged turn's accessible name say so; the visible mark is aria-hidden */
   const flagName = flagged ? <span className="txn-sr">{INTEGRITY_COPY.turnName}</span> : null
   const flagMark = flagged ? <IntegrityMark /> : null
-  const ledger = presentation === 'ledger'
+  const ledger = presentation === Presentation.Ledger
   const [expanded, setExpanded] = useState(true)
   const bodyId = useId()
   const headingId = useId()

@@ -11,6 +11,7 @@ import {
   PanelRightClose, PanelRightOpen, Menu as MenuIcon,
 } from 'lucide-react'
 import { isConversationTurn } from '@peasant-labs/schema'
+import { Presentation } from './state-capabilities.js'
 import ProviderIcon from '../ProviderIcon.jsx'
 import { transcriptHeadingLevel } from './heading.js'
 import { MarkdownContext } from './markdown-context.js'
@@ -395,7 +396,7 @@ export default function TranscriptViewer({
   const caps = capabilities ?? {}
   /* the ledger presentation is a CHROME switch only: same view state, same capabilities,
      same callbacks; the root class scopes the ledger CSS block. */
-  const ledger = presentation === 'ledger'
+  const ledger = presentation === Presentation.Ledger
 
   /* ── controllable view state (each works unmanaged via its default) ─────────── */
   const [theme] = useControllable(themeProp, onThemeChange, 'dark')

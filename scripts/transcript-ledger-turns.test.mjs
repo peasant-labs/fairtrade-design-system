@@ -14,6 +14,8 @@
 import { readFileSync } from 'node:fs'
 import { ROOT, loadFixturePair, assertExactNames, assertFields, withMountedSource, click, createReport } from './mounted-parts.mjs'
 import { workSummary, workCountLabel, workMetaLabel, workActionsLabel } from '../src/ui/transcript/work-summary.js'
+import { Presentation } from '../src/ui/transcript/state-capabilities.js'
+import { Role } from '@peasant-labs/schema'
 import './transcript-search-ranges.test.mjs'
 
 const FIXTURE = 'scripts/testdata/transcript-ledger-turns.yaml'
@@ -169,7 +171,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     report.check(same(articles.map(el => Number(el.dataset.turn)), nesting.payload.turns.map(turn => turn.index)), `${theme}/${presentation}: nesting preserves source order and turn navigation identities`)
     for (const row of nesting.cases) {
       const article = mounted.container.querySelector(`#turn-${row.index}`)
-      const inset = presentation === 'ledger' ? row.inset : 0
+      const inset = presentation === Presentation.Ledger ? row.inset : 0
       report.check(article?.getAttribute('data-agent-depth') === (inset ? String(row.depth) : null), `${row.name}/${theme}/${presentation}: only nested assistant prose gains its recorded depth marker`)
       report.check(article?.style.getPropertyValue('--txn-agent-depth') === (inset ? String(inset) : ''), `${row.name}/${theme}/${presentation}: visual nesting caps the inset without changing depth`)
       report.check(nestedVM.turns.find(turn => turn.index === row.index)?.depth === row.depth, `${row.name}/${theme}/${presentation}: the adapter's original depth remains intact`)
@@ -419,7 +421,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       const systemCheck = () => [...container.querySelectorAll('.txn-catlist .txn-checkrow')].find((el) => text(el.querySelector('.txn-cr-label')) === 'system')
       const checkbox = () => systemCheck()?.querySelector('input[type="checkbox"]')
       const visibleIndices = () => [...container.querySelectorAll('.txn-stream [data-turn]')].map((el) => Number(el.getAttribute('data-turn')))
-      const systemTurns = vm.turns.filter((turn) => turn.role === 'system')
+      const systemTurns = vm.turns.filter((turn) => turn.role === Role.System)
       const hiddenBaseline = visibleIndices()
       report.check(checkbox()?.checked === false, `${row.name}: the system category must start unchecked`)
       report.check(container.querySelector('.txn-stream .txn-systemrow') === null, `${row.name}: system rows must be absent at rest`)
