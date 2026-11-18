@@ -6,6 +6,7 @@ import { adaptTranscript } from './adapter.js'
 import { readingPayload } from '../../mockups/inuse/reading-fixture.js'
 import { integrityBoundProps, integrityOtherHash } from '../../mockups/inuse/integrity-fixture.js'
 import { INTEGRITY_COPY } from './integrity.js'
+import { TranscriptContinuationLabels } from './continuation-values.js'
 
 export const Pi = {
   args: { viewModel: adaptTranscript(piPayload) },
@@ -111,6 +112,34 @@ const meta = {
   decorators: frame('full'),
 }
 export default meta
+
+const previewRef = { index: 0, firstTurn: 0, lastTurn: 4, byteLength: 500, conversationTurns: { before: 0, count: 4 } }
+const previewArgs = {
+  viewModel: { ...viewModel, session: { ...viewModel.session, conversationTurnCount: 4 } },
+  capabilities: { canEdit: false, canLabel: false, canContribute: false, canChangeVisibility: false, canExport: false },
+  directory: { complete: false, segments: [previewRef] },
+  segments: [{ ...previewRef, turns: turns.map(turn => ({ ...turn, entryType: 'text' })) }],
+  allowClipboard: false,
+}
+
+export const PreviewMore = {
+  args: { ...previewArgs, continuation: { state: 'more', onLoadMore: fn() } },
+  play: async ({ canvasElement, args }) => {
+    const button = within(canvasElement).getByRole('button', { name: TranscriptContinuationLabels.LoadMore })
+    button.focus()
+    await userEvent.keyboard('{Enter} ')
+    await expect(args.continuation.onLoadMore).toHaveBeenCalledTimes(2)
+  },
+}
+export const PreviewLoading = { args: { ...previewArgs, continuation: { state: 'loading' } } }
+const finishedDirectory = { ...previewArgs.directory, complete: true, totalSegments: 1, totalTurns: 5, totalConversationTurns: 4 }
+const finishedPlay = async ({ canvasElement }) => {
+  await expect(canvasElement.querySelector('.txn-trace-count')).toHaveTextContent('4 turns')
+  await expect(canvasElement.textContent).not.toContain('loaded so far')
+}
+export const PreviewEnd = { args: { ...previewArgs, directory: finishedDirectory, continuation: { state: 'end', notice: 'this session has grown since the preview opened.' } }, play: finishedPlay }
+export const PreviewCut = { args: { ...previewArgs, directory: finishedDirectory, continuation: { state: 'cut', notice: 'the preview reached its limit.' } }, play: finishedPlay }
+export const PreviewFailed = { args: { ...previewArgs, continuation: { state: 'failed', notice: <button type="button">read again</button> } } }
 
 /* Unmanaged: only the two required props. Proves the state defaults (trace tab, dark theme). */
 export const Default = {

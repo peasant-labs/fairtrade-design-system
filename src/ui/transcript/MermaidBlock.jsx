@@ -1,4 +1,5 @@
-import { cloneElement, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { cloneElement, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { MarkdownContext } from './markdown-context.js'
 import { safeMermaidSource, safeMermaidModel } from './mermaidSource.js'
 import { mermaidSvg } from './mermaidSvg.jsx'
 
@@ -8,6 +9,7 @@ let pending = 0
 const MAX_PENDING = 16
 
 export default function MermaidBlock({ source }) {
+  const { allowClipboard } = useContext(MarkdownContext)
   const host = useRef(null)
   const stage = useRef(null)
   const [view, setView] = useState('source')
@@ -97,7 +99,7 @@ export default function MermaidBlock({ source }) {
     <div className="txn-mermaid-toolbar"><span>mermaid / diagram</span><div>
       <button type="button" onClick={() => { setView('source'); setStatus('') }} aria-pressed={view === 'source'}>view source</button>
       <button type="button" onClick={showDiagram} aria-pressed={view === 'diagram'}>view diagram</button>
-      <button type="button" onClick={copy}>{copied ? 'copied' : 'copy source'}</button>
+      {allowClipboard && <button type="button" onClick={copy}>{copied ? 'copied' : 'copy source'}</button>}
     </div></div>
     {view === 'diagram' && safe && diagram?.source === source ? <div className="txn-mermaid-stage" ref={stage} role="region" aria-label="diagram" tabIndex={0}>{diagram.value}</div> : <pre className="txn-mermaid-source"><code>{source}</code></pre>}
     {status && <p role="status">{status}</p>}
