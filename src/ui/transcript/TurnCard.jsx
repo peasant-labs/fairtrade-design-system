@@ -129,7 +129,12 @@ export default function TurnCard({
   const hasProse = turnHasProse(turn)
   const ledgerDetail = ledger && !isUser && !hasProse
   const timeLabel = turn.time || turnTimeLabel(turn.timestamp)
-  const isSub = !!turn.depth && turn.depth > 0
+  // A nested turn that is only an agent's thinking, with no words, tools or subagent name of its
+  // own, is a block of the reply it sits under, not a subagent: both presentations draw it as
+  // that reply's inline detail.
+  const replyThinking = !!turn.depth && turn.depth > 0 && turn.role === Role.Assistant && !!turn.thinking &&
+    !hasProse && !turn.toolCalls?.length && !turn.agentName
+  const isSub = !!turn.depth && turn.depth > 0 && !replyThinking
   // Only nested assistant prose draws an inset card. Tool/thinking-only entries
   // remain inline work, even when their source carries a nesting depth. Clamp
   // presentation only: the recorded depth remains intact on the turn and DOM.

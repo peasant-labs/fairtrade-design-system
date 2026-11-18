@@ -103,6 +103,47 @@ export function thinkingDurationMs(previous, turn) {
   return ms > 0 ? ms : undefined
 }
 
+/**
+ * The nearest turn before position `at` at the given depth, or undefined.
+ * @param {TurnDetail[]} turns @param {number} at @param {number} depth
+ * @returns {TurnDetail | undefined}
+ */
+function previousAtDepth(turns, at, depth) {
+  for (let q = at - 1; q >= 0; q--) if ((turns[q].depth ?? 0) === depth) return turns[q]
+  return undefined
+}
+
+/**
+ * The time the standalone thinking turn at position `at` took, measured from the event before it.
+ * A thinking turn on its own is measured from the previous turn at its depth. A thinking turn that
+ * is one block of a reply (nested under it, its `parentIndex` naming that reply earlier in `turns`)
+ * is measured inside the reply instead: from the nearest earlier block of the same reply, else from
+ * the reply itself, whose tools have not run yet. When the reply's own time is not before the
+ * thinking (the reply opens with it), the event before the reply is the start. A block of another
+ * reply is never the start.
+ * @param {TurnDetail[]} turns every known turn, in order
+ * @param {number} at the thinking turn's position in `turns`
+ * @returns {number | undefined}
+ */
+export function thinkingTimeMs(turns, at) {
+  const turn = turns[at]
+  if (!turn) return undefined
+  const depth = turn.depth ?? 0
+  let replyAt = -1
+  if (depth > 0 && turn.parentIndex != null) {
+    for (let q = at - 1; q >= 0 && replyAt < 0; q--) {
+      if (turns[q].index === turn.parentIndex && (turns[q].depth ?? 0) < depth) replyAt = q
+    }
+  }
+  if (replyAt < 0) return thinkingDurationMs(previousAtDepth(turns, at, depth), turn)
+  for (let q = at - 1; q > replyAt; q--) {
+    const block = turns[q]
+    if ((block.depth ?? 0) === depth && block.parentIndex === turn.parentIndex) return thinkingDurationMs(block, turn)
+  }
+  const reply = turns[replyAt]
+  return thinkingDurationMs({ ...reply, toolCalls: [] }, turn) ?? thinkingDurationMs(previousAtDepth(turns, replyAt, reply.depth ?? 0), turn)
+}
+
 /** Compact token count, e.g. 1700 → "1.7k". @param {number} n @returns {string} */
 function formatTokens(n) {
   if (!n || n <= 0) return '0'
@@ -1063,10 +1104,7 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
       // STANDALONE thinking entry: the whole turn IS the thinking. This path is LIVE on the real wire —
       // peasant emits a standalone entryType=thinking turn — so a real consumer renders it today.
       thinking = { text: content, words: wordCount(content) }
-      const at = positionOf.get(t) ?? -1
-      let previous
-      for (let q = at - 1; q >= 0 && !previous; q--) if ((filteredTurns[q].depth ?? 0) === (t.depth ?? 0)) previous = filteredTurns[q]
-      const durationMs = thinkingDurationMs(previous, t)
+      const durationMs = thinkingTimeMs(filteredTurns, positionOf.get(t) ?? -1)
       if (durationMs !== undefined) thinking.durationMs = durationMs
       content = ''
     } else if (!protectedTurn(t)) {

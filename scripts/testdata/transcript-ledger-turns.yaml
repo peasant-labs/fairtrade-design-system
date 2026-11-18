@@ -162,6 +162,92 @@ thinkingDurationCases:
     turn: {timestamp: '2026-09-20T10:00:04Z'}
     expected: null
 
+# thinkingPlacementCases feed the adapter's choice of the event a thinking turn is timed from. A
+# thinking turn nested under a reply (depth 1, parentIndex naming that reply) is one block of it: it
+# is timed from the nearest earlier block of the same reply, else from the reply itself (whose tools
+# have not run yet), else, when the reply opens with the thinking, from the event before the reply.
+# A block of another reply is never the start. `at` is the thinking turn's position in `turns`.
+thinkingPlacementCases:
+  - name: a reply that opens with thinking is timed from the event before the reply
+    turns:
+      - {index: 0, role: user, depth: 0, timestamp: '2026-09-20T10:00:00Z'}
+      - {index: 1, role: assistant, depth: 0, timestamp: '2026-09-20T10:00:04Z'}
+      - {index: 2, role: assistant, depth: 1, parentIndex: 1, entryType: thinking, timestamp: '2026-09-20T10:00:04Z'}
+    at: 2
+    expected: 4000
+  - name: a later thinking block is timed from the block before it in the same reply
+    turns:
+      - {index: 0, role: user, depth: 0, timestamp: '2026-09-20T10:00:00Z'}
+      - {index: 1, role: assistant, depth: 0, timestamp: '2026-09-20T10:00:04Z'}
+      - {index: 2, role: assistant, depth: 1, parentIndex: 1, entryType: thinking, timestamp: '2026-09-20T10:00:06Z'}
+      - {index: 3, role: assistant, depth: 1, parentIndex: 1, entryType: thinking, timestamp: '2026-09-20T10:00:10Z'}
+    at: 3
+    expected: 4000
+  - name: thinking after the reply's own time is timed from the reply without its tools
+    turns:
+      - {index: 0, role: user, depth: 0, timestamp: '2026-09-20T10:00:00Z'}
+      - {index: 1, role: assistant, depth: 0, timestamp: '2026-09-20T10:00:02Z', toolCalls: [{durationMs: 5000}]}
+      - {index: 2, role: assistant, depth: 1, parentIndex: 1, entryType: thinking, timestamp: '2026-09-20T10:00:05Z'}
+    at: 2
+    expected: 3000
+  - name: a reply's first thinking block is never timed from another reply's block
+    turns:
+      - {index: 0, role: user, depth: 0, timestamp: '2026-09-20T10:00:00Z'}
+      - {index: 1, role: assistant, depth: 0, timestamp: '2026-09-20T10:00:04Z', toolCalls: [{durationMs: 2000}]}
+      - {index: 2, role: assistant, depth: 1, parentIndex: 1, entryType: thinking, timestamp: '2026-09-20T10:00:04Z'}
+      - {index: 3, role: assistant, depth: 1, parentIndex: 1, entryType: thinking, timestamp: '2026-09-20T10:00:10Z'}
+      - {index: 4, role: assistant, depth: 0, timestamp: '2026-09-20T10:00:20Z'}
+      - {index: 5, role: assistant, depth: 1, parentIndex: 4, entryType: thinking, timestamp: '2026-09-20T10:00:20Z'}
+    at: 5
+    expected: 14000
+  - name: a nested thinking turn with no reply before it keeps the same-depth rule
+    turns:
+      - {index: 0, role: assistant, depth: 1, entryType: thinking, timestamp: '2026-09-20T10:00:00Z'}
+      - {index: 1, role: assistant, depth: 0, timestamp: '2026-09-20T10:00:01Z'}
+      - {index: 2, role: assistant, depth: 1, parentIndex: 9, entryType: thinking, timestamp: '2026-09-20T10:00:07Z'}
+    at: 2
+    expected: 7000
+  - name: a reply that opens with thinking and has nothing before it has no time
+    turns:
+      - {index: 0, role: assistant, depth: 0, timestamp: '2026-09-20T10:00:04Z'}
+      - {index: 1, role: assistant, depth: 1, parentIndex: 0, entryType: thinking, timestamp: '2026-09-20T10:00:04Z'}
+    at: 1
+    expected: null
+
+# a reply whose thinking is stored as its own nested blocks: reply 1 opens with thinking 2, thinks
+# again in 3 and runs one tool; reply 4 opens with thinking 5. The mounted rows name each thinking
+# block's time in source order, and a reply's thinking is never drawn as a subagent turn.
+replyPayload:
+  id: reply-thinking
+  harness: claude-code
+  startTime: '2026-09-20T10:00:00Z'
+  endTime: '2026-09-20T10:00:20Z'
+  durationMins: 1
+  totalTokens: 30
+  tokensIn: 20
+  tokensOut: 10
+  turnCount: 6
+  toolCallCount: 1
+  outcome: resolved
+  inputSubmissionCount: 1
+  turns:
+    - {index: 0, role: user, content: 'read the fixture and summarize it', timestamp: '2026-09-20T10:00:00Z', depth: 0}
+    - index: 1
+      role: assistant
+      content: 'reading the fixture first.'
+      timestamp: '2026-09-20T10:00:04Z'
+      depth: 0
+      hasThinking: true
+      toolCalls:
+        - {id: reply-read, name: Read, filePath: scripts/testdata/fixture.yaml, arguments: '{"file_path":"scripts/testdata/fixture.yaml"}', result: '"ok"', durationMs: 2000}
+    - {index: 2, role: assistant, entryType: thinking, content: 'the fixture is small enough to read whole.', timestamp: '2026-09-20T10:00:04Z', depth: 1, parentIndex: 1}
+    - {index: 3, role: assistant, entryType: thinking, content: 'one read is enough here.', timestamp: '2026-09-20T10:00:10Z', depth: 1, parentIndex: 1}
+    - {index: 4, role: assistant, content: 'the fixture holds one record.', timestamp: '2026-09-20T10:00:20Z', depth: 0, hasThinking: true}
+    - {index: 5, role: assistant, entryType: thinking, content: 'summarize in one line.', timestamp: '2026-09-20T10:00:20Z', depth: 1, parentIndex: 4}
+replyThinking:
+  turns: [2, 3, 5]
+  durations: [4s, 6s, 14s]
+
 # the mounted thinking row: turn 4 thinks for the minute after turn 3
 mountedThinking:
   kind: Think
@@ -315,6 +401,12 @@ cases:
     mountFilters: *system_on
   - name: a turn with no words is inline detail, not a card
     kind: detail-turns
+    mountFilters: *system_on
+  - name: classic draws a reply's thinking as the reply's detail, not a subagent
+    kind: reply-thinking-classic
+    mountFilters: *system_on
+  - name: ledger keeps a reply's thinking in the reply's actions
+    kind: reply-thinking-ledger
     mountFilters: *system_on
   - name: the system turn's heading follows the page level
     kind: heading-level
