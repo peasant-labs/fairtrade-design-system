@@ -17,9 +17,8 @@ export async function checkDirectory(directory) {
         comment: true,
       })
       for (const comment of ast.comments) {
-        if (/^eslint\s+/.test(comment.value.trim()) &&
-            /["']?unstring\/closed-set-literal["']?\s*:/.test(comment.value)) {
-          throw new Error(`${path}: inline configuration of unstring/closed-set-literal is forbidden; remove the directive`)
+        if (/^eslint\s+/.test(comment.value.trim())) {
+          throw new Error(`${path}: inline ESLint rule configuration is forbidden; configure rules in eslint.config.mjs`)
         }
         const directive = comment.value.trim().match(/^eslint-disable(?:-next-line|-line)?\b([\s\S]*)/)
         if (!directive) continue
@@ -29,6 +28,9 @@ export async function checkDirectory(directory) {
         }
         if (/(?:^|[\s,])unstring\/closed-set-literal(?:$|[\s,])/.test(rules)) {
           throw new Error(`${path}: disabling unstring/closed-set-literal is forbidden; remove the directive`)
+        }
+        if (!/\s--\s+\S/.test(directive[1])) {
+          throw new Error(`${path}: ESLint disable directives require a -- reason`)
         }
       }
     }

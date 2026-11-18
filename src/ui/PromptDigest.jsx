@@ -357,8 +357,8 @@ function SplitChain({ items, itemHref, author, selected, onSelect }) {
 
   useEffect(() => {
     if (index < 0 || typeof document === 'undefined' || document.activeElement !== listRef.current) return
-    document.getElementById(optionId(index))?.scrollIntoView?.({ block: 'nearest' })
-  }, [index])
+    document.getElementById(`${baseId}-session-${index}`)?.scrollIntoView?.({ block: 'nearest' })
+  }, [baseId, index])
 
   if (entries.length === 0) {
     return <p className="pd-split-empty">no transcripts in this digest yet.</p>

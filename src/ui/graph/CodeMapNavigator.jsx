@@ -58,6 +58,7 @@ export default function CodeMapNavigator({
     selectedId,
     navigatorFocusedId: effectiveFocus,
     navigatorFilter: filter,
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- adding expanded identity would recompute for equal expansion collections from the parent
   })), [payload, grain, expandedIdsKey(expanded), selectedId, effectiveFocus, filter])
   const filtering = filter.trim() !== ''
   // the rows a reader sees: the shared view, less the children of a grain-opened folder they closed
