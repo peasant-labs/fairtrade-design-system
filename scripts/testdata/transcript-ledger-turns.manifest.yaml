@@ -58,6 +58,7 @@ requiredCaseNames:
   - a turn with no words is inline detail, not a card
   - classic draws a reply's thinking as the reply's detail, not a subagent
   - ledger keeps a reply's thinking in the reply's actions
+  - classic still draws a subagent's own thinking as a subagent
   - the system turn's heading follows the page level
 requiredCaseKinds:
   classic keeps the turn's tools flat: classic
@@ -80,6 +81,7 @@ requiredCaseKinds:
   a turn with no words is inline detail, not a card: detail-turns
   classic draws a reply's thinking as the reply's detail, not a subagent: reply-thinking-classic
   ledger keeps a reply's thinking in the reply's actions: reply-thinking-ledger
+  classic still draws a subagent's own thinking as a subagent: subagent-thinking-classic
   the system turn's heading follows the page level: heading-level
 
 # Production mutations the gate must kill (scripts/parts-mutations.mjs).
@@ -120,7 +122,20 @@ requiredMutationNames:
   - a reply that opens with thinking is timed from itself
   - a later thinking block skips the block before it
   - classic labels a reply's thinking a subagent
+  - a subagent's thinking counts as a reply block
+  - nested thinking with no parent counts as a reply block
 mutations:
+  - name: a subagent's thinking counts as a reply block
+    file: src/ui/transcript/adapter.js
+    find: "    if (turns[q].index === turn.parentIndex) return (turns[q].depth ?? 0) === 0 ? q : -1\n"
+    replace: "    if (turns[q].index === turn.parentIndex) return q\n"
+    expectedDiagnostic: "classic still draws a subagent's own thinking as a subagent: turn 3 must draw as a subagent"
+  - name: nested thinking with no parent counts as a reply block
+    file: src/ui/transcript/work-summary.js
+    find: "  const replyThinking = turn.replyIndex !== undefined && turn.role === Role.Assistant"
+    replace: "  const replyThinking = turn.role === Role.Assistant"
+    expectedDiagnostic: "classic still draws a subagent's own thinking as a subagent: turn 4 must draw as a subagent"
+
   - name: a reply's thinking is timed from another reply's block
     file: src/ui/transcript/adapter.js
     find: "  if (replyAt < 0) return thinkingDurationMs(previousAtDepth(turns, at, depth), turn)\n"
@@ -137,9 +152,9 @@ mutations:
     replace: ""
     expectedDiagnostic: "a later thinking block is timed from the block before it in the same reply: the thinking time must be 4000"
   - name: classic labels a reply's thinking a subagent
-    file: src/ui/transcript/TurnCard.jsx
-    find: "  const isSub = !!turn.depth && turn.depth > 0 && !replyThinking\n"
-    replace: "  const isSub = !!turn.depth && turn.depth > 0\n"
+    file: src/ui/transcript/work-summary.js
+    find: "  return !replyThinking\n"
+    replace: "  return true\n"
     expectedDiagnostic: "classic draws a reply's thinking as the reply's detail, not a subagent: turn 2 must not draw a subagent"
 
   - name: positioning-only action reveal selects its source

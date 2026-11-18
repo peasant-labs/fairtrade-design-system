@@ -248,6 +248,32 @@ replyThinking:
   turns: [2, 3, 5]
   durations: [4s, 6s, 14s]
 
+# genuine subagent work still draws as a subagent: turn 2 is a subagent's prose under reply 1,
+# turn 3 is that subagent's own thinking (nested under turn 2, not under a top-level reply) and
+# turn 4 is nested thinking that names no parent. Neither thinking turn is a reply block.
+subagentPayload:
+  id: subagent-thinking
+  harness: claude-code
+  startTime: '2026-09-20T10:00:00Z'
+  endTime: '2026-09-20T10:00:30Z'
+  durationMins: 1
+  totalTokens: 30
+  tokensIn: 20
+  tokensOut: 10
+  turnCount: 5
+  conversationTurnCount: 2
+  toolCallCount: 0
+  outcome: resolved
+  inputSubmissionCount: 1
+  turns:
+    - {index: 0, role: user, content: 'review the fixture', timestamp: '2026-09-20T10:00:00Z', depth: 0}
+    - {index: 1, role: assistant, content: 'handing this to a reviewer.', timestamp: '2026-09-20T10:00:04Z', depth: 0}
+    - {index: 2, role: assistant, agentName: reviewer, content: 'the reviewer reads the fixture.', timestamp: '2026-09-20T10:00:10Z', depth: 1, parentIndex: 1}
+    - {index: 3, role: assistant, entryType: thinking, content: 'the reviewer weighs the record.', timestamp: '2026-09-20T10:00:20Z', depth: 2, parentIndex: 2}
+    - {index: 4, role: assistant, entryType: thinking, content: 'a nested thought with no parent.', timestamp: '2026-09-20T10:00:30Z', depth: 1}
+subagentThinking:
+  turns: [3, 4]
+
 # the mounted thinking row: turn 4 thinks for the minute after turn 3
 mountedThinking:
   kind: Think
@@ -407,6 +433,9 @@ cases:
     mountFilters: *system_on
   - name: ledger keeps a reply's thinking in the reply's actions
     kind: reply-thinking-ledger
+    mountFilters: *system_on
+  - name: classic still draws a subagent's own thinking as a subagent
+    kind: subagent-thinking-classic
     mountFilters: *system_on
   - name: the system turn's heading follows the page level
     kind: heading-level

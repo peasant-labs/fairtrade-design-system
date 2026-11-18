@@ -115,9 +115,28 @@ function previousAtDepth(turns, at, depth) {
 }
 
 /**
+ * The position of the reply the turn at `at` is one block of, or -1. A turn is a block of a reply
+ * when it is nested (depth above 0) and its `parentIndex` names an earlier top-level (depth 0) turn:
+ * a producer that stores one agent reply as one entry nests the reply's thinking under it. A nested
+ * turn whose parent is itself nested (a subagent's own turn) is not a reply block. The thinking time
+ * and the views' subagent rule both read this one predicate.
+ * @param {TurnDetail[]} turns every known turn, in order
+ * @param {number} at the turn's position in `turns`
+ * @returns {number}
+ */
+export function replyPositionOf(turns, at) {
+  const turn = turns[at]
+  if (!turn || (turn.depth ?? 0) <= 0 || turn.parentIndex == null) return -1
+  for (let q = at - 1; q >= 0; q--) {
+    if (turns[q].index === turn.parentIndex) return (turns[q].depth ?? 0) === 0 ? q : -1
+  }
+  return -1
+}
+
+/**
  * The time the standalone thinking turn at position `at` took, measured from the event before it.
  * A thinking turn on its own is measured from the previous turn at its depth. A thinking turn that
- * is one block of a reply (nested under it, its `parentIndex` naming that reply earlier in `turns`)
+ * is one block of a reply (`replyPositionOf`)
  * is measured inside the reply instead: from the nearest earlier block of the same reply, else from
  * the reply itself, whose tools have not run yet. When the reply's own time is not before the
  * thinking (the reply opens with it), the event before the reply is the start. A block of another
@@ -130,12 +149,7 @@ export function thinkingTimeMs(turns, at) {
   const turn = turns[at]
   if (!turn) return undefined
   const depth = turn.depth ?? 0
-  let replyAt = -1
-  if (depth > 0 && turn.parentIndex != null) {
-    for (let q = at - 1; q >= 0 && replyAt < 0; q--) {
-      if (turns[q].index === turn.parentIndex && (turns[q].depth ?? 0) < depth) replyAt = q
-    }
-  }
+  const replyAt = replyPositionOf(turns, at)
   if (replyAt < 0) return thinkingDurationMs(previousAtDepth(turns, at, depth), turn)
   for (let q = at - 1; q > replyAt; q--) {
     const block = turns[q]
@@ -1155,6 +1169,8 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
     if (sourcePositions.has(t)) turnVM.sourcePosition = sourcePositions.get(t)
     if (depth === 0 && t.role === Role.Assistant) turnVM.provider = provider
     if (t.agentName) turnVM.agentName = t.agentName
+    const replyAt = replyPositionOf(filteredTurns, positionOf.get(t) ?? -1)
+    if (replyAt >= 0) turnVM.replyIndex = filteredTurns[replyAt].index
     if (t.controlKind) {
       turnVM.controlKind = t.controlKind
       turnVM.isControl = true

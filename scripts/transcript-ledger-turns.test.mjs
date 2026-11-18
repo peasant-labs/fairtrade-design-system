@@ -104,6 +104,7 @@ assertExactNames(Object.keys(fixture.mountedThinking), ['kind', 'words', 'durati
 for (const row of fixture.thinkingDurationCases) assertFields(row, ['name', 'turn', 'expected'], `${FIXTURE} ${row.name}`, ['previous'])
 for (const row of fixture.thinkingPlacementCases) assertFields(row, ['name', 'turns', 'at', 'expected'], `${FIXTURE} ${row.name}`)
 assertExactNames(Object.keys(fixture.replyThinking), ['turns', 'durations'], `${FIXTURE} replyThinking`)
+assertExactNames(Object.keys(fixture.subagentThinking), ['turns'], `${FIXTURE} subagentThinking`)
 
 /* canLabel on, so the classic head's built-in label affordance exists to prove the ledger head drops it */
 const CAPABILITIES = { canEdit: false, canLabel: true, canContribute: false, canChangeVisibility: false, canExport: false }
@@ -534,6 +535,17 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       if (ledger) {
         const owned = [...container.querySelectorAll('#turn-1 .txn-thinking-toggle')].length
         report.check(owned === 2, `${row.name}: reply 1 must own its two thinking rows, received ${owned}`)
+      }
+      await mounted.unmount()
+    } else if (row.kind === 'subagent-thinking-classic') {
+      /* the reply-block rule is narrow: a subagent's own thinking, and nested thinking that names
+         no top-level reply as its parent, keep their subagent frame */
+      const subagentVM = adaptTranscript(fixture.subagentPayload)
+      const mounted = await mountViewer('classic', { viewModel: subagentVM })
+      for (const index of fixture.subagentThinking.turns) {
+        const article = mounted.container.querySelector(`#turn-${index}`)
+        report.check(!!article?.querySelector('.subtask'), `${row.name}: turn ${index} must draw as a subagent`)
+        report.check(subagentVM.turns.find((turn) => turn.index === index)?.replyIndex === undefined, `${row.name}: turn ${index} must not be cooked as a reply block`)
       }
       await mounted.unmount()
     } else if (row.kind === 'model-actions') {
