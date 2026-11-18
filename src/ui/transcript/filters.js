@@ -32,6 +32,7 @@
    this default, never the resolved filter object, so a reader who never touched the toggle
    keeps following the default. */
 
+import { Role } from '@peasant-labs/schema'
 import { TOOL_GROUPS } from './view-model.js'
 
 /**
@@ -179,9 +180,9 @@ const TAG_KIND = { errors: 'error', retries: 'retry', revert: 'revert' }
  * @returns {Category[]}
  */
 export function kindsOf(turn) {
-  if (turn.role === 'user') return ['prompts']
-  if (turn.role === 'system') return ['system']
-  if (turn.role !== 'assistant') return []
+  if (turn.role === Role.User) return ['prompts']
+  if (turn.role === Role.System) return ['system']
+  if (turn.role !== Role.Assistant) return []
   /** @type {Category[]} */
   const kinds = []
   if ((turn.content ?? '').trim() !== '') kinds.push('responses')
@@ -240,9 +241,9 @@ export function projectTurn(turn, filters, ctx = {}) {
   if (checkpointTurn != null && turn.index > checkpointTurn) return null
   if (!passesTags(turn, tags, annotationsByTurn)) return null
 
-  if (turn.role === 'user') return categories.prompts ? turn : null
-  if (turn.role === 'system') return categories.system === true ? turn : null
-  if (turn.role !== 'assistant') return turn
+  if (turn.role === Role.User) return categories.prompts ? turn : null
+  if (turn.role === Role.System) return categories.system === true ? turn : null
+  if (turn.role !== Role.Assistant) return turn
 
   const hasText = (turn.content ?? '').trim() !== ''
   const hasThinking = !!turn.thinking

@@ -1,3 +1,4 @@
+import { Role } from '@peasant-labs/schema'
 /** Runs follow the source prose, not the filtered projection, so a hidden turn never moves a
  * later action forward. Each prose turn starts its own run; a wordless turn appends to the
  * current run; a user turn closes it; a system turn stays where it is and does not split it.
@@ -29,8 +30,8 @@ export function actionGroups(turns, visibleTurns) {
     run = []
   }
   for (const source of turns) {
-    if (source.role === 'user') { flush(); continue }
-    if (source.role === 'system') continue
+    if (source.role === Role.User) { flush(); continue }
+    if (source.role === Role.System) continue
     if (prose(source)) flush()
     run.push(source)
   }

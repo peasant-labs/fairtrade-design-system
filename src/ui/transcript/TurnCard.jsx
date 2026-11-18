@@ -1,3 +1,4 @@
+import { Role } from '@peasant-labs/schema'
 import { CornerDownRight, User, Wrench, Check, Link as LinkIcon, AlertTriangle, Coins } from 'lucide-react'
 import { useId, useLayoutEffect, useState } from 'react'
 import ProviderIcon from '../ProviderIcon.jsx'
@@ -120,7 +121,7 @@ export default function TurnCard({
     if (revealRequest) setExpanded(true)
   }, [revealRequest])
   if (!turn) return null
-  const isUser = turn.role === 'user'
+  const isUser = turn.role === Role.User
   const isEarlier = !!turn.partition && turn.partition !== 'main'
   /* Only a turn with words earns a card. An agent turn that is only thinking or tool work is
      inline detail: no role line, no number, no time, just its lines under the previous turn. */
@@ -131,7 +132,7 @@ export default function TurnCard({
   // Only nested assistant prose draws an inset card. Tool/thinking-only entries
   // remain inline work, even when their source carries a nesting depth. Clamp
   // presentation only: the recorded depth remains intact on the turn and DOM.
-  const insetAgent = ledger && turn.role === 'assistant' && isSub && hasProse
+  const insetAgent = ledger && turn.role === Role.Assistant && isSub && hasProse
   // The assistant is the agent, so a present canonical provider selects its
   // accent. Curated turns may omit provider and use the neutral assistant
   // fallback; a present invalid value fails through providerAccent.
@@ -141,8 +142,8 @@ export default function TurnCard({
   const accentName = provider === undefined ? 'amber' : providerAccent(provider)
   const asstAccent = `var(--${accentName})`
 
-  const roleStyle = turn.role === 'assistant' && !isSub ? { color: asstAccent } : undefined
-  const roleGlyph = turn.role === 'assistant' && !isSub && provider !== undefined ? (
+  const roleStyle = turn.role === Role.Assistant && !isSub ? { color: asstAccent } : undefined
+  const roleGlyph = turn.role === Role.Assistant && !isSub && provider !== undefined ? (
     <ProviderIcon
       harness={provider}
       accent
@@ -296,8 +297,8 @@ export default function TurnCard({
   const workBlock = ledger && !suppressWork && (hasWork || modelActions?.length) ? (
     <div className="txn-turnwork">
       {/* a work block drawn without group rows has no row to carry the mark, so it leads the block */}
-      {ledgerDetail && !modelActions?.length && turn.role !== 'system' ? flagMark : null}
-      {modelActions?.length || turn.role === 'user' || turn.role === 'system' ? (
+      {ledgerDetail && !modelActions?.length && turn.role !== Role.System ? flagMark : null}
+      {modelActions?.length || turn.role === Role.User || turn.role === Role.System ? (
         <ModelActions turns={modelActions?.length ? modelActions : [turn]} openTools={openTools} onToggle={toggleTool} expandAll={expandAll} compact={compact} flaggedPositions={flaggedPositions} cardTurn={ledgerDetail ? undefined : turn} reveal={actionReveal} registerActionRef={registerActionRef} />
       ) : turn.toolCalls?.length ? (
         <TranscriptWorkGroup
@@ -315,7 +316,7 @@ export default function TurnCard({
 
   const cardClass =
     'turn txn-turn ' +
-    (isUser ? 'user' : isSub ? 'sub' : turn.role === 'system' ? 'system' : 'asst') +
+    (isUser ? 'user' : isSub ? 'sub' : turn.role === Role.System ? 'system' : 'asst') +
     (active ? ' txn-active' : '') +
     (compact ? ' txn-compact' : '') +
     (ledger ? ' txn-turn-ledger' : '')
@@ -327,7 +328,7 @@ export default function TurnCard({
      and the row as its children. The row keeps the same trailing cluster every ledger turn has:
      the copy anchor plus the host's own per-turn actions, so a host extension survives the role
      switch. */
-  const systemRow = ledger && turn.role === 'system'
+  const systemRow = ledger && turn.role === Role.System
   /* The server says which system rows are control records. Only a ledger system row with
      a producer kind becomes a control row; every other system row keeps the system row. */
   const controlRow = systemRow && !!turn.controlKind

@@ -27,7 +27,7 @@
 
 import { parseArgs, parseResult, extractPath, callDiff, diffLines } from './adapter.parse.js'
 import { computeAnalytics, computeTurnLabels, computeTaskGroups } from './analytics.js'
-import { zObservedModelID, zContentProvenance, zSourceEntryRef, zSessionRelationshipNavigation, parseSessionDetailPayloadValue } from '@peasant-labs/schema'
+import { Role, TurnPartType, Harness, SessionRelationshipKind, RelationshipTargetState, RelationshipNavigationStatus, PublicSourceAnchorKind, zObservedModelID, zContentProvenance, zSourceEntryRef, zSessionRelationshipNavigation, parseSessionDetailPayloadValue } from '@peasant-labs/schema'
 import { aggregateUsage } from './usage.js'
 import { isKnownTime } from './time.js'
 import { unwrapUserQuery, userQueryLeadLength, USER_QUERY_OPEN_TAG, USER_QUERY_CLOSE_TAG } from './title.js'
@@ -141,7 +141,7 @@ function protectedTurn(turn) {
  * @returns {string | undefined}
  */
 function displayedPrompt(role, content, harness) {
-  if (harness !== 'cursor' || role !== 'user') return undefined
+  if (harness !== 'cursor' || role !== Role.User) return undefined
   const shown = unwrapUserQuery(content)
   return shown === content ? undefined : shown
 }
@@ -220,7 +220,7 @@ function withKnownTime(turn) {
  * @param {TurnDetail} turn
  */
 function hasImageBlock(turn) {
-  return (turn.contentParts ?? []).some((part) => part?.type === 'image' && !!part.image)
+  return (turn.contentParts ?? []).some((part) => part?.type === TurnPartType.Image && !!part.image)
 }
 
 /**
@@ -235,8 +235,8 @@ function contentPartsOf(turn) {
   /** @type {import('./view-model.js').ContentPartVM[]} */
   const cooked = []
   for (const part of parts) {
-    if (part?.type === 'text' && typeof part.text === 'string') cooked.push({ type: 'text', text: part.text })
-    else if (part?.type === 'image' && part.image) cooked.push({ type: 'image', image: part.image })
+    if (part?.type === TurnPartType.Text && typeof part.text === 'string') cooked.push({ type: 'text', text: part.text })
+    else if (part?.type === TurnPartType.Image && part.image) cooked.push({ type: 'image', image: part.image })
   }
   return cooked.length > 0 ? cooked : undefined
 }
@@ -304,7 +304,7 @@ export function prefilterTurns(turns) {
     const hasContent = !!t.content?.trim()
     const hasTools = (t.toolCalls?.length ?? 0) > 0
     if (!hasContent && !hasTools) return false
-    if (t.role === 'system' && !hasTools && (!t.content || t.content.trim().length < 8)) return false
+    if (t.role === Role.System && !hasTools && (!t.content || t.content.trim().length < 8)) return false
     return true
   })
   /** @type {TurnDetail[]} */
@@ -332,7 +332,7 @@ export function prefilterTurns(turns) {
  * @returns {string | undefined}
  */
 function validObservedModel(turn) {
-  if (turn.role !== 'assistant') return undefined
+  if (turn.role !== Role.Assistant) return undefined
   const parsed = zObservedModelID.safeParse(turn.observedModel)
   return parsed.success ? parsed.data : undefined
 }
@@ -353,7 +353,7 @@ function resolveStickyModels(turns, seed) {
   for (const turn of turns) {
     const depth = turn.depth ?? 0
     const observed = validObservedModel(turn)
-    if (turn.role !== 'assistant') {
+    if (turn.role !== Role.Assistant) {
       resolved.set(turn.index, {})
       continue
     }
@@ -752,7 +752,7 @@ function buildHighlights(turnVMs, phases, git) {
   /** @type {HighlightVM[]} */
   const out = []
 
-  const firstUser = turnVMs.find((t) => t.role === 'user' && t.content.trim() !== '')
+  const firstUser = turnVMs.find((t) => t.role === Role.User && t.content.trim() !== '')
   if (firstUser) {
     out.push({ id: 'hl-request', kind: 'request', turn: firstUser.index, icon: 'request', title: 'initial request', sub: preview(firstUser.displayContent ?? firstUser.content, 160) })
   }
@@ -786,7 +786,7 @@ function buildHighlights(turnVMs, phases, git) {
     out.push({ id: `hl-commit-${c.hash}`, kind: 'checkpoint', turn: anchor, icon: 'commit', title: c.shortHash || c.hash || 'checkpoint', sub: c.message })
   }
 
-  const lastAssistant = [...turnVMs].reverse().find((t) => t.role === 'assistant' && t.depth === 0 && t.content.trim() !== '')
+  const lastAssistant = [...turnVMs].reverse().find((t) => t.role === Role.Assistant && t.depth === 0 && t.content.trim() !== '')
   if (lastAssistant) {
     /** @type {HighlightVM} */
     const h = { id: 'hl-final', kind: 'final', turn: lastAssistant.index, icon: 'final', title: 'final response', sub: preview(lastAssistant.content, 200) }
@@ -921,7 +921,7 @@ export function adaptTranscript(payload, annotations, analytics, options) {
 
 /** @param {TranscriptWireInput} payload */
 function hasNormalizedEvidence(payload) {
-  return payload.harness === 'pi' || ['nativeMetadata', 'inputSubmissionCount', 'rootSessionId', 'purpose', 'relationships', 'earlierHistory'].some(key => present(payload, key)) ||
+  return payload.harness === Harness.Pi || ['nativeMetadata', 'inputSubmissionCount', 'rootSessionId', 'purpose', 'relationships', 'earlierHistory'].some(key => present(payload, key)) ||
     !!payload.turns?.some(hasTurnEvidence)
 }
 
@@ -944,34 +944,34 @@ function cookRelationships(relationships, navigation) {
   if (new Set(nav.map(item => item.kind)).size !== nav.length) {
     throw new TypeError('Fairtrade adaptTranscript refused relationship navigation during cooking: duplicate relationship kinds make the authorized target ambiguous. No links were produced. Return one schema-valid read result per relationship kind and retry.')
   }
-  const context = relationships.find(item => item.kind === 'context_from')
-  const starter = relationships.find(item => item.kind === 'started_by')
-  const rows = [context, starter].filter(item => item !== undefined).filter(item => item.targetState !== 'explicit_none').map(relation => {
+  const context = relationships.find(item => item.kind === SessionRelationshipKind.ContextFrom)
+  const starter = relationships.find(item => item.kind === SessionRelationshipKind.StartedBy)
+  const rows = [context, starter].filter(item => item !== undefined).filter(item => item.targetState !== RelationshipTargetState.ExplicitNone).map(relation => {
     const item = nav.find(candidate => candidate.kind === relation.kind)
-    const known = relation.targetState === 'target_known' || relation.targetState === 'target_known_retained'
-    const resolved = item && (item.status === 'resolved' || item.status === 'general_link_only')
+    const known = relation.targetState === RelationshipTargetState.Known || relation.targetState === RelationshipTargetState.KnownRetained
+    const resolved = item && (item.status === RelationshipNavigationStatus.Resolved || item.status === RelationshipNavigationStatus.GeneralLinkOnly)
     const targetCount = Number(!!item?.localId) + Number(!!item?.transcriptId)
     const usable = known && resolved && targetCount === 1 && (!item.localId || item.localId === relation.targetLocalId)
     /** @type {import('./view-model.js').RelationshipVM} */
     const row = {
       kind: relation.kind,
-      label: relation.kind === 'context_from' ? 'context inherited from' : 'started by',
-      statusLabel: relation.targetState === 'conflicting_current_native_evidence' || item?.status === 'conflicting' ? 'conflicting source evidence'
-        : !known || item?.status === 'unknown' ? 'unknown source'
-          : item?.status === 'inaccessible' ? 'source inaccessible'
+      label: relation.kind === SessionRelationshipKind.ContextFrom ? 'context inherited from' : 'started by',
+      statusLabel: relation.targetState === RelationshipTargetState.ConflictingCurrentNativeEvidence || item?.status === RelationshipNavigationStatus.Conflicting ? 'conflicting source evidence'
+        : !known || item?.status === RelationshipNavigationStatus.Unknown ? 'unknown source'
+          : item?.status === RelationshipNavigationStatus.Inaccessible ? 'source inaccessible'
             : 'source unavailable',
     }
     if (usable && item) {
       row.statusLabel = 'current session'
       const saved = relation.anchor
       const verified = item.anchor
-      const exact = relation.kind === 'context_from' && item.status === 'resolved' && saved && verified &&
-        saved.kind !== 'general_source_session' && saved.kind === verified.kind &&
+      const exact = relation.kind === SessionRelationshipKind.ContextFrom && item.status === RelationshipNavigationStatus.Resolved && saved && verified &&
+        saved.kind !== PublicSourceAnchorKind.General && saved.kind === verified.kind &&
         saved.sourceEntryRef === verified.sourceEntryRef && saved.sourceRevisionRef === verified.sourceRevisionRef
       row.navigation = { kind: item.kind, status: exact ? 'resolved' : 'general_link_only',
         ...(item.localId ? { localId: item.localId } : { transcriptId: item.transcriptId }),
         ...(exact ? { anchor: verified } : {}) }
-      if (relation.kind === 'context_from') row.note = exact
+      if (relation.kind === SessionRelationshipKind.ContextFrom) row.note = exact
         ? 'opens the current source at the recorded branch point. captured child history stays unchanged.'
         : 'opens the current source. the earlier source state is not verified; captured child history stays unchanged.'
     }
@@ -1012,7 +1012,7 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
   const sourcePositions = new Map()
   if (partition === 'main') completeTurns.forEach((turn, i) => sourcePositions.set(turn, i))
   // an unknown time is no time at all
-  const filteredTurns = (payload.harness === 'pi' ? completeTurns : prefilterTurns(completeTurns))
+  const filteredTurns = (payload.harness === Harness.Pi ? completeTurns : prefilterTurns(completeTurns))
     .map((turn) => {
       const copy = withKnownTime(turn)
       const position = sourcePositions.get(turn)
@@ -1035,7 +1035,7 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
   let finalPos = -1
   for (let p = 0; p < turns.length; p++) {
     const t = turns[p]
-    if (t.role === 'assistant' && (t.depth ?? 0) === 0 && t.content?.trim()) finalPos = p
+    if (t.role === Role.Assistant && (t.depth ?? 0) === 0 && t.content?.trim()) finalPos = p
   }
 
   /** @type {Map<string, ToolCallVM>} */
@@ -1104,7 +1104,7 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
       annotations: annotationsByTurn[t.index] ?? [],
     }
     if (sourcePositions.has(t)) turnVM.sourcePosition = sourcePositions.get(t)
-    if (depth === 0 && t.role === 'assistant') turnVM.provider = provider
+    if (depth === 0 && t.role === Role.Assistant) turnVM.provider = provider
     if (t.agentName) turnVM.agentName = t.agentName
     if (t.controlKind) {
       turnVM.controlKind = t.controlKind
