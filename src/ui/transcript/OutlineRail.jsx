@@ -102,7 +102,7 @@ function LedgerTurnCards({ viewModel, activeTurn, onJump }) {
  * @param {number} [props.activeTurn]                   the active TURN INDEX, for the ledger cards
  * @param {(turnIndex: number) => void} [props.onJump]
  */
-export default function OutlineRail({ viewModel, tab, onJump = () => {}, presentation = 'classic', activeTurn }) {
+export default function OutlineRail({ viewModel, tab, onJump = () => {}, presentation = PresentationValue.Classic, activeTurn }) {
   const files = viewModel?.files ?? []
   const highlights = viewModel?.highlights ?? []
   /* the cooked friction annotations: prefer the analytics-derived patterns, else the per-turn
