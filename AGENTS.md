@@ -31,7 +31,7 @@ manager: **pnpm**. Source is **JS/JSX only - no TypeScript**. Icons: `lucide-rea
 ## commands
 - `pnpm dev` - run the page (Vite, http://localhost:5180).
 - `pnpm build` - generate llm artifacts + contrast gate (WCAG, both themes) + Vite build. Must pass.
-- `pnpm lint:unstring` - static guard against stringly-typed values at the pinned `unstring/v0.0.2`. It needs Go 1.26+ and ast-grep 0.51.2 (`npm install --global @ast-grep/cli@0.51.2`); CI runs it in `lib`. `pnpm lint:unstring:update` only lowers `.unstring-baseline.yaml`. A deliberate exception uses `// unstring-allow: <rule-id> - <reason>` with at least three words, and the two closed-set rules accept no marker.
+- `pnpm lint:unstring` - static guard against stringly-typed values at the pinned `unstring/v0.0.4`. It needs Go 1.26+ and ast-grep 0.51.2 (`npm install --global @ast-grep/cli@0.51.2`); CI runs it in `lib`. `pnpm lint:unstring:update` only lowers `.unstring-baseline.yaml`. A deliberate exception uses `// unstring-allow: <rule-id> - <reason>` with at least three words, and the two closed-set rules accept no marker.
 
   The baseline was re-initialised once at schema 0.54.0 for 40 catalog/local-set strings (the 34 are local fixture/harness vocabularies; the fixture `owner` and `surface` axes are checked by validators, the rest are local unions or registries; 6 CSS/ARIA/HTTP coincidences). The three real hits were converted to `MapNodeKind.File`, `Role.User`, and `Role.Assistant`. Shrink-only resumes from this baseline. The typed rule is the planned retirement path.
 - `pnpm test:design-decisions` / `pnpm audit:design-decisions` - named mutation tests and real-source decision/record audit; required by the library build.
