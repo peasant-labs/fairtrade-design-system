@@ -215,7 +215,7 @@
     "test:transcript-markdown": "node scripts/transcript-markdown.test.mjs",
     "test:transcript-markdown:mutations": "node scripts/transcript-markdown.entrypoint.test.mjs && node scripts/transcript-markdown.mutations.mjs",
     "lint:css": "node scripts/css-token-lint.mjs",
-    "lint:eslint": "node scripts/assert-unstring-eslint-enabled.mjs && eslint 'src/ui/**/*.{js,jsx}'",
+    "lint:eslint": "node scripts/assert-unstring-eslint-enabled.test.mjs && node scripts/assert-unstring-eslint-enabled.mjs && eslint 'src/ui/**/*.{js,jsx}'",
     "lint:unstring": "go run github.com/peasant-labs/infra/unstring/cmd/unstring@v0.0.4 check",
     "lint:unstring:update": "go run github.com/peasant-labs/infra/unstring/cmd/unstring@v0.0.4 update",
     "test:css-guards": "node scripts/css-guards.test.mjs",

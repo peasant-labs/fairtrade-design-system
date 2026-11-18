@@ -1,9 +1,9 @@
 import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import tseslint from 'typescript-eslint'
 
-async function checkDirectory(directory) {
+export async function checkDirectory(directory) {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const path = join(directory, entry.name)
     if (entry.isDirectory()) {
@@ -17,6 +17,10 @@ async function checkDirectory(directory) {
         comment: true,
       })
       for (const comment of ast.comments) {
+        if (/^eslint\s+/.test(comment.value.trim()) &&
+            /["']?unstring\/closed-set-literal["']?\s*:/.test(comment.value)) {
+          throw new Error(`${path}: inline configuration of unstring/closed-set-literal is forbidden; remove the directive`)
+        }
         const directive = comment.value.trim().match(/^eslint-disable(?:-next-line|-line)?\b([\s\S]*)/)
         if (!directive) continue
         const rules = directive[1].split(/\s--(?:\s|$)/, 1)[0].replace(/^\s*\*\s*/gm, '').trim()
@@ -31,4 +35,6 @@ async function checkDirectory(directory) {
   }
 }
 
-await checkDirectory(fileURLToPath(new URL('../src/ui/', import.meta.url)))
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  await checkDirectory(fileURLToPath(new URL('../src/ui/', import.meta.url)))
+}

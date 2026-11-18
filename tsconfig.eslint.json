@@ -11,5 +11,14 @@
     "skipLibCheck": true
   },
   "include": ["src/ui/**/*.jsx", "src/ui/**/*.js"],
-  "exclude": []
+  "exclude": [
+    "src/ui/**/*.stories.jsx",
+    "src/ui/story-frame.jsx",
+    "src/ui/**/*.test.js",
+    "src/ui/**/*.test.jsx",
+    "src/ui/**/*.type-test.js",
+    "src/ui/**/*.type-test.jsx",
+    "src/ui/**/*.spec.js",
+    "src/ui/**/*.spec.jsx"
+  ]
 }
