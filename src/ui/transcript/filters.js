@@ -145,7 +145,7 @@ export function encodeFilterIntent(filters = DEFAULT_TRANSCRIPT_FILTERS) {
 export function filtersActive(filters = DEFAULT_TRANSCRIPT_FILTERS) {
   const defaults = DEFAULT_TRANSCRIPT_FILTERS
   let count = 0
-  for (const key of ['prompts', 'responses', 'thinking', 'toolcalls', 'system']) {
+  for (const key of Object.values(Category)) {
     // `system` is the one category whose documented default is off, so absence reads as
     // off rather than as a deviation.
     const on = key === Category.System ? filters.categories?.system === true : filters.categories?.[key] !== false

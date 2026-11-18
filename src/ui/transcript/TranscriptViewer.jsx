@@ -329,7 +329,7 @@ export default function TranscriptViewer({
   showOutcome = true,
   showSearchTrigger = false,
   footer,
-  presentation = 'ledger',
+  presentation = Presentation.Ledger,
   subtitle,
   pullRequests,
   headingLevel,

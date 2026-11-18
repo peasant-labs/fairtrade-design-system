@@ -105,7 +105,7 @@ export default function TurnCard({
   actionReveal,
   registerActionRef,
   suppressWork = false,
-  presentation = 'classic',
+  presentation = Presentation.Classic,
   flagged = false,
   flaggedPositions,
 }) {
