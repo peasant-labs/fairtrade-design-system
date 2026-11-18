@@ -872,3 +872,52 @@ export const ImagesUnavailable = {
     await expect(canvasElement.querySelectorAll('.txn-image-thumb').length).toBe(0)
   },
 }
+
+/* ── a reply's thinking as nested blocks ──────────────────────────────────────
+   A producer that stores one reply as one entry keeps its thinking as nested blocks under it
+   (depth 1, parentIndex naming the reply) and folds its tool calls into the reply. The thinking
+   is the reply's own detail in both presentations, never a subagent turn, and each block is timed
+   inside its reply. */
+const replyThinkingPayload = {
+  id: 'reply-thinking',
+  harness: 'claude-code',
+  startTime: '2026-09-20T10:00:00Z',
+  endTime: '2026-09-20T10:00:20Z',
+  durationMins: 1,
+  totalTokens: 30,
+  tokensIn: 20,
+  tokensOut: 10,
+  turnCount: 6,
+  toolCallCount: 1,
+  outcome: 'resolved',
+  inputSubmissionCount: 1,
+  conversationTurnCount: 3,
+  turns: [
+    { index: 0, role: 'user', depth: 0, content: 'read the fixture and summarize it', timestamp: '2026-09-20T10:00:00Z' },
+    {
+      index: 1, role: 'assistant', depth: 0, content: 'reading the fixture first.', timestamp: '2026-09-20T10:00:04Z', hasThinking: true,
+      toolCalls: [{ id: 'reply-read', name: 'Read', filePath: 'notes/plan.md', arguments: '{"file_path":"notes/plan.md"}', result: 'records: 1', durationMs: 2000 }],
+    },
+    { index: 2, role: 'assistant', depth: 1, parentIndex: 1, entryType: 'thinking', content: 'the fixture is small enough to read whole.', timestamp: '2026-09-20T10:00:04Z' },
+    { index: 3, role: 'assistant', depth: 1, parentIndex: 1, entryType: 'thinking', content: 'one read is enough here.', timestamp: '2026-09-20T10:00:10Z' },
+    { index: 4, role: 'assistant', depth: 0, content: 'the fixture holds one record.', timestamp: '2026-09-20T10:00:20Z', hasThinking: true },
+    { index: 5, role: 'assistant', depth: 1, parentIndex: 4, entryType: 'thinking', content: 'summarize in one line.', timestamp: '2026-09-20T10:00:20Z' },
+  ],
+  title: 'Read the fixture',
+}
+
+const replyThinkingPlay = async ({ canvasElement }) => {
+  for (const index of [2, 3, 5]) {
+    const article = canvasElement.querySelector(`#turn-${index}`)
+    await expect(article).not.toBeNull()
+    await expect(article.querySelector('.subtask')).toBeNull()
+    await expect(article.querySelector('.txn-depth')).toBeNull()
+  }
+  const times = [...canvasElement.querySelectorAll('.txn-thinking-toggle .txn-tc-dur')].map((node) => node.textContent)
+  await expect(times).toEqual(['4s', '6s', '14s'])
+}
+
+const replyThinkingArgs = { viewModel: adaptTranscript(replyThinkingPayload), capabilities: readOnlyCaps, filters: ledgerFilters }
+
+export const ReplyThinkingLedger = { decorators: [ledgerFrame], args: { ...replyThinkingArgs, presentation: 'ledger' }, play: replyThinkingPlay }
+export const ReplyThinkingClassic = { args: { ...replyThinkingArgs, presentation: 'classic' }, play: replyThinkingPlay }

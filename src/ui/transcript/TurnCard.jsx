@@ -14,7 +14,7 @@ import TranscriptImageAttachment from './ImageAttachment.jsx'
 import { imageParts } from './image-parts.js'
 import { useImageUrl } from './image-url.js'
 import TranscriptWorkGroup, { ModelActions } from './WorkGroup.jsx'
-import { turnHasProse } from './work-summary.js'
+import { drawsAsSubagent, turnHasProse } from './work-summary.js'
 import UsageDisclosure from './UsageDisclosure.jsx'
 import { Term } from '../Explainer.jsx'
 import { formatRelative as formatRelativeTime, isKnownTime } from './time.js'
@@ -131,7 +131,9 @@ export default function TurnCard({
   const hasProse = turnHasProse(turn)
   const ledgerDetail = ledger && !isUser && !hasProse
   const timeLabel = turn.time || turnTimeLabel(turn.timestamp)
-  const isSub = !!turn.depth && turn.depth > 0
+  // A nested turn is a subagent's unless it is only thinking under a top-level reply; the one
+  // predicate decides it for both presentations.
+  const isSub = drawsAsSubagent(turn)
   // Only nested assistant prose draws an inset card. Tool/thinking-only entries
   // remain inline work, even when their source carries a nesting depth. Clamp
   // presentation only: the recorded depth remains intact on the turn and DOM.
