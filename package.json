@@ -215,6 +215,7 @@
     "test:transcript-markdown": "node scripts/transcript-markdown.test.mjs",
     "test:transcript-markdown:mutations": "node scripts/transcript-markdown.entrypoint.test.mjs && node scripts/transcript-markdown.mutations.mjs",
     "lint:css": "node scripts/css-token-lint.mjs",
+    "lint:eslint": "node scripts/assert-unstring-eslint-enabled.mjs && eslint 'src/ui/**/*.{js,jsx}'",
     "lint:unstring": "go run github.com/peasant-labs/infra/unstring/cmd/unstring@v0.0.4 check",
     "lint:unstring:update": "go run github.com/peasant-labs/infra/unstring/cmd/unstring@v0.0.4 update",
     "test:css-guards": "node scripts/css-guards.test.mjs",
@@ -276,7 +277,7 @@
     "test:step-wizard:mutations": "node scripts/parts-mutations.mjs scripts/step-wizard.test.mjs scripts/testdata/step-wizard.manifest.yaml"
   },
   "dependencies": {
-    "@peasant-labs/schema": "0.54.0",
+    "@peasant-labs/schema": "0.57.0",
     "@shikijs/core": "4.6.0",
     "@shikijs/engine-javascript": "4.6.0",
     "@shikijs/langs": "4.6.0",
@@ -304,6 +305,8 @@
     "@types/react": "19.2.18",
     "@vitejs/plugin-react": "^6.0.2",
     "@xyflow/react": "12.10.2",
+    "eslint": "^10.15.0",
+    "eslint-plugin-unstring": "0.2.0",
     "http-server": "^14.1.1",
     "jsdom": "^29.1.1",
     "puppeteer-core": "^25.1.0",
@@ -313,6 +316,7 @@
     "storybook": "^10.4.6",
     "tailwindcss": "^4.3.1",
     "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.2",
     "vite": "^8.0.16",
     "vitest": "^4.1.12",
     "yaml": "2.9.0"

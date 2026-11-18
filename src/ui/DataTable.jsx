@@ -157,7 +157,6 @@ export default function DataTable({
     const m = new Map()
     rows.forEach((row, i) => m.set(String(keyOf(row, i)), keyOf(row, i)))
     return m
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, rowKey])
 
   /* fully-controlled adapters: our public state -> TanStack state, and back on change.
@@ -178,7 +177,6 @@ export default function DataTable({
     })
     return sel
     // selected is a fresh Set when controlled; depend on its stable serialization instead.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, keyOf, selectedKey(selected)])
 
   const table = useReactTable({

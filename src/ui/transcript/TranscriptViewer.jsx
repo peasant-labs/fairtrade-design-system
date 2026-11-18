@@ -564,7 +564,6 @@ export default function TranscriptViewer({
     } else {
       commitSidebarLayout(zenSnapshotRef.current)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zen, ledger])
 
   // Unmanaged disclosure state is session-local. Controlled hosts restore their
@@ -658,7 +657,6 @@ export default function TranscriptViewer({
         fail()
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [segmentMode, windowKey, loadedIndexKey, onLoadSegment, activeFailure, windowRetry])
 
   function requestWindow(anchor) {
@@ -1340,7 +1338,6 @@ export default function TranscriptViewer({
     if (!turns.some((turn) => turn.index === target)) return
     pendingJumpRef.current = null
     jumpTo(target, { switchTab: false })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [turns])
   /* A requested segment (boundary, scrubber, window) arrives as new props. Hold the
      reader's turn when content is prepended: remember the reading line, then correct
@@ -1354,7 +1351,6 @@ export default function TranscriptViewer({
     const el = turnRefs.current[pending.turnIndex]
     if (!el) return
     sc.scrollTop = el.offsetTop - pending.offset
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadedIndexKey, turns])
   useEffect(() => { setLoadingSegment(null) }, [loadedIndexKey])
   function captureReadingAnchor() {
@@ -1400,7 +1396,6 @@ export default function TranscriptViewer({
     if (!turns.some((turn) => turn.index === pending.firstTurn)) return
     pendingSeekRef.current = null
     jumpTo(pending.firstTurn, { switchTab: false })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [turns])
   function stepTurn(dir) {
     const ids = (navigableTurns.length ? navigableTurns : visibleTurns).map((t) => t.index)
@@ -1623,7 +1618,6 @@ export default function TranscriptViewer({
     if (typeof window === 'undefined') return undefined
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchOpen, tab, viewMode, activeTurn, visibleTurns, selectTab])
 
   /* Only deliberate search input/navigation reveals a turn, never passive activation. */
@@ -1636,7 +1630,6 @@ export default function TranscriptViewer({
       setSystemReveal({ turn: m.turn, sessionId: session.id, filterFingerprint: filterFingerprint(filters), sequence: ++revealSequence.current })
     }
     revealAction(m.turn, m.where, { search: true, occurrence: m.occurrence, sourceOnly: m.sourceOnly })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchNavigation])
 
   /* A reveal that lands on a grouped member opens its group first, so the member is laid out
@@ -1698,7 +1691,6 @@ export default function TranscriptViewer({
     }
     const frame = requestAnimationFrame(scroll)
     return () => { cancelled = true; cancelAnimationFrame(frame) }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchReveal, ledger])
 
   /* files / diffs derived. */

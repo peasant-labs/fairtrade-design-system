@@ -20,11 +20,13 @@ allowBuilds:
 # Supply-chain age gate: block a package until it has been published
 # for at least 3 days. First-party packages are exempt so a same-day
 # fairtrade/schema release is not blocked by its own policy.
+# eslint-plugin-unstring is first-party from peasant-labs/infra's unstring/v* stream; named because unscoped.
 # https://pnpm.io/settings/dependency-resolution#minimumreleaseage
 # https://pnpm.io/settings/dependency-resolution#minimumreleaseageexclude
 minimumReleaseAge: 4320
 minimumReleaseAgeExclude:
   - '@peasant-labs/*'
+  - 'eslint-plugin-unstring'
 
 # Node engine enforcement: pnpm 11 enforces a project's declared `engines` at
 # install time (ERR_PNPM_UNSUPPORTED_ENGINE), so an out-of-contract Node fails

@@ -358,7 +358,6 @@ function SplitChain({ items, itemHref, author, selected, onSelect }) {
   useEffect(() => {
     if (index < 0 || typeof document === 'undefined' || document.activeElement !== listRef.current) return
     document.getElementById(optionId(index))?.scrollIntoView?.({ block: 'nearest' })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index])
 
   if (entries.length === 0) {

@@ -40,7 +40,6 @@ export default function TranscriptControlRow({ turn, actions, revealRequest = 0 
   useLayoutEffect(() => {
     if (revealRequest) setOpen(true)
     // the reveal sequence is the only trigger
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [revealRequest])
   if (!turn) return null
   const recorded = turn.displayContent ?? turn.content ?? ''
