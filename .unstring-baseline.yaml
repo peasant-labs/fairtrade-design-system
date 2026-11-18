@@ -61,7 +61,7 @@ rules:
     scripts/journey/transcript-adaptive-layout.journey.mjs: 1
     scripts/journey/transcript-integrity.journey.mjs: 1
     scripts/journey/transcript-motion.journey.mjs: 11
-    scripts/journey/transcript-reading.journey.mjs: 19
+    scripts/journey/transcript-reading.journey.mjs: 14
     scripts/journey/village-observations.journey.mjs: 1
     scripts/number-format.test.mjs: 1
     scripts/packed-tarball-roundtrip.test.mjs: 2

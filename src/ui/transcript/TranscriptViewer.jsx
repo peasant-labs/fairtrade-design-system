@@ -67,6 +67,9 @@ import { toolStateKey } from './tool-state-key.js'
 import { renderedSearchRanges, searchExpression } from './search-highlights.js'
 import SearchHighlights from './SearchHighlights.jsx'
 
+/** @type {AnimationPlayState} */
+const runningAnimation = 'running'
+
 /* ───────────────────────────────────────────────────────────────────────────
    TranscriptViewer — the composite single-transcript surface (the headline)
    ─────────────────────────────────────────────────────────────────────────
@@ -1507,7 +1510,7 @@ export default function TranscriptViewer({
     // release guard mid-flight. Using the full expanded height is deliberately
     // conservative (only the title + chips actually leave), which can never
     // reintroduce the clamp-flicker.
-    const headerMoving = header?.getAnimations?.({ subtree: true }).some(animation => animation.playState === 'running')
+    const headerMoving = header?.getAnimations?.({ subtree: true }).some(animation => animation.playState === runningAnimation)
     if (header && header.offsetHeight > 0 && !header.closest('.txn-app-condensed') && !headerMoving) {
       heroHeightRef.current = header.offsetHeight
     }
