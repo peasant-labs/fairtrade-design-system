@@ -76,8 +76,8 @@ importers:
         specifier: ^10.15.0
         version: 10.15.0(jiti@2.7.0)(supports-color@7.2.0)
       eslint-plugin-unstring:
-        specifier: 0.2.0
-        version: 0.2.0(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))(typescript@6.0.3)
+        specifier: 0.2.1
+        version: 0.2.1(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))(typescript@6.0.3)
       http-server:
         specifier: ^14.1.1
         version: 14.1.1(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0)
@@ -2013,8 +2013,8 @@ packages:
     resolution: {integrity: sha512-/veY75JbMK4j1yjvuUxuVsiS/hr/4iHs9FTT6cgTexxdE0Ly/glccBAkloH/DofkjRbZU3bnoj38mOmhkZ0lHw==}
     engines: {node: '>=12'}
 
-  eslint-plugin-unstring@0.2.0:
-    resolution: {integrity: sha512-K0JITp+Uu7dJL540rww0FgqdIlRXlrmzT1wyDFvT70IFLWGT4w9KLPVoQ0SCeYF4q9A9TLLKwzUxwxA3j+1nSw==}
+  eslint-plugin-unstring@0.2.1:
+    resolution: {integrity: sha512-a3PLjZm9PNHFc0cb9Q8HJUl92wEwqvv9jjoUx2IXXibWnLLHzSUk7iXQ4k/HKewhzrkK+W1XtwND6i9jx22Xxw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       eslint: '>=9'
@@ -5227,7 +5227,7 @@ snapshots:
 
   escape-string-regexp@5.0.0: {}
 
-  eslint-plugin-unstring@0.2.0(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))(typescript@6.0.3):
+  eslint-plugin-unstring@0.2.1(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))(typescript@6.0.3):
     dependencies:
       eslint: 10.15.0(jiti@2.7.0)(supports-color@7.2.0)
       typescript: 6.0.3

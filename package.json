@@ -306,7 +306,7 @@
     "@vitejs/plugin-react": "^6.0.2",
     "@xyflow/react": "12.10.2",
     "eslint": "^10.15.0",
-    "eslint-plugin-unstring": "0.2.0",
+    "eslint-plugin-unstring": "0.2.1",
     "http-server": "^14.1.1",
     "jsdom": "^29.1.1",
     "puppeteer-core": "^25.1.0",
