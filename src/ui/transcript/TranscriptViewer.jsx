@@ -196,6 +196,7 @@ function measureReaderFull(stream) {
 /* the five session views (count badges come off the cooked VM). */
 const TAB_ORDER = /** @type {const} */ (['highlights', 'trace', 'diffs', 'files', 'annotations'])
 const TAB_LABEL = { highlights: 'highlights', trace: 'full trace', diffs: 'diffs', files: 'files', annotations: 'annotations' }
+const CONTINUATION_STATES = new Set(Object.values(TranscriptContinuationState))
 
 /* phase id/key → glyph (PhaseVM carries a semantic key, not a component). */
 const PHASE_ICON = { exploration: FileSearch, debugging: AlertTriangle, implementation: Pencil, planning: ListTree, review: ShieldCheck }
@@ -347,6 +348,9 @@ export default function TranscriptViewer({
   onLoadWindow,
   continuation: continuationProp,
 }) {
+  if (continuationProp != null && !CONTINUATION_STATES.has(continuationProp.state)) {
+    throw new TypeError(`TranscriptViewer refused continuation.state ${String(continuationProp.state)}: pass one of ${[...CONTINUATION_STATES].join(', ')} to describe the segment continuation.`)
+  }
   const resolvedImageUrl = useImageUrl(imageUrl, attachmentUrl)
   if (breadcrumb != null && breadcrumbContext != null) {
     throw new TypeError('TranscriptViewer cannot use breadcrumb and breadcrumbContext together; pass either a complete breadcrumb or ancestor context, not both.')

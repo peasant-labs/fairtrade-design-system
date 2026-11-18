@@ -12,7 +12,10 @@ requiredMutationNames:
   - mermaid copy ignores preview policy
   - trace badge ignores complete directory
   - completed directory reports an open range
+  - unknown continuation state is silently accepted
 requiredAssertions:
+  - continuation-values-are-exported
+  - unknown-continuation-state-throws
   - ended-directory-drops-loaded-so-far
   - cut-directory-drops-loaded-so-far
   - trace-tab-counts-loaded-turns-while-open
@@ -40,6 +43,11 @@ requiredAssertions:
   - complete-tail-keeps-final-response
   - no-continuation-prop-is-unchanged
 mutations:
+  - name: unknown continuation state is silently accepted
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "if (continuationProp != null && !CONTINUATION_STATES.has(continuationProp.state)) {"
+    replace: "if (false) {"
+    expectedDiagnostic: unknown-continuation-state-throws
   - name: observer requests more
     file: src/ui/transcript/TranscriptViewer.jsx
     find: "  const resolvedImageUrl = useImageUrl(imageUrl, attachmentUrl)"

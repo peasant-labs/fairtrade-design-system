@@ -1,6 +1,7 @@
 import { loadFixturePair, withMountedSource, click, createReport } from './mounted-parts.mjs'
 import { Role } from '@peasant-labs/schema'
-import { TranscriptContinuationState, TranscriptContinuationLabels } from '../src/ui/transcript/continuation-values.js'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { TranscriptContinuationState, TranscriptContinuationLabels, TranscriptTail } from '../src/ui/transcript/continuation-values.js'
 
 const FIXTURE = 'scripts/testdata/transcript-continuation.yaml'
 const MANIFEST = 'scripts/testdata/transcript-continuation.manifest.yaml'
@@ -15,6 +16,13 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     disconnect() {}
   }
   const { default: Viewer } = await load('/src/ui/transcript/TranscriptViewer.jsx')
+  const publicUI = await load('/src/ui/index.js')
+  check('continuation-values-are-exported', publicUI.TranscriptContinuationState?.More === TranscriptContinuationState.More && publicUI.TranscriptTail?.Incomplete === TranscriptTail.Incomplete && publicUI.TranscriptContinuationLabels?.LoadMore === TranscriptContinuationLabels.LoadMore)
+  let refusal
+  try {
+    renderToStaticMarkup(React.createElement(Viewer, { viewModel: { session: {}, turns: [] }, capabilities: {}, continuation: { state: fixture.unknownState } }))
+  } catch (error) { refusal = error }
+  check('unknown-continuation-state-throws', refusal instanceof TypeError && refusal.message.includes(fixture.unknownState) && Object.values(TranscriptContinuationState).every(state => refusal.message.includes(state)))
   const { adaptTranscript } = await load('/src/ui/transcript/adapter.js')
   const { scrubberTicks, regionBoundaries, loadedRegions } = await load('/src/ui/transcript/segments.js')
   const payload = { id: 'preview', harness: 'claude-code', turns: [
