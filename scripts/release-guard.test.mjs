@@ -757,3 +757,49 @@ test('an annotated remote release tag cannot be moved or deleted by a plain push
     fs.rmSync(dir, { recursive: true, force: true })
   }
 })
+
+test('release candidate provenance runs the real workflow step', async (t) => {
+  const fixture = YAML.parse(fs.readFileSync(path.join(import.meta.dirname, 'testdata/release-provenance.yaml'), 'utf8'), { merge: true })
+  const workflow = YAML.parse(fs.readFileSync(path.join(REPO_ROOT, '.github/workflows/release-batch.yml'), 'utf8'))
+  const steps = workflow.jobs.plan.steps
+  const step = steps.find((item) => item.id === 'provenance')
+  assert.ok(step?.run)
+  assert.equal(Object.hasOwn(step, 'continue-on-error'), false)
+  assert.match(steps.find((item) => item.name === 'Make the annotated release tag').if, /steps\.provenance\.outcome == 'success'/)
+  assert.equal(workflow.jobs.plan.permissions['pull-requests'], 'read')
+  const names = fixture.provenance_cases.map((item) => item.name)
+  assert.equal(new Set(names).size, names.length)
+  for (const name of fixture.provenance_required) assert.ok(names.includes(name), `missing provenance case ${name}`)
+  for (const item of fixture.provenance_cases) {
+    await t.test(item.name, () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'release-provenance-'))
+      try {
+        const bin = path.join(dir, 'bin')
+        fs.mkdirSync(bin)
+        const commands = {
+          git: '#!/bin/sh\n[ "$#" -eq 2 ] && [ "$1" = show ] && [ "$2" = "${PLAN_SOURCE}:.github/release-intent.yaml" ] || exit 90\nprintf "fixture config\\n"\n',
+          yq: '#!/bin/sh\n[ "$#" -eq 2 ] && [ "$1" = "-o=json" ] && [ "$2" = "." ] || exit 91\ncat >/dev/null\nprintf "%s\\n" "$TEST_CONFIG_JSON"\n',
+          gh: '#!/bin/sh\n[ "$#" -eq 3 ] && [ "$1" = api ] && [ "$2" = --paginate ] && [ "$3" = "repos/${GITHUB_REPOSITORY}/commits/${CANDIDATE}/pulls?per_page=100" ] && [ "$GH_TOKEN" = readonly-test-token ] || exit 92\nprintf "%s" "$TEST_API_OUTPUT"\nexit "$TEST_API_EXIT"\n',
+        }
+        for (const [name, body] of Object.entries(commands)) fs.writeFileSync(path.join(bin, name), body, { mode: 0o755 })
+        const output = item.raw_output || (item.pages || []).map((page) => JSON.stringify(page) + '\n').join('')
+        const result = spawnSync('bash', ['-e', '-c', step.run], {
+          cwd: dir, encoding: 'utf8', timeout: 10000,
+          env: { ...process.env, PATH: `${bin}${path.delimiter}${process.env.PATH}`, RUNNER_TEMP: dir,
+            GH_TOKEN: 'readonly-test-token', GITHUB_REPOSITORY: 'peasant-labs/fairtrade-design-system',
+            PLAN_SOURCE: 'plan-source', CANDIDATE: item.candidate || fixture.provenance_candidate,
+            TEST_CONFIG_JSON: JSON.stringify(item.config || fixture.provenance_config),
+            TEST_API_OUTPUT: output, TEST_API_EXIT: String(item.api_exit || 0) },
+        })
+        assert.equal(result.error, undefined)
+        assert.equal(result.status, item.expected_exit, result.stderr + result.stdout)
+        if (item.expected_exit !== 0) {
+          assert.ok(item.error_contains?.startsWith('::error::'))
+          assert.ok((result.stdout + result.stderr).includes(item.error_contains), result.stdout + result.stderr)
+        }
+      } finally {
+        fs.rmSync(dir, { recursive: true, force: true })
+      }
+    })
+  }
+})
