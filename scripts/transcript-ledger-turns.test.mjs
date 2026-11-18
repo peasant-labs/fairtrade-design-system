@@ -105,6 +105,7 @@ const CAPABILITIES = { canEdit: false, canLabel: true, canContribute: false, can
 const HOST_ACTION = 'host action'
 
 await withMountedSource(async ({ load, mount, window, React }) => {
+  const { COMMAND_INPUT_HEADING } = await load('/src/ui/transcript/ToolBody.jsx')
   const { adaptTranscript, thinkingDurationMs } = await load('/src/ui/transcript/adapter.js')
   /* the thinking-time rule, through the loaded adapter so a mutation of it is the one under test */
   for (const row of fixture.thinkingDurationCases) {
@@ -324,7 +325,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(open?.getAttribute('aria-expanded') === 'true', `${row.name}: the clicked row must stay open`)
       report.check(!!panel?.querySelector('.txn-toolcall .txn-tcbody'), `${row.name}: the clicked row must reveal its body`)
       const input = panel?.querySelector('.txn-toolcall .txn-term')
-      report.check(text(input?.previousElementSibling) === 'input', `${row.name}: Bash must label its command input`)
+      report.check(text(input?.previousElementSibling) === COMMAND_INPUT_HEADING, `${row.name}: Bash must label its command input`)
       report.check(text(input?.querySelector('.mono')) === row.input, `${row.name}: Bash input must preserve the recorded command`)
       report.check(!!input && input.querySelector('svg') === null, `${row.name}: Bash input must contain no icon`)
       report.check(text(input?.querySelector('.txn-term-prompt')) === '$', `${row.name}: Bash input keeps its dollar prompt`)
