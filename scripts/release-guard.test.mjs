@@ -777,9 +777,9 @@ test('release candidate provenance runs the real workflow step', async (t) => {
         const bin = path.join(dir, 'bin')
         fs.mkdirSync(bin)
         const commands = {
-          git: '#!/bin/sh\n[ "$#" -eq 2 ] && [ "$1" = show ] && [ "$2" = "${PLAN_SOURCE}:.github/release-intent.yaml" ] || exit 90\nprintf "fixture config\\n"\n',
-          yq: '#!/bin/sh\n[ "$#" -eq 2 ] && [ "$1" = "-o=json" ] && [ "$2" = "." ] || exit 91\ncat >/dev/null\nprintf "%s\\n" "$TEST_CONFIG_JSON"\n',
-          gh: '#!/bin/sh\n[ "$#" -eq 3 ] && [ "$1" = api ] && [ "$2" = --paginate ] && [ "$3" = "repos/${GITHUB_REPOSITORY}/commits/${CANDIDATE}/pulls?per_page=100" ] && [ "$GH_TOKEN" = readonly-test-token ] || exit 92\nprintf "%s" "$TEST_API_OUTPUT"\nexit "$TEST_API_EXIT"\n',
+          git: '#!/bin/sh\n[ "$#" -eq 2 ] && [ "$1" = show ] && [ "$2" = "${PLAN_SOURCE}:.github/release-intent.yaml" ] || { echo UNEXPECTED_STUB_ARGUMENTS:git >&2; exit 90; }\n[ "$TEST_GIT_EXIT" = 0 ] || exit "$TEST_GIT_EXIT"\nprintf "fixture config\\n"\n',
+          yq: '#!/bin/sh\n[ "$#" -eq 2 ] && [ "$1" = "-o=json" ] && [ "$2" = "." ] || { echo UNEXPECTED_STUB_ARGUMENTS:yq >&2; exit 91; }\n[ "$TEST_YQ_EXIT" = 0 ] || exit "$TEST_YQ_EXIT"\ncat >/dev/null\nprintf "%s\\n" "$TEST_CONFIG_JSON"\n',
+          gh: '#!/bin/sh\n[ "$#" -eq 3 ] && [ "$1" = api ] && [ "$2" = --paginate ] && [ "$3" = "repos/${GITHUB_REPOSITORY}/commits/${CANDIDATE}/pulls?per_page=100" ] && [ "$GH_TOKEN" = readonly-test-token ] || { echo UNEXPECTED_STUB_ARGUMENTS:gh >&2; exit 92; }\nprintf "%s" "$TEST_API_OUTPUT"\nexit "$TEST_API_EXIT"\n',
         }
         for (const [name, body] of Object.entries(commands)) fs.writeFileSync(path.join(bin, name), body, { mode: 0o755 })
         const output = item.raw_output || (item.pages || []).map((page) => JSON.stringify(page) + '\n').join('')
@@ -789,9 +789,11 @@ test('release candidate provenance runs the real workflow step', async (t) => {
             GH_TOKEN: 'readonly-test-token', GITHUB_REPOSITORY: 'peasant-labs/fairtrade-design-system',
             PLAN_SOURCE: 'plan-source', CANDIDATE: item.candidate || fixture.provenance_candidate,
             TEST_CONFIG_JSON: JSON.stringify(item.config || fixture.provenance_config),
-            TEST_API_OUTPUT: output, TEST_API_EXIT: String(item.api_exit || 0) },
+            TEST_API_OUTPUT: output, TEST_API_EXIT: String(item.api_exit || 0),
+            TEST_GIT_EXIT: String(item.git_exit || 0), TEST_YQ_EXIT: String(item.yq_exit || 0) },
         })
         assert.equal(result.error, undefined)
+        assert.ok(!(result.stdout + result.stderr).includes('UNEXPECTED_STUB_ARGUMENTS:'), result.stderr)
         assert.equal(result.status, item.expected_exit, result.stderr + result.stdout)
         if (item.expected_exit !== 0) {
           assert.ok(item.error_contains?.startsWith('::error::'))
