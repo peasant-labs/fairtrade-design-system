@@ -114,7 +114,7 @@ export default meta
 
 const previewRef = { index: 0, firstTurn: 0, lastTurn: 4, byteLength: 500, conversationTurns: { before: 0, count: 4 } }
 const previewArgs = {
-  viewModel,
+  viewModel: { ...viewModel, session: { ...viewModel.session, conversationTurnCount: 4 } },
   capabilities: { canEdit: false, canLabel: false, canContribute: false, canChangeVisibility: false, canExport: false },
   directory: { complete: false, segments: [previewRef] },
   segments: [{ ...previewRef, turns: turns.map(turn => ({ ...turn, entryType: 'text' })) }],
@@ -131,8 +131,14 @@ export const PreviewMore = {
   },
 }
 export const PreviewLoading = { args: { ...previewArgs, continuation: { state: 'loading' } } }
-export const PreviewEnd = { args: { ...previewArgs, continuation: { state: 'end', notice: 'this session has grown since the preview opened.' } } }
-export const PreviewCut = { args: { ...previewArgs, continuation: { state: 'cut', notice: 'the preview reached its limit.' } } }
+const finishedDirectory = { ...previewArgs.directory, complete: true, totalSegments: 1, totalTurns: 5, totalConversationTurns: 4 }
+const finishedPlay = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  await expect(canvas.getByText('4 turns', { selector: '.txn-trace-count' })).toBeVisible()
+  await expect(canvas.queryByText(/loaded so far/)).toBeNull()
+}
+export const PreviewEnd = { args: { ...previewArgs, directory: finishedDirectory, continuation: { state: 'end', notice: 'this session has grown since the preview opened.' } }, play: finishedPlay }
+export const PreviewCut = { args: { ...previewArgs, directory: finishedDirectory, continuation: { state: 'cut', notice: 'the preview reached its limit.' } }, play: finishedPlay }
 export const PreviewFailed = { args: { ...previewArgs, continuation: { state: 'failed', notice: <button type="button">read again</button> } } }
 
 /* Unmanaged: only the two required props. Proves the state defaults (trace tab, dark theme). */

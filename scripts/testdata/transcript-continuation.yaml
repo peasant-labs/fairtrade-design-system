@@ -9,12 +9,14 @@ cases:
     label: turns 1–2 loaded so far
   - name: end-replaces-control-with-notice
     state: end
+    complete: true
     notice: session ended
-    label: turns 1–2 loaded so far
+    label: 2 turns
   - name: cut-replaces-control-with-notice
     state: cut
+    complete: true
     notice: preview limit reached
-    label: turns 1–2 loaded so far
+    label: 2 turns
   - name: failed-shows-host-control
     state: failed
     notice: read again
@@ -26,6 +28,8 @@ tabCounts:
   loaded: 2
   total: 10
 assertions:
+  - name: ended-directory-drops-loaded-so-far
+  - name: cut-directory-drops-loaded-so-far
   - name: trace-tab-counts-loaded-turns-while-open
   - name: trace-tab-count-agrees-with-header-when-complete
   - name: whole-payload-trace-tab-count-unchanged

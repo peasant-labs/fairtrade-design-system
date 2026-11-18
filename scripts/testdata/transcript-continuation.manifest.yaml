@@ -11,7 +11,10 @@ requiredMutationNames:
   - incomplete tail keeps final marker
   - mermaid copy ignores preview policy
   - trace badge ignores complete directory
+  - completed directory reports an open range
 requiredAssertions:
+  - ended-directory-drops-loaded-so-far
+  - cut-directory-drops-loaded-so-far
   - trace-tab-counts-loaded-turns-while-open
   - trace-tab-count-agrees-with-header-when-complete
   - whole-payload-trace-tab-count-unchanged
@@ -67,3 +70,8 @@ mutations:
     find: ": id === 'trace' ? traceBadgeCount"
     replace: ": id === 'trace' ? conversationTurns.length"
     expectedDiagnostic: trace-tab-count-agrees-with-header-when-complete
+  - name: completed directory reports an open range
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "    if (directory?.complete === false) {"
+    replace: "    if (directory?.complete !== undefined) {"
+    expectedDiagnostic: ended-directory-drops-loaded-so-far

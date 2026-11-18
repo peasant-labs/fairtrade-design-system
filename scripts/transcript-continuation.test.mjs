@@ -49,10 +49,15 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   for (const row of fixture.cases) {
     let calls = 0
     const continuation = { state: row.state, notice: row.notice, onLoadMore: () => { calls++ } }
-    const mounted = await mount(React.createElement(Viewer, { viewModel: vm, capabilities: caps, directory, segments, continuation, allowClipboard: false }))
+    const caseDirectory = row.complete ? { ...directory, complete: true, totalSegments: 1, totalTurns: 2, totalConversationTurns: 2 } : directory
+    const mounted = await mount(React.createElement(Viewer, { viewModel: vm, capabilities: caps, directory: caseDirectory, segments, continuation, allowClipboard: false }))
     report.check(calls === 0, `${row.name}: mount fires nothing`)
     if (row.state === 'more') check('mount-fires-nothing', calls === 0)
     const scope = mounted.container.querySelector('[data-transcript-continuation]')
+    if (row.state === 'end' || row.state === 'cut') {
+      const name = row.state === 'end' ? 'ended-directory-drops-loaded-so-far' : 'cut-directory-drops-loaded-so-far'
+      check(name, mounted.container.querySelector('.txn-trace-count')?.textContent.trim() === row.label && !mounted.container.textContent.includes('loaded so far') && scrubberTicks(caseDirectory)[0].valueText === 'turns 1–2 of 2')
+    }
     report.check(mounted.container.textContent.includes(row.label), `${row.name}: position label`)
     report.check(!mounted.container.querySelector('.txn-anchor'), `${row.name}: no turn copy`)
     const button = scope?.querySelector('button')
