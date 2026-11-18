@@ -519,9 +519,9 @@ export default function MapCanvas({
   onStateAction,
   canonicalControlled = false,
 }) {
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- stabilizing the empty fallback would stop dependent memos or effects rerunning on renders without data
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- stabilizing empty nodes would stop tree, violation and search recomputation while data is absent
   const nodes = data?.nodes ?? []
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- stabilizing the empty fallback would stop dependent memos or effects rerunning on renders without data
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- stabilizing empty edges would stop lifted edge recomputation while data is absent
   const edges = data?.edges ?? []
 
   const baseId = useId().replace(/[:]/g, '')
@@ -593,7 +593,7 @@ export default function MapCanvas({
   // pointer immediately; once released (dragPreview cleared) the canonical
   // prop is authoritative again.
   const scale = dragPreview ? dragPreview.scale : hasCanonicalViewport ? viewport.scale : localScale
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- memoizing pan would change callback and memo invalidation on renders with unchanged coordinates
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- memoizing pan would stop keyboard and pointer callbacks and minimap recomputing on unchanged coordinates
   const pan = dragPreview
     ? { x: dragPreview.panX, y: dragPreview.panY }
     : hasCanonicalViewport

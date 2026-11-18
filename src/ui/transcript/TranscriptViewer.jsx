@@ -612,7 +612,7 @@ export default function TranscriptViewer({
   const [traceReadingPosition, setTraceReadingPosition] = useState(null)
 
   const session = vm?.session ?? {}
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- stabilizing the empty fallback would stop dependent memos or effects rerunning on renders without data
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- stabilizing empty turns would stop the search-measurement reset effect on renders without turns
   const turns = vm?.turns ?? []
 
   /* ── segmented window loading ──────────────────────────────────────────────────
@@ -830,7 +830,7 @@ export default function TranscriptViewer({
     [segmentMode, vm?.highlights, inLoadedTurns],
   )
   const scorecardBands = vm?.analytics?.scorecardBands ?? []
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- stabilizing the empty fallback would stop dependent memos or effects rerunning on renders without data
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- stabilizing empty commits would stop visible and system-hidden turn projections recomputing when commits are absent
   const commits = session?.git?.commits ?? []
   const annotations = useMemo(
     () => (segmentMode
