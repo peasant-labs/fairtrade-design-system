@@ -14,8 +14,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   const { adaptTranscript } = await load('/src/ui/transcript/adapter.js')
   const { scrubberTicks, regionBoundaries, loadedRegions } = await load('/src/ui/transcript/segments.js')
   const payload = { id: 'preview', harness: 'claude-code', turns: [
-    { index: 0, role: 'user', content: 'hello' },
-    { index: 1, role: 'assistant', content: 'hello back' },
+    { index: 0, role: 'user', depth: 0, entryType: 'text', content: 'hello' },
+    { index: 1, role: 'assistant', depth: 0, entryType: 'text', content: 'hello back' },
   ] }
   const vm = adaptTranscript(payload, undefined, undefined, { tail: 'incomplete' })
   check('incomplete-tail-has-no-final-marker', vm.turns.every(turn => !Object.hasOwn(turn, 'isFinal')))
@@ -36,6 +36,16 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   check('open-directory-scope-says-loaded-part', range.container.textContent.includes('in the loaded part of the session'))
   await range.unmount()
   const caps = { canEdit: false, canLabel: false, canContribute: true, canChangeVisibility: false, canExport: false }
+  const traceBadge = container => [...container.querySelectorAll('[role=tab]')].find(tab => tab.textContent.includes('full trace'))?.querySelector('.cnt')?.textContent.trim()
+  const openBadge = await mount(React.createElement(Viewer, { viewModel: vm, capabilities: caps, directory, segments, continuation: { state: 'more', onLoadMore() {} } }))
+  check('trace-tab-counts-loaded-turns-while-open', traceBadge(openBadge.container) === String(fixture.tabCounts.loaded))
+  const completedDirectory = { ...directory, complete: true, totalTurns: fixture.tabCounts.total, totalConversationTurns: fixture.tabCounts.total, totalSegments: 1 }
+  await openBadge.rerender(React.createElement(Viewer, { viewModel: vm, capabilities: caps, directory: completedDirectory, segments, continuation: { state: 'end' } }))
+  check('trace-tab-count-agrees-with-header-when-complete', traceBadge(openBadge.container) === String(fixture.tabCounts.total) && openBadge.container.querySelector('.txn-trace-count')?.textContent.trim() === `${fixture.tabCounts.total} turns`)
+  await openBadge.unmount()
+  const wholeBadge = await mount(React.createElement(Viewer, { viewModel: vm, capabilities: caps }))
+  check('whole-payload-trace-tab-count-unchanged', traceBadge(wholeBadge.container) === String(fixture.tabCounts.loaded))
+  await wholeBadge.unmount()
   for (const row of fixture.cases) {
     let calls = 0
     const continuation = { state: row.state, notice: row.notice, onLoadMore: () => { calls++ } }

@@ -117,7 +117,7 @@ const previewArgs = {
   viewModel,
   capabilities: { canEdit: false, canLabel: false, canContribute: false, canChangeVisibility: false, canExport: false },
   directory: { complete: false, segments: [previewRef] },
-  segments: [{ ...previewRef, turns }],
+  segments: [{ ...previewRef, turns: turns.map(turn => ({ ...turn, entryType: 'text' })) }],
   allowClipboard: false,
 }
 

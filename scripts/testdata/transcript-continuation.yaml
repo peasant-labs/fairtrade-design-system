@@ -22,7 +22,13 @@ cases:
 loadedRange:
   count: 48
   caption: turns 1–48 loaded so far
+tabCounts:
+  loaded: 2
+  total: 10
 assertions:
+  - name: trace-tab-counts-loaded-turns-while-open
+  - name: trace-tab-count-agrees-with-header-when-complete
+  - name: whole-payload-trace-tab-count-unchanged
   - name: open-directory-draws-no-trailing-segment-boundary
   - name: open-directory-scrubber-samples-loaded-refs
   - name: open-directory-scope-says-loaded-part

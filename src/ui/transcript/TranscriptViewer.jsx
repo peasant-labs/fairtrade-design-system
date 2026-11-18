@@ -925,6 +925,11 @@ export default function TranscriptViewer({
      still reveal them, and each category's badge keeps its own entry count. */
   const conversationTurns = useMemo(() => turns.filter(isConversationTurn), [turns])
   const visibleConversationCount = useMemo(() => visibleTurns.filter(isConversationTurn).length, [visibleTurns])
+  const traceBadgeCount = segmentMode
+    ? scope?.complete && scope.totalConversationTurns != null && visibleConversationCount === conversationTurns.length
+      ? scope.totalConversationTurns
+      : (allSegmentTurns ?? []).filter(isConversationTurn).length
+    : conversationTurns.length
   /* The trace header's count. With a directory total the header stays in one unit while
      segments load: the total alone once every segment is held and no filter hides a held
      conversation turn, otherwise the visible count against it. Neither client count is
@@ -1804,7 +1809,7 @@ export default function TranscriptViewer({
       {TAB_ORDER.map((id) => {
         const on = tab === id
         const count = id === 'highlights' ? highlights.length
-          : id === 'trace' ? conversationTurns.length
+          : id === 'trace' ? traceBadgeCount
           : id === 'diffs' ? diffs.length
           : id === 'files' ? files.length
           : annotations.length

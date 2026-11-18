@@ -10,7 +10,11 @@ requiredMutationNames:
   - loading stays enabled
   - incomplete tail keeps final marker
   - mermaid copy ignores preview policy
+  - trace badge ignores complete directory
 requiredAssertions:
+  - trace-tab-counts-loaded-turns-while-open
+  - trace-tab-count-agrees-with-header-when-complete
+  - whole-payload-trace-tab-count-unchanged
   - open-directory-draws-no-trailing-segment-boundary
   - open-directory-scrubber-samples-loaded-refs
   - open-directory-scope-says-loaded-part
@@ -58,3 +62,8 @@ mutations:
     find: "{allowClipboard && <button type=\"button\" onClick={copy}>"
     replace: "{true && <button type=\"button\" onClick={copy}>"
     expectedDiagnostic: no-clipboard-in-preview
+  - name: trace badge ignores complete directory
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: ": id === 'trace' ? traceBadgeCount"
+    replace: ": id === 'trace' ? conversationTurns.length"
+    expectedDiagnostic: trace-tab-count-agrees-with-header-when-complete
