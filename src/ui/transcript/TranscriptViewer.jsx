@@ -964,7 +964,7 @@ export default function TranscriptViewer({
     return visibleConversationCount === conversationTurns.length
       ? `${formatInteger(conversationTurns.length)} ${turnUnit(conversationTurns.length)}`
       : `${formatInteger(visibleConversationCount)} of ${formatInteger(conversationTurns.length)} ${turnUnit(conversationTurns.length)}`
-  }, [directory?.complete, segmentMode, scope, visibleConversationCount, conversationTurns.length])
+  }, [directory?.complete, directory?.segments, segmentMode, scope, visibleConversationCount, conversationTurns.length])
 
   /* Runs of consecutive visible system turns. Ledger-only: classic keeps its full cards, so
      there is nothing to fold there. */
