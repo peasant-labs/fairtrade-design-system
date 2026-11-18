@@ -414,6 +414,7 @@ export const TOOL_GROUPS = Object.freeze([
  * empty arrays) so components never branch on existence for the core surfaces.
  *
  * @typedef {object} TranscriptViewModel
+ * @property {boolean} [incompleteTail] the final response has not yet been loaded
  * @property {SessionVM} session
  * @property {TurnVM[]} turns
  * @property {Map<string, ToolCallVM>} toolCallsById   parsed once; turns reference the same objects

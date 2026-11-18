@@ -1,0 +1,26 @@
+cases:
+  - name: open-directory-labels-say-loaded-so-far
+    state: more
+    button: load more
+    label: turns 1–2 loaded so far
+  - name: loading-disables-and-labels-the-control
+    state: loading
+    button: loading
+    label: turns 1–2 loaded so far
+  - name: end-replaces-control-with-notice
+    state: end
+    notice: session ended
+    label: turns 1–2 loaded so far
+  - name: cut-replaces-control-with-notice
+    state: cut
+    notice: preview limit reached
+    label: turns 1–2 loaded so far
+  - name: failed-shows-host-control
+    state: failed
+    notice: read again
+    label: turns 1–2 loaded so far
+assertions:
+  - name: no-clipboard-in-preview
+  - name: every-tab-stays-with-incomplete-tail
+  - name: complete-tail-keeps-final-response
+  - name: no-continuation-prop-is-unchanged

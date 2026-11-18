@@ -112,6 +112,29 @@ const meta = {
 }
 export default meta
 
+const previewRef = { index: 0, firstTurn: 0, lastTurn: 4, byteLength: 500, conversationTurns: { before: 0, count: 4 } }
+const previewArgs = {
+  viewModel,
+  capabilities: { canEdit: false, canLabel: false, canContribute: false, canChangeVisibility: false, canExport: false },
+  directory: { complete: false, segments: [previewRef] },
+  segments: [{ ...previewRef, turns }],
+  allowClipboard: false,
+}
+
+export const PreviewMore = {
+  args: { ...previewArgs, continuation: { state: 'more', onLoadMore: fn() } },
+  play: async ({ canvasElement, args }) => {
+    const button = within(canvasElement).getByRole('button', { name: 'load more of this session' })
+    button.focus()
+    await userEvent.keyboard('{Enter}{Space}')
+    await expect(args.continuation.onLoadMore).toHaveBeenCalledTimes(2)
+  },
+}
+export const PreviewLoading = { args: { ...previewArgs, continuation: { state: 'loading' } } }
+export const PreviewEnd = { args: { ...previewArgs, continuation: { state: 'end', notice: 'this session has grown since the preview opened.' } } }
+export const PreviewCut = { args: { ...previewArgs, continuation: { state: 'cut', notice: 'the preview reached its limit.' } } }
+export const PreviewFailed = { args: { ...previewArgs, continuation: { state: 'failed', notice: <button type="button">read again</button> } } }
+
 /* Unmanaged: only the two required props. Proves the state defaults (trace tab, dark theme). */
 export const Default = {
   args: { viewModel, capabilities: fullCaps, callbacks: { onLabel: fn() } },

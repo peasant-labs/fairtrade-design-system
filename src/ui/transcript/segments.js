@@ -66,8 +66,9 @@ export const SEGMENT_OVERSCAN_TURNS = 0
  * @typedef {object} SegmentDirectoryVM
  * @property {string} [sessionId]
  * @property {string} [revision]
- * @property {number} totalTurns
- * @property {number} totalSegments
+ * @property {boolean} [complete] false while the directory can grow; defaults to true
+ * @property {number} [totalTurns]
+ * @property {number} [totalSegments]
  * @property {number} [totalConversationTurns]  the total a position is stated against. A host passes a directory its server validated; absent means no position is shown
  * @property {SegmentRefVM[]} [segments]
  * @property {number} [directoryPage]
@@ -145,7 +146,17 @@ const isFiniteNumber = (value) => typeof value === 'number' && Number.isFinite(v
 
 /** The directory's conversation-turn total, or null when it sent none. Every position
     is stated against it, so without it no surface names a position. */
-const conversationTotal = (directory) => (isFiniteNumber(directory?.totalConversationTurns) ? directory.totalConversationTurns : null)
+const conversationTotal = (directory) => {
+  if (isFiniteNumber(directory?.totalConversationTurns)) return directory.totalConversationTurns
+  if (directory?.complete === false) {
+    const refs = directory.segments ?? []
+    if (refs.length && refs.every(hasSpan)) {
+      const span = refs[refs.length - 1].conversationTurns
+      return span.before + span.count
+    }
+  }
+  return null
+}
 
 /** Whether a ref carries its span. Presence only: the counts are the producer's, and
     are trusted exactly as `index` and `byteLength` are. */
@@ -281,7 +292,7 @@ export function regionBoundaries(directory, regions) {
   for (const ref of refsOf(directory, [])) byIndex.set(ref.index, ref)
   for (const region of regions) for (const ref of region.refs) if (!byIndex.has(ref.index)) byIndex.set(ref.index, ref)
   const refs = [...byIndex.values()].sort((a, b) => a.index - b.index)
-  const total = Math.max(0, isFiniteNumber(directory?.totalSegments) ? directory.totalSegments : refs.length)
+  const total = Math.max(0, directory?.complete === false ? refs.length : isFiniteNumber(directory?.totalSegments) ? directory.totalSegments : refs.length)
   if (total === 0) return []
   const conversationTurns = conversationTotal(directory)
   /* One pass over the gap: the refs the directory has received for it, and whether every
@@ -386,22 +397,26 @@ export function windowFailureCaption(directory, failure) {
  */
 export function scrubberTicks(directory) {
   const refs = refsOf(directory, [])
-  const total = Math.max(refs.length, isFiniteNumber(directory?.totalSegments) ? directory.totalSegments : refs.length)
+  const open = directory?.complete === false
+  const total = open ? refs.length : Math.max(refs.length, isFiniteNumber(directory?.totalSegments) ? directory.totalSegments : refs.length)
   if (total === 0) return []
   const sample = Math.min(SEGMENT_SCRUBBER_TICKS, total)
   const indexes = new Set()
   if (refs.length <= SEGMENT_SCRUBBER_TICKS) {
     for (const ref of refs) indexes.add(ref.index)
   } else {
-    const last = total - 1
-    for (let i = 0; i < sample; i += 1) indexes.add(Math.round((i / (sample - 1)) * last))
+    const last = open ? refs.length - 1 : total - 1
+    for (let i = 0; i < sample; i += 1) {
+      const offset = Math.round((i / (sample - 1)) * last)
+      indexes.add(open ? refs[offset].index : offset)
+    }
   }
   const conversationTurns = conversationTotal(directory)
   const byIndex = new Map(refs.map((ref) => [ref.index, ref]))
   return [...indexes].sort((a, b) => a - b).map((index) => {
     const ref = byIndex.get(index) ?? { index, firstTurn: index, lastTurn: index, byteLength: 0 }
     const position = conversationTurns != null && hasSpan(ref) ? positionOf(conversationTurns, [ref]) : null
-    const ordinal = `segment ${formatInteger(index + 1)} of ${formatInteger(total)}`
+    const ordinal = open ? `segment ${formatInteger(index + 1)} loaded so far` : `segment ${formatInteger(index + 1)} of ${formatInteger(total)}`
     return {
       key: `segment-tick-${index}`,
       index,
@@ -410,7 +425,7 @@ export function scrubberTicks(directory) {
       label: position ? positionRange(position) : ordinal,
       valueText: position == null
         ? ordinal
-        : position.count === 0 ? `${positionRange(position)}, ${ordinal}` : `${positionRange(position)} of ${formatInteger(position.total)}`,
+        : position.count === 0 ? `${positionRange(position)}, ${ordinal}` : open ? `${positionRange(position)} loaded so far` : `${positionRange(position)} of ${formatInteger(position.total)}`,
       leftPct: total > 1 ? (index / (total - 1)) * 100 : 0,
       position,
     }
@@ -423,7 +438,7 @@ export function loadedScope(directory, regions) {
   const loadedSegments = regions.reduce((sum, region) => sum + region.refs.length, 0)
   const loadedTurns = regions.reduce((sum, region) => sum + region.turns.length, 0)
   const totalTurns = Math.max(loadedTurns, isFiniteNumber(directory?.totalTurns) ? directory.totalTurns : loadedTurns)
-  const complete = totalSegments > 0 && loadedSegments >= totalSegments
+  const complete = directory?.complete !== false && totalSegments > 0 && loadedSegments >= totalSegments
   /* With a directory total the sentence is in conversation turns, the unit the header
      and every boundary use. The held count is never compared with the total. */
   const totalConversationTurns = conversationTotal(directory)
@@ -439,7 +454,9 @@ export function loadedScope(directory, regions) {
     complete,
     loadedConversationTurns,
     totalConversationTurns,
-    filesText: totalConversationTurns == null
+    filesText: directory?.complete === false
+      ? `derived from the loaded part of the session`
+      : totalConversationTurns == null
       ? complete
         ? `derived from all ${formatInteger(loadedTurns)} loaded ${turnUnit(loadedTurns)}`
         : `derived from ${formatInteger(loadedTurns)} of ${formatInteger(totalTurns)} ${turnUnit(totalTurns)}, ${segmentPart}`

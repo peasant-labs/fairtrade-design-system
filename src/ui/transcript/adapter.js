@@ -377,6 +377,7 @@ function resolveStickyModels(turns, seed) {
  * @property {readonly number[]} [visibleTurnIndices] post-resolution projection by canonical turn index
  * @property {import('@peasant-labs/schema').SessionRelationshipNavigation[]} [relationshipNavigation] separately authorized read metadata; never durable content
  * @property {'local' | 'published'} [payloadMode] published requires a detail already validated by schema's published envelope parser; defaults to local
+ * @property {'complete' | 'incomplete'} [tail] whether the last loaded response is known to end the session
  */
 
 /* ── Tool-call cooking ───────────────────────────────────────────────────────── */
@@ -687,11 +688,11 @@ function indexAnnotations(patternAnns, entryAnns) {
 /* ── Diffs, files, highlights, filter index (from cooked turns) ──────────────── */
 
 /** @param {TurnVM[]} turnVMs @returns {DiffEntryVM[]} */
-function buildDiffs(turnVMs) {
+export function buildDiffs(turnVMs) {
   /** @type {DiffEntryVM[]} */
   const out = []
   for (const turn of turnVMs) {
-    for (const tc of turn.toolCalls) {
+    for (const tc of turn.toolCalls ?? []) {
       if (!tc.diff) continue
       const path = tc.filePath ?? '(unknown)'
       /** @type {DiffEntryVM} */
@@ -858,6 +859,10 @@ function buildFilterIndex(turnVMs, annotationsByTurn) {
  */
 export function adaptTranscript(payload, annotations, analytics, options) {
   const payloadMode = options?.payloadMode ?? 'local'
+  const incompleteTail = options?.tail === 'incomplete'
+  if (options?.tail !== undefined && options.tail !== 'complete' && options.tail !== 'incomplete') {
+    throw new TypeError('Fairtrade adaptTranscript refused tail: pass complete or incomplete to describe the loaded transcript.')
+  }
   if (payloadMode !== 'local' && payloadMode !== 'published') {
     throw new TypeError('Fairtrade adaptTranscript refused payloadMode: select local or published; use published only after validating the envelope with parseTranscriptContentText.')
   }
@@ -899,9 +904,13 @@ export function adaptTranscript(payload, annotations, analytics, options) {
     diffs: buildDiffs(turnVMs),
     files: buildFiles(turnVMs),
     tasks: withDisplayedPrompts(an.taskGroups ?? computeTaskGroups(turns), turnVMs),
-    highlights: buildHighlights(turnVMs, phases, git),
+    highlights: buildHighlights(turnVMs, phases, git).map(highlight => incompleteTail && highlight.id === 'hl-final' ? { ...highlight, title: 'latest loaded response' } : highlight),
     filterIndex: buildFilterIndex(turnVMs, annotationsByTurn),
     analytics: an,
+  }
+  if (incompleteTail) {
+    for (const turn of vm.turns) delete turn.isFinal
+    vm.incompleteTail = true
   }
   if (payload.nativeMetadata) vm.nativeMetadata = payload.nativeMetadata
   if (hasEvidence) vm.usageScopes = aggregateUsage(completeTurns)

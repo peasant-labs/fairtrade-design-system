@@ -1,0 +1,25 @@
+requiredCases:
+  - open-directory-labels-say-loaded-so-far
+  - loading-disables-and-labels-the-control
+  - end-replaces-control-with-notice
+  - cut-replaces-control-with-notice
+  - failed-shows-host-control
+requiredMutationNames:
+  - observer requests more
+  - drop open-directory state
+requiredAssertions:
+  - no-clipboard-in-preview
+  - every-tab-stays-with-incomplete-tail
+  - complete-tail-keeps-final-response
+  - no-continuation-prop-is-unchanged
+mutations:
+  - name: observer requests more
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "  const resolvedImageUrl = useImageUrl(imageUrl, attachmentUrl)"
+    replace: "  useEffect(() => { const observer = new IntersectionObserver(() => continuationProp?.onLoadMore?.()); observer.observe(document.body); return () => observer.disconnect() }, [])\n  const resolvedImageUrl = useImageUrl(imageUrl, attachmentUrl)"
+    expectedDiagnostic: mount fires nothing
+  - name: drop open-directory state
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "    if (directory?.complete === false) {"
+    replace: "    if (false) {"
+    expectedDiagnostic: open-directory-labels-say-loaded-so-far
