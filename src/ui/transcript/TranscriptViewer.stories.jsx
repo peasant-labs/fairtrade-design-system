@@ -6,6 +6,7 @@ import { adaptTranscript } from './adapter.js'
 import { readingPayload } from '../../mockups/inuse/reading-fixture.js'
 import { integrityBoundProps, integrityOtherHash } from '../../mockups/inuse/integrity-fixture.js'
 import { INTEGRITY_COPY } from './integrity.js'
+import { TranscriptContinuationLabels } from './continuation-values.js'
 
 export const Pi = {
   args: { viewModel: adaptTranscript(piPayload) },
@@ -124,7 +125,7 @@ const previewArgs = {
 export const PreviewMore = {
   args: { ...previewArgs, continuation: { state: 'more', onLoadMore: fn() } },
   play: async ({ canvasElement, args }) => {
-    const button = within(canvasElement).getByRole('button', { name: 'load more of this session' })
+    const button = within(canvasElement).getByRole('button', { name: TranscriptContinuationLabels.LoadMore })
     button.focus()
     await userEvent.keyboard('{Enter} ')
     await expect(args.continuation.onLoadMore).toHaveBeenCalledTimes(2)
@@ -133,9 +134,8 @@ export const PreviewMore = {
 export const PreviewLoading = { args: { ...previewArgs, continuation: { state: 'loading' } } }
 const finishedDirectory = { ...previewArgs.directory, complete: true, totalSegments: 1, totalTurns: 5, totalConversationTurns: 4 }
 const finishedPlay = async ({ canvasElement }) => {
-  const canvas = within(canvasElement)
-  await expect(canvas.getByText('4 turns', { selector: '.txn-trace-count' })).toBeVisible()
-  await expect(canvas.queryByText(/loaded so far/)).toBeNull()
+  await expect(canvasElement.querySelector('.txn-trace-count')).toHaveTextContent('4 turns')
+  await expect(canvasElement.textContent).not.toContain('loaded so far')
 }
 export const PreviewEnd = { args: { ...previewArgs, directory: finishedDirectory, continuation: { state: 'end', notice: 'this session has grown since the preview opened.' } }, play: finishedPlay }
 export const PreviewCut = { args: { ...previewArgs, directory: finishedDirectory, continuation: { state: 'cut', notice: 'the preview reached its limit.' } }, play: finishedPlay }

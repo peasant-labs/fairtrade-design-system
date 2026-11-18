@@ -10,7 +10,8 @@ import {
   CornerDownRight, Check, X, PanelLeftClose, PanelLeftOpen,
   PanelRightClose, PanelRightOpen, Menu as MenuIcon,
 } from 'lucide-react'
-import { isConversationTurn } from '@peasant-labs/schema'
+import { isConversationTurn, Role } from '@peasant-labs/schema'
+import { TranscriptContinuationState, TranscriptContinuationLabels } from './continuation-values.js'
 import { Presentation } from './state-capabilities.js'
 import { buildDiffs } from './adapter.js'
 import ProviderIcon from '../ProviderIcon.jsx'
@@ -386,7 +387,7 @@ export default function TranscriptViewer({
     if (!segmentMode) return null
     const list = turnsFromSegments(loadedSegments)
     if (!incompleteTail && !previewSegments) return list
-    const latest = [...list].reverse().find(turn => turn.role === 'assistant' && turn.depth === 0 && turn.content?.trim())
+    const latest = [...list].reverse().find(turn => turn.role === Role.Assistant && turn.depth === 0 && turn.content?.trim())
     return list.map(turn => {
       const { isFinal: _final, ...withoutFinal } = turn
       return !incompleteTail && turn.index === latest?.index ? { ...withoutFinal, isFinal: true } : withoutFinal
@@ -846,7 +847,7 @@ export default function TranscriptViewer({
   const highlights = useMemo(() => {
     const existing = segmentMode ? (vm?.highlights ?? []).filter((highlight) => inLoadedTurns(highlight.turn)) : vm?.highlights ?? []
     if (!previewSegments) return existing
-    const latest = [...(allSegmentTurns ?? [])].reverse().find(turn => turn.role === 'assistant' && turn.depth === 0 && turn.content?.trim())
+    const latest = [...(allSegmentTurns ?? [])].reverse().find(turn => turn.role === Role.Assistant && turn.depth === 0 && turn.content?.trim())
     const others = existing.filter(highlight => highlight.id !== 'hl-final')
     return latest ? [...others, { id: 'hl-final', kind: 'final', icon: 'final', turn: latest.index, title: incompleteTail ? 'latest loaded response' : 'final response', sub: latest.content }] : others
   }, [segmentMode, vm?.highlights, inLoadedTurns, incompleteTail, previewSegments, allSegmentTurns])
@@ -2345,8 +2346,8 @@ export default function TranscriptViewer({
                             <div className="txn-segboundary txn-segboundary-newer" data-transcript-continuation>
                               <span className="txn-segboundary-rule" aria-hidden="true" />
                               <div className="txn-segboundary-controls">
-                                {(continuationProp.state === 'more' || continuationProp.state === 'loading')
-                                  ? <button type="button" className="txn-segboundary-load" aria-label="load more of this session" disabled={continuationProp.state === 'loading' || typeof continuationProp.onLoadMore !== 'function'} onClick={continuationProp.onLoadMore}>{continuationProp.state === 'loading' ? 'loading' : 'load more'}</button>
+                                {(continuationProp.state === TranscriptContinuationState.More || continuationProp.state === TranscriptContinuationState.Loading)
+                                  ? <button type="button" className="txn-segboundary-load" aria-label={TranscriptContinuationLabels.LoadMore} disabled={continuationProp.state === TranscriptContinuationState.Loading || typeof continuationProp.onLoadMore !== 'function'} onClick={continuationProp.onLoadMore}>{continuationProp.state === TranscriptContinuationState.Loading ? 'loading' : 'load more'}</button>
                                   : continuationProp.notice}
                               </div>
                             </div>

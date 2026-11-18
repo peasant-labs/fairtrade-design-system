@@ -116,6 +116,6 @@ mutations:
     expectedDiagnostic: "rail_lists_only_conversation_turns"
   - name: a turn count counts every entry again
     file: src/ui/transcript/TranscriptViewer.jsx
-    find: ": id === 'trace' ? conversationTurns.length"
+    find: ": id === 'trace' ? traceBadgeCount"
     replace: ": id === 'trace' ? turns.length"
     expectedDiagnostic: "turn_counts_report_conversation_turns_only"

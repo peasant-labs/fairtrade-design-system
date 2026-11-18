@@ -1,6 +1,10 @@
 import { loadFixturePair, withMountedSource, click, createReport } from './mounted-parts.mjs'
+import { Role } from '@peasant-labs/schema'
+import { TranscriptContinuationState, TranscriptContinuationLabels } from '../src/ui/transcript/continuation-values.js'
 
-const { fixture } = loadFixturePair('scripts/testdata/transcript-continuation.yaml', 'scripts/testdata/transcript-continuation.manifest.yaml', { cases: 'requiredCases', assertions: 'requiredAssertions' })
+const FIXTURE = 'scripts/testdata/transcript-continuation.yaml'
+const MANIFEST = 'scripts/testdata/transcript-continuation.manifest.yaml'
+const { fixture } = loadFixturePair(FIXTURE, MANIFEST, { cases: 'requiredCases', assertions: 'requiredAssertions' })
 const report = createReport('transcript continuation')
 const observed = new Set()
 const check = (name, passed) => { observed.add(name); report.check(passed, name) }
@@ -36,7 +40,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   check('open-directory-scope-says-loaded-part', range.container.textContent.includes('in the loaded part of the session'))
   await range.unmount()
   const caps = { canEdit: false, canLabel: false, canContribute: true, canChangeVisibility: false, canExport: false }
-  const traceBadge = container => [...container.querySelectorAll('[role=tab]')].find(tab => tab.textContent.includes('full trace'))?.querySelector('.cnt')?.textContent.trim()
+  const traceBadge = container => container.querySelector('[role=tab][id$="-trace"] .cnt')?.textContent.trim()
   const openBadge = await mount(React.createElement(Viewer, { viewModel: vm, capabilities: caps, directory, segments, continuation: { state: 'more', onLoadMore() {} } }))
   check('trace-tab-counts-loaded-turns-while-open', traceBadge(openBadge.container) === String(fixture.tabCounts.loaded))
   const completedDirectory = { ...directory, complete: true, totalTurns: fixture.tabCounts.total, totalConversationTurns: fixture.tabCounts.total, totalSegments: 1 }
@@ -52,10 +56,10 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     const caseDirectory = row.complete ? { ...directory, complete: true, totalSegments: 1, totalTurns: 2, totalConversationTurns: 2 } : directory
     const mounted = await mount(React.createElement(Viewer, { viewModel: vm, capabilities: caps, directory: caseDirectory, segments, continuation, allowClipboard: false }))
     report.check(calls === 0, `${row.name}: mount fires nothing`)
-    if (row.state === 'more') check('mount-fires-nothing', calls === 0)
+    if (row.state === TranscriptContinuationState.More) check('mount-fires-nothing', calls === 0)
     const scope = mounted.container.querySelector('[data-transcript-continuation]')
-    if (row.state === 'end' || row.state === 'cut') {
-      const name = row.state === 'end' ? 'ended-directory-drops-loaded-so-far' : 'cut-directory-drops-loaded-so-far'
+    if (row.state === TranscriptContinuationState.End || row.state === TranscriptContinuationState.Cut) {
+      const name = row.state === TranscriptContinuationState.End ? 'ended-directory-drops-loaded-so-far' : 'cut-directory-drops-loaded-so-far'
       check(name, mounted.container.querySelector('.txn-trace-count')?.textContent.trim() === row.label && !mounted.container.textContent.includes('loaded so far') && scrubberTicks(caseDirectory)[0].valueText === 'turns 1–2 of 2')
     }
     report.check(mounted.container.textContent.includes(row.label), `${row.name}: position label`)
@@ -63,15 +67,15 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     const button = scope?.querySelector('button')
     if (row.button) {
       report.check(button?.textContent.trim() === row.button, `${row.name}: button label`)
-      report.check(button?.disabled === (row.state === 'loading'), `${row.name}: disabled state`)
+      report.check(button?.disabled === (row.state === TranscriptContinuationState.Loading), `${row.name}: disabled state`)
       await mounted.act(() => { window.dispatchEvent(new window.Event('resize')) })
-      if (row.state === 'more') check('resize-fires-nothing', calls === 0)
+      if (row.state === TranscriptContinuationState.More) check('resize-fires-nothing', calls === 0)
       await mounted.act(() => { const stream = mounted.container.querySelector('.txn-stream'); stream.scrollTop = stream.scrollHeight; stream.dispatchEvent(new window.Event('scroll')) })
-      if (row.state === 'more') check('reaching-the-end-fires-nothing', calls === 0)
+      if (row.state === TranscriptContinuationState.More) check('reaching-the-end-fires-nothing', calls === 0)
       report.check(calls === 0, `${row.name}: scroll and resize fire nothing`)
-      if (row.state === 'more') {
-        check('more-draws-load-control', !!button && button.getAttribute('aria-label') === 'load more of this session')
-        check('load-more-by-keyboard', button.tagName === 'BUTTON' && button.type === 'button' && !button.disabled)
+      if (row.state === TranscriptContinuationState.More) {
+        check('more-draws-load-control', !!button && button.getAttribute('aria-label') === TranscriptContinuationLabels.LoadMore)
+        check('load-more-by-keyboard', button instanceof window.HTMLButtonElement && !button.disabled)
         await mounted.act(() => click(window, button))
         check('one-activation-fires-one-load', calls === 1)
         check('load-more-fires-only-on-activation', calls === 1)
@@ -81,14 +85,13 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     }
     await mounted.unmount()
   }
-  const diagramTurns = vm.turns.map(turn => turn.role === 'assistant' ? { ...turn, content: '```mermaid\nflowchart LR\nA --> B\n```' } : turn)
+  const diagramTurns = vm.turns.map(turn => turn.role === Role.Assistant ? { ...turn, content: '```mermaid\nflowchart LR\nA --> B\n```' } : turn)
   const diagramSegments = [{ ...ref, turns: diagramTurns }]
-  const mounted = await mount(React.createElement(Viewer, { viewModel: vm, capabilities: caps, directory, segments: diagramSegments, continuation: { state: 'more', onLoadMore() {} }, allowClipboard: false }))
+  const mounted = await mount(React.createElement(Viewer, { viewModel: vm, capabilities: caps, directory, segments: diagramSegments, continuation: { state: 'more', onLoadMore() {} }, allowClipboard: false, showTail: true, shareOpen: true }))
   check('every-tab-stays-with-incomplete-tail', mounted.container.querySelectorAll('[role=tab]').length >= 5)
   const noMermaidCopy = mounted.container.textContent.includes('view diagram') && !mounted.container.textContent.includes('copy source')
-  const share = [...mounted.container.querySelectorAll('button')].find(button => button.textContent.trim().startsWith('share'))
-  if (share) await mounted.act(() => click(window, share))
-  check('no-clipboard-in-preview', noMermaidCopy && !mounted.container.textContent.includes('copy link') && !mounted.container.querySelector('.txn-anchor'))
+  const shareMenu = mounted.container.querySelector('[role="menu"][aria-label="share"]')
+  check('no-clipboard-in-preview', !!shareMenu && noMermaidCopy && !shareMenu.textContent.includes('copy link') && !mounted.container.querySelector('.txn-anchor'))
   await mounted.unmount()
   const complete = await mount(React.createElement(Viewer, { viewModel: vm, capabilities: caps, directory: { ...directory, complete: true, totalSegments: 1, totalTurns: 2 }, segments, continuation: { state: 'end' }, activeTab: 'highlights' }))
   report.check(complete.container.textContent.includes('final response'), 'complete-tail-keeps-final-response: segment highlights')

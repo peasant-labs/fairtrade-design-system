@@ -52,7 +52,7 @@ mutations:
     expectedDiagnostic: open-directory-labels-say-loaded-so-far
   - name: loading stays enabled
     file: src/ui/transcript/TranscriptViewer.jsx
-    find: "disabled={continuationProp.state === 'loading' || typeof continuationProp.onLoadMore !== 'function'}"
+    find: "disabled={continuationProp.state === TranscriptContinuationState.Loading || typeof continuationProp.onLoadMore !== 'function'}"
     replace: "disabled={typeof continuationProp.onLoadMore !== 'function'}"
     expectedDiagnostic: "loading-disables-and-labels-the-control: disabled state"
   - name: incomplete tail keeps final marker

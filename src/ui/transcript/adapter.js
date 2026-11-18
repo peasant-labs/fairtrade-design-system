@@ -32,6 +32,7 @@ import { aggregateUsage } from './usage.js'
 import { isKnownTime } from './time.js'
 import { unwrapUserQuery, userQueryLeadLength, USER_QUERY_OPEN_TAG, USER_QUERY_CLOSE_TAG } from './title.js'
 import { EarlierHistoryState, UnknownEarlierHistoryState, parseEarlierHistoryState } from './earlier-history-state.js'
+import { TranscriptTail } from './continuation-values.js'
 
 /** @typedef {import('./wire-types.js').TranscriptWireInput} TranscriptWireInput */
 /** @typedef {import('./wire-types.js').SessionDetailPayload} SessionDetailPayload */
@@ -859,8 +860,8 @@ function buildFilterIndex(turnVMs, annotationsByTurn) {
  */
 export function adaptTranscript(payload, annotations, analytics, options) {
   const payloadMode = options?.payloadMode ?? 'local'
-  const incompleteTail = options?.tail === 'incomplete'
-  if (options?.tail !== undefined && options.tail !== 'complete' && options.tail !== 'incomplete') {
+  const incompleteTail = options?.tail === TranscriptTail.Incomplete
+  if (options?.tail !== undefined && options.tail !== TranscriptTail.Complete && options.tail !== TranscriptTail.Incomplete) {
     throw new TypeError('Fairtrade adaptTranscript refused tail: pass complete or incomplete to describe the loaded transcript.')
   }
   if (payloadMode !== 'local' && payloadMode !== 'published') {
