@@ -1,5 +1,5 @@
 import { Role } from '@peasant-labs/schema'
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
 /* Scrubber — the condensed position track in the pinned trace header, lifted verbatim from the
    canonical mockup (src/mockups/inuse/TranscriptApp.jsx:1619).
@@ -41,7 +41,7 @@ export default function Scrubber({ turns = [], ticks, active = 0, activeTick = 0
   const bracketPct = last > 0 ? (activeIdx / last) * 100 : 0
   const activeTickEntry = segmentMode ? ticks[activeIdx] : null
 
-  function seekTick(clientX, track) {
+  const seekTick = useCallback((clientX, track) => {
     if (!segmentMode || ticks.length === 0 || typeof onSeekTick !== 'function') return
     const rect = track.getBoundingClientRect()
     const frac = rect.width > 0 ? Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)) : 0
@@ -52,7 +52,7 @@ export default function Scrubber({ turns = [], ticks, active = 0, activeTick = 0
       if (next < distance) { distance = next; nearest = tick }
     }
     onSeekTick(nearest)
-  }
+  }, [segmentMode, ticks, onSeekTick])
 
   function down(e) {
     if (e.button !== undefined && e.button !== 0) return
@@ -71,8 +71,7 @@ export default function Scrubber({ turns = [], ticks, active = 0, activeTick = 0
     window.addEventListener('mousemove', move)
     window.addEventListener('mouseup', up)
     return () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up) }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- retain drag listeners for the current seek inputs
-  }, [onSeek, onSeekTick, dragging, segmentMode, ticks])
+  }, [onSeek, onSeekTick, dragging, segmentMode, ticks, seekTick])
 
   return (
     <div

@@ -363,7 +363,7 @@ export default function Explore({
 
   const selectedTranscript = transcriptRows.find((t) => t.id === selectedId) ?? transcriptRows[0] ?? null
   const selectedOwner = selectedTranscript?.owner ?? null
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- preserve existing derived array identity and memo invalidation
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- memoizing ownerTranscripts would stop dependent memos rerunning on renders where the owner is unchanged
   const ownerTranscripts = selectedOwner
     ? transcriptRows.filter((t) => t.owner.githubUsername === selectedOwner.githubUsername)
     : []
