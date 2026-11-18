@@ -19,7 +19,27 @@ cases:
     state: failed
     notice: read again
     label: turns 1–2 loaded so far
+loadedRange:
+  count: 48
+  caption: turns 1–48 loaded so far
 assertions:
+  - name: open-directory-draws-no-trailing-segment-boundary
+  - name: open-directory-scrubber-samples-loaded-refs
+  - name: open-directory-scope-says-loaded-part
+  - name: complete-directory-labels-say-of-total
+  - name: incomplete-tail-has-no-final-marker
+  - name: incomplete-tail-names-latest-loaded-response
+  - name: more-draws-load-control
+  - name: one-activation-fires-one-load
+  - name: load-more-fires-only-on-activation
+  - name: reaching-the-end-fires-nothing
+  - name: resize-fires-nothing
+  - name: mount-fires-nothing
+  - name: load-more-by-keyboard
+  - name: short-segment-draws-like-any-segment
+  - name: final-frame-without-segment-ends-the-load-control
+  - name: complete-is-authoritative-over-last-has-newer
+  - name: complete-directory-is-unchanged
   - name: no-clipboard-in-preview
   - name: every-tab-stays-with-incomplete-tail
   - name: complete-tail-keeps-final-response

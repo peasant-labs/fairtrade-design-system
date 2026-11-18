@@ -126,7 +126,7 @@ export const PreviewMore = {
   play: async ({ canvasElement, args }) => {
     const button = within(canvasElement).getByRole('button', { name: 'load more of this session' })
     button.focus()
-    await userEvent.keyboard('{Enter}{Space}')
+    await userEvent.keyboard('{Enter} ')
     await expect(args.continuation.onLoadMore).toHaveBeenCalledTimes(2)
   },
 }
