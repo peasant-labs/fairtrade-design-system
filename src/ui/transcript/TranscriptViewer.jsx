@@ -565,12 +565,14 @@ export default function TranscriptViewer({
     } else {
       commitSidebarLayout(zenSnapshotRef.current)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- apply sidebar layout only on zen or ledger transitions
   }, [zen, ledger])
 
   // Unmanaged disclosure state is session-local. Controlled hosts restore their
   // own saved map on Back and are not reset by this default behavior.
   useEffect(() => {
     if (earlierHistoryOpenProp === undefined) setEarlierHistoryOpen({})
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- reset uncontrolled history only when the session changes
   }, [vm?.session?.id])
 
   /* ── local (non-exposed) UI state ───────────────────────────────────────────── */
@@ -610,6 +612,7 @@ export default function TranscriptViewer({
   const [traceReadingPosition, setTraceReadingPosition] = useState(null)
 
   const session = vm?.session ?? {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- preserve fallback array identity and existing memo invalidation
   const turns = vm?.turns ?? []
 
   /* ── segmented window loading ──────────────────────────────────────────────────
@@ -634,6 +637,7 @@ export default function TranscriptViewer({
     }
     if (windowKey && activeFailure?.kind === 'window' && (!previous || previous.key !== windowKey) && windowProp.anchorTurn === activeFailure.anchor) setWindowFailure(null)
     previousWindowRef.current = windowKey ? { key: windowKey, anchor: windowProp.anchorTurn, segments: windowProp.segments ?? [], sessionId: session.id, incomplete: !rawCoverage?.complete, missing: rawCoverage?.missing ?? [] } : null
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- update window history on the existing window and coverage transitions
   }, [windowKey, rawCoverage?.complete, session.id, windowProp, activeFailure])
   useEffect(() => {
     if (!segmentMode || !windowKey) {
@@ -658,6 +662,7 @@ export default function TranscriptViewer({
         fail()
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- request missing segments only when the existing request inputs change
   }, [segmentMode, windowKey, loadedIndexKey, onLoadSegment, activeFailure, windowRetry])
 
   function requestWindow(anchor) {
@@ -825,6 +830,7 @@ export default function TranscriptViewer({
     [segmentMode, vm?.highlights, inLoadedTurns],
   )
   const scorecardBands = vm?.analytics?.scorecardBands ?? []
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- preserve fallback array identity and existing memo invalidation
   const commits = session?.git?.commits ?? []
   const annotations = useMemo(
     () => (segmentMode
@@ -1166,6 +1172,7 @@ export default function TranscriptViewer({
     else sc.scrollTo({ top: turnScrollTop(sc, el), behavior: 'auto' })
     latestTraceReadingSnapshotRef.current = readTraceReadingSnapshot()
     return 'applied'
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- retain the current trace restoration callback invalidation
   }, [readTraceReadingSnapshot, tab, turns, viewMode, visibleTurns, systemHiddenTurns, ledger, actionLayout, setTab, setViewMode, setOpenTools, filters, session.id, systemGroups])
 
   const applyTraceReadingPosition = useCallback((position) => {
@@ -1202,6 +1209,7 @@ export default function TranscriptViewer({
     traceReadingPositionRef.current = null
     setTraceReadingPosition(null)
     return 'applied'
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- retain the current reading-position restoration invalidation
   }, [session?.id, tab, traceReadingPosition, turns, viewMode, visibleTurns, segmentMode, onLoadWindow])
 
   useTranscriptInitialPosition({
@@ -1339,6 +1347,7 @@ export default function TranscriptViewer({
     if (!turns.some((turn) => turn.index === target)) return
     pendingJumpRef.current = null
     jumpTo(target, { switchTab: false })
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- resolve a pending jump when turns arrive
   }, [turns])
   /* A requested segment (boundary, scrubber, window) arrives as new props. Hold the
      reader's turn when content is prepended: remember the reading line, then correct
@@ -1352,6 +1361,7 @@ export default function TranscriptViewer({
     const el = turnRefs.current[pending.turnIndex]
     if (!el) return
     sc.scrollTop = el.offsetTop - pending.offset
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- restore pending scroll when loaded turns change
   }, [loadedIndexKey, turns])
   useEffect(() => { setLoadingSegment(null) }, [loadedIndexKey])
   function captureReadingAnchor() {
@@ -1397,6 +1407,7 @@ export default function TranscriptViewer({
     if (!turns.some((turn) => turn.index === pending.firstTurn)) return
     pendingSeekRef.current = null
     jumpTo(pending.firstTurn, { switchTab: false })
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- resolve a pending seek when turns arrive
   }, [turns])
   function stepTurn(dir) {
     const ids = (navigableTurns.length ? navigableTurns : visibleTurns).map((t) => t.index)
@@ -1619,6 +1630,7 @@ export default function TranscriptViewer({
     if (typeof window === 'undefined') return undefined
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- retain keyboard listener lifecycle for the existing navigation inputs
   }, [searchOpen, tab, viewMode, activeTurn, visibleTurns, selectTab])
 
   /* Only deliberate search input/navigation reveals a turn, never passive activation. */
@@ -1631,6 +1643,7 @@ export default function TranscriptViewer({
       setSystemReveal({ turn: m.turn, sessionId: session.id, filterFingerprint: filterFingerprint(filters), sequence: ++revealSequence.current })
     }
     revealAction(m.turn, m.where, { search: true, occurrence: m.occurrence, sourceOnly: m.sourceOnly })
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- reveal only when the search navigation request changes
   }, [searchNavigation])
 
   /* A reveal that lands on a grouped member opens its group first, so the member is laid out
@@ -1692,6 +1705,7 @@ export default function TranscriptViewer({
     }
     const frame = requestAnimationFrame(scroll)
     return () => { cancelled = true; cancelAnimationFrame(frame) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- schedule scrolling only when the search reveal or ledger changes
   }, [searchReveal, ledger])
 
   /* files / diffs derived. */

@@ -71,6 +71,7 @@ export default function Scrubber({ turns = [], ticks, active = 0, activeTick = 0
     window.addEventListener('mousemove', move)
     window.addEventListener('mouseup', up)
     return () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- retain drag listeners for the current seek inputs
   }, [onSeek, onSeekTick, dragging, segmentMode, ticks])
 
   return (

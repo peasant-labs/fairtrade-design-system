@@ -519,7 +519,9 @@ export default function MapCanvas({
   onStateAction,
   canonicalControlled = false,
 }) {
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- preserve fallback array identity and existing memo invalidation
   const nodes = data?.nodes ?? []
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- preserve fallback array identity and existing memo invalidation
   const edges = data?.edges ?? []
 
   const baseId = useId().replace(/[:]/g, '')
@@ -582,6 +584,7 @@ export default function MapCanvas({
     : localGrain
   const expanded = useMemo(
     () => canonicalControlled ? toIdSet(expandedIds) : localExpanded,
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- serialized expanded IDs track membership rather than collection identity
     [canonicalControlled, expandedIdsKey, localExpanded],
   )
   const selectedId = canonicalControlled ? selectedIdProp ?? null : localSelectedId
@@ -590,6 +593,7 @@ export default function MapCanvas({
   // pointer immediately; once released (dragPreview cleared) the canonical
   // prop is authoritative again.
   const scale = dragPreview ? dragPreview.scale : hasCanonicalViewport ? viewport.scale : localScale
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- preserve viewport object identity and existing callback invalidation
   const pan = dragPreview
     ? { x: dragPreview.panX, y: dragPreview.panY }
     : hasCanonicalViewport
@@ -645,6 +649,7 @@ export default function MapCanvas({
 
   useEffect(() => {
     if (!canonicalControlled && expandedIds !== undefined) setLocalExpanded(toIdSet(expandedIds))
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- synchronize expanded membership by its serialized key
   }, [canonicalControlled, expandedIdsKey])
 
   useEffect(() => {
@@ -724,6 +729,7 @@ export default function MapCanvas({
   const visible = useMemo(() => {
     if (canonicalVisibleIds === undefined) return visibleNodes(tree, GRAIN_DEPTH[grain], expanded)
     return Array.from(canonicalVisibleIds, (id) => tree.byId.get(id)).filter(Boolean)
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- serialized visible IDs track membership rather than collection identity
   }, [tree, grain, expanded, canonicalVisibleKey])
   const visibleIds = useMemo(() => new Set(visible.map((n) => n.id)), [visible])
 
@@ -765,6 +771,7 @@ export default function MapCanvas({
       if (visibleId) out.add(visibleId)
     }
     return out
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- serialized highlighted IDs track membership rather than collection identity
   }, [highlightedIdsKey, tree.parentIdByChild, visibleIds])
 
   /* ----- search matches (a path-substring combobox) ----- */
@@ -904,6 +911,7 @@ export default function MapCanvas({
     // out via the breadcrumb left the canvas zoomed into the now-closed
     // folder's old scoped-fit framing instead of reframing the wider view.
     fit(hasCanonicalViewport)
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- fit only when visible IDs or viewport ownership changes
   }, [visKey, viewportOwnershipKey])
 
   /* ----- zoom about the viewport centre (so +/- feel anchored) ----- */

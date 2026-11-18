@@ -157,6 +157,7 @@ export default function DataTable({
     const m = new Map()
     rows.forEach((row, i) => m.set(String(keyOf(row, i)), keyOf(row, i)))
     return m
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- rowKey and rows define the lookup snapshot
   }, [rows, rowKey])
 
   /* fully-controlled adapters: our public state -> TanStack state, and back on change.
@@ -168,6 +169,7 @@ export default function DataTable({
      the reference identical whenever the selection/sort is unchanged, breaking that loop. */
   const sorting = useMemo(
     () => (sort ? [{ id: sort.key, desc: sort.dir === 'desc' }] : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sort key and direction define the sorting snapshot
     [sort?.key, sort?.dir],
   )
   const rowSelection = useMemo(() => {
@@ -177,6 +179,7 @@ export default function DataTable({
     })
     return sel
     // selected is a fresh Set when controlled; depend on its stable serialization instead.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- serialized selection tracks membership rather than Set identity
   }, [rows, keyOf, selectedKey(selected)])
 
   const table = useReactTable({

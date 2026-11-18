@@ -51,6 +51,7 @@ export default function useTranscriptInitialPosition(options) {
     if (!shouldApplyTranscriptInitialPosition(consumedTokenRef.current, token)) return
     const result = options.apply(position)
     consumedTokenRef.current = advanceTranscriptInitialPositionConsumption(consumedTokenRef.current, token, result)
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- readiness values deliberately define when positioning is retried
   }, [token, position, options.apply, ...options.readiness])
 
   return { position, token }

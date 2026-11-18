@@ -113,6 +113,7 @@ export default function useReaderWidthAnchor({ readerPx, scrollRef, activeTurnRe
   }
   function schedule() { if (anchor.current && frame.current == null) frame.current = requestAnimationFrame(tick) }
   function finish() { finishing.current = true; schedule() }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- compensate when reader width changes, not callback identity
   useLayoutEffect(() => { compensate() }, [readerPx])
   useEffect(() => {
     return () => { clear(); expectedScroll.current = null }

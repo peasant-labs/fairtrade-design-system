@@ -265,6 +265,7 @@ export function DateRangeCalendar({
   // mount auto-focus (used when the popover opens)
   useEffect(() => {
     if (autoFocus) { wantFocus.current = true; const el = dayRefs.current.get(focusISO); if (el) { el.focus(); wantFocus.current = false } }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- focus only on the autofocus transition, not calendar navigation
   }, [autoFocus])
 
   // skip aria-disabled (out-of-bounds) days when arrowing
