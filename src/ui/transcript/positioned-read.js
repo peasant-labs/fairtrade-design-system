@@ -73,10 +73,13 @@ const DEFAULT_BUSY_SECONDS = 1
 /** Every string the reader's states show. The one place to edit that wording. */
 export const POSITIONED_READ_COPY = Object.freeze({
   loading: 'loading transcript',
-  busy: (seconds) => `the server is busy. trying again in ${seconds} s.`,
+  busy: (seconds) => `the server is busy and asked for ${seconds} s. this reader tries again after that.`,
   busyAction: 'try now',
   stale: 'this transcript changed since it was opened. reload to read the current version.',
   staleAction: 'reload transcript',
+  staleHeading: 'transcript changed',
+  failedHeading: 'could not load the transcript',
+  untitled: 'transcript',
   deniedHeading: 'transcript not found',
   deniedBody: 'it may not exist, or you may not have access to it.',
   unavailableHeading: 'content unavailable',
@@ -782,6 +785,8 @@ export function usePositionedTranscript(options) {
       ...(header?.sessionHeader ?? {}),
       ...(session ?? {}),
       id: session?.id ?? snapshot.context?.contentSessionId ?? header?.sessionHeader?.id ?? '',
+      /* a read that has nothing to show still names the page, so the heading is never empty */
+      ...(session?.title === undefined && loadedTurns.length === 0 ? { title: POSITIONED_READ_COPY.untitled } : {}),
       harness: session?.harness ?? snapshot.context?.harness ?? header?.sessionHeader?.harness,
       model: session?.model ?? snapshot.context?.model ?? header?.sessionHeader?.model,
     },

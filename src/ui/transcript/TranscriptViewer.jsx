@@ -990,15 +990,26 @@ export default function TranscriptViewer({
   const positionedSettled = !positionedRead || (positionedRead.status === PositionedReadStatus.Ready && !positionedFailure)
   const positionedNotice = !positionedRead ? null
     : positionedFailure?.kind === PositionedReadFailureKind.Denied || positionedFailure?.kind === PositionedReadFailureKind.Unavailable ? (
-      <div className="empty txn-read-refused" data-read-failure={positionedFailure.kind}>
+      <div className="empty txn-read-refused" role="alert" data-read-failure={positionedFailure.kind}>
         <div className="ring"><FileText size={20} aria-hidden="true" /></div>
         <EmptyHeading>{positionedFailure.kind === PositionedReadFailureKind.Denied ? POSITIONED_READ_COPY.deniedHeading : POSITIONED_READ_COPY.unavailableHeading}</EmptyHeading>
         <p>{positionedFailure.kind === PositionedReadFailureKind.Denied ? POSITIONED_READ_COPY.deniedBody : POSITIONED_READ_COPY.unavailableBody}</p>
       </div>
+    ) : positionedFailure && positionedFailure.kind !== PositionedReadFailureKind.Busy && loadedSegments.length === 0 ? (
+      /* nothing in hand: the failure is the page, drawn as the empty state with its one action */
+      <div className="empty txn-read-refused" role="alert" data-read-failure={positionedFailure.kind}>
+        <div className="ring"><AlertTriangle size={20} aria-hidden="true" /></div>
+        <EmptyHeading>{positionedFailure.kind === PositionedReadFailureKind.Stale ? POSITIONED_READ_COPY.staleHeading : POSITIONED_READ_COPY.failedHeading}</EmptyHeading>
+        <p>{positionedFailureSentence(positionedFailure.kind)}</p>
+        <button type="button" className="txn-read-action" onClick={() => positionedRead.retry()}>
+          {positionedFailure.kind === PositionedReadFailureKind.Stale ? POSITIONED_READ_COPY.staleAction : POSITIONED_READ_COPY.retryAction}
+        </button>
+      </div>
     ) : positionedFailure ? (
-      <div className="txn-held-window" role={positionedFailure.kind === PositionedReadFailureKind.Busy ? 'status' : 'alert'} data-read-failure={positionedFailure.kind}>
-        <span>{positionedFailureSentence(positionedFailure.kind, positionedFailure.retryAfterSeconds)}</span>{' '}
-        <button type="button" className="txn-segboundary-load" onClick={() => positionedRead.retry()}>
+      <div className={'txn-read-notice' + (positionedFailure.kind === PositionedReadFailureKind.Busy ? ' txn-read-notice-quiet' : '')} role={positionedFailure.kind === PositionedReadFailureKind.Busy ? 'status' : 'alert'} data-read-failure={positionedFailure.kind}>
+        {positionedFailure.kind !== PositionedReadFailureKind.Busy && <AlertTriangle size={14} aria-hidden="true" />}
+        <span className="txn-read-notice-text">{positionedFailureSentence(positionedFailure.kind, positionedFailure.retryAfterSeconds)}</span>
+        <button type="button" className="txn-read-action" onClick={() => positionedRead.retry()}>
           {positionedFailure.kind === PositionedReadFailureKind.Stale ? POSITIONED_READ_COPY.staleAction : positionedFailure.kind === PositionedReadFailureKind.Busy ? POSITIONED_READ_COPY.busyAction : POSITIONED_READ_COPY.retryAction}
         </button>
       </div>

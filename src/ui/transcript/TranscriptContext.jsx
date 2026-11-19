@@ -39,7 +39,7 @@ export default function TranscriptContext({ relationships = [], earlierHistory =
         {open[section.id] ? <ChevronDown aria-hidden="true" /> : <ChevronRight aria-hidden="true" />}
         <History aria-hidden="true" /> earlier history {section.countText === undefined
           ? <span className="tnum">{section.turns.length}</span>
-          : section.countText !== '' && <span className="tnum">{section.countText}</span>}
+          : section.countText !== '' && <span className="tnum">{section.countText}</span>}{' '}
         <span className="txn-context-status">{section.state.label}</span>
       </button>
       <div id={`${prefix}-history-${section.id}`} hidden={!open[section.id]}>
