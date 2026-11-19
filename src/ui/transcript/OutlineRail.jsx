@@ -82,7 +82,7 @@ function LedgerTurnCards({ viewModel, activeTurn, onJump }) {
               onClick={() => onJump(first)}
             >
               <span className="txn-rail-turn-top">
-                <b className="tnum">#{firstTurn?.label ?? task.index}</b>
+                {!firstTurn?.numberAbsent && <b className="tnum">#{firstTurn?.label ?? task.index}</b>}
                 <span className="tnum">{formatDuration(task.durationMs)}</span>
               </span>
               <span className="txn-rail-turn-copy">{prompt}</span>

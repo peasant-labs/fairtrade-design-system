@@ -16,6 +16,7 @@
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import {
   isPositionedDirectoryPositionsValid,
+  Role,
   TranscriptSegmentPartitionKind,
   TranscriptUsagePresence,
   zPositionedDirectory,
@@ -692,6 +693,23 @@ function historyVM(directory, history, reopen) {
   })
 }
 
+/** The outline's prompts from the rows in hand: each top-level user row with words opens a task
+    holding the rows after it, up to the next such row. Its number is the row's served one. */
+function loadedTasks(turns) {
+  const tasks = []
+  let current = null
+  for (const turn of turns) {
+    const opens = turn.role === Role.User && (turn.depth ?? 0) === 0 && String(turn.displayContent ?? turn.content ?? '').trim() !== ''
+    if (opens) {
+      current = { id: `task-${turn.partition}-${turn.index}`, index: tasks.length + 1, prompt: turn.content ?? '', turnIndices: [] }
+      if (turn.displayContent !== undefined) current.displayPrompt = turn.displayContent
+      tasks.push(current)
+    }
+    if (current) current.turnIndices.push(turn.index)
+  }
+  return tasks
+}
+
 /**
  * The React binding: one reader per transcript, its snapshot, and the viewer props it produces.
  * @param {{ transport: PositionedReadTransport, target: PositionedTarget, landing: string, residency?: number, session?: object }} options
@@ -755,14 +773,14 @@ export function usePositionedTranscript(options) {
     toolCallsById: new Map(),
     diffs: [],
     files: [],
-    tasks: [],
+    tasks: loadedTasks(loadedTurns),
     highlights: [],
     filterIndex: { toolGroupCounts: {}, annotationsByTurn: {}, tags: [], tagCounts: {}, totalTurns: 0 },
     analytics: {},
     relationships: [],
     earlierHistory,
     ...(snapshot.usageScopes ? { usageScopes: snapshot.usageScopes } : {}),
-  }), [header, session, snapshot.context, earlierHistory, snapshot.usageScopes])
+  }), [header, session, snapshot.context, earlierHistory, snapshot.usageScopes, loadedTurns])
 
   return {
     viewModel,

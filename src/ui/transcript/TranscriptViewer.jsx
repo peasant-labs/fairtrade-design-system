@@ -949,6 +949,8 @@ export default function TranscriptViewer({
      unit agrees with the number beside it: the total in an "of" pair, as in the boundary
      caption "turn 20 of 77". */
   const traceCountText = useMemo(() => {
+    /* a positioned read with nothing in hand has no count to state yet */
+    if (positionedRead && loadedSegments.length === 0) return ''
     if (directory?.complete === false) {
       const refs = directory.segments ?? []
       const first = refs[0]?.conversationTurns
@@ -971,7 +973,7 @@ export default function TranscriptViewer({
     return visibleConversationCount === conversationTurns.length
       ? `${formatInteger(conversationTurns.length)} ${turnUnit(conversationTurns.length)}`
       : `${formatInteger(visibleConversationCount)} of ${formatInteger(conversationTurns.length)} ${turnUnit(conversationTurns.length)}`
-  }, [directory?.complete, directory?.segments, segmentMode, scope, visibleConversationCount, conversationTurns.length])
+  }, [directory?.complete, directory?.segments, segmentMode, scope, visibleConversationCount, conversationTurns.length, positionedRead, loadedSegments.length])
 
   /* Runs of consecutive visible system turns. Ledger-only: classic keeps its full cards, so
      there is nothing to fold there. */
