@@ -74,6 +74,11 @@ cases:
       - {name: retry-after-negative-1s, status: 503, retryAfterSeconds: -3, kind: busy, wait: 1}
   - name: controller-failure-never-whole-document
     kinds: [stale, busy, denied, unavailable, failed, malformed, network]
+  # One segment of the target run fails once while the rest load; the retry answers.
+  - name: controller-retry-after-partial-failure-settles-ready
+    turn: 1031
+    segment: 11
+    status: 500
   - name: controller-transport-mismatch-discards
     segment: 0
   - name: controller-directory-paging-refetch-page-one

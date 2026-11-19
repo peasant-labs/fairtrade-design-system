@@ -187,7 +187,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   const { default: TurnCard } = await load('/src/ui/transcript/TurnCard.jsx')
   const { default: TranscriptViewer } = await load('/src/ui/transcript/TranscriptViewer.jsx')
   const { buildPositionedDemo } = await load('/src/mockups/inuse/positioned-fixture.js')
-  const { createPositionedReader, usePositionedTranscript, PositionedLanding, PositionedReadFailureKind } = reader
+  const { createPositionedReader, usePositionedTranscript, PositionedLanding, PositionedReadFailureKind, PositionedReadStatus } = reader
   const start = async (options) => {
     const instance = createPositionedReader({ landing: PositionedLanding.Exact, ...options })
     await instance.start()
@@ -414,6 +414,24 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       check(spy.wholeDocument === 0 && touched.length === 0, `${kind}: no whole-document adapt (${spy.wholeDocument}) and no transport member outside the five (${JSON.stringify(touched)})`)
       instance.dispose()
     }
+  })
+  await run('reader', 'controller-retry-after-partial-failure-settles-ready', async (row, check) => {
+    let refused = false
+    const { transport } = documentTransport({
+      respond: (operation, request) => {
+        if (operation !== Operation.Segment || request.index !== row.segment || refused) return undefined
+        refused = true
+        return { status: row.status, body: null }
+      },
+    })
+    const instance = await start({ transport, target: { transport: DOC.transport, turn: row.turn } })
+    const before = instance.getSnapshot()
+    check(before.failure?.kind === PositionedReadFailureKind.Failed && before.segments.size > 0 && before.status !== PositionedReadStatus.Ready, `the partial failure keeps loaded rows and is not ready, received ${JSON.stringify({ status: before.status, failure: before.failure, held: [...before.segments.keys()] })}`)
+    await instance.retry()
+    await settle()
+    const after = instance.getSnapshot()
+    check(after.failure === null && after.segments.has(row.segment) && after.status === PositionedReadStatus.Ready, `a retry that answers settles the read as ready, received ${JSON.stringify({ status: after.status, failure: after.failure, held: [...after.segments.keys()] })}`)
+    instance.dispose()
   })
   await run('reader', 'controller-transport-mismatch-discards', async (row, check) => {
     const { transport, main } = documentTransport({

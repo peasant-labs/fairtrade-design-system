@@ -15,6 +15,7 @@ requiredCaseNames:
   - controller-refetch-keeps-number
   - controller-status-kind-table
   - controller-failure-never-whole-document
+  - controller-retry-after-partial-failure-settles-ready
   - controller-transport-mismatch-discards
   - controller-directory-paging-refetch-page-one
   - controller-section-open-close-aborts
@@ -46,6 +47,7 @@ requiredMutationNames:
   - share one reader across effect runs
   - add a read status
   - report the status over a failure kind
+  - a retry never settles the read
 mutations:
   - name: print position plus one instead of the served number
     file: src/ui/transcript/adapter.js
@@ -157,3 +159,8 @@ mutations:
     find: "data-positioned-read={positionedRead ? positionedRead.failure?.kind ?? positionedRead.status : undefined}"
     replace: "data-positioned-read={positionedRead ? positionedRead.status : undefined}"
     expectedDiagnostic: hook-viewer-props-mount-every-failure-state
+  - name: a retry never settles the read
+    file: src/ui/transcript/positioned-read.js
+    find: "        if (mine === generation && !state.failure) settleReady()"
+    replace: ""
+    expectedDiagnostic: controller-retry-after-partial-failure-settles-ready

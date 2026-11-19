@@ -259,6 +259,12 @@ export function createPositionedReader(options) {
     for (const listener of listeners) listener()
   }
 
+  function settleReady() {
+    if (state.status === PositionedReadStatus.Ready) return
+    state.status = PositionedReadStatus.Ready
+    emit()
+  }
+
   /* ── one request ──────────────────────────────────────────────────────────── */
 
   /** Send one request, map its status, parse its body and check its read context. */
@@ -647,9 +653,13 @@ export function createPositionedReader(options) {
       if (!failure) return Promise.resolve()
       if (DISCARDING.has(failure.kind) || state.segments.size === 0) return restart()
       const again = state.failed.splice(0)
+      const mine = generation
       state.failure = null
       emit()
-      return Promise.all(again.map((run) => run()))
+      return Promise.all(again.map((run) => run())).then(() => {
+        /* the reads that failed have now answered: with nothing failing again, the read is settled */
+        if (mine === generation && !state.failure) settleReady()
+      })
     },
     dispose() {
       controller.abort()
