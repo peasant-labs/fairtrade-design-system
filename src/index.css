@@ -2323,6 +2323,17 @@
   .txn-scope { margin: 0 0 var(--sp-2); color: var(--ink-3); font-family: var(--font-mono); font-size: var(--fs-label); line-height: 1.5; }
   .txn-truncation { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); margin: var(--sp-1) 0 var(--sp-2); padding: var(--sp-1) var(--sp-3); border-left: 1px dotted color-mix(in srgb, var(--ink-4) 55%, transparent); color: var(--ink-3); font-family: var(--font-mono); font-size: var(--fs-label); line-height: 1.5; }
   .txn-truncation-load { min-height: var(--target-min); padding: var(--sp-1) var(--sp-2); border: var(--bd); border-radius: 0; background: var(--surface); color: var(--ink); font-family: var(--font-mono); font-size: var(--fs-label); cursor: pointer; }
+  /* a positioned read's failure line: a functional icon and the sentence, then its one action; busy
+     recovers on its own, so it stays in the quiet ink of the held-window line */
+  .txn-read-notice { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); margin: var(--sp-2) 0; padding: var(--sp-1) var(--sp-3); border-left: 1px solid var(--warning); color: var(--ink-2); font-family: var(--font-mono); font-size: var(--fs-label); line-height: 1.5; }
+  .txn-read-notice .lucide { flex: none; color: var(--warning); }
+  .txn-read-notice-quiet { border-left-color: var(--rule-strong); color: var(--ink-3); }
+  .txn-read-notice-text { flex: 1 1 24ch; }
+  .txn-read-action { flex: none; min-height: var(--control-h); padding: var(--sp-1) var(--sp-3); border: var(--bd-strong); border-radius: 0; background: transparent; color: var(--ink); font-family: var(--font-mono); font-size: var(--fs-label); white-space: nowrap; cursor: pointer; }
+  .txn-read-action:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
+  .txn-read-refused p { font-size: var(--fs-body); line-height: var(--lh-body); }
+  @media (hover: hover) and (pointer: fine) { .txn-read-action:hover { color: var(--amber-bright); border-color: var(--amber-dim); } }
+  @media (prefers-reduced-motion: no-preference) { .txn-read-action { transition: transform var(--dur-1) var(--ease-out); } .txn-read-action:active { transform: scale(0.97); } }
   .txn-truncation-load:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
 
   /* ---- tab strip ---- */

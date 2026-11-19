@@ -1,3 +1,5 @@
+import { MAIN_PARTITION_ID } from './adapter.js'
+
 /**
  * Pure view of a transcript's served integrity flag. The host passes the served value as it
  * arrived, the detail response's content hash, and the content hash of the rendered content.
@@ -42,4 +44,31 @@ export function integrityView(integrity, transcriptContentHash, contentHash) {
   const positions = new Set()
   if (bound) for (const position of flagged) if (Number.isInteger(position) && position >= 0) positions.add(position)
   return { positions }
+}
+
+/**
+ * The integrity props for a positioned read. The header's marks are `(position, turn)` pairs in the
+ * served main partition: a mark lands on the loaded row at that position only when the row carries
+ * that recorded index, so a mark can never sit on another row. Marks are decided only when the header
+ * carries `contentHash`; without it the badge draws alone and no row is marked.
+ * @param {{ flaggedTurns?: { position: number, turn?: number }[], contentHash?: string } | null | undefined} header
+ * @param {{ position?: number, recordedIndex?: number, partition?: string }[]} turns  the loaded rows
+ * @returns {{ integrity: { flagged_turns: number[] } | null, contentHash: string }}
+ */
+export function positionedIntegrity(header, turns) {
+  const pairs = header?.flaggedTurns
+  if (!Array.isArray(pairs)) return { integrity: null, contentHash: '' }
+  const contentHash = typeof header?.contentHash === 'string' ? header.contentHash : ''
+  /** @type {Map<number, { recordedIndex?: number }>} */
+  const byPosition = new Map()
+  for (const turn of turns) {
+    if (turn.partition === MAIN_PARTITION_ID && Number.isInteger(turn.position)) byPosition.set(/** @type {number} */ (turn.position), turn)
+  }
+  /** @type {number[]} */
+  const flagged = []
+  for (const pair of pairs) {
+    const row = byPosition.get(pair.position)
+    if (row && row.recordedIndex === pair.turn) flagged.push(pair.position)
+  }
+  return { integrity: { flagged_turns: flagged }, contentHash }
 }

@@ -1,0 +1,110 @@
+# The positioned reader controller, driven through a recording transport over a synthetic
+# positioned document whose every body passes Schema's z* parsers. The document has
+# `segments` segments of `rowsPerSegment` rows; each segment is one task (a user row and
+# assistant replies) numbered by the server. A row's recorded index is its position plus
+# `recordedOffset`, so a position is never mistaken for a recorded index. The default window
+# is the first segment; a window at a recorded index runs from that row's segment through
+# the next one. Every case is run by scripts/transcript-positioned-reader.test.mjs.
+document:
+  transport: {kind: village_transcript, transcriptId: 0b9a3e7c-5d41-4c1f-9a7e-2f6b8c1d4e50}
+  otherTranscriptId: 7f3d2c1b-0a9e-4d8c-b7a6-5e4f3d2c1b0a
+  segments: 12
+  rowsPerSegment: 3
+  recordedOffset: 1000
+cases:
+  - name: controller-request-set-equals-F
+    runs:
+      - {label: plain open, segments: [0]}
+      - {label: far deep link, turn: 1031, segments: [10, 11, 0]}
+  - name: controller-target-first
+    turn: 1031
+    firstSegment: 10
+  - name: controller-evicts-oldest-visited
+    residency: 3
+    load: [5, 6, 7, 8]
+    evicted: [5, 6]
+    resident: [0, 7, 8]
+  # One case per pin class. Each loads segments until the pinned one would be the
+  # oldest-visited unpinned segment, then checks that it stays.
+  - name: controller-pin-target
+    residency: 3
+    turn: 1012
+    load: [9, 10]
+    kept: 4
+  - name: controller-pin-neighbour
+    residency: 3
+    turn: 1012
+    load: [9, 10]
+    kept: 5
+  - name: controller-pin-focus
+    residency: 3
+    pin: focus
+    load: [5, 6, 7]
+    kept: 5
+  - name: controller-pin-selection
+    residency: 3
+    pin: selection
+    load: [5, 6, 7]
+    kept: 5
+  - name: controller-pin-open-control
+    residency: 3
+    pin: openControl
+    load: [5, 6, 7]
+    kept: 5
+  - name: controller-pin-open-history
+    residency: 3
+    load: [5, 6, 7]
+  - name: controller-refetch-keeps-number
+    residency: 3
+    load: [5, 6, 7, 8, 5]
+    refetched: 5
+  - name: controller-status-kind-table
+    rows:
+      - {name: status-409-stale, status: 409, kind: stale}
+      - {name: status-503-busy, status: 503, retryAfterSeconds: 7, kind: busy, wait: 7}
+      - {name: status-404-denied, status: 404, kind: denied}
+      - {name: status-410-unavailable, status: 410, kind: unavailable}
+      - {name: status-500-failed, status: 500, kind: failed}
+      - {name: status-400-failed, status: 400, kind: failed}
+      - {name: status-parse-refusal-malformed, status: 200, body: refused-by-parser, kind: malformed}
+      - {name: status-context-mismatch-malformed, status: 200, body: other-transcript, kind: malformed}
+      - {name: status-rejected-network, reject: true, kind: network}
+      - {name: retry-after-absent-1s, status: 503, kind: busy, wait: 1}
+      - {name: retry-after-nan-1s, status: 503, retryAfterSeconds: .nan, kind: busy, wait: 1}
+      - {name: retry-after-negative-1s, status: 503, retryAfterSeconds: -3, kind: busy, wait: 1}
+  - name: controller-failure-never-whole-document
+    kinds: [stale, busy, denied, unavailable, failed, malformed, network]
+  # One segment of the target run fails once while the rest load; the retry answers.
+  - name: controller-retry-after-partial-failure-settles-ready
+    turn: 1031
+    segment: 11
+    status: 500
+  - name: controller-transport-mismatch-discards
+    segment: 0
+  - name: controller-directory-paging-refetch-page-one
+    perPage: 5
+    pages: [1, 2, 1, 2, 3]
+  - name: controller-section-open-close-aborts
+  - name: controller-landing-exact-vs-snapped
+    # recorded index 1013 is the second row of segment 4; the window anchors on its user row
+    turn: 1013
+    exact: 13
+    snapped: 12
+    absentTurn: 999
+  - name: controller-closed-sets
+    failureKinds: [stale, busy, denied, unavailable, failed, malformed, network]
+    landings: [exact, snapped]
+    statuses: [closed, loading, ready, failed]
+  - name: demo-mock-refuses-invalid-body
+  # The hook under React StrictMode, which mounts, unmounts and remounts every effect: each
+  # mount must get its own reader, so the remount loads the target and settles.
+  - name: hook-strict-mode-reaches-ready
+    turn: 1031
+    heading: assistant turn 11a
+    status: ready
+  # The hook's viewerProps, spread onto the viewer with nothing else wired, mount every failure
+  # state of the in-use demo's mock transport. `statuses` is what the stream reports: the
+  # failure kind while a failure is present.
+  - name: hook-viewer-props-mount-every-failure-state
+    kinds: [busy, stale, denied, unavailable, failed, malformed, network]
+    statuses: {busy: busy, stale: stale, denied: denied, unavailable: unavailable, failed: failed, malformed: malformed, network: network}

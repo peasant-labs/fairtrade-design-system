@@ -1,0 +1,5 @@
+# Required-NAME manifest for transcript-usage-accumulator.yaml.
+requiredCaseNames:
+  - usage-accumulator-equals-aggregate
+  - usage-hidden-unless-present
+  - usage-no-spread-150000-owners

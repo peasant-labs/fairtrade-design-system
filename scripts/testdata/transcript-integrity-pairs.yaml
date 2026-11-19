@@ -1,0 +1,15 @@
+# Integrity marks for a positioned read come from the header's served (position, turn)
+# pairs. A pair marks the loaded row at its position only when that row carries the pair's
+# recorded index; without the header's contentHash no row is marked and the badge draws alone.
+rows:
+  - {position: 40, recordedIndex: 1052}
+  - {position: 41, recordedIndex: 1053}
+  - {position: 42, recordedIndex: 1055}
+flaggedTurns:
+  - {position: 41, turn: 1053}
+  - {position: 42, turn: 9999}
+contentHash: sha256-served-bytes
+cases:
+  - name: integrity-mark-on-served-pair
+    marked: [41]
+  - name: integrity-no-mark-without-hash

@@ -114,7 +114,7 @@ rules:
     src/FeedbackTool.jsx: 1
     src/effects.jsx: 3
     src/mockups/inuse/CommonsApp.jsx: 8
-    src/mockups/inuse/CommonsExplore.jsx: 28
+    src/mockups/inuse/CommonsExplore.jsx: 27
     src/mockups/inuse/CommonsManage.jsx: 10
     src/mockups/inuse/CommonsPages.jsx: 1
     src/mockups/inuse/CommonsPullRequest.jsx: 2
@@ -197,7 +197,7 @@ rules:
     src/ui/transcript/ToolBody.jsx: 6
     src/ui/transcript/ToolCall.jsx: 2
     src/ui/transcript/TranscriptBoundary.jsx: 2
-    src/ui/transcript/TranscriptViewer.jsx: 70
+    src/ui/transcript/TranscriptViewer.jsx: 67
     src/ui/transcript/TranscriptViewer.stories.jsx: 1
     src/ui/transcript/TurnCard.jsx: 6
     src/ui/transcript/UsageDisclosure.jsx: 3
@@ -216,7 +216,6 @@ rules:
     src/ui/transcript/mermaidSvg.jsx: 1
     src/ui/transcript/segments.js: 1
     src/ui/transcript/title.js: 1
-    src/ui/transcript/usage.js: 2
     src/ui/transcript/useReaderWidthAnchor.js: 1
     src/ui/transcript/work-summary.js: 5
     vite.config.js: 1

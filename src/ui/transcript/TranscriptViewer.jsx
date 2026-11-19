@@ -32,6 +32,8 @@ import {
   regionBoundaries,
   scrubberTicks,
   turnsFromSegments,
+  placeBoundaries,
+  scrubberSeekTarget,
   turnUnit,
   windowCoverage,
   windowFailureCaption,
@@ -44,6 +46,7 @@ import IntegrityBadge from './IntegrityBadge.jsx'
 import { integrityView } from './integrity.js'
 import Collapsible from './Collapsible.jsx'
 import TranscriptContext from './TranscriptContext.jsx'
+import { PositionedReadFailureKind, PositionedReadStatus, POSITIONED_READ_COPY, positionedFailureSentence } from './positioned-read.js'
 import { UsageScopes } from './UsageDisclosure.jsx'
 import DiffEntryCard from './DiffEntryCard.jsx'
 import OutlineRail from './OutlineRail.jsx'
@@ -350,6 +353,7 @@ export default function TranscriptViewer({
   onLoadSegment,
   onLoadWindow,
   continuation: continuationProp,
+  positionedRead,
 }) {
   if (continuationProp != null && !CONTINUATION_STATES.has(continuationProp.state)) {
     throw new TypeError(`TranscriptViewer refused continuation.state ${String(continuationProp.state)}: pass one of ${[...CONTINUATION_STATES].join(', ')} to describe the segment continuation.`)
@@ -945,6 +949,8 @@ export default function TranscriptViewer({
      unit agrees with the number beside it: the total in an "of" pair, as in the boundary
      caption "turn 20 of 77". */
   const traceCountText = useMemo(() => {
+    /* a positioned read with nothing in hand has no count to state yet */
+    if (positionedRead && loadedSegments.length === 0) return ''
     if (directory?.complete === false) {
       const refs = directory.segments ?? []
       const first = refs[0]?.conversationTurns
@@ -967,7 +973,7 @@ export default function TranscriptViewer({
     return visibleConversationCount === conversationTurns.length
       ? `${formatInteger(conversationTurns.length)} ${turnUnit(conversationTurns.length)}`
       : `${formatInteger(visibleConversationCount)} of ${formatInteger(conversationTurns.length)} ${turnUnit(conversationTurns.length)}`
-  }, [directory?.complete, directory?.segments, segmentMode, scope, visibleConversationCount, conversationTurns.length])
+  }, [directory?.complete, directory?.segments, segmentMode, scope, visibleConversationCount, conversationTurns.length, positionedRead, loadedSegments.length])
 
   /* Runs of consecutive visible system turns. Ledger-only: classic keeps its full cards, so
      there is nothing to fold there. */
@@ -977,29 +983,47 @@ export default function TranscriptViewer({
      between boundary normally follows the last rendered turn before the gap; when a
      held window leaves none, it renders before the first rendered turn after the gap
      so a counted boundary can never be missing from the DOM. */
+  /* A positioned read's own state: still loading, or a failure with what the reader can do. A
+     denied or unavailable read replaces the trace; any other failure keeps every loaded row and
+     draws its notice above them. Busy is a status, not an alert: it tries again on its own. */
+  const positionedFailure = positionedRead?.failure ?? null
+  const positionedSettled = !positionedRead || (positionedRead.status === PositionedReadStatus.Ready && !positionedFailure)
+  const positionedNotice = !positionedRead ? null
+    : positionedFailure?.kind === PositionedReadFailureKind.Denied || positionedFailure?.kind === PositionedReadFailureKind.Unavailable ? (
+      <div className="empty txn-read-refused" role="alert" data-read-failure={positionedFailure.kind}>
+        <div className="ring"><FileText size={20} aria-hidden="true" /></div>
+        <EmptyHeading>{positionedFailure.kind === PositionedReadFailureKind.Denied ? POSITIONED_READ_COPY.deniedHeading : POSITIONED_READ_COPY.unavailableHeading}</EmptyHeading>
+        <p>{positionedFailure.kind === PositionedReadFailureKind.Denied ? POSITIONED_READ_COPY.deniedBody : POSITIONED_READ_COPY.unavailableBody}</p>
+      </div>
+    ) : positionedFailure && positionedFailure.kind !== PositionedReadFailureKind.Busy && loadedSegments.length === 0 ? (
+      /* nothing in hand: the failure is the page, drawn as the empty state with its one action */
+      <div className="empty txn-read-refused" role="alert" data-read-failure={positionedFailure.kind}>
+        <div className="ring"><AlertTriangle size={20} aria-hidden="true" /></div>
+        <EmptyHeading>{positionedFailure.kind === PositionedReadFailureKind.Stale ? POSITIONED_READ_COPY.staleHeading : POSITIONED_READ_COPY.failedHeading}</EmptyHeading>
+        <p>{positionedFailureSentence(positionedFailure.kind)}</p>
+        <button type="button" className="txn-read-action" onClick={() => positionedRead.retry()}>
+          {positionedFailure.kind === PositionedReadFailureKind.Stale ? POSITIONED_READ_COPY.staleAction : POSITIONED_READ_COPY.retryAction}
+        </button>
+      </div>
+    ) : positionedFailure ? (
+      <div className={'txn-read-notice' + (positionedFailure.kind === PositionedReadFailureKind.Busy ? ' txn-read-notice-quiet' : '')} role={positionedFailure.kind === PositionedReadFailureKind.Busy ? 'status' : 'alert'} data-read-failure={positionedFailure.kind}>
+        {positionedFailure.kind !== PositionedReadFailureKind.Busy && <AlertTriangle size={14} aria-hidden="true" />}
+        <span className="txn-read-notice-text">{positionedFailureSentence(positionedFailure.kind, positionedFailure.retryAfterSeconds)}</span>
+        <button type="button" className="txn-read-action" onClick={() => positionedRead.retry()}>
+          {positionedFailure.kind === PositionedReadFailureKind.Stale ? POSITIONED_READ_COPY.staleAction : positionedFailure.kind === PositionedReadFailureKind.Busy ? POSITIONED_READ_COPY.busyAction : POSITIONED_READ_COPY.retryAction}
+        </button>
+      </div>
+    ) : positionedRead.status === PositionedReadStatus.Loading && loadedSegments.length === 0 ? (
+      <p className="txn-held-window" role="status" data-read-loading="true">{POSITIONED_READ_COPY.loading}</p>
+    ) : null
+
   const boundaryPlacement = useMemo(() => {
     if (!segmentMode) return { leading: null, trailing: null, after: new Map(), before: new Map(), count: 0 }
     const isRenderedRow = (turn) => {
       const group = systemGroups.get(turn.index)
       return !group || group.owner.index === turn.index
     }
-    const rows = visibleTurns.filter(isRenderedRow)
-    const lastVisibleBefore = (turnIndex) => [...rows].reverse().find((turn) => turn.index < turnIndex)
-    const firstVisibleAfter = (turnIndex) => rows.find((turn) => turn.index > turnIndex)
-    const after = new Map()
-    const before = new Map()
-    for (const boundary of boundaries) {
-      if (boundary.side !== 'between') continue
-      const preceding = lastVisibleBefore(boundary.firstTurn)
-      if (preceding) after.set(preceding.index, boundary)
-      else {
-        const following = firstVisibleAfter(boundary.lastTurn)
-        if (following) before.set(following.index, boundary)
-      }
-    }
-    const leading = boundaries.find((boundary) => boundary.side === 'older' || boundary.side === 'all') ?? null
-    const trailing = boundaries.find((boundary) => boundary.side === 'newer') ?? null
-    return { leading, trailing, after, before, count: after.size + before.size + (leading ? 1 : 0) + (trailing ? 1 : 0) }
+    return placeBoundaries(boundaries, visibleTurns.filter(isRenderedRow))
   }, [segmentMode, boundaries, visibleTurns, systemGroups])
 
 
@@ -1440,8 +1464,9 @@ export default function TranscriptViewer({
   }
   function seekScrubTick(tick) {
     if (!tick) return
-    if (turns.some((turn) => turn.index === tick.firstTurn)) {
-      jumpTo(tick.firstTurn, { switchTab: false })
+    const loaded = scrubberSeekTarget(tick, turns)
+    if (loaded != null) {
+      jumpTo(loaded, { switchTab: false })
       return
     }
     pendingSeekRef.current = tick
@@ -1450,9 +1475,10 @@ export default function TranscriptViewer({
   useEffect(() => {
     const pending = pendingSeekRef.current
     if (!pending) return
-    if (!turns.some((turn) => turn.index === pending.firstTurn)) return
+    const target = scrubberSeekTarget(pending, turns)
+    if (target == null) return
     pendingSeekRef.current = null
-    jumpTo(pending.firstTurn, { switchTab: false })
+    jumpTo(target, { switchTab: false })
   // eslint-disable-next-line react-hooks/exhaustive-deps -- adding jumpTo, recreated each render, would retry a pending seek on unrelated renders
   }, [turns])
   function stepTurn(dir) {
@@ -2138,6 +2164,7 @@ export default function TranscriptViewer({
                 <div className="txn-streamwrap">
                   <div className="txn-stream" ref={scrollRef} role="region" aria-label="full trace turns"
                     data-mounted-turn-bound={segmentMode ? loadedTurnBound : undefined}
+                    data-positioned-read={positionedRead ? positionedRead.failure?.kind ?? positionedRead.status : undefined}
                     data-segment-boundaries={segmentMode ? boundaryPlacement.count : undefined}
                     data-segment-mode={segmentMode ? 'true' : undefined}
                     onWheel={releaseTurnNavigation} onTouchStart={releaseTurnNavigation} onPointerDown={releaseTurnNavigation}
@@ -2168,14 +2195,15 @@ export default function TranscriptViewer({
                         )}
                       </div>
                     )}
-                    {segmentMode && directory?.complete !== false && (directory?.totalSegments ?? 0) === 0 && (
+                    {positionedNotice}
+                    {segmentMode && positionedSettled && directory?.complete !== false && (directory?.totalSegments ?? 0) === 0 && (
                       <div className="empty txn-not-indexed" data-not-indexed="true">
                         <div className="ring"><FileText size={20} aria-hidden="true" /></div>
                         <EmptyHeading>not indexed</EmptyHeading>
                         <p>this transcript has no segments yet. its turns are not available to read.</p>
                       </div>
                     )}
-                    {visibleTurns.length === 0 && !(segmentMode && (directory?.totalSegments ?? 0) === 0) && (
+                    {visibleTurns.length === 0 && positionedSettled && !(segmentMode && (directory?.totalSegments ?? 0) === 0) && (
                       <div className="empty"><div className="ring"><FilterIcon size={20} aria-hidden="true" /></div><EmptyHeading>no turns to display</EmptyHeading>
                         {filters.categories.system !== true && counts.categories.system > 0 ? (
                           <>

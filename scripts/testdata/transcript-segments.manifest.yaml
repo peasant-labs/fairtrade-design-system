@@ -130,7 +130,13 @@ requiredMutationNames:
   - a caption states a total other than the header's
   - a count of one prints the plural
   - the header without positions prints raw digits
+  - region bounds spread the turn list
 mutations:
+  - name: region bounds spread the turn list
+    file: src/ui/transcript/segments.js
+    find: "      const bounds = turnKeyBounds(segment.turns)\n      held = new Set()"
+    replace: "      const bounds = { min: Math.min(...segment.turns.map((turn) => turn.index)), max: Math.max(...segment.turns.map((turn) => turn.index)) }\n      held = new Set()"
+    expectedDiagnostic: regions-no-spread-150000-turns
   - name: a count of one prints the plural
     file: src/ui/transcript/segments.js
     find: "return count === 1 ? 'turn' : 'turns'"
@@ -266,3 +272,9 @@ mutations:
     find: 'const conversationTurns = useMemo(() => turns.filter(isConversationTurn), [turns])'
     replace: "const conversationTurns = useMemo(() => turns.filter((turn) => turn.role !== 'system'), [turns])"
     expectedDiagnostic: 'tool and thinking rows are not counted: header'
+requiredPositionedGeometryNames:
+  - boundary-placement-by-segment-ordinal
+  - scrubber-jump-by-ordinal
+  - failure-caption-by-position
+  - gap-boundary-between-two-runs
+  - regions-no-spread-150000-turns
