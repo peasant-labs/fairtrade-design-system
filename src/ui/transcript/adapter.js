@@ -432,8 +432,18 @@ function resolveStickyModels(turns, seed) {
  * @typedef {object} AdaptTranscriptOptions
  * @property {readonly number[]} [visibleTurnIndices] post-resolution projection by canonical turn index
  * @property {import('@peasant-labs/schema').SessionRelationshipNavigation[]} [relationshipNavigation] separately authorized read metadata; never durable content
- * @property {'local' | 'published'} [payloadMode] published requires a detail already validated by schema's published envelope parser; defaults to local
+ * @property {'local' | 'published' | 'segment'} [payloadMode] published requires a detail already validated by schema's published envelope parser; segment takes one positioned segment already parsed by schema's zPositionedSegment; defaults to local
  * @property {'complete' | 'incomplete'} [tail] whether the last loaded response is known to end the session
+ * @property {import('@peasant-labs/schema').TranscriptReadContext} [context] segment mode: the read context, already parsed
+ * @property {Partial<SessionVM> & Record<string, unknown>} [session] segment mode: session chrome from the header or the host's metadata
+ */
+
+/**
+ * What segment mode returns: the served rows cooked to `TurnVM`s, nothing whole-document.
+ * @typedef {object} PositionedSegmentVM
+ * @property {TurnVM[]} turns
+ * @property {Map<string, ToolCallVM>} toolCallsById
+ * @property {import('@peasant-labs/schema').NativeMetadataRecord[]} [nativeMetadata]
  */
 
 /* ── Tool-call cooking ───────────────────────────────────────────────────────── */
@@ -915,12 +925,15 @@ function buildFilterIndex(turnVMs, annotationsByTurn) {
  */
 export function adaptTranscript(payload, annotations, analytics, options) {
   const payloadMode = options?.payloadMode ?? 'local'
+  if (payloadMode === 'segment') {
+    return /** @type {TranscriptViewModel} */ (/** @type {unknown} */ (adaptPositionedSegment(/** @type {unknown} */ (payload), annotations, analytics, options)))
+  }
   const incompleteTail = options?.tail === TranscriptTail.Incomplete
   if (options?.tail !== undefined && options.tail !== TranscriptTail.Complete && options.tail !== TranscriptTail.Incomplete) {
     throw new TypeError('Fairtrade adaptTranscript refused tail: pass complete or incomplete to describe the loaded transcript.')
   }
   if (payloadMode !== 'local' && payloadMode !== 'published') {
-    throw new TypeError('Fairtrade adaptTranscript refused payloadMode: select local or published; use published only after validating the envelope with parseTranscriptContentText.')
+    throw new TypeError('Fairtrade adaptTranscript refused payloadMode: select local, published or segment; use published only after validating the envelope with parseTranscriptContentText, and segment only for a body parsed by zPositionedSegment.')
   }
   const hasEvidence = hasNormalizedEvidence(payload)
   // A future string state is preserved, while canonical validation still checks
@@ -984,6 +997,67 @@ export function adaptTranscript(payload, annotations, analytics, options) {
   })
   return vm
 }
+
+/**
+ * The served facts of one positioned row, carried beside its turn through the cook. The number is
+ * the server's: segment mode prints it and never computes one.
+ * @typedef {object} ServedRow
+ * @property {number} position
+ * @property {string | undefined} displayNumber
+ * @property {number | undefined} recordedIndex
+ * @property {import('@peasant-labs/schema').TranscriptRecordedIndexState} recordedIndexState
+ * @property {number} segmentIndex
+ */
+
+/** The partition id a positioned read cooks into: `main`, or `earlier-N` for history section N. @param {{ kind?: string, sectionIndex?: number | null } | undefined} partition @returns {string} */
+export function positionedPartitionId(partition) {
+  if (partition?.kind === 'history') return `earlier-${partition.sectionIndex ?? 0}`
+  return 'main'
+}
+
+/**
+ * Segment mode: cook one positioned segment's served rows. The rows are the server's kept rows in
+ * served order, so nothing is filtered, merged or renumbered here: each row prints its own
+ * `displayNumber`, and a row without one prints none.
+ * @param {unknown} segment
+ * @param {AnnotationSummary[] | undefined} annotations
+ * @param {unknown} analytics
+ * @param {AdaptTranscriptOptions | undefined} options
+ * @returns {PositionedSegmentVM}
+ */
+function adaptPositionedSegment(segment, annotations, analytics, options) {
+  if (analytics !== undefined) {
+    throw new TypeError('Fairtrade adaptTranscript refused analytics in segment mode: precomputed analytics describe a whole document, and a positioned segment is one served run of it. Pass undefined for analytics and read whole-document facts from the header and directory instead.')
+  }
+  const context = options?.context
+  if (context === null || typeof context !== 'object' || typeof context.revision !== 'string') {
+    throw new TypeError('Fairtrade adaptTranscript refused segment mode without a read context: pass options.context, the TranscriptReadContext parsed by zPositionedSegment from the same response, so the rows are cooked against the served harness and model.')
+  }
+  const body = /** @type {{ index?: unknown, rows?: unknown, partition?: unknown, nativeMetadata?: import('@peasant-labs/schema').NativeMetadataRecord[] }} */ (segment ?? {})
+  if (!Array.isArray(body.rows) || typeof body.index !== 'number') {
+    throw new TypeError('Fairtrade adaptTranscript refused the segment in segment mode: it has no rows or no segment index. Parse the response with zPositionedSegment and pass the parsed value.')
+  }
+  const segmentIndex = body.index
+  const partition = positionedPartitionId(/** @type {{ kind?: string, sectionIndex?: number | null }} */ (body.partition))
+  /** @type {Map<TurnDetail, ServedRow>} */
+  const served = new Map()
+  /** @type {TurnDetail[]} */
+  const turns = []
+  for (const row of /** @type {import('@peasant-labs/schema').TranscriptSegmentRow[]} */ (body.rows)) {
+    const turn = /** @type {TurnDetail} */ (/** @type {unknown} */ ({ ...row.turn }))
+    served.set(turn, { position: row.position, displayNumber: row.displayNumber, recordedIndex: row.recordedIndex, recordedIndexState: row.recordedIndexState, segmentIndex })
+    turns.push(turn)
+  }
+  const payload = /** @type {TranscriptWireInput} */ (/** @type {unknown} */ ({ harness: context.harness, model: context.model }))
+  const cooked = cookPartition(payload, turns, body.nativeMetadata, partition, annotations, POSITIONED_ANALYTICS, undefined, served)
+  /** @type {PositionedSegmentVM} */
+  const vm = { turns: cooked.turns, toolCallsById: cooked.toolCallsById }
+  if (body.nativeMetadata) vm.nativeMetadata = body.nativeMetadata
+  return vm
+}
+
+/** A positioned segment carries no whole-document analytics: no phases, no pattern annotations. */
+const POSITIONED_ANALYTICS = /** @type {TranscriptAnalyticsVM} */ (Object.freeze({ phases: [], patternAnnotations: [], taskGroups: [] }))
 
 /** @param {TranscriptWireInput} payload */
 function hasNormalizedEvidence(payload) {
@@ -1063,8 +1137,10 @@ function cookRelationships(relationships, navigation) {
  * @param {AnnotationSummary[]} [annotations]
  * @param {TranscriptAnalyticsVM} [analytics]
  * @param {readonly number[]} [visibleIndices]
+ * @param {Map<TurnDetail, ServedRow>} [servedRows] segment mode: the served row of each turn; when present
+ *   the rows are already the kept rows and carry their own numbers, so nothing is filtered or labelled
  */
-function cookPartition(payload, completeTurns, nativeMetadata, partition, annotations, analytics, visibleIndices) {
+function cookPartition(payload, completeTurns, nativeMetadata, partition, annotations, analytics, visibleIndices, servedRows) {
   const indexCounts = new Map()
   const idCounts = new Map()
   for (const turn of completeTurns) {
@@ -1076,18 +1152,21 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
      withKnownTime's copy, so a served position still finds a turn whose time was dropped */
   /** @type {Map<TurnDetail, number>} */
   const sourcePositions = new Map()
-  if (partition === 'main') completeTurns.forEach((turn, i) => sourcePositions.set(turn, i))
+  if (partition === 'main' && !servedRows) completeTurns.forEach((turn, i) => sourcePositions.set(turn, i))
   // an unknown time is no time at all
-  const filteredTurns = (payload.harness === Harness.Pi ? completeTurns : prefilterTurns(completeTurns))
+  const kept = servedRows ? completeTurns : payload.harness === Harness.Pi ? completeTurns : prefilterTurns(completeTurns)
+  const filteredTurns = kept
     .map((turn) => {
       const copy = withKnownTime(turn)
       const position = sourcePositions.get(turn)
       if (copy !== turn && position !== undefined) sourcePositions.set(copy, position)
+      const row = servedRows?.get(turn)
+      if (copy !== turn && row) servedRows?.set(copy, row)
       return copy
     })
   const visibleTurnIndices = visibleIndices === undefined ? null : new Set(visibleIndices)
   const turns = visibleTurnIndices === null ? filteredTurns : filteredTurns.filter((turn) => visibleTurnIndices.has(turn.index))
-  const labels = computeTurnLabels(turns)
+  const labels = servedRows ? turns.map((turn) => servedRows.get(turn)?.displayNumber) : computeTurnLabels(turns)
   const provider = payload.harness
 
   // Genuine analytics — accepted precomputed, else derived once and reused below.
@@ -1099,7 +1178,8 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
 
   // Last top-level assistant turn carries the `isFinal` marker.
   let finalPos = -1
-  for (let p = 0; p < turns.length; p++) {
+  /* a served segment is one run of the document, so its last reply is not the session's */
+  if (!servedRows) for (let p = 0; p < turns.length; p++) {
     const t = turns[p]
     if (t.role === Role.Assistant && (t.depth ?? 0) === 0 && t.content?.trim()) finalPos = p
   }
@@ -1153,24 +1233,33 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
 
     const depth = t.depth ?? 0
     const isError = t.entryType === EntryType.Error || toolCalls.some((c) => c.isError)
+    const row = servedRows?.get(t)
     /** @type {TurnVM} */
     const turnVM = {
-      index: t.index,
-      sourceIndexUnique: indexCounts.get(t.index) === 1,
-      identity: `${partition}:${t.sourceEntryRef || t.index}`,
+      index: row ? row.position : t.index,
+      sourceIndexUnique: row ? true : indexCounts.get(t.index) === 1,
+      identity: row ? `${partition}:position-${row.position}` : `${partition}:${t.sourceEntryRef || t.index}`,
       partition,
       role: t.role,
-      label: labels[p] ?? String(p + 1),
+      label: row ? row.displayNumber ?? '' : labels[p] ?? String(p + 1),
       content,
       depth,
       toolCalls,
       annotations: annotationsByTurn[t.index] ?? [],
     }
     if (sourcePositions.has(t)) turnVM.sourcePosition = sourcePositions.get(t)
+    if (row) {
+      turnVM.position = row.position
+      turnVM.sourcePosition = row.position
+      turnVM.segmentIndex = row.segmentIndex
+      turnVM.recordedIndexState = row.recordedIndexState
+      if (row.recordedIndex !== undefined) turnVM.recordedIndex = row.recordedIndex
+      if (row.displayNumber === undefined) turnVM.numberAbsent = true
+    }
     if (depth === 0 && t.role === Role.Assistant) turnVM.provider = provider
     if (t.agentName) turnVM.agentName = t.agentName
     const replyAt = replyPositionOf(filteredTurns, positionOf.get(t) ?? -1)
-    if (replyAt >= 0) turnVM.replyIndex = filteredTurns[replyAt].index
+    if (replyAt >= 0) turnVM.replyIndex = servedRows ? servedRows.get(filteredTurns[replyAt])?.position : filteredTurns[replyAt].index
     if (t.controlKind) {
       turnVM.controlKind = t.controlKind
       turnVM.isControl = true

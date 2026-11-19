@@ -161,14 +161,20 @@ export default function TurnCard({
   ) : (
     <Wrench size={14} aria-hidden="true" />
   )
-  const anchorButton = !isEarlier && allowClipboard ? (
+  /* A positioned row the server sent no number for prints none: no guess, no local count. Its
+     name says the number was not served, so a screen reader hears the same fact. */
+  const numbered = !turn.numberAbsent
+  const turnName = numbered ? `turn ${turn.label}` : 'turn, number not served'
+  /* The copy link addresses the recorded index; a positioned row without one has no address. */
+  const linkIndex = turn.position === undefined ? turn.index : turn.recordedIndex
+  const anchorButton = !isEarlier && allowClipboard && linkIndex !== undefined ? (
     <button
       type="button"
       className="txn-anchor"
       data-turn-control={turn.index}
-      aria-label={'copy link to turn ' + turn.label}
+      aria-label={numbered ? 'copy link to turn ' + turn.label : `copy link to this ${roleLabel} turn`}
       title="copy link to this turn"
-      onClick={() => onCopyAnchor(turn.index)}
+      onClick={() => onCopyAnchor(linkIndex)}
     >
       {copied ? <Check size={14} aria-hidden="true" /> : <LinkIcon size={14} aria-hidden="true" />}
     </button>
@@ -176,7 +182,7 @@ export default function TurnCard({
 
   const head = (
     <div className={'txn-turnhead' + (ledger ? ' txn-turnhead-ledger' : '')}>
-      <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}{flagName}</TurnHeading>
+      <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} {turnName}{flagName}</TurnHeading>
       {ledger ? (
         <>
           {/* the ledger head: the square role well and the role word, then the turn number, the
@@ -184,7 +190,7 @@ export default function TurnCard({
               accessible name; the role word beside it names the role either way. */}
           <span className="txn-roleico" style={roleStyle}>{roleGlyph}</span>
           <span className="txn-rolelabel" style={roleStyle}>{roleLabel}</span>
-          <span className="txn-turnnum tnum">#{turn.label}</span>
+          {numbered && <span className="txn-turnnum tnum">#{turn.label}</span>}
           {flagMark}
           {timeLabel && (
             <Term className="txn-turntime" def={turn.timeTitle ?? turn.timestamp ?? turn.time}>
@@ -202,10 +208,10 @@ export default function TurnCard({
           </span>
           {turn.effectiveModel && <span className="txn-turnmodel mono">{turn.effectiveModel}</span>}
           {isSub && <span className="txn-depth tnum">depth {turn.depth}</span>}
-          <span className="txn-turnnum tnum">#{turn.label}</span>
+          {numbered && <span className="txn-turnnum tnum">#{turn.label}</span>}
           {flagMark}
           <button type="button" className="txn-turn-disclosure" aria-expanded={expanded} aria-controls={bodyId} onClick={() => setExpanded(value => !value)}>
-            {expanded ? 'collapse' : 'expand'} turn {turn.label}
+            {expanded ? 'collapse' : 'expand'} {numbered ? `turn ${turn.label}` : 'this turn'}
           </button>
           {timeLabel && (
             <Term className="txn-turntime" def={turn.timeTitle ?? turn.timestamp ?? turn.time}>
@@ -352,7 +358,7 @@ export default function TurnCard({
     >
       {systemRow ? (
         <>
-          <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}{flagName}</TurnHeading>
+          <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} {turnName}{flagName}</TurnHeading>
           {controlRow ? (
             <TranscriptControlRow
               turn={turn}
@@ -393,7 +399,7 @@ export default function TurnCard({
             </div>
           ) : ledgerDetail ? (
             <>
-              <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}{flagName}</TurnHeading>
+              <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} {turnName}{flagName}</TurnHeading>
               {workBlock ?? (flagged && !suppressWork ? <div className="txn-turnwork txn-turnwork-solo">{flagMark}</div> : null)}
             </>
           ) : (

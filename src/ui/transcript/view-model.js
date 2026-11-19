@@ -250,6 +250,13 @@ export const TOOL_GROUPS = Object.freeze([
  * @property {number} [segmentIndex]        the segment this turn arrived in, when read as part of loaded regions
  * @property {boolean} [truncated]          this turn's own text was bounded by the served-text bound
  * @property {number} [byteLength]          pre-bound JSON size of content + arguments + result; the truncation notice's size
+ * @property {number} [position]            positioned reads only: the row's place in its partition's served order;
+ *                                          a positioned turn's `index` is this position, its row identity
+ * @property {number} [recordedIndex]       positioned reads only: the turn's own recorded index, when recorded; the
+ *                                          copy link and saved labels address it
+ * @property {import('@peasant-labs/schema').TranscriptRecordedIndexState} [recordedIndexState] positioned reads only
+ * @property {boolean} [numberAbsent]       positioned reads only: the server sent no display number for this row, so
+ *                                          the reader prints none (`label` is empty)
  */
 
 /* ── Annotations (cooked, per-turn) ──────────────────────────────────────────── */
