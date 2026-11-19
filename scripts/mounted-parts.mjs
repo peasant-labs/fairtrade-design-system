@@ -89,8 +89,10 @@ function mutationPlugin() {
 /**
  * Start vite in middleware mode over the repo, install a jsdom window as the globals React needs,
  * and hand the gate `load(path)` and `mount(element)`. Everything is torn down in finally.
+ * `plugins` adds vite transforms that run after the mutation, such as a call counter a gate places
+ * on a production function it must prove is not called.
  */
-export async function withMountedSource(run, { url = 'https://fairtrade.invalid/' } = {}) {
+export async function withMountedSource(run, { url = 'https://fairtrade.invalid/', plugins = [] } = {}) {
   // Fixture validation and mutation orchestration do not need a DOM or a Vite server.
   // Load the mounted-only dependencies in the isolated process that actually mounts.
   const [{ default: React, act }, { JSDOM }, { default: react }, { createServer }] = await Promise.all([
@@ -120,7 +122,7 @@ export async function withMountedSource(run, { url = 'https://fairtrade.invalid/
   const { createRoot } = await import('react-dom/client')
   // This harness only uses ssrLoadModule. Scanning index.html and prebundling the
   // client application wastes memory and can race separate mutation processes.
-  const server = await createServer({ cacheDir: FAIRTRADE_VITE_CACHE_DIR, appType: 'custom', configFile: false, logLevel: 'silent', plugins: [mutationPlugin(), react()], root: ROOT, optimizeDeps: { noDiscovery: true, include: [] }, server: { middlewareMode: true } })
+  const server = await createServer({ cacheDir: FAIRTRADE_VITE_CACHE_DIR, appType: 'custom', configFile: false, logLevel: 'silent', plugins: [mutationPlugin(), ...plugins, react()], root: ROOT, optimizeDeps: { noDiscovery: true, include: [] }, server: { middlewareMode: true } })
   const roots = []
   try {
     const load = (path) => server.ssrLoadModule(path)

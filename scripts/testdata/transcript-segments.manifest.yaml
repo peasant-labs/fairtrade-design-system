@@ -266,3 +266,9 @@ mutations:
     find: 'const conversationTurns = useMemo(() => turns.filter(isConversationTurn), [turns])'
     replace: "const conversationTurns = useMemo(() => turns.filter((turn) => turn.role !== 'system'), [turns])"
     expectedDiagnostic: 'tool and thinking rows are not counted: header'
+requiredPositionedGeometryNames:
+  - boundary-placement-by-segment-ordinal
+  - scrubber-jump-by-ordinal
+  - failure-caption-by-position
+  - gap-boundary-between-two-runs
+  - regions-no-spread-100000-turns

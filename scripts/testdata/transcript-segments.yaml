@@ -868,3 +868,41 @@ heroCases:
   - name: the hero falls back to turnCount
     turnCount: 80
     hero: 80 turns
+
+# Positioned geometry: a positioned directory names each segment's run by served position
+# (sourceFirstPosition..sourceLastPosition), a positioned viewer keys every row on its
+# position, and the geometry below places, jumps and captions by segment ordinal and
+# position. Each directory is a run of `segments` refs of `rowsPerSegment` rows, every row a
+# conversation turn; `pageRefs` keeps only the first refs, as a directory page would.
+positionedGeometryCases:
+  - name: boundary-placement-by-segment-ordinal
+    segments: 6
+    rowsPerSegment: 4
+    loaded: [0, 4, 5]
+    expectAfterPosition: 3
+    expectSegmentIndexes: [1, 2, 3]
+  # 400 segments sample 200 ticks over all ordinals; only the first page of 250 refs is in
+  # hand, so the last tick has no ref and jumps by its ordinal alone
+  - name: scrubber-jump-by-ordinal
+    segments: 400
+    rowsPerSegment: 1
+    pageRefs: 250
+    loaded: [0, 399]
+    seekOrdinal: 399
+    expectPosition: 399
+  - name: failure-caption-by-position
+    segments: 6
+    rowsPerSegment: 4
+    failedAnchor: 9
+    caption: could not load the window around turns 9–12.
+  - name: gap-boundary-between-two-runs
+    segments: 12
+    rowsPerSegment: 6
+    loaded: [0, 10, 11]
+    expectSegmentIndexes: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    caption: turns 7–60 of 72
+  # A RangeError guard, not a timing case: a dense segment holds more turns than an argument
+  # spread may carry on a small stack, so region bounds are taken in one pass. The rows are
+  # generated in process from this count; no large file is committed.
+  - name: regions-no-spread-100000-turns
+    turns: 100000

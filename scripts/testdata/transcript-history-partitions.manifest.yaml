@@ -1,0 +1,5 @@
+# Required-NAME manifest for transcript-history-partitions.yaml.
+requiredCaseNames:
+  - history-closed-count-qualified
+  - history-open-exact-count
+  - history-numbering-restarts

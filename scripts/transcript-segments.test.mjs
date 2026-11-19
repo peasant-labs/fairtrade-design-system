@@ -33,6 +33,9 @@ import {
   scrubberTicks,
   turnsFromSegments,
   windowCoverage,
+  placeBoundaries,
+  scrubberSeekTarget,
+  windowFailureCaption,
 } from '../src/ui/transcript/segments.js'
 
 const FIXTURE = 'scripts/testdata/transcript-segments.yaml'
@@ -73,6 +76,7 @@ const { fixture, manifest } = loadFixturePair(FIXTURE, MANIFEST, {
   positionCases: 'requiredPositionCaseNames',
   countCases: 'requiredCountCaseNames',
   heroCases: 'requiredHeroCaseNames',
+  positionedGeometryCases: 'requiredPositionedGeometryNames',
 })
 
 for (const row of fixture.directories) assertFields(row, ['name', 'totalTurns', 'totalSegments', 'firstTurn', 'segmentTurns', 'segmentBytes'], `${FIXTURE} ${row.name}`)
@@ -741,6 +745,62 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     report.check(!String(thrown?.message ?? '').includes('Cannot read properties of undefined'), `${row.name}: the error must not be an opaque property read`)
   }
 })
+
+/* Positioned geometry. A positioned directory and its rows, built from the case's counts: row
+   `index` is its served position, as a positioned viewer keys it. */
+function positionedDocument(row) {
+  const refs = Array.from({ length: row.segments }, (_, index) => ({
+    index,
+    byteLength: 100,
+    sourceFirstPosition: index * row.rowsPerSegment,
+    sourceLastPosition: (index + 1) * row.rowsPerSegment - 1,
+    conversationTurns: { before: index * row.rowsPerSegment, count: row.rowsPerSegment },
+  }))
+  const directory = { complete: true, totalSegments: row.segments, totalTurns: row.segments * row.rowsPerSegment, totalConversationTurns: row.segments * row.rowsPerSegment, segments: row.pageRefs ? refs.slice(0, row.pageRefs) : refs }
+  const segmentOf = (index) => ({ ...refs[index], turns: Array.from({ length: row.rowsPerSegment }, (_, offset) => {
+    const position = refs[index].sourceFirstPosition + offset
+    return { index: position, position, identity: `main:position-${position}`, partition: 'main', role: offset === 0 ? 'user' : 'assistant', entryType: 'text', depth: 0, content: `row ${position}`, label: String(position + 1), segmentIndex: index, toolCalls: [], annotations: [] }
+  }) })
+  return { refs, directory, segmentOf }
+}
+for (const row of fixture.positionedGeometryCases) {
+  const name = row.name
+  if (name === 'regions-no-spread-100000-turns') {
+    const turns = Array.from({ length: row.turns }, (_, index) => ({ index, role: 'assistant', depth: 0, content: '', toolCalls: [], annotations: [] }))
+    let regions = null
+    let thrown = null
+    try { regions = loadedRegions({ totalSegments: 1 }, [{ index: 0, turns }]) } catch (error) { thrown = error }
+    report.check(thrown === null && regions?.length === 1 && regions[0].turns.length === row.turns && regions[0].firstTurn === 0 && regions[0].lastTurn === row.turns - 1, `${name}: one dense segment builds one region of every turn with single-pass bounds, received ${thrown ? thrown.name : JSON.stringify(regions?.map((region) => [region.firstTurn, region.lastTurn, region.turns.length]))}`)
+    continue
+  }
+  const { directory, segmentOf } = positionedDocument(row)
+  if (name === 'failure-caption-by-position') {
+    report.check(windowFailureCaption(directory, { anchor: row.failedAnchor }) === row.caption, `${name}: the jump failure names the segment holding position ${row.failedAnchor}, received ${JSON.stringify(windowFailureCaption(directory, { anchor: row.failedAnchor }))}`)
+    continue
+  }
+  const loaded = row.loaded.map(segmentOf)
+  const regions = loadedRegions(directory, loaded)
+  const boundaries = regionBoundaries(directory, regions)
+  if (name === 'scrubber-jump-by-ordinal') {
+    const tick = scrubberTicks(directory).find((item) => item.index === row.seekOrdinal)
+    const turns = loaded.flatMap((segment) => segment.turns)
+    report.check(tick != null && tick.firstTurn === undefined, `${name}: a tick whose ref is on a page not yet received claims no coordinate, received ${JSON.stringify(tick)}`)
+    report.check(scrubberSeekTarget(tick, turns) === row.expectPosition, `${name}: the seek lands on the first loaded row of segment ${row.seekOrdinal}, received ${scrubberSeekTarget(tick, turns)}`)
+    report.check(scrubberSeekTarget(tick, turns.filter((turn) => turn.segmentIndex !== row.seekOrdinal)) === null, `${name}: the seek waits until its segment is loaded`)
+    continue
+  }
+  const between = boundaries.filter((boundary) => boundary.side === 'between')
+  report.check(between.length === 1 && JSON.stringify(between[0].segmentIndexes) === JSON.stringify(row.expectSegmentIndexes) && between[0].positioned === true, `${name}: one positioned boundary covers exactly the unloaded ordinals between the runs, received ${JSON.stringify(between.map((boundary) => boundary.segmentIndexes))}`)
+  if (row.caption) report.check(boundaryCaption(between[0]) === row.caption, `${name}: the gap caption names its served positions, received ${JSON.stringify(between[0] && boundaryCaption(between[0]))}`)
+  if (name === 'boundary-placement-by-segment-ordinal') {
+    const rows = regions.flatMap((region) => region.turns)
+    const placed = placeBoundaries(boundaries, rows)
+    report.check(placed.after.get(row.expectAfterPosition) === between[0] && placed.before.size === 0, `${name}: the gap boundary follows the last row of the segment before it, received after=${JSON.stringify([...placed.after.keys()])}`)
+    /* with the earlier run hidden, the boundary moves before the first row of a later segment */
+    const later = placeBoundaries(boundaries, rows.filter((turn) => turn.segmentIndex !== 0))
+    report.check(later.before.get(rows.find((turn) => turn.segmentIndex === row.loaded[1]).index) === between[0], `${name}: with no earlier row the boundary precedes the first row after the gap`)
+  }
+}
 
 function dirSession() {
   return 'sess_segment_fixture'
