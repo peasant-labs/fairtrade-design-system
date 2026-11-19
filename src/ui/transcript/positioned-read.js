@@ -785,6 +785,10 @@ function loadedTasks(turns) {
 /**
  * The React binding: one reader per transcript and mount. A host spreads `viewerProps` onto
  * `TranscriptViewer` and keeps `controls` for its own chrome (the landing line, a retry).
+ *
+ * The reader is keyed by the target's identity and by the transport object, so the host must
+ * memoise its transport (useMemo, or a module-level object): a transport created inline on every
+ * render starts a new reader, and a new set of reads, on every render.
  * @param {PositionedReaderOptions & { session?: object }} options
  * @returns {PositionedTranscript}
  */
