@@ -13,7 +13,7 @@
 
    No fallback. A failure shows a failure state; nothing here reads or re-renders a whole document. */
 
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import {
   isPositionedDirectoryPositionsValid,
   Role,
@@ -158,11 +158,9 @@ const samePartition = (served, requested) => served?.kind === requested.kind && 
  * @property {{ reference: string, kind?: string }} [entry]  a carried entry reference (hosts with a locator)
  */
 
-/**
- * Create one reader for one transcript. Nothing is requested until `start()`.
- * @param {{ transport: PositionedReadTransport, target: PositionedTarget, landing: string, residency?: number }} options
- */
-export function createPositionedReader({ transport, target, landing, residency = DEFAULT_RESIDENCY }) {
+/** Refuse options a reader cannot run with, naming what to pass instead. */
+function validateReaderOptions(options) {
+  const { transport, target, landing, residency = DEFAULT_RESIDENCY } = options ?? {}
   if (!transport || typeof transport.directory !== 'function' || typeof transport.segment !== 'function' || typeof transport.window !== 'function') {
     throw new TypeError('createPositionedReader refused the transport: it needs directory, segment and window functions that each take (request, AbortSignal) and resolve { status, body }. Pass the host transport for this transcript.')
   }
@@ -175,6 +173,24 @@ export function createPositionedReader({ transport, target, landing, residency =
   if (!Number.isInteger(residency) || residency < 1) {
     throw new TypeError(`createPositionedReader refused residency ${String(residency)}: pass a positive whole number of segments, or omit it for the reader's default.`)
   }
+}
+
+/** The stand-in a hook reads before its effect has created a reader: loading, nothing held. */
+const IDLE_SNAPSHOT = Object.freeze({ status: PositionedReadStatus.Loading, header: null, context: null, directory: null, windows: { default: null, target: null }, fetchSet: null, landing: null, segments: new Map(), history: new Map(), failure: null, usageScopes: undefined })
+const idle = () => Promise.resolve()
+const IDLE_READER = Object.freeze({
+  getSnapshot: () => IDLE_SNAPSHOT,
+  subscribe: () => () => {},
+  start: idle, retry: idle, loadSegment: idle, loadPosition: idle, openSection: idle, closeSection() {}, visit() {}, setPins() {}, dispose() {},
+})
+
+/**
+ * Create one reader for one transcript. Nothing is requested until `start()`.
+ * @param {{ transport: PositionedReadTransport, target: PositionedTarget, landing: string, residency?: number }} options
+ */
+export function createPositionedReader(options) {
+  validateReaderOptions(options)
+  const { transport, target, landing, residency = DEFAULT_RESIDENCY } = options
 
   const listeners = new Set()
   let controller = new AbortController()
@@ -730,28 +746,38 @@ function loadedTasks(turns) {
 }
 
 /**
- * The React binding: one reader per transcript, its snapshot, and the viewer props it produces.
+ * The React binding: one reader per transcript and mount, its snapshot, and the viewer props it produces.
  * @param {{ transport: PositionedReadTransport, target: PositionedTarget, landing: string, residency?: number, session?: object }} options
  */
 export function usePositionedTranscript(options) {
   const { transport, target, landing, residency, session } = options
   const targetKey = JSON.stringify([target?.transport, target?.turn ?? null, target?.entry?.reference ?? null, landing, residency ?? null])
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- the reader is keyed by the target's identity, not by the option objects' identities
-  const reader = useMemo(() => createPositionedReader({ transport, target, landing, ...(residency !== undefined ? { residency } : {}) }), [targetKey, transport])
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the options are keyed by the target's identity, not by the option objects' identities
+  const readerOptions = useMemo(() => ({ transport, target, landing, ...(residency !== undefined ? { residency } : {}) }), [targetKey, transport])
+  /* Each mount of the effect creates, starts and disposes its own reader, so a remount (React
+     StrictMode runs every effect twice in development) never restarts a disposed one. The
+     options are checked here, during render, so a wrong option throws where the host renders. */
+  useMemo(() => validateReaderOptions(readerOptions), [readerOptions])
+  const [reader, setReader] = useState(null)
   useEffect(() => {
-    reader.start()
-    return () => reader.dispose()
-  }, [reader])
-  const snapshot = useSyncExternalStore(reader.subscribe, reader.getSnapshot, reader.getSnapshot)
+    const instance = createPositionedReader(readerOptions)
+    setReader(instance)
+    instance.start()
+    return () => instance.dispose()
+  }, [readerOptions])
+  const live = reader ?? IDLE_READER
+  const snapshot = useSyncExternalStore(live.subscribe, live.getSnapshot, live.getSnapshot)
   const [historyOpen, setHistoryOpen] = useState({})
+  const historyOpenRef = useRef(historyOpen)
+  historyOpenRef.current = historyOpen
 
   /* busy waits the server's Retry-After, then tries again on its own */
   const failure = snapshot.failure
   useEffect(() => {
     if (failure?.kind !== PositionedReadFailureKind.Busy) return undefined
-    const handle = setTimeout(() => { reader.retry() }, (failure.retryAfterSeconds ?? DEFAULT_BUSY_SECONDS) * 1000)
+    const handle = setTimeout(() => { live.retry() }, (failure.retryAfterSeconds ?? DEFAULT_BUSY_SECONDS) * 1000)
     return () => clearTimeout(handle)
-  }, [failure, reader])
+  }, [failure, live])
 
   const onEarlierHistoryOpenChange = useCallback((next) => {
     setHistoryOpen((previous) => {
@@ -759,25 +785,34 @@ export function usePositionedTranscript(options) {
       for (const [id, open] of Object.entries(value)) {
         const section = Number(id.replace('earlier-', ''))
         if (!Number.isInteger(section)) continue
-        if (open && !previous[id]) reader.openSection(section)
-        if (!open && previous[id]) reader.closeSection(section)
+        if (open && !previous[id]) live.openSection(section)
+        if (!open && previous[id]) live.closeSection(section)
       }
       return value
     })
+  }, [live])
+
+  /* a section opened before this reader existed (or by the reader it replaced) opens on it too */
+  useEffect(() => {
+    if (!reader) return
+    for (const [id, open] of Object.entries(historyOpenRef.current)) {
+      const section = Number(id.replace('earlier-', ''))
+      if (open && Number.isInteger(section)) reader.openSection(section)
+    }
   }, [reader])
 
   /* the row the reader is on is a visit, and its segment is pinned while focused */
   const onActiveTurnChange = useCallback((position) => {
-    const record = [...reader.getSnapshot().segments.values()].find((item) => item.turns.some((turn) => turn.index === position))
+    const record = [...live.getSnapshot().segments.values()].find((item) => item.turns.some((turn) => turn.index === position))
     if (!record) return
-    reader.setPins({ focus: [record.index] })
-    reader.visit(record.index)
-  }, [reader])
+    live.setPins({ focus: [record.index] })
+    live.visit(record.index)
+  }, [live])
 
   const header = snapshot.header
   const directory = useMemo(() => directoryVM(snapshot.directory), [snapshot.directory])
   const segments = useMemo(() => segmentsVM(snapshot.segments, snapshot.directory), [snapshot.segments, snapshot.directory])
-  const earlierHistory = useMemo(() => historyVM(snapshot.directory, snapshot.history, reader.openSection), [snapshot.directory, snapshot.history, reader])
+  const earlierHistory = useMemo(() => historyVM(snapshot.directory, snapshot.history, live.openSection), [snapshot.directory, snapshot.history, live])
   const loadedTurns = useMemo(() => segments.flatMap((segment) => segment.turns), [segments])
   const integrity = useMemo(() => positionedIntegrity(header, loadedTurns), [header, loadedTurns])
   const viewModel = useMemo(() => ({
@@ -808,22 +843,22 @@ export function usePositionedTranscript(options) {
     directory: directory ?? { complete: true, totalSegments: 0, segments: [] },
     segments,
     window: null,
-    onLoadSegment: reader.loadSegment,
-    onLoadWindow: reader.loadPosition,
+    onLoadSegment: live.loadSegment,
+    onLoadWindow: live.loadPosition,
     earlierHistoryOpen: historyOpen,
     onEarlierHistoryOpenChange,
     integrity: integrity.integrity,
     transcriptContentHash: integrity.contentHash,
     contentHash: integrity.contentHash,
-    positionedRead: { status: snapshot.status, failure, retry: reader.retry },
+    positionedRead: { status: snapshot.status, failure, retry: live.retry },
     initialPosition: snapshot.landing && Number.isInteger(snapshot.landing.position) ? { kind: 'turn', turnIndex: snapshot.landing.position } : undefined,
     landing: snapshot.landing,
     header,
     failure,
-    retry: reader.retry,
+    retry: live.retry,
     openSection: (section) => onEarlierHistoryOpenChange((previous) => ({ ...previous, [`earlier-${section}`]: true })),
     closeSection: (section) => onEarlierHistoryOpenChange((previous) => ({ ...previous, [`earlier-${section}`]: false })),
     onActiveTurnChange,
-    setPins: reader.setPins,
+    setPins: live.setPins,
   }
 }

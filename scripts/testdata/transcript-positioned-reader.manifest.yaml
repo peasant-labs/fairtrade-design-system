@@ -21,6 +21,7 @@ requiredCaseNames:
   - controller-landing-exact-vs-snapped
   - controller-closed-sets
   - demo-mock-refuses-invalid-body
+  - hook-strict-mode-reaches-ready
 requiredMutationNames:
   - print position plus one instead of the served number
   - served number off by one
@@ -41,6 +42,7 @@ requiredMutationNames:
   - leave a 4xx status unmapped
   - add a failure kind
   - remove a landing
+  - share one reader across effect runs
 mutations:
   - name: print position plus one instead of the served number
     file: src/ui/transcript/adapter.js
@@ -137,3 +139,8 @@ mutations:
     find: "  Snapped: 'snapped',\n})"
     replace: "})"
     expectedDiagnostic: controller-closed-sets
+  - name: share one reader across effect runs
+    file: src/ui/transcript/positioned-read.js
+    find: "    const instance = createPositionedReader(readerOptions)"
+    replace: "    const shared = (globalThis.__fairtradeSharedReaders ??= new WeakMap())\n    if (!shared.has(readerOptions)) shared.set(readerOptions, createPositionedReader(readerOptions))\n    const instance = shared.get(readerOptions)"
+    expectedDiagnostic: hook-strict-mode-reaches-ready

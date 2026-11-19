@@ -489,6 +489,20 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     check(clean === null, `the demo starts on its own bodies, received ${clean?.message}`)
   })
 
+  await run('reader', 'hook-strict-mode-reaches-ready', async (row, check) => {
+    const { transport } = documentTransport()
+    const StrictHost = () => {
+      const read = usePositionedTranscript({ transport, target: { transport: DOC.transport, turn: row.turn }, landing: PositionedLanding.Exact })
+      return React.createElement(TranscriptViewer, { viewModel: read.viewModel, capabilities: {}, directory: read.directory, segments: read.segments, onLoadSegment: read.onLoadSegment, onLoadWindow: read.onLoadWindow, positionedRead: read.positionedRead, initialPosition: read.initialPosition })
+    }
+    const view = await mount(React.createElement(React.StrictMode, null, React.createElement(StrictHost)))
+    await view.settle(30)
+    const status = view.container.querySelector('.txn-stream')?.getAttribute('data-positioned-read')
+    const headings = [...view.container.querySelectorAll('.txn-turn-heading')].map((node) => node.textContent)
+    check(status === row.status && headings.includes(row.heading), `under StrictMode the reader loads its target and settles, received status ${status} and ${headings.length} rows`)
+    await view.unmount()
+  })
+
   /* ── usage ───────────────────────────────────────────────────────────────────── */
   const U = families.usage
   const usageView = (scopes) => scopes.map((scope) => ({
