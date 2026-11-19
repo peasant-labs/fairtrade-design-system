@@ -154,6 +154,16 @@ export { default as useTranscriptInitialPosition } from './useTranscriptInitialP
 /** @typedef {import('./analytics.js').PhaseType} PhaseType */
 
 /* ── schema-backed wire types (JSDoc re-exports; erased at build) ─────────────── */
+/* the positioned reader's host contract */
+/** @typedef {import('./positioned-read.js').PositionedReadTransport} PositionedReadTransport */
+/** @typedef {import('./positioned-read.js').PositionedHostResponse} PositionedHostResponse */
+/** @typedef {import('./positioned-read.js').PositionedTarget} PositionedTarget */
+/** @typedef {import('./positioned-read.js').PositionedReadFailure} PositionedReadFailure */
+/** @typedef {import('./positioned-read.js').PositionedReaderOptions} PositionedReaderOptions */
+/** @typedef {import('./positioned-read.js').PositionedReadControls} PositionedReadControls */
+/** @typedef {import('./positioned-read.js').PositionedTranscript} PositionedTranscript */
+/** @typedef {import('./positioned-read.js').PositionedReadFailureKindValue} PositionedReadFailureKindValue */
+/** @typedef {import('./positioned-read.js').PositionedLandingValue} PositionedLandingValue */
 /** @typedef {import('./wire-types.js').Role} Role */
 /** @typedef {import('./wire-types.js').EntryType} EntryType */
 /** @typedef {import('./wire-types.js').ToolCallKind} ToolCallKind */

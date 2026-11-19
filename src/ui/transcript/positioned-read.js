@@ -56,12 +56,15 @@ export const PositionedReadStatus = Object.freeze({
   Failed: 'failed',
 })
 
+/** @typedef {(typeof PositionedReadFailureKind)[keyof typeof PositionedReadFailureKind]} PositionedReadFailureKindValue */
+/** @typedef {(typeof PositionedLanding)[keyof typeof PositionedLanding]} PositionedLandingValue */
+
 const FAILURE_KINDS = new Set(Object.values(PositionedReadFailureKind))
 const LANDINGS = new Set(Object.values(PositionedLanding))
 
-/** @param {unknown} value @returns {boolean} */
+/** @param {unknown} value @returns {value is PositionedReadFailureKindValue} */
 export function isPositionedReadFailureKind(value) { return FAILURE_KINDS.has(/** @type {string} */ (value)) }
-/** @param {unknown} value @returns {boolean} */
+/** @param {unknown} value @returns {value is PositionedLandingValue} */
 export function isPositionedLanding(value) { return LANDINGS.has(/** @type {string} */ (value)) }
 
 /** The resident segment budget when the host names none. Internal: a host may pass `residency`, but
@@ -156,6 +159,15 @@ const samePartition = (served, requested) => served?.kind === requested.kind && 
  * @property {{ kind: string, transcriptId?: string, sessionId?: string }} transport  the read identity every context must carry
  * @property {number} [turn]   a deep link's recorded index
  * @property {{ reference: string, kind?: string }} [entry]  a carried entry reference (hosts with a locator)
+ * @typedef {object} PositionedReadFailure  why the read has nothing new to show, and what the reader can do
+ * @property {PositionedReadFailureKindValue} kind
+ * @property {string} operation          the transport method whose answer failed
+ * @property {number} [retryAfterSeconds] busy only: the wait before the reader tries again
+ * @typedef {object} PositionedReaderOptions
+ * @property {PositionedReadTransport} transport
+ * @property {PositionedTarget} target
+ * @property {PositionedLandingValue} landing  the host's deep-link rule
+ * @property {number} [residency]  resident segments before the oldest visited one is evicted; defaults to the reader's own
  */
 
 /** Refuse options a reader cannot run with, naming what to pass instead. */
@@ -186,7 +198,7 @@ const IDLE_READER = Object.freeze({
 
 /**
  * Create one reader for one transcript. Nothing is requested until `start()`.
- * @param {{ transport: PositionedReadTransport, target: PositionedTarget, landing: string, residency?: number }} options
+ * @param {PositionedReaderOptions} options
  */
 export function createPositionedReader(options) {
   validateReaderOptions(options)
@@ -746,10 +758,22 @@ function loadedTasks(turns) {
 }
 
 /**
+ * @typedef {object} PositionedReadControls
+ * @property {() => Promise<unknown>} retry  a stale, denied or unavailable read reloads; any other failure re-runs its reads
+ * @property {(section: number) => void} openSection
+ * @property {(section: number) => void} closeSection
+ * @property {import('@peasant-labs/schema').TranscriptContentHeader | null} header
+ * @property {{ mode: PositionedLandingValue, position?: number, requestedAnchor?: number, anchorTurn?: number, requestedPosition?: number, anchorPosition?: number, anchorSegment?: number, snapped: boolean } | null} landing
+ * @typedef {object} PositionedTranscript
+ * @property {Partial<import('./state-capabilities.js').TranscriptViewerBaseProps>} viewerProps  every prop the viewer needs for this read; spread it onto TranscriptViewer
+ * @property {PositionedReadControls} controls
+ */
+
+/**
  * The React binding: one reader per transcript and mount. A host spreads `viewerProps` onto
  * `TranscriptViewer` and keeps `controls` for its own chrome (the landing line, a retry).
- * @param {{ transport: PositionedReadTransport, target: PositionedTarget, landing: string, residency?: number, session?: object }} options
- * @returns {{ viewerProps: object, controls: { retry: () => Promise<unknown>, openSection: (section: number) => void, closeSection: (section: number) => void, header: object | null, landing: object | null } }}
+ * @param {PositionedReaderOptions & { session?: object }} options
+ * @returns {PositionedTranscript}
  */
 export function usePositionedTranscript(options) {
   const { transport, target, landing, residency, session } = options
