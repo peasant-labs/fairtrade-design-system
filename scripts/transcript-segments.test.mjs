@@ -33,9 +33,6 @@ import {
   scrubberTicks,
   turnsFromSegments,
   windowCoverage,
-  placeBoundaries,
-  scrubberSeekTarget,
-  windowFailureCaption,
 } from '../src/ui/transcript/segments.js'
 
 const FIXTURE = 'scripts/testdata/transcript-segments.yaml'
@@ -763,9 +760,12 @@ function positionedDocument(row) {
   }) })
   return { refs, directory, segmentOf }
 }
+/* the geometry loads segments.js through vite, so the manifest's source mutations reach it */
+await withMountedSource(async ({ load }) => {
+const { loadedRegions, regionBoundaries, boundaryCaption, placeBoundaries, scrubberTicks, scrubberSeekTarget, windowFailureCaption } = await load('/src/ui/transcript/segments.js')
 for (const row of fixture.positionedGeometryCases) {
   const name = row.name
-  if (name === 'regions-no-spread-100000-turns') {
+  if (name === 'regions-no-spread-150000-turns') {
     const turns = Array.from({ length: row.turns }, (_, index) => ({ index, role: 'assistant', depth: 0, content: '', toolCalls: [], annotations: [] }))
     let regions = null
     let thrown = null
@@ -802,6 +802,7 @@ for (const row of fixture.positionedGeometryCases) {
     report.check(later.before.get(rows.find((turn) => turn.segmentIndex === row.loaded[1]).index) === between[0], `${name}: with no earlier row the boundary precedes the first row after the gap`)
   }
 }
+})
 
 function dirSession() {
   return 'sess_segment_fixture'

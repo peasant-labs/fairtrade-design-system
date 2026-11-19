@@ -902,7 +902,8 @@ positionedGeometryCases:
     expectSegmentIndexes: [1, 2, 3, 4, 5, 6, 7, 8, 9]
     caption: turns 7–60 of 72
   # A RangeError guard, not a timing case: a dense segment holds more turns than an argument
-  # spread may carry on a small stack, so region bounds are taken in one pass. The rows are
-  # generated in process from this count; no large file is committed.
-  - name: regions-no-spread-100000-turns
-    turns: 100000
+  # spread may carry, so region bounds are taken in one pass. 150,000 is past the spread limit
+  # of the pinned Node, so restoring a spread throws here (the manifest's spread mutation). The
+  # rows are generated in process from this count; no large file is committed.
+  - name: regions-no-spread-150000-turns
+    turns: 150000
