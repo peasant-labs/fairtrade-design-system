@@ -4,6 +4,11 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.2.0
+
+- read positioned transcript segments with served numbers (#319)
+- drop the scrubber's loaded-so-far caption (#321)
+
 ## 0.1.1
 
 - draw a reply's nested thinking as the reply's detail and time it inside the reply (#307)
