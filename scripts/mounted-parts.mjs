@@ -91,6 +91,7 @@ function mutationPlugin() {
  * and hand the gate `load(path)` and `mount(element)`. Everything is torn down in finally.
  * `plugins` adds vite transforms that run after the mutation, such as a call counter a gate places
  * on a production function it must prove is not called.
+ * @param {{ url?: string, plugins?: import('vite').Plugin[] }} [options]
  */
 export async function withMountedSource(run, { url = 'https://fairtrade.invalid/', plugins = [] } = {}) {
   // Fixture validation and mutation orchestration do not need a DOM or a Vite server.
