@@ -789,7 +789,8 @@ for (const row of fixture.positionedGeometryCases) {
     report.check(scrubberSeekTarget(tick, turns.filter((turn) => turn.segmentIndex !== row.seekOrdinal)) === null, `${name}: the seek waits until its segment is loaded`)
     continue
   }
-  const between = boundaries.filter((boundary) => boundary.side === 'between')
+  /* each case's loaded runs start at segment 0 and end at the last one, so the gap is the only edge */
+  const between = boundaries
   report.check(between.length === 1 && JSON.stringify(between[0].segmentIndexes) === JSON.stringify(row.expectSegmentIndexes) && between[0].positioned === true, `${name}: one positioned boundary covers exactly the unloaded ordinals between the runs, received ${JSON.stringify(between.map((boundary) => boundary.segmentIndexes))}`)
   if (row.caption) report.check(boundaryCaption(between[0]) === row.caption, `${name}: the gap caption names its served positions, received ${JSON.stringify(between[0] && boundaryCaption(between[0]))}`)
   if (name === 'boundary-placement-by-segment-ordinal') {

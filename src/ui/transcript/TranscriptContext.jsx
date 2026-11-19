@@ -3,7 +3,7 @@ import { ChevronDown, ChevronRight, Link as LinkIcon, History } from 'lucide-rea
 import TurnCard from './TurnCard.jsx'
 import { UsageScopes } from './UsageDisclosure.jsx'
 import { useImageUrl } from './image-url.js'
-import { POSITIONED_READ_COPY, positionedFailureSentence as failureSentence } from './positioned-read.js'
+import { POSITIONED_READ_COPY, PositionedReadStatus, positionedFailureSentence as failureSentence } from './positioned-read.js'
 
 /**
  * Current-source navigation and retained history use only cooked evidence.
@@ -45,7 +45,7 @@ export default function TranscriptContext({ relationships = [], earlierHistory =
       <div id={`${prefix}-history-${section.id}`} hidden={!open[section.id]}>
         <p className="txn-context-note">{section.state.explanation}</p>
         <UsageScopes scopes={section.usageScopes} label="earlier history usage by scope" />
-        {open[section.id] && section.status === 'loading' && <p className="txn-context-note" role="status">{POSITIONED_READ_COPY.historyLoading}</p>}
+        {open[section.id] && section.status === PositionedReadStatus.Loading && <p className="txn-context-note" role="status">{POSITIONED_READ_COPY.historyLoading}</p>}
         {open[section.id] && section.failure && <div className="txn-held-window" role="alert">
           <span>{failureSentence(section.failure.kind)}</span>{' '}
           {section.retry && <button type="button" className="txn-segboundary-load" onClick={section.retry}>{POSITIONED_READ_COPY.retryAction}</button>}

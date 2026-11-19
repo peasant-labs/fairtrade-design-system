@@ -47,6 +47,15 @@ export const PositionedLanding = Object.freeze({
   Snapped: 'snapped',
 })
 
+/** Where a positioned read, or one history section of it, stands. Closed; internal to the reader
+    and the viewer that draws its states. */
+export const PositionedReadStatus = Object.freeze({
+  Closed: 'closed',
+  Loading: 'loading',
+  Ready: 'ready',
+  Failed: 'failed',
+})
+
 const FAILURE_KINDS = new Set(Object.values(PositionedReadFailureKind))
 const LANDINGS = new Set(Object.values(PositionedLanding))
 
@@ -173,7 +182,7 @@ export function createPositionedReader({ transport, target, landing, residency =
 
   const reset = () => {
     state = {
-      status: 'loading',
+      status: PositionedReadStatus.Loading,
       header: null,
       context: null,
       directory: null,
@@ -261,14 +270,14 @@ export function createPositionedReader({ transport, target, landing, residency =
       controller = new AbortController()
       generation += 1
       reset()
-      state.status = 'failed'
+      state.status = PositionedReadStatus.Failed
       state.failure = { kind, operation: error.operation }
       emit()
       return
     }
     if (!state.failure) state.failure = { kind: error.kind, operation: error.operation, ...(error.retryAfterSeconds !== undefined ? { retryAfterSeconds: error.retryAfterSeconds } : {}) }
     if (retry) state.failed.push(retry)
-    if (state.status === 'loading' && state.segments.size === 0) state.status = 'failed'
+    if (state.status === PositionedReadStatus.Loading && state.segments.size === 0) state.status = PositionedReadStatus.Failed
     emit()
   }
 
@@ -289,7 +298,7 @@ export function createPositionedReader({ transport, target, landing, residency =
     land(w_d, w_t)
     await requestFetchSet(w_d, w_t)
     await Promise.all(tasks)
-    if (mine === generation && state.status === 'loading' && !state.failure) { state.status = 'ready'; emit() }
+    if (mine === generation && state.status === PositionedReadStatus.Loading && !state.failure) { state.status = PositionedReadStatus.Ready; emit() }
   }
 
   async function loadHeader() {
@@ -496,10 +505,10 @@ export function createPositionedReader({ transport, target, landing, residency =
 
   async function openSection(section) {
     const existing = state.history.get(section)
-    if (existing?.open && existing.status !== 'failed') return
+    if (existing?.open && existing.status !== PositionedReadStatus.Failed) return
     existing?.abort.abort()
     const meta = state.directory?.history?.find((item) => item.index === section)
-    const record = { open: true, status: 'loading', directory: null, segments: new Map(), abort: new AbortController(), failure: null, usagePresent: meta?.usagePresent, usageScopes: undefined }
+    const record = { open: true, status: PositionedReadStatus.Loading, directory: null, segments: new Map(), abort: new AbortController(), failure: null, usagePresent: meta?.usagePresent, usageScopes: undefined }
     state.history.set(section, record)
     emit()
     const partition = partitionRequest(section)
@@ -513,7 +522,7 @@ export function createPositionedReader({ transport, target, landing, residency =
       record.usagePresent = directory.usagePresent
       emit()
       await Promise.all(window.segments.map((ordinal) => loadSegment(ordinal, section)))
-      if (state.history.get(section) === record && record.status === 'loading') { record.status = 'ready'; emit() }
+      if (state.history.get(section) === record && record.status === PositionedReadStatus.Loading) { record.status = PositionedReadStatus.Ready; emit() }
     } catch (error) { failSection(section, error) }
   }
 
@@ -521,7 +530,7 @@ export function createPositionedReader({ transport, target, landing, residency =
     const record = state.history.get(section)
     if (!record || !(error instanceof ReadFailure) || error.kind === 'aborted') return
     if (DISCARDING.has(error.kind) && error.kind !== PositionedReadFailureKind.Denied) { fail(error); return }
-    record.status = 'failed'
+    record.status = PositionedReadStatus.Failed
     record.failure = { kind: error.kind, operation: error.operation }
     if (error.kind === PositionedReadFailureKind.Denied) record.segments.clear()
     emit()
@@ -693,7 +702,7 @@ function historyVM(directory, history, reopen) {
       usageScopes: open?.usageScopes ?? [],
       nativeMetadata: open ? [...open.segments.values()].flatMap((record) => record.nativeMetadata ?? []) : undefined,
       countText: exact !== undefined ? POSITIONED_READ_COPY.historyExact(exact) : recorded !== undefined ? POSITIONED_READ_COPY.historyRecorded(recorded) : '',
-      status: open ? open.status : 'closed',
+      status: open ? open.status : PositionedReadStatus.Closed,
       failure: open?.failure ?? null,
       ...(open?.failure ? { retry: () => reopen(meta.index) } : {}),
     }

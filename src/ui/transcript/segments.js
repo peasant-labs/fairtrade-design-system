@@ -27,6 +27,9 @@ import { hasImageParts } from './image-parts.js'
 
 /** @typedef {import('./view-model.js').TurnVM} TurnVM */
 
+/** Which unloaded edge a boundary stands at. */
+const BOUNDARY_SIDE = Object.freeze({ Older: 'older', Newer: 'newer', Between: 'between', All: 'all' })
+
 /** The scrubber's fixed sample size; the mounted tick count is `min(this, totalSegments)`. */
 export const SEGMENT_SCRUBBER_TICKS = 200
 
@@ -399,10 +402,11 @@ export function regionBoundaries(directory, regions) {
  * @returns {{ leading: SegmentBoundaryVM | null, trailing: SegmentBoundaryVM | null, after: Map<number, SegmentBoundaryVM>, before: Map<number, SegmentBoundaryVM>, count: number }}
  */
 export function placeBoundaries(boundaries, rows) {
+  const side = BOUNDARY_SIDE
   const after = new Map()
   const before = new Map()
   for (const boundary of boundaries) {
-    if (boundary.side !== 'between') continue
+    if (boundary.side !== side.Between) continue
     const firstOrdinal = boundary.segmentIndexes[0]
     const lastOrdinal = boundary.segmentIndexes[boundary.segmentIndexes.length - 1]
     const precedes = boundary.positioned
@@ -419,8 +423,8 @@ export function placeBoundaries(boundaries, rows) {
       if (following) before.set(following.index, boundary)
     }
   }
-  const leading = boundaries.find((boundary) => boundary.side === 'older' || boundary.side === 'all') ?? null
-  const trailing = boundaries.find((boundary) => boundary.side === 'newer') ?? null
+  const leading = boundaries.find((boundary) => boundary.side === side.Older || boundary.side === side.All) ?? null
+  const trailing = boundaries.find((boundary) => boundary.side === side.Newer) ?? null
   return { leading, trailing, after, before, count: after.size + before.size + (leading ? 1 : 0) + (trailing ? 1 : 0) }
 }
 

@@ -925,7 +925,7 @@ function buildFilterIndex(turnVMs, annotationsByTurn) {
  */
 export function adaptTranscript(payload, annotations, analytics, options) {
   const payloadMode = options?.payloadMode ?? 'local'
-  if (payloadMode === 'segment') {
+  if (payloadMode === PayloadMode.Segment) {
     return /** @type {TranscriptViewModel} */ (/** @type {unknown} */ (adaptPositionedSegment(/** @type {unknown} */ (payload), annotations, analytics, options)))
   }
   const incompleteTail = options?.tail === TranscriptTail.Incomplete
@@ -1012,7 +1012,7 @@ export function adaptTranscript(payload, annotations, analytics, options) {
 /** The partition id a positioned read cooks into: `main`, or `earlier-N` for history section N. @param {{ kind?: string, sectionIndex?: number | null } | undefined} partition @returns {string} */
 export function positionedPartitionId(partition) {
   if (partition?.kind === TranscriptSegmentPartitionKind.History) return `earlier-${partition.sectionIndex ?? 0}`
-  return 'main'
+  return MAIN_PARTITION_ID
 }
 
 /**
@@ -1055,6 +1055,12 @@ function adaptPositionedSegment(segment, annotations, analytics, options) {
   if (body.nativeMetadata) vm.nativeMetadata = body.nativeMetadata
   return vm
 }
+
+/** The adapter's boundary modes. */
+const PayloadMode = Object.freeze({ Local: 'local', Published: 'published', Segment: 'segment' })
+
+/** The id of a transcript's main partition; history sections are `earlier-N`. */
+export const MAIN_PARTITION_ID = 'main'
 
 /** A positioned segment carries no whole-document analytics: no phases, no pattern annotations. */
 const POSITIONED_ANALYTICS = /** @type {TranscriptAnalyticsVM} */ (Object.freeze({ phases: [], patternAnnotations: [], taskGroups: [] }))

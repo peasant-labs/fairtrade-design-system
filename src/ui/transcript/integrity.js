@@ -1,3 +1,5 @@
+import { MAIN_PARTITION_ID } from './adapter.js'
+
 /**
  * Pure view of a transcript's served integrity flag. The host passes the served value as it
  * arrived, the detail response's content hash, and the content hash of the rendered content.
@@ -60,7 +62,7 @@ export function positionedIntegrity(header, turns) {
   /** @type {Map<number, { recordedIndex?: number }>} */
   const byPosition = new Map()
   for (const turn of turns) {
-    if (turn.partition === 'main' && Number.isInteger(turn.position)) byPosition.set(/** @type {number} */ (turn.position), turn)
+    if (turn.partition === MAIN_PARTITION_ID && Number.isInteger(turn.position)) byPosition.set(/** @type {number} */ (turn.position), turn)
   }
   /** @type {number[]} */
   const flagged = []

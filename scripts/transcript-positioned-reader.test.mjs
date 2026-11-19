@@ -19,6 +19,9 @@
    Run: pnpm test:transcript-positioned-reader
    Mutations: pnpm test:transcript-positioned-reader:mutations */
 import {
+  TranscriptSegmentPartitionKind,
+  TranscriptUsagePresence,
+  UsageCompleteness,
   zPositionedDirectory,
   zPositionedSegment,
   zPositionedWindow,
@@ -26,13 +29,25 @@ import {
 } from '@peasant-labs/schema'
 import { loadFixturePair, withMountedSource, click, createReport } from './mounted-parts.mjs'
 
+const NUMBERING = 'scripts/testdata/transcript-positioned-numbering.yaml'
+const NUMBERING_MANIFEST = 'scripts/testdata/transcript-positioned-numbering.manifest.yaml'
+const READER = 'scripts/testdata/transcript-positioned-reader.yaml'
+const READER_MANIFEST = 'scripts/testdata/transcript-positioned-reader.manifest.yaml'
+const USAGE = 'scripts/testdata/transcript-usage-accumulator.yaml'
+const USAGE_MANIFEST = 'scripts/testdata/transcript-usage-accumulator.manifest.yaml'
+const HISTORY = 'scripts/testdata/transcript-history-partitions.yaml'
+const HISTORY_MANIFEST = 'scripts/testdata/transcript-history-partitions.manifest.yaml'
+const INTEGRITY = 'scripts/testdata/transcript-integrity-pairs.yaml'
+const INTEGRITY_MANIFEST = 'scripts/testdata/transcript-integrity-pairs.manifest.yaml'
 const families = {
-  numbering: loadFixturePair('scripts/testdata/transcript-positioned-numbering.yaml', 'scripts/testdata/transcript-positioned-numbering.manifest.yaml', { cases: 'requiredCaseNames' }).fixture,
-  reader: loadFixturePair('scripts/testdata/transcript-positioned-reader.yaml', 'scripts/testdata/transcript-positioned-reader.manifest.yaml', { cases: 'requiredCaseNames' }).fixture,
-  usage: loadFixturePair('scripts/testdata/transcript-usage-accumulator.yaml', 'scripts/testdata/transcript-usage-accumulator.manifest.yaml', { cases: 'requiredCaseNames' }).fixture,
-  history: loadFixturePair('scripts/testdata/transcript-history-partitions.yaml', 'scripts/testdata/transcript-history-partitions.manifest.yaml', { cases: 'requiredCaseNames' }).fixture,
-  integrity: loadFixturePair('scripts/testdata/transcript-integrity-pairs.yaml', 'scripts/testdata/transcript-integrity-pairs.manifest.yaml', { cases: 'requiredCaseNames' }).fixture,
+  numbering: loadFixturePair(NUMBERING, NUMBERING_MANIFEST, { cases: 'requiredCaseNames' }).fixture,
+  reader: loadFixturePair(READER, READER_MANIFEST, { cases: 'requiredCaseNames' }).fixture,
+  usage: loadFixturePair(USAGE, USAGE_MANIFEST, { cases: 'requiredCaseNames' }).fixture,
+  history: loadFixturePair(HISTORY, HISTORY_MANIFEST, { cases: 'requiredCaseNames' }).fixture,
+  integrity: loadFixturePair(INTEGRITY, INTEGRITY_MANIFEST, { cases: 'requiredCaseNames' }).fixture,
 }
+/** The transport's request names, as the recording transport logs them. */
+const Operation = Object.freeze({ Header: 'header', Directory: 'directory', Window: 'window', Segment: 'segment', Locate: 'locate' })
 const report = createReport('transcript positioned reader')
 const caseOf = (family, name) => {
   const row = families[family].cases.find((item) => item.name === name)
@@ -63,7 +78,7 @@ globalThis.__fairtradePositionedSpy = spy
 const COUNTERS = [
   { file: 'src/ui/transcript/analytics.js', find: 'export function computeTurnLabels(turns) {', add: 'globalThis.__fairtradePositionedSpy && (globalThis.__fairtradePositionedSpy.labels += 1)' },
   { file: 'src/ui/transcript/adapter.js', find: 'export function prefilterTurns(turns) {', add: 'globalThis.__fairtradePositionedSpy && (globalThis.__fairtradePositionedSpy.prefilter += 1)' },
-  { file: 'src/ui/transcript/adapter.js', find: "  const payloadMode = options?.payloadMode ?? 'local'\n", add: "if (payloadMode !== 'segment' && globalThis.__fairtradePositionedSpy) globalThis.__fairtradePositionedSpy.wholeDocument += 1" },
+  { file: 'src/ui/transcript/adapter.js', find: "  const payloadMode = options?.payloadMode ?? 'local'\n", add: "if (payloadMode !== PayloadMode.Segment && globalThis.__fairtradePositionedSpy) globalThis.__fairtradePositionedSpy.wholeDocument += 1" },
 ]
 const counterPlugin = {
   name: 'fairtrade-positioned-call-counters',
@@ -119,15 +134,15 @@ function partitionOf({ segments, rowsPerSegment, partition, offset, usage }) {
  * undefined for the document's own answer. Every call is logged with its request and signal.
  */
 function documentTransport({ respond, perPage, usagePresent = 'empty', history } = {}) {
-  const main = partitionOf({ segments: DOC.segments, rowsPerSegment: DOC.rowsPerSegment, partition: { kind: 'main' }, offset: DOC.recordedOffset, usage: usagePresent === 'present' })
+  const main = partitionOf({ segments: DOC.segments, rowsPerSegment: DOC.rowsPerSegment, partition: { kind: 'main' }, offset: DOC.recordedOffset, usage: usagePresent === TranscriptUsagePresence.Present })
   const section = history ? partitionOf({ segments: 1, rowsPerSegment: history.rows, partition: { kind: 'history', sectionIndex: history.index }, offset: 0 }) : null
   const log = []
   const ok = (body) => Promise.resolve({ status: 200, body })
   const answer = (operation, request) => {
-    const isHistory = request?.partition?.kind === 'history'
+    const isHistory = request?.partition?.kind === TranscriptSegmentPartitionKind.History
     const part = isHistory ? section : main
-    if (operation === 'header') return ok(parse(zTranscriptContentHeader, { contractVersion: '0.58.1', kind: 'session_detail', revision: '3', representation: 'r1', canonical: true, omittedImages: 0, sessionHeader: { id: 'positioned-test', harness: 'claude-code' } }, 'header'))
-    if (operation === 'directory') {
+    if (operation === Operation.Header) return ok(parse(zTranscriptContentHeader, { contractVersion: '0.58.1', kind: 'session_detail', revision: '3', representation: 'r1', canonical: true, omittedImages: 0, sessionHeader: { id: 'positioned-test', harness: 'claude-code' } }, 'header'))
+    if (operation === Operation.Directory) {
       const page = request.page ?? 1
       const refs = perPage ? part.refs.slice((page - 1) * perPage, page * perPage) : part.refs
       return ok(parse(zPositionedDirectory, {
@@ -136,7 +151,7 @@ function documentTransport({ respond, perPage, usagePresent = 'empty', history }
         ...(!isHistory && history ? { history: [{ index: history.index, state: history.state, totalTurns: history.rows, totalConversationTurns: history.recordedConversationTurns, usagePresent: 'unknown' }] } : {}),
       }, 'directory'))
     }
-    if (operation === 'window') {
+    if (operation === Operation.Window) {
       const turn = request.turn
       const requested = turn === undefined ? undefined : part.rows.find((row) => row.recordedIndex === turn)
       const nearest = turn === undefined ? part.rows[0] : requested ?? part.rows.find((row) => row.recordedIndex > turn) ?? part.rows.at(-1)
@@ -150,7 +165,7 @@ function documentTransport({ respond, perPage, usagePresent = 'empty', history }
         hasOlder: run[0] > 0, hasNewer: run.at(-1) < part.bodies.length - 1,
       }, 'window'))
     }
-    if (operation === 'segment') return ok(parse(zPositionedSegment, part.bodies[request.index], 'segment'))
+    if (operation === Operation.Segment) return ok(parse(zPositionedSegment, part.bodies[request.index], 'segment'))
     return Promise.resolve({ status: 404, body: null })
   }
   const call = (operation) => (request, signal) => {
@@ -158,10 +173,10 @@ function documentTransport({ respond, perPage, usagePresent = 'empty', history }
     const custom = respond?.(operation, request, signal)
     return custom === undefined ? answer(operation, request) : Promise.resolve(custom)
   }
-  const transport = { header: call('header'), directory: call('directory'), window: call('window'), segment: call('segment'), locate: call('locate') }
+  const transport = Object.fromEntries(Object.values(Operation).map((operation) => [operation, call(operation)]))
   return { transport, log, main, section }
 }
-const segmentRequests = (log) => log.filter((entry) => entry.operation === 'segment' && entry.request.partition.kind === 'main').map((entry) => entry.request.index)
+const segmentRequests = (log) => log.filter((entry) => entry.operation === Operation.Segment && entry.request.partition.kind === TranscriptSegmentPartitionKind.Main).map((entry) => entry.request.index)
 const residentOf = (reader) => [...reader.getSnapshot().segments.keys()].sort((a, b) => a - b)
 
 await withMountedSource(async ({ load, mount, window, React }) => {
@@ -231,7 +246,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   await run('numbering', 'number-malformed-value-discarded', async (_, check) => {
     const { transport } = documentTransport({
       respond: (operation, request) => {
-        if (operation !== 'segment' || request.index !== 0) return undefined
+        if (operation !== Operation.Segment || request.index !== 0) return undefined
         const body = partitionOf({ segments: DOC.segments, rowsPerSegment: DOC.rowsPerSegment, partition: { kind: 'main' }, offset: DOC.recordedOffset }).bodies[0]
         return { status: 200, body: { ...body, rows: body.rows.map((row, index) => (index === 0 ? { ...row, displayNumber: N.malformedNumber } : row)) } }
       },
@@ -362,7 +377,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     for (const status of row.rows) {
       const { transport, main } = documentTransport({
         respond: (operation, request) => {
-          if (operation !== 'segment' || request.index !== 0) return undefined
+          if (operation !== Operation.Segment || request.index !== 0) return undefined
           if (status.reject) return Promise.reject(new TypeError('Failed to fetch'))
           if (status.status !== 200) return { status: status.status, ...('retryAfterSeconds' in status ? { retryAfterSeconds: status.retryAfterSeconds } : {}), body: null }
           const body = main.bodies[0]
@@ -385,7 +400,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     for (const kind of row.kinds) {
       const { transport } = documentTransport({
         respond: (operation, request) => {
-          if (operation !== 'segment' || request.index !== 0) return undefined
+          if (operation !== Operation.Segment || request.index !== 0) return undefined
           return responses[kind] === 'reject' ? Promise.reject(new TypeError('Failed to fetch')) : responses[kind]
         },
       })
@@ -402,7 +417,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   })
   await run('reader', 'controller-transport-mismatch-discards', async (row, check) => {
     const { transport, main } = documentTransport({
-      respond: (operation, request) => (operation === 'segment' && request.index === row.segment
+      respond: (operation, request) => (operation === Operation.Segment && request.index === row.segment
         ? { status: 200, body: { ...main.bodies[row.segment], context: context(main.totals, { kind: DOC.transport.kind, transcriptId: DOC.otherTranscriptId }) } }
         : undefined),
     })
@@ -415,12 +430,12 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     const { transport, log } = documentTransport({
       perPage: row.perPage,
       respond: (operation, request) => {
-        if (operation === 'directory' && request.page === 2 && !refused) { refused = true; return { status: 404, body: null } }
+        if (operation === Operation.Directory && request.page === 2 && !refused) { refused = true; return { status: 404, body: null } }
         return undefined
       },
     })
     const instance = await start({ transport, target: { transport: DOC.transport } })
-    const pages = log.filter((entry) => entry.operation === 'directory').map((entry) => entry.request.page)
+    const pages = log.filter((entry) => entry.operation === Operation.Directory).map((entry) => entry.request.page)
     check(JSON.stringify(pages) === JSON.stringify(row.pages), `a page past the last refetches page one, received ${JSON.stringify(pages)}`)
     check(instance.getSnapshot().directory?.segments.length === DOC.segments && !instance.getSnapshot().failure, `the directory holds every ref after the refetch, received ${instance.getSnapshot().directory?.segments.length}`)
     instance.dispose()
@@ -430,12 +445,12 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     const held = new Promise((done) => { release = done })
     const { transport, log, section } = documentTransport({
       history: families.history.section,
-      respond: (operation, request) => (operation === 'segment' && request.partition.kind === 'history' ? held : undefined),
+      respond: (operation, request) => (operation === Operation.Segment && request.partition.kind === TranscriptSegmentPartitionKind.History ? held : undefined),
     })
     const instance = await start({ transport, target: { transport: DOC.transport } })
     const opening = instance.openSection(families.history.section.index)
     await settle()
-    const pending = log.find((entry) => entry.operation === 'segment' && entry.request.partition.kind === 'history')
+    const pending = log.find((entry) => entry.operation === Operation.Segment && entry.request.partition.kind === TranscriptSegmentPartitionKind.History)
     instance.closeSection(families.history.section.index)
     release({ status: 200, body: section.bodies[0] })
     await opening
@@ -479,8 +494,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   const usageView = (scopes) => scopes.map((scope) => ({
     scope: scope.scope,
     ownerCount: scope.ownerCount,
-    tokens: Object.fromEntries(scope.tokens.filter((field) => field.value !== 'unknown').map((field) => [field.label, [field.value, field.completeness]])),
-    cost: Object.fromEntries(scope.cost.filter((field) => field.value !== 'unknown').map((field) => [field.label, [field.value, field.completeness]])),
+    tokens: Object.fromEntries(scope.tokens.filter((field) => field.completeness !== UsageCompleteness.Unknown).map((field) => [field.label, [field.value, field.completeness]])),
+    cost: Object.fromEntries(scope.cost.filter((field) => field.completeness !== UsageCompleteness.Unknown).map((field) => [field.label, [field.value, field.completeness]])),
   }))
   await run('usage', 'usage-accumulator-equals-aggregate', async (_, check) => {
     const accumulator = createUsageAccumulator()
@@ -494,7 +509,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       const { transport } = documentTransport({ usagePresent: presence })
       const instance = await start({ transport, target: { transport: DOC.transport } })
       const scopes = instance.getSnapshot().usageScopes
-      check(presence === 'present' ? Array.isArray(scopes) && scopes.length > 0 : scopes === undefined, `usagePresent ${presence} ${presence === 'present' ? 'shows' : 'hides'} usage, received ${JSON.stringify(scopes?.map((scope) => scope.ownerCount))}`)
+      check(presence === TranscriptUsagePresence.Present ? Array.isArray(scopes) && scopes.length > 0 : scopes === undefined, `usagePresent ${presence} ${presence === TranscriptUsagePresence.Present ? 'shows' : 'hides'} usage, received ${JSON.stringify(scopes?.map((scope) => scope.ownerCount))}`)
       instance.dispose()
     }
   })
@@ -531,7 +546,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   await run('history', 'history-closed-count-qualified', async (_, check) => {
     const { view, recorded } = await historyHost()
     check(toggleText(view.container).startsWith(H.closedText), `the closed section states its recorded count, received ${JSON.stringify(toggleText(view.container))}`)
-    check(!recorded.log.some((entry) => entry.request?.partition?.kind === 'history'), 'a closed section reads nothing')
+    check(!recorded.log.some((entry) => entry.request?.partition?.kind === TranscriptSegmentPartitionKind.History), 'a closed section reads nothing')
     await view.unmount()
   })
   await run('history', 'history-open-exact-count', async (_, check) => {

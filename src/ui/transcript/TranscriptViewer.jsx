@@ -46,7 +46,7 @@ import IntegrityBadge from './IntegrityBadge.jsx'
 import { integrityView } from './integrity.js'
 import Collapsible from './Collapsible.jsx'
 import TranscriptContext from './TranscriptContext.jsx'
-import { PositionedReadFailureKind, POSITIONED_READ_COPY, positionedFailureSentence } from './positioned-read.js'
+import { PositionedReadFailureKind, PositionedReadStatus, POSITIONED_READ_COPY, positionedFailureSentence } from './positioned-read.js'
 import { UsageScopes } from './UsageDisclosure.jsx'
 import DiffEntryCard from './DiffEntryCard.jsx'
 import OutlineRail from './OutlineRail.jsx'
@@ -987,7 +987,7 @@ export default function TranscriptViewer({
      denied or unavailable read replaces the trace; any other failure keeps every loaded row and
      draws its notice above them. Busy is a status, not an alert: it tries again on its own. */
   const positionedFailure = positionedRead?.failure ?? null
-  const positionedSettled = !positionedRead || (positionedRead.status === 'ready' && !positionedFailure)
+  const positionedSettled = !positionedRead || (positionedRead.status === PositionedReadStatus.Ready && !positionedFailure)
   const positionedNotice = !positionedRead ? null
     : positionedFailure?.kind === PositionedReadFailureKind.Denied || positionedFailure?.kind === PositionedReadFailureKind.Unavailable ? (
       <div className="empty txn-read-refused" data-read-failure={positionedFailure.kind}>
@@ -1002,7 +1002,7 @@ export default function TranscriptViewer({
           {positionedFailure.kind === PositionedReadFailureKind.Stale ? POSITIONED_READ_COPY.staleAction : positionedFailure.kind === PositionedReadFailureKind.Busy ? POSITIONED_READ_COPY.busyAction : POSITIONED_READ_COPY.retryAction}
         </button>
       </div>
-    ) : positionedRead.status === 'loading' && loadedSegments.length === 0 ? (
+    ) : positionedRead.status === PositionedReadStatus.Loading && loadedSegments.length === 0 ? (
       <p className="txn-held-window" role="status" data-read-loading="true">{POSITIONED_READ_COPY.loading}</p>
     ) : null
 

@@ -10,6 +10,7 @@
    server's cook reproduces (`computeTurnLabels`), once, over the whole partition. */
 
 import {
+  TranscriptSegmentPartitionKind,
   isConversationTurn,
   isPositionedDirectoryPositionsValid,
   zPositionedDirectory,
@@ -25,7 +26,11 @@ const SEGMENTS = 12
 const START = Date.parse('2026-11-12T09:00:00Z')
 
 /** The demo scenarios, one per mounted state. */
-export const POSITIONED_DEMO_SCENARIOS = Object.freeze(['open', 'far', 'history', 'nonumber', 'busy', 'stale', 'denied', 'unavailable', 'failed', 'malformed', 'network'])
+export const PositionedDemoScenario = Object.freeze({
+  Open: 'open', Far: 'far', History: 'history', NoNumber: 'nonumber', Busy: 'busy', Stale: 'stale',
+  Denied: 'denied', Unavailable: 'unavailable', Failed: 'failed', Malformed: 'malformed', Network: 'network',
+})
+export const POSITIONED_DEMO_SCENARIOS = Object.freeze(Object.values(PositionedDemoScenario))
 
 const FILES = ['src/reader/fetch-set.js', 'src/reader/eviction.js', 'src/reader/landing.js', 'docs/reading.md', 'src/reader/history.js', 'src/reader/usage.js']
 const PROMPTS = [
@@ -126,7 +131,7 @@ export function buildPositionedDemo(scenario = 'open', { delayMs = 30, mutateBod
     segmentRows: ROWS_PER_SEGMENT,
     partition: { kind: 'main' },
     contextFor: (totals) => context(totals),
-    drop: scenario === 'nonumber' ? (position) => position === 2 : undefined,
+    drop: scenario === PositionedDemoScenario.NoNumber ? (position) => position === 2 : undefined,
   })
   const history = buildPartition({
     tasks: 1,
@@ -214,17 +219,17 @@ export function buildPositionedDemo(scenario = 'open', { delayMs = 30, mutateBod
   }
   const answer = (value) => new Promise((resolve) => setTimeout(() => resolve(value), delayMs))
   const ok = (body) => answer({ status: 200, body })
-  const isHistory = (request) => request?.partition?.kind === 'history'
+  const isHistory = (request) => request?.partition?.kind === TranscriptSegmentPartitionKind.History
 
   /** The scenario's refusal for one segment read, or null to answer it. Segment 1 is the one the
       failing scenarios refuse, so the opening run paints before the notice. */
   const segmentRefusal = (request) => {
     if (isHistory(request) || request.index !== 1) return null
     switch (scenario) {
-      case 'busy': return { status: 503, retryAfterSeconds: 30, body: null }
-      case 'stale': return { status: 409, body: null }
-      case 'failed': return first('failed') ? { status: 500, body: null } : null
-      case 'malformed': return first('malformed') ? { status: 200, body: foreignSegment } : null
+      case PositionedDemoScenario.Busy: return { status: 503, retryAfterSeconds: 30, body: null }
+      case PositionedDemoScenario.Stale: return { status: 409, body: null }
+      case PositionedDemoScenario.Failed: return first('failed') ? { status: 500, body: null } : null
+      case PositionedDemoScenario.Malformed: return first('malformed') ? { status: 200, body: foreignSegment } : null
       default: return null
     }
   }
@@ -232,8 +237,8 @@ export function buildPositionedDemo(scenario = 'open', { delayMs = 30, mutateBod
   const transport = {
     header: () => ok(header),
     directory(request) {
-      if (scenario === 'denied') return answer({ status: 404, body: null })
-      if (scenario === 'unavailable') return answer({ status: 410, body: null })
+      if (scenario === PositionedDemoScenario.Denied) return answer({ status: 404, body: null })
+      if (scenario === PositionedDemoScenario.Unavailable) return answer({ status: 410, body: null })
       return ok(isHistory(request) ? historyDirectory : mainDirectory)
     },
     window(request) {
@@ -243,7 +248,7 @@ export function buildPositionedDemo(scenario = 'open', { delayMs = 30, mutateBod
       return window ? ok(window) : answer({ status: 400, body: null })
     },
     segment(request) {
-      if (scenario === 'network' && request.index === 1 && first('network')) return new Promise((_, reject) => setTimeout(() => reject(new TypeError('Failed to fetch')), delayMs))
+      if (scenario === PositionedDemoScenario.Network && request.index === 1 && first('network')) return new Promise((_, reject) => setTimeout(() => reject(new TypeError('Failed to fetch')), delayMs))
       const refusal = segmentRefusal(request)
       if (refusal) return answer(refusal)
       const list = isHistory(request) ? historySegments : mainSegments
@@ -255,10 +260,11 @@ export function buildPositionedDemo(scenario = 'open', { delayMs = 30, mutateBod
   /* the default open's run is segment 0; the other scenarios read a run that includes segment 1 */
   const farTurn = main.rows[(SEGMENTS - 2) * ROWS_PER_SEGMENT + 2].recordedIndex
   const failingTurn = main.rows[ROWS_PER_SEGMENT].recordedIndex
-  const deepLink = scenario === 'far' ? farTurn : ['busy', 'stale', 'failed', 'malformed', 'network'].includes(scenario) ? failingTurn : undefined
+  const failing = [PositionedDemoScenario.Busy, PositionedDemoScenario.Stale, PositionedDemoScenario.Failed, PositionedDemoScenario.Malformed, PositionedDemoScenario.Network]
+  const deepLink = scenario === PositionedDemoScenario.Far ? farTurn : failing.includes(scenario) ? failingTurn : undefined
   return {
     transport,
     target: { transport: { kind: 'village_transcript', transcriptId: TRANSCRIPT_ID }, ...(deepLink === undefined ? {} : { turn: deepLink }) },
-    openHistory: scenario === 'history',
+    openHistory: scenario === PositionedDemoScenario.History,
   }
 }
