@@ -128,8 +128,10 @@ export {
 export {
   PositionedReadFailureKind,
   PositionedLanding,
+  PositionedReadStatus,
   isPositionedReadFailureKind,
   isPositionedLanding,
+  isPositionedReadStatus,
   createPositionedReader,
   usePositionedTranscript,
 } from './positioned-read.js'
@@ -164,6 +166,7 @@ export { default as useTranscriptInitialPosition } from './useTranscriptInitialP
 /** @typedef {import('./positioned-read.js').PositionedTranscript} PositionedTranscript */
 /** @typedef {import('./positioned-read.js').PositionedReadFailureKindValue} PositionedReadFailureKindValue */
 /** @typedef {import('./positioned-read.js').PositionedLandingValue} PositionedLandingValue */
+/** @typedef {import('./positioned-read.js').PositionedReadStatusValue} PositionedReadStatusValue */
 /** @typedef {import('./wire-types.js').Role} Role */
 /** @typedef {import('./wire-types.js').EntryType} EntryType */
 /** @typedef {import('./wire-types.js').ToolCallKind} ToolCallKind */

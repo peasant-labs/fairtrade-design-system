@@ -89,6 +89,7 @@ cases:
   - name: controller-closed-sets
     failureKinds: [stale, busy, denied, unavailable, failed, malformed, network]
     landings: [exact, snapped]
+    statuses: [closed, loading, ready, failed]
   - name: demo-mock-refuses-invalid-body
   # The hook under React StrictMode, which mounts, unmounts and remounts every effect: each
   # mount must get its own reader, so the remount loads the target and settles.
@@ -97,7 +98,8 @@ cases:
     heading: assistant turn 11a
     status: ready
   # The hook's viewerProps, spread onto the viewer with nothing else wired, mount every failure
-  # state of the in-use demo's mock transport. `statuses` is what the stream reports.
+  # state of the in-use demo's mock transport. `statuses` is what the stream reports: the
+  # failure kind while a failure is present.
   - name: hook-viewer-props-mount-every-failure-state
     kinds: [busy, stale, denied, unavailable, failed, malformed, network]
-    statuses: {busy: failed, stale: failed, denied: failed, unavailable: failed, failed: failed, malformed: failed, network: failed}
+    statuses: {busy: busy, stale: stale, denied: denied, unavailable: unavailable, failed: failed, malformed: malformed, network: network}

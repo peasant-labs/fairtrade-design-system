@@ -47,8 +47,7 @@ export const PositionedLanding = Object.freeze({
   Snapped: 'snapped',
 })
 
-/** Where a positioned read, or one history section of it, stands. Closed; internal to the reader
-    and the viewer that draws its states. */
+/** Where a positioned read, or one history section of it, stands. Closed. */
 export const PositionedReadStatus = Object.freeze({
   Closed: 'closed',
   Loading: 'loading',
@@ -58,14 +57,18 @@ export const PositionedReadStatus = Object.freeze({
 
 /** @typedef {(typeof PositionedReadFailureKind)[keyof typeof PositionedReadFailureKind]} PositionedReadFailureKindValue */
 /** @typedef {(typeof PositionedLanding)[keyof typeof PositionedLanding]} PositionedLandingValue */
+/** @typedef {(typeof PositionedReadStatus)[keyof typeof PositionedReadStatus]} PositionedReadStatusValue */
 
 const FAILURE_KINDS = new Set(Object.values(PositionedReadFailureKind))
 const LANDINGS = new Set(Object.values(PositionedLanding))
+const STATUSES = new Set(Object.values(PositionedReadStatus))
 
 /** @param {unknown} value @returns {value is PositionedReadFailureKindValue} */
 export function isPositionedReadFailureKind(value) { return FAILURE_KINDS.has(/** @type {string} */ (value)) }
 /** @param {unknown} value @returns {value is PositionedLandingValue} */
 export function isPositionedLanding(value) { return LANDINGS.has(/** @type {string} */ (value)) }
+/** @param {unknown} value @returns {value is PositionedReadStatusValue} */
+export function isPositionedReadStatus(value) { return STATUSES.has(/** @type {string} */ (value)) }
 
 /** The resident segment budget when the host names none. Internal: a host may pass `residency`, but
     the default is this reader's to tune. */

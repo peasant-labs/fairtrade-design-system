@@ -44,6 +44,8 @@ requiredMutationNames:
   - add a failure kind
   - remove a landing
   - share one reader across effect runs
+  - add a read status
+  - report the status over a failure kind
 mutations:
   - name: print position plus one instead of the served number
     file: src/ui/transcript/adapter.js
@@ -145,3 +147,13 @@ mutations:
     find: "    const instance = createPositionedReader(readerOptions)"
     replace: "    const shared = (globalThis.__fairtradeSharedReaders ??= new WeakMap())\n    if (!shared.has(readerOptions)) shared.set(readerOptions, createPositionedReader(readerOptions))\n    const instance = shared.get(readerOptions)"
     expectedDiagnostic: hook-strict-mode-reaches-ready
+  - name: add a read status
+    file: src/ui/transcript/positioned-read.js
+    find: "  Ready: 'ready',\n  Failed: 'failed',\n})"
+    replace: "  Ready: 'ready',\n  Failed: 'failed',\n  Busy: 'busy',\n})"
+    expectedDiagnostic: controller-closed-sets
+  - name: report the status over a failure kind
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "data-positioned-read={positionedRead ? positionedRead.failure?.kind ?? positionedRead.status : undefined}"
+    replace: "data-positioned-read={positionedRead ? positionedRead.status : undefined}"
+    expectedDiagnostic: hook-viewer-props-mount-every-failure-state

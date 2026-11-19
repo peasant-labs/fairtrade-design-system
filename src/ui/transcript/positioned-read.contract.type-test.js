@@ -14,6 +14,7 @@
 /** @typedef {import('./index.js').PositionedTranscript} PositionedTranscript */
 /** @typedef {import('./index.js').PositionedLandingValue} PositionedLandingValue */
 /** @typedef {import('./index.js').PositionedReadFailureKindValue} PositionedReadFailureKindValue */
+/** @typedef {import('./index.js').PositionedReadStatusValue} PositionedReadStatusValue */
 
 /** @type {PositionedHostResponse} */
 const busy = { status: 503, retryAfterSeconds: 2, body: null }
@@ -43,7 +44,8 @@ const failure = { kind: 'busy', operation: 'segment', retryAfterSeconds: 2 }
 // @ts-expect-error a failure kind outside the closed set is refused
 /** @type {PositionedReadFailureKindValue} */ const timeout = 'timeout'
 
-
+/** @type {PositionedReadStatusValue} */
+const ready = 'ready'
 
 /** @param {PositionedTranscript} read */
 function host(read) {
@@ -56,4 +58,4 @@ function host(read) {
   return { again, snapped, vm }
 }
 
-export { partial, nearest, loose, failure, timeout, options, host }
+export { partial, nearest, loose, failure, timeout, ready, options, host }

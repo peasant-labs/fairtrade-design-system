@@ -478,7 +478,10 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     const sameMembers = (object, members) => Object.isFrozen(object) && JSON.stringify(Object.values(object).sort()) === JSON.stringify([...members].sort())
     check(sameMembers(reader.PositionedReadFailureKind, row.failureKinds), `PositionedReadFailureKind is exactly ${JSON.stringify(row.failureKinds)}, received ${JSON.stringify(Object.values(reader.PositionedReadFailureKind))}`)
     check(sameMembers(reader.PositionedLanding, row.landings), `PositionedLanding is exactly ${JSON.stringify(row.landings)}, received ${JSON.stringify(Object.values(reader.PositionedLanding))}`)
-    check(row.failureKinds.every(reader.isPositionedReadFailureKind) && !reader.isPositionedReadFailureKind('timeout') && row.landings.every(reader.isPositionedLanding) && !reader.isPositionedLanding('nearest'), 'the guards accept exactly the members')
+    check(sameMembers(reader.PositionedReadStatus, row.statuses), `PositionedReadStatus is exactly ${JSON.stringify(row.statuses)}, received ${JSON.stringify(Object.values(reader.PositionedReadStatus))}`)
+    check(row.failureKinds.every(reader.isPositionedReadFailureKind) && !reader.isPositionedReadFailureKind('timeout') && row.landings.every(reader.isPositionedLanding) && !reader.isPositionedLanding('nearest') && row.statuses.every(reader.isPositionedReadStatus) && !reader.isPositionedReadStatus('busy'), 'the guards accept exactly the members')
+    const barrel = await load('/src/ui/transcript/index.js')
+    check(barrel.PositionedReadStatus === reader.PositionedReadStatus && barrel.isPositionedReadStatus === reader.isPositionedReadStatus, 'the status set and its guard are exported from the transcript barrel')
   })
   await run('reader', 'demo-mock-refuses-invalid-body', async (_, check) => {
     let thrown = null
