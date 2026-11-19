@@ -96,3 +96,8 @@ cases:
     turn: 1031
     heading: assistant turn 11a
     status: ready
+  # The hook's viewerProps, spread onto the viewer with nothing else wired, mount every failure
+  # state of the in-use demo's mock transport. `statuses` is what the stream reports.
+  - name: hook-viewer-props-mount-every-failure-state
+    kinds: [busy, stale, denied, unavailable, failed, malformed, network]
+    statuses: {busy: failed, stale: failed, denied: failed, unavailable: failed, failed: failed, malformed: failed, network: failed}

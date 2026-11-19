@@ -746,8 +746,10 @@ function loadedTasks(turns) {
 }
 
 /**
- * The React binding: one reader per transcript and mount, its snapshot, and the viewer props it produces.
+ * The React binding: one reader per transcript and mount. A host spreads `viewerProps` onto
+ * `TranscriptViewer` and keeps `controls` for its own chrome (the landing line, a retry).
  * @param {{ transport: PositionedReadTransport, target: PositionedTarget, landing: string, residency?: number, session?: object }} options
+ * @returns {{ viewerProps: object, controls: { retry: () => Promise<unknown>, openSection: (section: number) => void, closeSection: (section: number) => void, header: object | null, landing: object | null } }}
  */
 export function usePositionedTranscript(options) {
   const { transport, target, landing, residency, session } = options
@@ -838,27 +840,30 @@ export function usePositionedTranscript(options) {
     ...(snapshot.usageScopes ? { usageScopes: snapshot.usageScopes } : {}),
   }), [header, session, snapshot.context, earlierHistory, snapshot.usageScopes, loadedTurns])
 
-  return {
+  const positionedRead = useMemo(() => ({ status: snapshot.status, failure, retry: live.retry }), [snapshot.status, failure, live])
+  const viewerProps = useMemo(() => ({
     viewModel,
     directory: directory ?? { complete: true, totalSegments: 0, segments: [] },
     segments,
-    window: null,
     onLoadSegment: live.loadSegment,
     onLoadWindow: live.loadPosition,
     earlierHistoryOpen: historyOpen,
     onEarlierHistoryOpenChange,
+    onActiveTurnChange,
+    /* the viewer marks a turn only when both hashes are present and equal; a positioned read's
+       marks are already decided against the header's hash, so the one hash fills both */
     integrity: integrity.integrity,
     transcriptContentHash: integrity.contentHash,
     contentHash: integrity.contentHash,
-    positionedRead: { status: snapshot.status, failure, retry: live.retry },
+    positionedRead,
     initialPosition: snapshot.landing && Number.isInteger(snapshot.landing.position) ? { kind: 'turn', turnIndex: snapshot.landing.position } : undefined,
-    landing: snapshot.landing,
-    header,
-    failure,
+  }), [viewModel, directory, segments, live, historyOpen, onEarlierHistoryOpenChange, onActiveTurnChange, integrity, positionedRead, snapshot.landing])
+  const controls = useMemo(() => ({
     retry: live.retry,
     openSection: (section) => onEarlierHistoryOpenChange((previous) => ({ ...previous, [`earlier-${section}`]: true })),
     closeSection: (section) => onEarlierHistoryOpenChange((previous) => ({ ...previous, [`earlier-${section}`]: false })),
-    onActiveTurnChange,
-    setPins: live.setPins,
-  }
+    header,
+    landing: snapshot.landing,
+  }), [live, onEarlierHistoryOpenChange, header, snapshot.landing])
+  return { viewerProps, controls }
 }

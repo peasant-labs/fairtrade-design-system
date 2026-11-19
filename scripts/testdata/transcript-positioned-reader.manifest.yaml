@@ -22,6 +22,7 @@ requiredCaseNames:
   - controller-closed-sets
   - demo-mock-refuses-invalid-body
   - hook-strict-mode-reaches-ready
+  - hook-viewer-props-mount-every-failure-state
 requiredMutationNames:
   - print position plus one instead of the served number
   - served number off by one

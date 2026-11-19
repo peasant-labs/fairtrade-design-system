@@ -831,31 +831,17 @@ function PositionedTranscriptDemo({ theme }) {
     return POSITIONED_DEMO_SCENARIOS.includes(read) ? read : 'open'
   }, [])
   const demo = useMemo(() => buildPositionedDemo(scenario), [scenario])
-  const read = usePositionedTranscript({ transport: demo.transport, target: demo.target, landing: PositionedLanding.Exact })
-  const { openSection } = read
+  const { viewerProps, controls } = usePositionedTranscript({ transport: demo.transport, target: demo.target, landing: PositionedLanding.Exact })
+  const { openSection, landing } = controls
   useEffect(() => { if (demo.openHistory) openSection(0) }, [demo.openHistory]) // eslint-disable-line react-hooks/exhaustive-deps -- open once on mount
-  const landing = read.landing
   const prelude = landing?.snapped && landing.requestedAnchor !== undefined
     ? <p role="status">Turn {landing.requestedAnchor} is not in this transcript's served view, so the viewer opened turn {landing.anchorTurn}.</p>
     : undefined
   return (
     <TranscriptViewer
-      viewModel={read.viewModel}
+      {...viewerProps}
       theme={theme}
       capabilities={CAPABILITIES}
-      directory={read.directory}
-      segments={read.segments}
-      window={read.window}
-      onLoadSegment={read.onLoadSegment}
-      onLoadWindow={read.onLoadWindow}
-      earlierHistoryOpen={read.earlierHistoryOpen}
-      onEarlierHistoryOpenChange={read.onEarlierHistoryOpenChange}
-      onActiveTurnChange={read.onActiveTurnChange}
-      integrity={read.integrity}
-      transcriptContentHash={read.transcriptContentHash}
-      contentHash={read.contentHash}
-      positionedRead={read.positionedRead}
-      initialPosition={read.initialPosition}
       streamPrelude={prelude}
       showOutcome={false}
     />

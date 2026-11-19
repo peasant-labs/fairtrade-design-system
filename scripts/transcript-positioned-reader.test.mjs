@@ -492,8 +492,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   await run('reader', 'hook-strict-mode-reaches-ready', async (row, check) => {
     const { transport } = documentTransport()
     const StrictHost = () => {
-      const read = usePositionedTranscript({ transport, target: { transport: DOC.transport, turn: row.turn }, landing: PositionedLanding.Exact })
-      return React.createElement(TranscriptViewer, { viewModel: read.viewModel, capabilities: {}, directory: read.directory, segments: read.segments, onLoadSegment: read.onLoadSegment, onLoadWindow: read.onLoadWindow, positionedRead: read.positionedRead, initialPosition: read.initialPosition })
+      const { viewerProps } = usePositionedTranscript({ transport, target: { transport: DOC.transport, turn: row.turn }, landing: PositionedLanding.Exact })
+      return React.createElement(TranscriptViewer, { ...viewerProps, capabilities: {} })
     }
     const view = await mount(React.createElement(React.StrictMode, null, React.createElement(StrictHost)))
     await view.settle(30)
@@ -501,6 +501,22 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     const headings = [...view.container.querySelectorAll('.txn-turn-heading')].map((node) => node.textContent)
     check(status === row.status && headings.includes(row.heading), `under StrictMode the reader loads its target and settles, received status ${status} and ${headings.length} rows`)
     await view.unmount()
+  })
+
+  await run('reader', 'hook-viewer-props-mount-every-failure-state', async (row, check) => {
+    for (const kind of row.kinds) {
+      const demo = buildPositionedDemo(kind, { delayMs: 0 })
+      const DemoHost = () => {
+        const { viewerProps } = usePositionedTranscript({ transport: demo.transport, target: demo.target, landing: PositionedLanding.Exact })
+        return React.createElement(TranscriptViewer, { ...viewerProps, capabilities: {} })
+      }
+      const view = await mount(React.createElement(DemoHost))
+      await view.settle(30)
+      const notice = view.container.querySelector(`[data-read-failure="${kind}"]`)
+      const status = view.container.querySelector('.txn-stream')?.getAttribute('data-positioned-read')
+      check(notice !== null && status === row.statuses[kind], `${kind}: the spread viewer props draw the ${kind} state, received notice ${notice ? 'present' : 'absent'} and status ${status}`)
+      await view.unmount()
+    }
   })
 
   /* ── usage ───────────────────────────────────────────────────────────────────── */
@@ -543,11 +559,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   const Host = ({ transport, onRead }) => {
     const read = usePositionedTranscript({ transport, target: { transport: DOC.transport }, landing: PositionedLanding.Exact })
     onRead(read)
-    return React.createElement(TranscriptViewer, {
-      viewModel: read.viewModel, capabilities: {}, directory: read.directory, segments: read.segments,
-      onLoadSegment: read.onLoadSegment, onLoadWindow: read.onLoadWindow, positionedRead: read.positionedRead,
-      earlierHistoryOpen: read.earlierHistoryOpen, onEarlierHistoryOpenChange: read.onEarlierHistoryOpenChange,
-    })
+    return React.createElement(TranscriptViewer, { ...read.viewerProps, capabilities: {} })
   }
   const historyHost = async () => {
     const recorded = documentTransport({ history: H.section })
@@ -574,7 +586,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     const { view, read } = await historyHost()
     await view.act(() => click(window, view.container.querySelector('.txn-earlier-toggle')))
     await view.settle(20)
-    const section = read().viewModel.earlierHistory[0]
+    const section = read().viewerProps.viewModel.earlierHistory[0]
     const labels = section.turns.map((turn) => turn.label)
     const headings = [...view.container.querySelectorAll('.txn-earlier .txn-turn-heading')].map((node) => node.textContent)
     check(labels[0] === '1' && headings[0] === 'user turn 1' && section.turns.every((turn) => turn.partition === `earlier-${H.section.index}`), `the section numbers from 1 in its own partition, received ${JSON.stringify(labels)} ${JSON.stringify(headings.slice(0, 2))}`)
