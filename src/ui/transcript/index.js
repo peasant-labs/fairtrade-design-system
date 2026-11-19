@@ -124,6 +124,15 @@ export {
   turnsFromSegments,
   windowCoverage,
 } from './segments.js'
+/* the positioned (v2) reader: one controller for every host, which supplies transport only */
+export {
+  PositionedReadFailureKind,
+  PositionedLanding,
+  isPositionedReadFailureKind,
+  isPositionedLanding,
+  createPositionedReader,
+  usePositionedTranscript,
+} from './positioned-read.js'
 export { default as TranscriptScorecard } from './Scorecard.jsx'
 export { default as TranscriptLabelPopover } from './LabelPopover.jsx'
 export {
