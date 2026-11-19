@@ -24,6 +24,8 @@ const FIXTURE_RELATIVE_PATH = 'testdata/release-guard.yaml'
 const MANIFEST_RELATIVE_PATH = 'testdata/release-guard.manifest.yaml'
 const fixturePath = path.join(import.meta.dirname, FIXTURE_RELATIVE_PATH)
 const manifestPath = path.join(import.meta.dirname, MANIFEST_RELATIVE_PATH)
+const PROVENANCE_FIXTURE_RELATIVE_PATH = 'testdata/release-provenance.yaml'
+const provenanceFixturePath = path.join(import.meta.dirname, PROVENANCE_FIXTURE_RELATIVE_PATH)
 /** Per-command ceiling for one throwaway-repository git call, in ms. */
 const GIT_COMMAND_TIMEOUT_MS = 10000
 /** Ceiling for the whole release-tag case, in ms: a regression fails instead of hanging. */
@@ -759,14 +761,17 @@ test('an annotated remote release tag cannot be moved or deleted by a plain push
 })
 
 test('release candidate provenance runs the real workflow step', async (t) => {
-  const fixture = YAML.parse(fs.readFileSync(path.join(import.meta.dirname, 'testdata/release-provenance.yaml'), 'utf8'), { merge: true })
+  const fixture = YAML.parse(fs.readFileSync(provenanceFixturePath, 'utf8'), { merge: true })
   const workflow = YAML.parse(fs.readFileSync(path.join(REPO_ROOT, '.github/workflows/release-batch.yml'), 'utf8'))
   const steps = workflow.jobs.plan.steps
   const step = steps.find((item) => item.id === 'provenance')
   assert.ok(step?.run)
   assert.equal(Object.hasOwn(step, 'continue-on-error'), false)
   assert.match(steps.find((item) => item.name === 'Make the annotated release tag').if, /steps\.provenance\.outcome == 'success'/)
-  assert.equal(workflow.jobs.plan.permissions['pull-requests'], 'read')
+  assert.ok(Object.keys(fixture.provenance_permissions ?? {}).length > 0, 'fixture names no required plan job permissions')
+  for (const [scope, level] of Object.entries(fixture.provenance_permissions)) {
+    assert.equal(workflow.jobs.plan.permissions[scope], level, `plan job must grant ${scope}: ${level}`)
+  }
   const names = fixture.provenance_cases.map((item) => item.name)
   assert.equal(new Set(names).size, names.length)
   for (const name of fixture.provenance_required) assert.ok(names.includes(name), `missing provenance case ${name}`)
