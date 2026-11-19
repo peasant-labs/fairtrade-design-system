@@ -204,7 +204,7 @@ workflow:
       replace: ""
       error_contains: "the verifier must require the prepared source to equal the current tip"
     - name: a Go cache keyed on another module is rejected
-      file: ci.yml
+      file: title-guard.yml
       find: "cache-dependency-path: infra-tool/tools/release/go.sum"
       replace: "cache-dependency-path: go.sum"
     - name: release PR lookup only on push is rejected
