@@ -32,6 +32,8 @@ import {
   regionBoundaries,
   scrubberTicks,
   turnsFromSegments,
+  placeBoundaries,
+  scrubberSeekTarget,
   turnUnit,
   windowCoverage,
   windowFailureCaption,
@@ -983,23 +985,7 @@ export default function TranscriptViewer({
       const group = systemGroups.get(turn.index)
       return !group || group.owner.index === turn.index
     }
-    const rows = visibleTurns.filter(isRenderedRow)
-    const lastVisibleBefore = (turnIndex) => [...rows].reverse().find((turn) => turn.index < turnIndex)
-    const firstVisibleAfter = (turnIndex) => rows.find((turn) => turn.index > turnIndex)
-    const after = new Map()
-    const before = new Map()
-    for (const boundary of boundaries) {
-      if (boundary.side !== 'between') continue
-      const preceding = lastVisibleBefore(boundary.firstTurn)
-      if (preceding) after.set(preceding.index, boundary)
-      else {
-        const following = firstVisibleAfter(boundary.lastTurn)
-        if (following) before.set(following.index, boundary)
-      }
-    }
-    const leading = boundaries.find((boundary) => boundary.side === 'older' || boundary.side === 'all') ?? null
-    const trailing = boundaries.find((boundary) => boundary.side === 'newer') ?? null
-    return { leading, trailing, after, before, count: after.size + before.size + (leading ? 1 : 0) + (trailing ? 1 : 0) }
+    return placeBoundaries(boundaries, visibleTurns.filter(isRenderedRow))
   }, [segmentMode, boundaries, visibleTurns, systemGroups])
 
 
@@ -1440,8 +1426,9 @@ export default function TranscriptViewer({
   }
   function seekScrubTick(tick) {
     if (!tick) return
-    if (turns.some((turn) => turn.index === tick.firstTurn)) {
-      jumpTo(tick.firstTurn, { switchTab: false })
+    const loaded = scrubberSeekTarget(tick, turns)
+    if (loaded != null) {
+      jumpTo(loaded, { switchTab: false })
       return
     }
     pendingSeekRef.current = tick
@@ -1450,9 +1437,10 @@ export default function TranscriptViewer({
   useEffect(() => {
     const pending = pendingSeekRef.current
     if (!pending) return
-    if (!turns.some((turn) => turn.index === pending.firstTurn)) return
+    const target = scrubberSeekTarget(pending, turns)
+    if (target == null) return
     pendingSeekRef.current = null
-    jumpTo(pending.firstTurn, { switchTab: false })
+    jumpTo(target, { switchTab: false })
   // eslint-disable-next-line react-hooks/exhaustive-deps -- adding jumpTo, recreated each render, would retry a pending seek on unrelated renders
   }, [turns])
   function stepTurn(dir) {
