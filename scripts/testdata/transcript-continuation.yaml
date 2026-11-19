@@ -29,6 +29,9 @@ tabCounts:
   total: 10
 unknownState: unforeseen
 assertions:
+  - name: preview-timeline-is-the-minimap-over-loaded-turns
+  - name: preview-minimap-grows-when-a-segment-appends
+  - name: windowed-segment-read-keeps-segment-ticks
   - name: open-directory-scrubber-draws-no-caption
   - name: continuation-values-are-exported
   - name: unknown-continuation-state-throws
