@@ -39,8 +39,11 @@ const HISTORY = 'scripts/testdata/transcript-history-partitions.yaml'
 const HISTORY_MANIFEST = 'scripts/testdata/transcript-history-partitions.manifest.yaml'
 const INTEGRITY = 'scripts/testdata/transcript-integrity-pairs.yaml'
 const INTEGRITY_MANIFEST = 'scripts/testdata/transcript-integrity-pairs.manifest.yaml'
+const numberingPair = loadFixturePair(NUMBERING, NUMBERING_MANIFEST, { cases: 'requiredCaseNames' })
+/** The cases the manifest allows to be skipped; the runner's pending set must equal it. */
+const PENDING_CASE_NAMES = new Set(numberingPair.manifest.pendingCaseNames ?? [])
 const families = {
-  numbering: loadFixturePair(NUMBERING, NUMBERING_MANIFEST, { cases: 'requiredCaseNames' }).fixture,
+  numbering: numberingPair.fixture,
   reader: loadFixturePair(READER, READER_MANIFEST, { cases: 'requiredCaseNames' }).fixture,
   usage: loadFixturePair(USAGE, USAGE_MANIFEST, { cases: 'requiredCaseNames' }).fixture,
   history: loadFixturePair(HISTORY, HISTORY_MANIFEST, { cases: 'requiredCaseNames' }).fixture,
@@ -56,11 +59,13 @@ const caseOf = (family, name) => {
 }
 let ran = 0
 let pending = 0
+const skipped = new Set()
 /** Run one named case; every check message starts with the case name, so a mutation's killer is named. */
 async function run(family, name, body) {
   const row = caseOf(family, name)
   if (row.pending === true) {
     pending += 1
+    skipped.add(name)
     console.log(`pending: ${name} (${row.note})`)
     return
   }
@@ -629,4 +634,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   })
 }, { plugins: [counterPlugin] })
 
+/* every family's pending flags, against the manifest's pending set: nothing is skipped silently */
+const flagged = Object.values(families).flatMap((family) => family.cases.filter((row) => row.pending === true).map((row) => row.name))
+const same = (a, b) => a.size === b.size && [...a].every((name) => b.has(name))
+report.check(same(new Set(flagged), PENDING_CASE_NAMES) && same(skipped, PENDING_CASE_NAMES), `pending-cases-match-manifest: the skipped cases ${JSON.stringify([...skipped])} and the flagged ones ${JSON.stringify(flagged)} must equal pendingCaseNames ${JSON.stringify([...PENDING_CASE_NAMES])}`)
 report.finish(`${ran} cases ran, ${pending} pending.`)

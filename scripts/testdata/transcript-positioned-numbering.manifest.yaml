@@ -14,3 +14,7 @@ requiredCaseNames:
   - number-history-section-prints-own-numbering
   - segment-mode-refuses-analytics
   - number-fixture-replay-js
+# The cases the runner may skip, exactly: a case marked pending in the fixture and not named
+# here, or named here and not pending, fails the gate.
+pendingCaseNames:
+  - number-fixture-replay-js
