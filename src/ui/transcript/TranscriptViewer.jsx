@@ -2153,6 +2153,7 @@ export default function TranscriptViewer({
                 <div className="txn-streamwrap">
                   <div className="txn-stream" ref={scrollRef} role="region" aria-label="full trace turns"
                     data-mounted-turn-bound={segmentMode ? loadedTurnBound : undefined}
+                    data-positioned-read={positionedRead ? positionedRead.status : undefined}
                     data-segment-boundaries={segmentMode ? boundaryPlacement.count : undefined}
                     data-segment-mode={segmentMode ? 'true' : undefined}
                     onWheel={releaseTurnNavigation} onTouchStart={releaseTurnNavigation} onPointerDown={releaseTurnNavigation}
