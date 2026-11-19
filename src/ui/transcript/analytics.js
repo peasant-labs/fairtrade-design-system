@@ -23,7 +23,7 @@
    (`adapter.parse.js`) — never the adapter — so there is no import cycle.
    ─────────────────────────────────────────────────────────────────────────── */
 
-import { Role, isConversationTurn } from '@peasant-labs/schema'
+import { Role, SessionOutcome, isConversationTurn } from '@peasant-labs/schema'
 import { extractPath, countDiff } from './adapter.parse.js'
 
 /** @typedef {import('./wire-types.js').TurnDetail} TurnDetail */
@@ -682,7 +682,7 @@ export function assessScorecard(sc, medians = {}) {
       if (v < OUTPUT_SURVIVAL_RISK) flags.push(`Only ${Math.round(v)}% of output survived`)
     }
     if (
-      sc.outcome === 'failed' && present(sc.costTotalUsd) && share !== undefined &&
+      sc.outcome === SessionOutcome.Failed && present(sc.costTotalUsd) && share !== undefined &&
       medians.retryShare !== undefined && share > medians.retryShare
     ) {
       bands.push('bad')

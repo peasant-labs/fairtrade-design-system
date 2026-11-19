@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@peasant-labs/schema':
-        specifier: 0.58.0
-        version: 0.58.0
+        specifier: 0.58.1
+        version: 0.58.1
       '@shikijs/core':
         specifier: 4.6.0
         version: 4.6.0
@@ -79,8 +79,8 @@ importers:
         specifier: 7.1.1
         version: 7.1.1(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)
       eslint-plugin-unstring:
-        specifier: 0.2.1
-        version: 0.2.1(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))(typescript@6.0.3)
+        specifier: 0.3.0
+        version: 0.3.0(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))(typescript@6.0.3)
       http-server:
         specifier: ^14.1.1
         version: 14.1.1(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0)
@@ -818,8 +818,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@peasant-labs/schema@0.58.0':
-    resolution: {integrity: sha512-skgB4GYN+0k2ClVlvFciUzO0NjXdRNnepMHRvqq8AoesFoQqWWqEy3d5ew4/NPXHVN8dDfsiFv75/OwcY48LlA==}
+  '@peasant-labs/schema@0.58.1':
+    resolution: {integrity: sha512-CeZMr3D8Wk7ZNVR9P5WhO/OOnwBlj85zlBKhn+w9S9UAuPPs/mfXJBT72jj4FjpdWbmQtYGYRhJQdNUsEW/wcw==}
     engines: {node: '>=26'}
 
   '@playwright/test@1.63.0':
@@ -2022,8 +2022,8 @@ packages:
     peerDependencies:
       eslint: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0 || ^9.0.0 || ^10.0.0
 
-  eslint-plugin-unstring@0.2.1:
-    resolution: {integrity: sha512-a3PLjZm9PNHFc0cb9Q8HJUl92wEwqvv9jjoUx2IXXibWnLLHzSUk7iXQ4k/HKewhzrkK+W1XtwND6i9jx22Xxw==}
+  eslint-plugin-unstring@0.3.0:
+    resolution: {integrity: sha512-F7GfGsLRDjQF2IXNtB6K3x5Xir+TTTpRK+Nre7QpOg9T7Xs4zLQJPr4DnuHEHc9cRmZ97RRNhakVIxXET5DaBw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       eslint: '>=9'
@@ -4028,7 +4028,7 @@ snapshots:
   '@oxc-resolver/binding-win32-x64-msvc@11.21.3':
     optional: true
 
-  '@peasant-labs/schema@0.58.0':
+  '@peasant-labs/schema@0.58.1':
     dependencies:
       yaml: 2.9.0
       zod: 4.4.3
@@ -5259,7 +5259,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-unstring@0.2.1(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))(typescript@6.0.3):
+  eslint-plugin-unstring@0.3.0(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))(typescript@6.0.3):
     dependencies:
       eslint: 10.15.0(jiti@2.7.0)(supports-color@7.2.0)
       typescript: 6.0.3

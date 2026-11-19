@@ -27,7 +27,7 @@
 
 import { parseArgs, parseResult, extractPath, callDiff, diffLines } from './adapter.parse.js'
 import { computeAnalytics, computeTurnLabels, computeTaskGroups } from './analytics.js'
-import { Role, TurnPartType, Harness, SessionRelationshipKind, RelationshipTargetState, RelationshipNavigationStatus, PublicSourceAnchorKind, zObservedModelID, zContentProvenance, zSourceEntryRef, zSessionRelationshipNavigation, parseSessionDetailPayloadValue } from '@peasant-labs/schema'
+import { Role, EntryType, ToolCallKind, TurnPartType, Harness, SessionRelationshipKind, RelationshipTargetState, RelationshipNavigationStatus, PublicSourceAnchorKind, zObservedModelID, zContentProvenance, zSourceEntryRef, zSessionRelationshipNavigation, parseSessionDetailPayloadValue } from '@peasant-labs/schema'
 import { aggregateUsage } from './usage.js'
 import { isKnownTime } from './time.js'
 import { unwrapUserQuery, userQueryLeadLength, USER_QUERY_OPEN_TAG, USER_QUERY_CLOSE_TAG } from './title.js'
@@ -471,11 +471,11 @@ function groupFor(call) {
   if (n === 'webfetch' || n === 'web_fetch' || n === 'fetch' || n === 'readwebsite') return 'fetch'
   if (n === 'task' || n === 'taskcreate' || n === 'taskupdate' || n === 'task_create' || n === 'task_update' || n === 'todowrite' || n === 'agent') return 'tasks'
   switch (call.toolKind) {
-    case 'read': return 'read'
-    case 'edit': return 'edits'
-    case 'execute': return 'bash'
-    case 'search': return 'search'
-    case 'fetch': return 'fetch'
+    case ToolCallKind.Read: return 'read'
+    case ToolCallKind.Edit: return 'edits'
+    case ToolCallKind.Execute: return 'bash'
+    case ToolCallKind.Search: return 'search'
+    case ToolCallKind.Fetch: return 'fetch'
     default: return 'other'
   }
 }
@@ -1125,7 +1125,7 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
     let content = t.content ?? ''
     /** @type {import('./view-model.js').ThinkingVM | undefined} */
     let thinking
-    if (t.entryType === 'thinking' && (protectedTurn(t) || content.trim() !== '')) {
+    if (t.entryType === EntryType.Thinking && (protectedTurn(t) || content.trim() !== '')) {
       // STANDALONE thinking entry: the whole turn IS the thinking. This path is LIVE on the real wire —
       // peasant emits a standalone entryType=thinking turn — so a real consumer renders it today.
       thinking = { text: content, words: wordCount(content) }
@@ -1152,7 +1152,7 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
     }
 
     const depth = t.depth ?? 0
-    const isError = t.entryType === 'error' || toolCalls.some((c) => c.isError)
+    const isError = t.entryType === EntryType.Error || toolCalls.some((c) => c.isError)
     /** @type {TurnVM} */
     const turnVM = {
       index: t.index,
