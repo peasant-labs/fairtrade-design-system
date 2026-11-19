@@ -3,6 +3,9 @@ import { readFileSync } from 'node:fs'
 import YAML from 'yaml'
 import { loadFixturePair } from '../mounted-parts.mjs'
 
+/** @type {AnimationPlayState} */
+const runningAnimation = 'running'
+
 // Pixels, real overflow and post-animation visibility cannot be proved in JSDOM.
 // Reuse the existing built app/runner and small shared demo fixture; no extra service.
 const { fixture } = loadFixturePair('scripts/testdata/transcript-reading-browser.yaml', 'scripts/testdata/transcript-reading-browser.manifest.yaml', {
@@ -260,12 +263,12 @@ for (const row of fixture.width) test(`transcript reading width ${row.name}`, as
   const handle = page.getByRole('separator', { name: 'reading width' })
   await handle.evaluate(el => el.focus({ preventScroll: true }))
   // Wait for the actual finite header transitions already triggered by selection.
-  await page.locator('.txn-header').evaluate(async el => {
+  await page.locator('.txn-header').evaluate(async (el, runningState) => {
     await new Promise(requestAnimationFrame)
-    const running = el.getAnimations({ subtree: true }).filter(a => a.playState === 'running' && Number.isFinite(a.effect?.getComputedTiming().endTime))
+    const running = el.getAnimations({ subtree: true }).filter(a => a.playState === runningState && Number.isFinite(a.effect?.getComputedTiming().endTime))
     let timer
     try { await Promise.race([Promise.all(running.map(a => a.finished.catch(() => {}))), new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('header transitions did not settle within 2s')), 2000) })]) } finally { clearTimeout(timer) }
-  })
+  }, runningAnimation)
   const initial = await paragraph.evaluate(el => {
     const target = el.closest('.txn-turnwrap'), stream = el.closest('.txn-stream')
     const view = stream.getBoundingClientRect(), box = target.getBoundingClientRect()
@@ -325,7 +328,7 @@ for (const row of fixture.movingHeader) test(`transcript reading width ${row.nam
   })
   await stream.evaluate((el, top) => { el.scrollTop = top }, row.scrollTop)
   await expect.poll(() => header.evaluate(el => el.getAnimations({ subtree: true }).some(a => a.playState === 'paused'))).toBe(true)
-  await handle.evaluate(el => {
+  await handle.evaluate((el, runningState) => {
     const app = el.closest('.txn-app'), stream = app.querySelector('.txn-stream')
     window.__chromeChanges = []
     const observer = new MutationObserver(() => window.__chromeChanges.push({ condensed: app.classList.contains('txn-app-condensed'), scrollTop: stream.scrollTop }))
@@ -338,15 +341,15 @@ for (const row of fixture.movingHeader) test(`transcript reading width ${row.nam
       const pos = document.caretPositionFromPoint((Math.max(view.left, box.left) + Math.min(view.right, box.right)) / 2, y)
       if (!pos || pos.offsetNode.nodeType !== Node.TEXT_NODE || !target.contains(pos.offsetNode)) throw new Error('no visible selected text at gesture start')
       const range = document.createRange(); range.setStart(pos.offsetNode, pos.offset); range.collapse(true)
-      window.__movingWidth = { range, frames: [], running: document.querySelector('.txn-header').getAnimations({ subtree: true }).some(a => a.playState === 'running') }
+      window.__movingWidth = { range, frames: [], running: document.querySelector('.txn-header').getAnimations({ subtree: true }).some(a => a.playState === runningState) }
       const record = () => window.__movingWidth.frames.push({ y: range.getBoundingClientRect().top, streamTop: stream.getBoundingClientRect().top, scrollTop: stream.scrollTop })
       record()
-      const sample = () => { setTimeout(() => { record(); if (document.querySelector('.txn-header').getAnimations({ subtree: true }).some(a => a.playState === 'running')) requestAnimationFrame(sample) }, 0) }
+      const sample = () => { setTimeout(() => { record(); if (document.querySelector('.txn-header').getAnimations({ subtree: true }).some(a => a.playState === runningState)) requestAnimationFrame(sample) }, 0) }
       requestAnimationFrame(sample)
     }, { capture: true, once: true })
-  })
+  }, runningAnimation)
   await handle.press('Home')
-  await header.evaluate(async el => { await Promise.all(el.getAnimations({ subtree: true }).filter(a => a.playState === 'running' && Number.isFinite(a.effect?.getComputedTiming().endTime)).map(a => a.finished.catch(() => {}))); await new Promise(requestAnimationFrame) })
+  await header.evaluate(async (el, runningState) => { await Promise.all(el.getAnimations({ subtree: true }).filter(a => a.playState === runningState && Number.isFinite(a.effect?.getComputedTiming().endTime)).map(a => a.finished.catch(() => {}))); await new Promise(requestAnimationFrame) }, runningAnimation)
   const evidence = await page.evaluate(() => ({ running: window.__movingWidth.running, frames: window.__movingWidth.frames }))
   await info.attach('moving-header-position', { body: JSON.stringify(evidence), contentType: 'application/json' })
   expect(evidence.running).toBe(true)
@@ -358,7 +361,7 @@ for (const row of fixture.movingHeader) test(`transcript reading width ${row.nam
   const state = await page.evaluate(() => ({ y: window.__movingWidth.range.getBoundingClientRect().top, scrollTop: document.querySelector('.txn-stream').scrollTop, condensed: document.querySelector('.txn-app').classList.contains('txn-app-condensed'), header: document.querySelector('.txn-header').getBoundingClientRect().height }))
   console.log('settled width chrome', JSON.stringify(state))
   await expect(page.locator('.txn-app')).not.toHaveClass(/txn-app-condensed/)
-  await header.evaluate(async el => { await new Promise(requestAnimationFrame); await new Promise(requestAnimationFrame); await Promise.all(el.getAnimations({ subtree: true }).filter(a => a.playState === 'running' && Number.isFinite(a.effect?.getComputedTiming().endTime)).map(a => a.finished.catch(() => {}))); await new Promise(requestAnimationFrame) })
+  await header.evaluate(async (el, runningState) => { await new Promise(requestAnimationFrame); await new Promise(requestAnimationFrame); await Promise.all(el.getAnimations({ subtree: true }).filter(a => a.playState === runningState && Number.isFinite(a.effect?.getComputedTiming().endTime)).map(a => a.finished.catch(() => {}))); await new Promise(requestAnimationFrame) }, runningAnimation)
   const changes = await page.evaluate(() => window.__chromeChanges)
   expect(changes.some(change => !change.condensed && change.scrollTop <= 56)).toBe(true)
   const settled = await page.evaluate(() => ({ y: window.__movingWidth.range.getBoundingClientRect().top, scrollTop: document.querySelector('.txn-stream').scrollTop, condensed: document.querySelector('.txn-app').classList.contains('txn-app-condensed') }))

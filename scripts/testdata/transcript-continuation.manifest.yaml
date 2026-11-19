@@ -1,0 +1,85 @@
+requiredCases:
+  - open-directory-labels-say-loaded-so-far
+  - loading-disables-and-labels-the-control
+  - end-replaces-control-with-notice
+  - cut-replaces-control-with-notice
+  - failed-shows-host-control
+requiredMutationNames:
+  - observer requests more
+  - drop open-directory state
+  - loading stays enabled
+  - incomplete tail keeps final marker
+  - mermaid copy ignores preview policy
+  - trace badge ignores complete directory
+  - completed directory reports an open range
+  - unknown continuation state is silently accepted
+requiredAssertions:
+  - continuation-values-are-exported
+  - unknown-continuation-state-throws
+  - ended-directory-drops-loaded-so-far
+  - cut-directory-drops-loaded-so-far
+  - trace-tab-counts-loaded-turns-while-open
+  - trace-tab-count-agrees-with-header-when-complete
+  - whole-payload-trace-tab-count-unchanged
+  - open-directory-draws-no-trailing-segment-boundary
+  - open-directory-scrubber-samples-loaded-refs
+  - open-directory-scope-says-loaded-part
+  - complete-directory-labels-say-of-total
+  - incomplete-tail-has-no-final-marker
+  - incomplete-tail-names-latest-loaded-response
+  - more-draws-load-control
+  - one-activation-fires-one-load
+  - load-more-fires-only-on-activation
+  - reaching-the-end-fires-nothing
+  - resize-fires-nothing
+  - mount-fires-nothing
+  - load-more-by-keyboard
+  - short-segment-draws-like-any-segment
+  - final-frame-without-segment-ends-the-load-control
+  - complete-is-authoritative-over-last-has-newer
+  - complete-directory-is-unchanged
+  - no-clipboard-in-preview
+  - every-tab-stays-with-incomplete-tail
+  - complete-tail-keeps-final-response
+  - no-continuation-prop-is-unchanged
+mutations:
+  - name: unknown continuation state is silently accepted
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "if (continuationProp != null && !CONTINUATION_STATES.has(continuationProp.state)) {"
+    replace: "if (false) {"
+    expectedDiagnostic: unknown-continuation-state-throws
+  - name: observer requests more
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "  const resolvedImageUrl = useImageUrl(imageUrl, attachmentUrl)"
+    replace: "  useEffect(() => { const observer = new IntersectionObserver(() => continuationProp?.onLoadMore?.()); observer.observe(document.body); return () => observer.disconnect() }, [])\n  const resolvedImageUrl = useImageUrl(imageUrl, attachmentUrl)"
+    expectedDiagnostic: mount fires nothing
+  - name: drop open-directory state
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "    if (directory?.complete === false) {"
+    replace: "    if (false) {"
+    expectedDiagnostic: open-directory-labels-say-loaded-so-far
+  - name: loading stays enabled
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "disabled={continuationProp.state === TranscriptContinuationState.Loading || typeof continuationProp.onLoadMore !== 'function'}"
+    replace: "disabled={typeof continuationProp.onLoadMore !== 'function'}"
+    expectedDiagnostic: "loading-disables-and-labels-the-control: disabled state"
+  - name: incomplete tail keeps final marker
+    file: src/ui/transcript/adapter.js
+    find: "for (const turn of vm.turns) delete turn.isFinal"
+    replace: "for (const turn of vm.turns) void turn.isFinal"
+    expectedDiagnostic: incomplete-tail-has-no-final-marker
+  - name: mermaid copy ignores preview policy
+    file: src/ui/transcript/MermaidBlock.jsx
+    find: "{allowClipboard && <button type=\"button\" onClick={copy}>"
+    replace: "{true && <button type=\"button\" onClick={copy}>"
+    expectedDiagnostic: no-clipboard-in-preview
+  - name: trace badge ignores complete directory
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: ": id === 'trace' ? traceBadgeCount"
+    replace: ": id === 'trace' ? conversationTurns.length"
+    expectedDiagnostic: trace-tab-count-agrees-with-header-when-complete
+  - name: completed directory reports an open range
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "    if (directory?.complete === false) {"
+    replace: "    if (directory?.complete !== undefined) {"
+    expectedDiagnostic: ended-directory-drops-loaded-so-far

@@ -435,19 +435,14 @@ export default function Explore({
     setPage(1)
   }
 
-  const profileProjects = useMemo(() => {
-    if (!selectedOwner) return []
-    return [...groupedBy(ownerTranscripts, (t) => t.projectName || 'untitled project').entries()].map(([project, items]) => ({ project, items }))
-  }, [ownerTranscripts, selectedOwner])
-
-  const profileStats = useMemo(() => {
-    const tokens = ownerTranscripts.reduce((sum, t) => sum + (t.tokenCount || 0), 0)
-    return {
-      transcripts: ownerTranscripts.length,
-      projects: profileProjects.length,
-      tokens,
-    }
-  }, [ownerTranscripts, profileProjects.length])
+  const profileProjects = selectedOwner
+    ? [...groupedBy(ownerTranscripts, (t) => t.projectName || 'untitled project').entries()].map(([project, items]) => ({ project, items }))
+    : []
+  const profileStats = {
+    transcripts: ownerTranscripts.length,
+    projects: profileProjects.length,
+    tokens: ownerTranscripts.reduce((sum, t) => sum + (t.tokenCount || 0), 0),
+  }
 
   if (mode === 'detail' && selectedTranscript) {
     return (

@@ -519,7 +519,9 @@ export default function MapCanvas({
   onStateAction,
   canonicalControlled = false,
 }) {
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- stabilizing empty nodes would stop tree, violation and search recomputation while data is absent
   const nodes = data?.nodes ?? []
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- stabilizing empty edges would stop lifted edge recomputation while data is absent
   const edges = data?.edges ?? []
 
   const baseId = useId().replace(/[:]/g, '')
@@ -582,6 +584,7 @@ export default function MapCanvas({
     : localGrain
   const expanded = useMemo(
     () => canonicalControlled ? toIdSet(expandedIds) : localExpanded,
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- adding expandedIds identity would recompute for equal expansion collections from the parent
     [canonicalControlled, expandedIdsKey, localExpanded],
   )
   const selectedId = canonicalControlled ? selectedIdProp ?? null : localSelectedId
@@ -590,6 +593,7 @@ export default function MapCanvas({
   // pointer immediately; once released (dragPreview cleared) the canonical
   // prop is authoritative again.
   const scale = dragPreview ? dragPreview.scale : hasCanonicalViewport ? viewport.scale : localScale
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- memoizing pan would stop keyboard and pointer callbacks and minimap recomputing on unchanged coordinates
   const pan = dragPreview
     ? { x: dragPreview.panX, y: dragPreview.panY }
     : hasCanonicalViewport
@@ -645,6 +649,7 @@ export default function MapCanvas({
 
   useEffect(() => {
     if (!canonicalControlled && expandedIds !== undefined) setLocalExpanded(toIdSet(expandedIds))
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- adding expandedIds identity would reset local expansion when a parent recreates an equal collection
   }, [canonicalControlled, expandedIdsKey])
 
   useEffect(() => {
@@ -724,6 +729,7 @@ export default function MapCanvas({
   const visible = useMemo(() => {
     if (canonicalVisibleIds === undefined) return visibleNodes(tree, GRAIN_DEPTH[grain], expanded)
     return Array.from(canonicalVisibleIds, (id) => tree.byId.get(id)).filter(Boolean)
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- adding canonicalVisibleIds identity would recompute visible nodes for equal parent collections
   }, [tree, grain, expanded, canonicalVisibleKey])
   const visibleIds = useMemo(() => new Set(visible.map((n) => n.id)), [visible])
 
@@ -765,6 +771,7 @@ export default function MapCanvas({
       if (visibleId) out.add(visibleId)
     }
     return out
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- adding highlightedIds identity would recompute highlights for equal parent collections
   }, [highlightedIdsKey, tree.parentIdByChild, visibleIds])
 
   /* ----- search matches (a path-substring combobox) ----- */
@@ -904,6 +911,7 @@ export default function MapCanvas({
     // out via the breadcrumb left the canvas zoomed into the now-closed
     // folder's old scoped-fit framing instead of reframing the wider view.
     fit(hasCanonicalViewport)
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- adding fit, fitToIds, expanded, tree.children, visibleIds or hasCanonicalViewport can refit on unrelated renders and override user pan
   }, [visKey, viewportOwnershipKey])
 
   /* ----- zoom about the viewport centre (so +/- feel anchored) ----- */

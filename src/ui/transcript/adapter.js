@@ -32,6 +32,7 @@ import { aggregateUsage } from './usage.js'
 import { isKnownTime } from './time.js'
 import { unwrapUserQuery, userQueryLeadLength, USER_QUERY_OPEN_TAG, USER_QUERY_CLOSE_TAG } from './title.js'
 import { EarlierHistoryState, UnknownEarlierHistoryState, parseEarlierHistoryState } from './earlier-history-state.js'
+import { TranscriptTail } from './continuation-values.js'
 
 /** @typedef {import('./wire-types.js').TranscriptWireInput} TranscriptWireInput */
 /** @typedef {import('./wire-types.js').SessionDetailPayload} SessionDetailPayload */
@@ -101,6 +102,61 @@ export function thinkingDurationMs(previous, turn) {
   }, 0)
   const ms = Date.parse(turn.timestamp) - (Date.parse(previous.timestamp) + tools)
   return ms > 0 ? ms : undefined
+}
+
+/**
+ * The nearest turn before position `at` at the given depth, or undefined.
+ * @param {TurnDetail[]} turns @param {number} at @param {number} depth
+ * @returns {TurnDetail | undefined}
+ */
+function previousAtDepth(turns, at, depth) {
+  for (let q = at - 1; q >= 0; q--) if ((turns[q].depth ?? 0) === depth) return turns[q]
+  return undefined
+}
+
+/**
+ * The position of the reply the turn at `at` is one block of, or -1. A turn is a block of a reply
+ * when it is nested (depth above 0) and its `parentIndex` names an earlier top-level (depth 0) turn:
+ * a producer that stores one agent reply as one entry nests the reply's thinking under it. A nested
+ * turn whose parent is itself nested (a subagent's own turn) is not a reply block. The thinking time
+ * and the views' subagent rule both read this one predicate.
+ * @param {TurnDetail[]} turns every known turn, in order
+ * @param {number} at the turn's position in `turns`
+ * @returns {number}
+ */
+export function replyPositionOf(turns, at) {
+  const turn = turns[at]
+  if (!turn || (turn.depth ?? 0) <= 0 || turn.parentIndex == null) return -1
+  for (let q = at - 1; q >= 0; q--) {
+    if (turns[q].index === turn.parentIndex) return (turns[q].depth ?? 0) === 0 ? q : -1
+  }
+  return -1
+}
+
+/**
+ * The time the standalone thinking turn at position `at` took, measured from the event before it.
+ * A thinking turn on its own is measured from the previous turn at its depth. A thinking turn that
+ * is one block of a reply (`replyPositionOf`)
+ * is measured inside the reply instead: from the nearest earlier block of the same reply, else from
+ * the reply itself, whose tools have not run yet. When the reply's own time is not before the
+ * thinking (the reply opens with it), the event before the reply is the start. A block of another
+ * reply is never the start.
+ * @param {TurnDetail[]} turns every known turn, in order
+ * @param {number} at the thinking turn's position in `turns`
+ * @returns {number | undefined}
+ */
+export function thinkingTimeMs(turns, at) {
+  const turn = turns[at]
+  if (!turn) return undefined
+  const depth = turn.depth ?? 0
+  const replyAt = replyPositionOf(turns, at)
+  if (replyAt < 0) return thinkingDurationMs(previousAtDepth(turns, at, depth), turn)
+  for (let q = at - 1; q > replyAt; q--) {
+    const block = turns[q]
+    if ((block.depth ?? 0) === depth && block.parentIndex === turn.parentIndex) return thinkingDurationMs(block, turn)
+  }
+  const reply = turns[replyAt]
+  return thinkingDurationMs({ ...reply, toolCalls: [] }, turn) ?? thinkingDurationMs(previousAtDepth(turns, replyAt, reply.depth ?? 0), turn)
 }
 
 /** Compact token count, e.g. 1700 → "1.7k". @param {number} n @returns {string} */
@@ -377,6 +433,7 @@ function resolveStickyModels(turns, seed) {
  * @property {readonly number[]} [visibleTurnIndices] post-resolution projection by canonical turn index
  * @property {import('@peasant-labs/schema').SessionRelationshipNavigation[]} [relationshipNavigation] separately authorized read metadata; never durable content
  * @property {'local' | 'published'} [payloadMode] published requires a detail already validated by schema's published envelope parser; defaults to local
+ * @property {'complete' | 'incomplete'} [tail] whether the last loaded response is known to end the session
  */
 
 /* ── Tool-call cooking ───────────────────────────────────────────────────────── */
@@ -687,11 +744,11 @@ function indexAnnotations(patternAnns, entryAnns) {
 /* ── Diffs, files, highlights, filter index (from cooked turns) ──────────────── */
 
 /** @param {TurnVM[]} turnVMs @returns {DiffEntryVM[]} */
-function buildDiffs(turnVMs) {
+export function buildDiffs(turnVMs) {
   /** @type {DiffEntryVM[]} */
   const out = []
   for (const turn of turnVMs) {
-    for (const tc of turn.toolCalls) {
+    for (const tc of turn.toolCalls ?? []) {
       if (!tc.diff) continue
       const path = tc.filePath ?? '(unknown)'
       /** @type {DiffEntryVM} */
@@ -858,6 +915,10 @@ function buildFilterIndex(turnVMs, annotationsByTurn) {
  */
 export function adaptTranscript(payload, annotations, analytics, options) {
   const payloadMode = options?.payloadMode ?? 'local'
+  const incompleteTail = options?.tail === TranscriptTail.Incomplete
+  if (options?.tail !== undefined && options.tail !== TranscriptTail.Complete && options.tail !== TranscriptTail.Incomplete) {
+    throw new TypeError('Fairtrade adaptTranscript refused tail: pass complete or incomplete to describe the loaded transcript.')
+  }
   if (payloadMode !== 'local' && payloadMode !== 'published') {
     throw new TypeError('Fairtrade adaptTranscript refused payloadMode: select local or published; use published only after validating the envelope with parseTranscriptContentText.')
   }
@@ -899,9 +960,13 @@ export function adaptTranscript(payload, annotations, analytics, options) {
     diffs: buildDiffs(turnVMs),
     files: buildFiles(turnVMs),
     tasks: withDisplayedPrompts(an.taskGroups ?? computeTaskGroups(turns), turnVMs),
-    highlights: buildHighlights(turnVMs, phases, git),
+    highlights: buildHighlights(turnVMs, phases, git).map(highlight => incompleteTail && highlight.id === 'hl-final' ? { ...highlight, title: 'latest loaded response' } : highlight),
     filterIndex: buildFilterIndex(turnVMs, annotationsByTurn),
     analytics: an,
+  }
+  if (incompleteTail) {
+    for (const turn of vm.turns) delete turn.isFinal
+    vm.incompleteTail = true
   }
   if (payload.nativeMetadata) vm.nativeMetadata = payload.nativeMetadata
   if (hasEvidence) vm.usageScopes = aggregateUsage(completeTurns)
@@ -909,6 +974,7 @@ export function adaptTranscript(payload, annotations, analytics, options) {
   vm.earlierHistory = (payload.earlierHistory ?? []).map((section, index) => {
     const id = `earlier-${index}`
     const earlier = cookPartition(payload, section.turns, section.nativeMetadata, id)
+    if (incompleteTail) for (const turn of earlier.turns) delete turn.isFinal
     return {
       id, state: historyStates[index],
       turns: earlier.turns,
@@ -1063,10 +1129,7 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
       // STANDALONE thinking entry: the whole turn IS the thinking. This path is LIVE on the real wire —
       // peasant emits a standalone entryType=thinking turn — so a real consumer renders it today.
       thinking = { text: content, words: wordCount(content) }
-      const at = positionOf.get(t) ?? -1
-      let previous
-      for (let q = at - 1; q >= 0 && !previous; q--) if ((filteredTurns[q].depth ?? 0) === (t.depth ?? 0)) previous = filteredTurns[q]
-      const durationMs = thinkingDurationMs(previous, t)
+      const durationMs = thinkingTimeMs(filteredTurns, positionOf.get(t) ?? -1)
       if (durationMs !== undefined) thinking.durationMs = durationMs
       content = ''
     } else if (!protectedTurn(t)) {
@@ -1106,6 +1169,8 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
     if (sourcePositions.has(t)) turnVM.sourcePosition = sourcePositions.get(t)
     if (depth === 0 && t.role === Role.Assistant) turnVM.provider = provider
     if (t.agentName) turnVM.agentName = t.agentName
+    const replyAt = replyPositionOf(filteredTurns, positionOf.get(t) ?? -1)
+    if (replyAt >= 0) turnVM.replyIndex = filteredTurns[replyAt].index
     if (t.controlKind) {
       turnVM.controlKind = t.controlKind
       turnVM.isControl = true

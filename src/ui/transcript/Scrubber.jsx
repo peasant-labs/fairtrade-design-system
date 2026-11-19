@@ -1,5 +1,5 @@
 import { Role } from '@peasant-labs/schema'
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
 /* Scrubber — the condensed position track in the pinned trace header, lifted verbatim from the
    canonical mockup (src/mockups/inuse/TranscriptApp.jsx:1619).
@@ -22,13 +22,14 @@ import { useEffect, useRef } from 'react'
  * @param {object} props
  * @param {TurnVM[]} [props.turns]                         legacy turn mode
  * @param {ScrubberTick[]} [props.ticks]                   segment sample; takes precedence over `turns`
+ * @param {boolean} [props.loadedSoFar]                    track covers only the loaded prefix
  * @param {number} [props.active]                          the active TURN INDEX (TurnVM.index)
  * @param {number} [props.activeTick]                      the active SEGMENT INDEX when `ticks` is supplied
  * @param {(clientX: number, track: HTMLElement) => void} [props.onSeek]
  * @param {(tick: ScrubberTick) => void} [props.onSeekTick]
  * @param {{ current: boolean }} [props.draggingRef]       shared drag latch; defaults to an internal ref
  */
-export default function Scrubber({ turns = [], ticks, active = 0, activeTick = 0, onSeek = () => {}, onSeekTick, draggingRef }) {
+export default function Scrubber({ turns = [], ticks, loadedSoFar = false, active = 0, activeTick = 0, onSeek = () => {}, onSeekTick, draggingRef }) {
   const trackRef = useRef(null)
   const internalDragging = useRef(false)
   const dragging = draggingRef ?? internalDragging
@@ -41,7 +42,7 @@ export default function Scrubber({ turns = [], ticks, active = 0, activeTick = 0
   const bracketPct = last > 0 ? (activeIdx / last) * 100 : 0
   const activeTickEntry = segmentMode ? ticks[activeIdx] : null
 
-  function seekTick(clientX, track) {
+  const seekTick = useCallback((clientX, track) => {
     if (!segmentMode || ticks.length === 0 || typeof onSeekTick !== 'function') return
     const rect = track.getBoundingClientRect()
     const frac = rect.width > 0 ? Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)) : 0
@@ -52,7 +53,7 @@ export default function Scrubber({ turns = [], ticks, active = 0, activeTick = 0
       if (next < distance) { distance = next; nearest = tick }
     }
     onSeekTick(nearest)
-  }
+  }, [segmentMode, ticks, onSeekTick])
 
   function down(e) {
     if (e.button !== undefined && e.button !== 0) return
@@ -71,7 +72,7 @@ export default function Scrubber({ turns = [], ticks, active = 0, activeTick = 0
     window.addEventListener('mousemove', move)
     window.addEventListener('mouseup', up)
     return () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up) }
-  }, [onSeek, onSeekTick, dragging, segmentMode, ticks])
+  }, [onSeek, onSeekTick, dragging, segmentMode, ticks, seekTick])
 
   return (
     <div
@@ -106,6 +107,7 @@ export default function Scrubber({ turns = [], ticks, active = 0, activeTick = 0
           />
         ))}
       <span className="txn-scrub-bracket" style={{ left: bracketPct + '%' }} aria-hidden="true" />
+      {loadedSoFar && <span className="txn-scope">loaded so far</span>}
     </div>
   )
 }

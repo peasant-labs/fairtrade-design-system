@@ -17,7 +17,14 @@ try {
   for (const entry of fixture.cases) {
     await writeFile(join(directory, 'source.jsx'), entry.source)
     if (entry.rejected) {
-      await assert.rejects(checkDirectory(directory), /unstring\/closed-set-literal/, entry.name)
+      const diagnostic = entry.name.startsWith('bare-')
+        ? /bare ESLint disable directives/
+        : entry.name.startsWith('named-')
+          ? /disabling unstring\/closed-set-literal is forbidden/
+          : entry.name.includes('inline-rule-config')
+            ? /inline ESLint rule configuration is forbidden/
+            : /ESLint disable directives require a -- reason/
+      await assert.rejects(checkDirectory(directory), diagnostic, entry.name)
     } else {
       await assert.doesNotReject(checkDirectory(directory), entry.name)
     }

@@ -1,0 +1,59 @@
+cases:
+  - name: open-directory-labels-say-loaded-so-far
+    state: more
+    button: load more
+    label: turns 1–2 loaded so far
+  - name: loading-disables-and-labels-the-control
+    state: loading
+    button: loading
+    label: turns 1–2 loaded so far
+  - name: end-replaces-control-with-notice
+    state: end
+    complete: true
+    notice: session ended
+    label: 2 turns
+  - name: cut-replaces-control-with-notice
+    state: cut
+    complete: true
+    notice: preview limit reached
+    label: 2 turns
+  - name: failed-shows-host-control
+    state: failed
+    notice: read again
+    label: turns 1–2 loaded so far
+loadedRange:
+  count: 48
+  caption: turns 1–48 loaded so far
+tabCounts:
+  loaded: 2
+  total: 10
+unknownState: unforeseen
+assertions:
+  - name: continuation-values-are-exported
+  - name: unknown-continuation-state-throws
+  - name: ended-directory-drops-loaded-so-far
+  - name: cut-directory-drops-loaded-so-far
+  - name: trace-tab-counts-loaded-turns-while-open
+  - name: trace-tab-count-agrees-with-header-when-complete
+  - name: whole-payload-trace-tab-count-unchanged
+  - name: open-directory-draws-no-trailing-segment-boundary
+  - name: open-directory-scrubber-samples-loaded-refs
+  - name: open-directory-scope-says-loaded-part
+  - name: complete-directory-labels-say-of-total
+  - name: incomplete-tail-has-no-final-marker
+  - name: incomplete-tail-names-latest-loaded-response
+  - name: more-draws-load-control
+  - name: one-activation-fires-one-load
+  - name: load-more-fires-only-on-activation
+  - name: reaching-the-end-fires-nothing
+  - name: resize-fires-nothing
+  - name: mount-fires-nothing
+  - name: load-more-by-keyboard
+  - name: short-segment-draws-like-any-segment
+  - name: final-frame-without-segment-ends-the-load-control
+  - name: complete-is-authoritative-over-last-has-newer
+  - name: complete-directory-is-unchanged
+  - name: no-clipboard-in-preview
+  - name: every-tab-stays-with-incomplete-tail
+  - name: complete-tail-keeps-final-response
+  - name: no-continuation-prop-is-unchanged

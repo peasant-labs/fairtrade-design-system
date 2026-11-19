@@ -230,6 +230,7 @@ export const TOOL_GROUPS = Object.freeze([
  * @property {string} [modelChangedFrom]     prior root model when this turn carries the observation that changed it
  * @property {import('@peasant-labs/schema').Harness} [provider] canonical provider identity for a top-level assistant turn
  * @property {string} [agentName]           subagent name when depth > 0
+ * @property {number} [replyIndex]          the index of the top-level reply this nested turn is one block of
  * @property {string} [controlKind]         the producer's control-record kind for this turn, when the
  *                                          server classified it (mode / permission-mode / attachment /
  *                                          agent-name / custom-title); never inferred from any other field
@@ -414,6 +415,7 @@ export const TOOL_GROUPS = Object.freeze([
  * empty arrays) so components never branch on existence for the core surfaces.
  *
  * @typedef {object} TranscriptViewModel
+ * @property {boolean} [incompleteTail] the final response has not yet been loaded
  * @property {SessionVM} session
  * @property {TurnVM[]} turns
  * @property {Map<string, ToolCallVM>} toolCallsById   parsed once; turns reference the same objects

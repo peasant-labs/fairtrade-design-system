@@ -736,6 +736,11 @@ The viewer uses its own available width for the two-rail layout. A compact embed
 reading column whole and exposes outline and filters through the same modal drawer used on
 phones, without changing stored desktop rail choices. Keyboard navigation reveals each focused
 session-view tab inside its own scrolling strip, with the inset focus ring and no host-page scroll.
+An open segment directory reports the loaded range as `turns 1–48 loaded so far` and samples only
+the refs in hand. Its trailing boundary offers a manual `load more` control; scrolling, mounting and
+resizing do not request content. Loading disables that control, and an end, cut or failure replaces
+it with the host's notice. An incomplete tail names the latest loaded response without calling it
+final. A host can disable app-initiated clipboard controls while preserving native text selection.
 
 ### Canvas and graph
 The map and graph surface: a dot-grid background, square nodes (intensity fill, selected in amber),
