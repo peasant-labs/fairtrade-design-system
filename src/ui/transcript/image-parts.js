@@ -14,6 +14,8 @@
 
    Pure: no JSX, no DOM, no state. The component and the gates read the same rules. */
 
+import { OmittedReason } from '@peasant-labs/schema'
+
 /** @typedef {import('./view-model.js').ContentPartVM} ContentPartVM */
 /** @typedef {import('./view-model.js').ImagePartVM} ImagePartVM */
 /** @typedef {import('@peasant-labs/schema').ImagePart} ImagePart */
@@ -79,7 +81,7 @@ export function imagePartMetadata(image) {
 export function imageOmissionDetail(image) {
   const part = image ?? {}
   const recorded = imagePartMetadata(part)
-  if (part.omittedReason === 'too_large') {
+  if (part.omittedReason === OmittedReason.TooLarge) {
     return recorded === '' ? `over the ${formatImageBytes(IMAGE_BYTES_LIMIT)} limit` : `${recorded} (over the ${formatImageBytes(IMAGE_BYTES_LIMIT)} limit)`
   }
   return recorded
