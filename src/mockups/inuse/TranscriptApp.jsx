@@ -747,6 +747,8 @@ function buildMockupVM() {
 import { piPayload } from './pi-fixture.js'
 import { readingPayload } from './reading-fixture.js'
 import { buildLargeRunModel, buildSegmentsModel } from './segments-fixture.js'
+import { buildPositionedDemo, POSITIONED_DEMO_SCENARIOS } from './positioned-fixture.js'
+import { usePositionedTranscript, PositionedLanding } from '../../ui/transcript/positioned-read.js'
 import nestingSource from '../../../scripts/testdata/transcript-nesting.yaml?raw'
 import { integrityBoundProps } from './integrity-fixture.js'
 import { usePublishFlow } from './PublishFlowDemo.jsx'
@@ -764,6 +766,7 @@ const CAPABILITIES = {
 export default function TranscriptApp({ theme = 'dark' }) {
   if (new URLSearchParams(window.location.search).get('transcript') === 'context') return <ContextTranscriptDemo theme={theme} />
   if (new URLSearchParams(window.location.search).get('transcript') === 'segments') return <SegmentsTranscriptDemo theme={theme} />
+  if (new URLSearchParams(window.location.search).get('transcript') === 'positioned') return <PositionedTranscriptDemo theme={theme} />
   return <DefaultTranscriptApp theme={theme} />
 }
 
@@ -812,6 +815,48 @@ function SegmentsTranscriptDemo({ theme }) {
       onLoadSegment={loadSegment}
       onLoadWindow={(anchor) => setWindowDescriptor(model.windowFor(anchor))}
       initialPosition={initialTurn != null ? { kind: 'turn', turnIndex: initialTurn } : undefined}
+      showOutcome={false}
+    />
+  )
+}
+
+/* The positioned demo: the real reader and the real segment adapter over a mock transport whose
+   every body passes Schema's parsers. `?transcript=positioned&read=<scenario>` picks the state:
+   open, far (a deep link far from the opening run), history (the earlier section open), nonumber
+   (a row the server sent no number for), and busy, stale, denied, unavailable, failed, malformed
+   and network. The host-owned landing line is drawn the way a host does it, in the prelude. */
+function PositionedTranscriptDemo({ theme }) {
+  const scenario = useMemo(() => {
+    const read = new URLSearchParams(window.location.search).get('read') ?? 'open'
+    return POSITIONED_DEMO_SCENARIOS.includes(read) ? read : 'open'
+  }, [])
+  const demo = useMemo(() => buildPositionedDemo(scenario), [scenario])
+  const read = usePositionedTranscript({ transport: demo.transport, target: demo.target, landing: PositionedLanding.Exact })
+  const { openSection } = read
+  useEffect(() => { if (demo.openHistory) openSection(0) }, [demo.openHistory]) // eslint-disable-line react-hooks/exhaustive-deps -- open once on mount
+  const landing = read.landing
+  const prelude = landing?.snapped && landing.requestedAnchor !== undefined
+    ? <p role="status">Turn {landing.requestedAnchor} is not in this transcript's served view, so the viewer opened turn {landing.anchorTurn}.</p>
+    : undefined
+  return (
+    <TranscriptViewer
+      viewModel={read.viewModel}
+      theme={theme}
+      capabilities={CAPABILITIES}
+      directory={read.directory}
+      segments={read.segments}
+      window={read.window}
+      onLoadSegment={read.onLoadSegment}
+      onLoadWindow={read.onLoadWindow}
+      earlierHistoryOpen={read.earlierHistoryOpen}
+      onEarlierHistoryOpenChange={read.onEarlierHistoryOpenChange}
+      onActiveTurnChange={read.onActiveTurnChange}
+      integrity={read.integrity}
+      transcriptContentHash={read.transcriptContentHash}
+      contentHash={read.contentHash}
+      positionedRead={read.positionedRead}
+      initialPosition={read.initialPosition}
+      streamPrelude={prelude}
       showOutcome={false}
     />
   )
