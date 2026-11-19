@@ -29,6 +29,7 @@ tabCounts:
   total: 10
 unknownState: unforeseen
 assertions:
+  - name: open-directory-scrubber-draws-no-caption
   - name: continuation-values-are-exported
   - name: unknown-continuation-state-throws
   - name: ended-directory-drops-loaded-so-far

@@ -22,14 +22,13 @@ import { useCallback, useEffect, useRef } from 'react'
  * @param {object} props
  * @param {TurnVM[]} [props.turns]                         legacy turn mode
  * @param {ScrubberTick[]} [props.ticks]                   segment sample; takes precedence over `turns`
- * @param {boolean} [props.loadedSoFar]                    track covers only the loaded prefix
  * @param {number} [props.active]                          the active TURN INDEX (TurnVM.index)
  * @param {number} [props.activeTick]                      the active SEGMENT INDEX when `ticks` is supplied
  * @param {(clientX: number, track: HTMLElement) => void} [props.onSeek]
  * @param {(tick: ScrubberTick) => void} [props.onSeekTick]
  * @param {{ current: boolean }} [props.draggingRef]       shared drag latch; defaults to an internal ref
  */
-export default function Scrubber({ turns = [], ticks, loadedSoFar = false, active = 0, activeTick = 0, onSeek = () => {}, onSeekTick, draggingRef }) {
+export default function Scrubber({ turns = [], ticks, active = 0, activeTick = 0, onSeek = () => {}, onSeekTick, draggingRef }) {
   const trackRef = useRef(null)
   const internalDragging = useRef(false)
   const dragging = draggingRef ?? internalDragging
@@ -107,7 +106,6 @@ export default function Scrubber({ turns = [], ticks, loadedSoFar = false, activ
           />
         ))}
       <span className="txn-scrub-bracket" style={{ left: bracketPct + '%' }} aria-hidden="true" />
-      {loadedSoFar && <span className="txn-scope">loaded so far</span>}
     </div>
   )
 }

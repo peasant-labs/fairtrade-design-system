@@ -45,6 +45,9 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   const fortyEightRef = { ...ref, lastTurn: 47, conversationTurns: { before: 0, count: 48 } }
   const range = await mount(React.createElement(Viewer, { viewModel: vm, capabilities: {}, directory: { complete: false, segments: [fortyEightRef] }, segments: [{ ...fortyEightRef, turns: fortyEightTurns }], continuation: { state: 'more', onLoadMore() {} } }))
   report.check(range.container.querySelector('.txn-trace-count')?.textContent === fixture.loadedRange.caption, 'open-directory-labels-say-loaded-so-far: exact forty-eight range')
+  await range.act(() => { const stream = range.container.querySelector('.txn-stream'); stream.scrollTop = 300; stream.dispatchEvent(new window.Event('scroll')) })
+  const scrubber = range.container.querySelector('.txn-scrub-segments')
+  check('open-directory-scrubber-draws-no-caption', !!scrubber && scrubber.textContent.trim() === '')
   check('open-directory-scope-says-loaded-part', range.container.textContent.includes('in the loaded part of the session'))
   await range.unmount()
   const caps = { canEdit: false, canLabel: false, canContribute: true, canChangeVisibility: false, canExport: false }

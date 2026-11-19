@@ -2112,7 +2112,6 @@ export default function TranscriptViewer({
                          transcript never mounts one tick per turn in either presentation */
                       <Scrubber
                         ticks={scrubTicks}
-                        loadedSoFar={directory?.complete === false}
                         activeTick={activeSegmentTick}
                         onSeekTick={seekScrubTick}
                         draggingRef={draggingRef}
@@ -2132,7 +2131,6 @@ export default function TranscriptViewer({
                       {activeModel && <span className="txn-sticky-model mono">{activeModel}</span>}
                       <Scrubber
                         turns={turns}
-                        loadedSoFar={segmentMode && directory?.complete === false}
                         ticks={segmentMode ? scrubTicks : undefined}
                         active={activeTurn}
                         activeTick={segmentMode ? activeSegmentTick : 0}
