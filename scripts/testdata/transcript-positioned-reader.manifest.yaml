@@ -117,7 +117,7 @@ mutations:
   - name: renumber on refetch
     file: src/ui/transcript/positioned-read.js
     find: "    const record = {\n      index: ordinal,"
-    replace: "    if (section === undefined && state.evicted.has(ordinal)) for (const turn of cooked.turns) turn.label = String(turn.position + 1)\n    const record = {\n      index: ordinal,"
+    replace: "    state.seen ??= new Set()\n    if (section === undefined && state.seen.has(ordinal)) for (const turn of cooked.turns) turn.label = String(turn.position + 1)\n    if (section === undefined) state.seen.add(ordinal)\n    const record = {\n      index: ordinal,"
     expectedDiagnostic: controller-refetch-keeps-number
   - name: map 503 to stale
     file: src/ui/transcript/positioned-read.js

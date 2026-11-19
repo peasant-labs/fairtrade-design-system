@@ -227,7 +227,6 @@ export function createPositionedReader(options) {
       landing: null,
       segments: new Map(),
       history: new Map(),
-      evicted: new Set(),
       pins: { focus: [], selection: [], openControl: [] },
       failure: null,
       failed: [],
@@ -481,7 +480,6 @@ export function createPositionedReader(options) {
     touch(record)
     if (section === undefined) {
       state.segments.set(ordinal, record)
-      state.evicted.delete(ordinal)
     } else {
       const open = state.history.get(section)
       if (!open) return
@@ -527,16 +525,15 @@ export function createPositionedReader(options) {
     for (const section of state.history.values()) resident += section.segments.size
     if (resident <= residency) return
     const candidates = []
-    for (const record of state.segments.values()) if (!pinned.has(record.index)) candidates.push({ record, from: state.segments, main: true })
+    for (const record of state.segments.values()) if (!pinned.has(record.index)) candidates.push({ record, from: state.segments })
     for (const section of state.history.values()) {
       if (sectionPinned(section)) continue
-      for (const record of section.segments.values()) candidates.push({ record, from: section.segments, main: false })
+      for (const record of section.segments.values()) candidates.push({ record, from: section.segments })
     }
     candidates.sort((a, b) => a.record.visited - b.record.visited)
-    for (const { record, from, main } of candidates) {
+    for (const { record, from } of candidates) {
       if (resident <= residency) break
       from.delete(record.index)
-      if (main) state.evicted.add(record.index)
       resident -= 1
     }
   }
