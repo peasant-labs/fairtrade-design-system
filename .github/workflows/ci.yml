@@ -65,10 +65,13 @@ jobs:
 
       # Static guard against stringly-typed values. It runs before the build so
       # a new hit fails in the first minute with a file and line.
+      # No Actions cache for Go here or below: on the self-hosted pool the
+      # shared cache grew to 5.8 GB and its restore and save took about 18 of
+      # lib's 25 minutes, for a tool that compiles in seconds.
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version: '1.26.x'
-          cache-dependency-path: package.json
+          cache: false
 
       - name: Install ast-grep
         run: npm install --global @ast-grep/cli@0.51.2
@@ -118,13 +121,15 @@ jobs:
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version-file: infra-tool/tools/release/go.mod
-          cache-dependency-path: infra-tool/tools/release/go.sum
+          cache: false
 
       - name: Build release-intent
-        working-directory: infra-tool/tools/release
-        run: |
-          go build -o "${RUNNER_TEMP}/release-intent" ./cmd/release-intent
-          echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
+        env:
+          GOWORK: "off"
+        run: go build -C infra-tool/tools/release -o "${RUNNER_TEMP}/release-intent" ./cmd/release-intent
+
+      - name: Put release-intent on the path
+        run: echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
 
       - name: Classify the pull request
         id: kind
