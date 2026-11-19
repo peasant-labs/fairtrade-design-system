@@ -27,7 +27,7 @@
 
 import { parseArgs, parseResult, extractPath, callDiff, diffLines } from './adapter.parse.js'
 import { computeAnalytics, computeTurnLabels, computeTaskGroups } from './analytics.js'
-import { Role, EntryType, ToolCallKind, TurnPartType, Harness, SessionRelationshipKind, RelationshipTargetState, RelationshipNavigationStatus, PublicSourceAnchorKind, zObservedModelID, zContentProvenance, zSourceEntryRef, zSessionRelationshipNavigation, parseSessionDetailPayloadValue } from '@peasant-labs/schema'
+import { Role, EntryType, ToolCallKind, TurnPartType, Harness, SessionRelationshipKind, RelationshipTargetState, RelationshipNavigationStatus, PublicSourceAnchorKind, zObservedModelID, zContentProvenance, zSourceEntryRef, zSessionRelationshipNavigation, parseSessionDetailPayloadValue, TranscriptSegmentPartitionKind } from '@peasant-labs/schema'
 import { aggregateUsage } from './usage.js'
 import { isKnownTime } from './time.js'
 import { unwrapUserQuery, userQueryLeadLength, USER_QUERY_OPEN_TAG, USER_QUERY_CLOSE_TAG } from './title.js'
@@ -1011,7 +1011,7 @@ export function adaptTranscript(payload, annotations, analytics, options) {
 
 /** The partition id a positioned read cooks into: `main`, or `earlier-N` for history section N. @param {{ kind?: string, sectionIndex?: number | null } | undefined} partition @returns {string} */
 export function positionedPartitionId(partition) {
-  if (partition?.kind === 'history') return `earlier-${partition.sectionIndex ?? 0}`
+  if (partition?.kind === TranscriptSegmentPartitionKind.History) return `earlier-${partition.sectionIndex ?? 0}`
   return 'main'
 }
 

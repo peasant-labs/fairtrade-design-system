@@ -46,6 +46,7 @@ import IntegrityBadge from './IntegrityBadge.jsx'
 import { integrityView } from './integrity.js'
 import Collapsible from './Collapsible.jsx'
 import TranscriptContext from './TranscriptContext.jsx'
+import { PositionedReadFailureKind, POSITIONED_READ_COPY, positionedFailureSentence } from './positioned-read.js'
 import { UsageScopes } from './UsageDisclosure.jsx'
 import DiffEntryCard from './DiffEntryCard.jsx'
 import OutlineRail from './OutlineRail.jsx'
@@ -352,6 +353,7 @@ export default function TranscriptViewer({
   onLoadSegment,
   onLoadWindow,
   continuation: continuationProp,
+  positionedRead,
 }) {
   if (continuationProp != null && !CONTINUATION_STATES.has(continuationProp.state)) {
     throw new TypeError(`TranscriptViewer refused continuation.state ${String(continuationProp.state)}: pass one of ${[...CONTINUATION_STATES].join(', ')} to describe the segment continuation.`)
@@ -979,6 +981,29 @@ export default function TranscriptViewer({
      between boundary normally follows the last rendered turn before the gap; when a
      held window leaves none, it renders before the first rendered turn after the gap
      so a counted boundary can never be missing from the DOM. */
+  /* A positioned read's own state: still loading, or a failure with what the reader can do. A
+     denied or unavailable read replaces the trace; any other failure keeps every loaded row and
+     draws its notice above them. Busy is a status, not an alert: it tries again on its own. */
+  const positionedFailure = positionedRead?.failure ?? null
+  const positionedSettled = !positionedRead || (positionedRead.status === 'ready' && !positionedFailure)
+  const positionedNotice = !positionedRead ? null
+    : positionedFailure?.kind === PositionedReadFailureKind.Denied || positionedFailure?.kind === PositionedReadFailureKind.Unavailable ? (
+      <div className="empty txn-read-refused" data-read-failure={positionedFailure.kind}>
+        <div className="ring"><FileText size={20} aria-hidden="true" /></div>
+        <EmptyHeading>{positionedFailure.kind === PositionedReadFailureKind.Denied ? POSITIONED_READ_COPY.deniedHeading : POSITIONED_READ_COPY.unavailableHeading}</EmptyHeading>
+        <p>{positionedFailure.kind === PositionedReadFailureKind.Denied ? POSITIONED_READ_COPY.deniedBody : POSITIONED_READ_COPY.unavailableBody}</p>
+      </div>
+    ) : positionedFailure ? (
+      <div className="txn-held-window" role={positionedFailure.kind === PositionedReadFailureKind.Busy ? 'status' : 'alert'} data-read-failure={positionedFailure.kind}>
+        <span>{positionedFailureSentence(positionedFailure.kind, positionedFailure.retryAfterSeconds)}</span>{' '}
+        <button type="button" className="txn-segboundary-load" onClick={() => positionedRead.retry()}>
+          {positionedFailure.kind === PositionedReadFailureKind.Stale ? POSITIONED_READ_COPY.staleAction : positionedFailure.kind === PositionedReadFailureKind.Busy ? POSITIONED_READ_COPY.busyAction : POSITIONED_READ_COPY.retryAction}
+        </button>
+      </div>
+    ) : positionedRead.status === 'loading' && loadedSegments.length === 0 ? (
+      <p className="txn-held-window" role="status" data-read-loading="true">{POSITIONED_READ_COPY.loading}</p>
+    ) : null
+
   const boundaryPlacement = useMemo(() => {
     if (!segmentMode) return { leading: null, trailing: null, after: new Map(), before: new Map(), count: 0 }
     const isRenderedRow = (turn) => {
@@ -2156,14 +2181,15 @@ export default function TranscriptViewer({
                         )}
                       </div>
                     )}
-                    {segmentMode && directory?.complete !== false && (directory?.totalSegments ?? 0) === 0 && (
+                    {positionedNotice}
+                    {segmentMode && positionedSettled && directory?.complete !== false && (directory?.totalSegments ?? 0) === 0 && (
                       <div className="empty txn-not-indexed" data-not-indexed="true">
                         <div className="ring"><FileText size={20} aria-hidden="true" /></div>
                         <EmptyHeading>not indexed</EmptyHeading>
                         <p>this transcript has no segments yet. its turns are not available to read.</p>
                       </div>
                     )}
-                    {visibleTurns.length === 0 && !(segmentMode && (directory?.totalSegments ?? 0) === 0) && (
+                    {visibleTurns.length === 0 && positionedSettled && !(segmentMode && (directory?.totalSegments ?? 0) === 0) && (
                       <div className="empty"><div className="ring"><FilterIcon size={20} aria-hidden="true" /></div><EmptyHeading>no turns to display</EmptyHeading>
                         {filters.categories.system !== true && counts.categories.system > 0 ? (
                           <>

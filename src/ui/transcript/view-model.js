@@ -469,6 +469,12 @@ export const TOOL_GROUPS = Object.freeze([
  * @property {TurnVM[]} turns
  * @property {import('@peasant-labs/schema').NativeMetadataRecord[]} [nativeMetadata]
  * @property {UsageScopeVM[]} usageScopes
+ * @property {number} [section]    positioned reads: the history section index
+ * @property {string} [countText]  positioned reads: the toggle's count, the recorded one qualified while closed
+ *                                 and the exact served one once open; empty when the server sent none
+ * @property {'closed' | 'loading' | 'ready' | 'failed'} [status] positioned reads: the section's read state
+ * @property {{ kind: string, operation: string } | null} [failure] positioned reads: why the section did not load
+ * @property {() => unknown} [retry] positioned reads: read the failed section again
  */
 
 export {}

@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight, Link as LinkIcon, History } from 'lucide-rea
 import TurnCard from './TurnCard.jsx'
 import { UsageScopes } from './UsageDisclosure.jsx'
 import { useImageUrl } from './image-url.js'
+import { POSITIONED_READ_COPY, positionedFailureSentence as failureSentence } from './positioned-read.js'
 
 /**
  * Current-source navigation and retained history use only cooked evidence.
@@ -36,12 +37,19 @@ export default function TranscriptContext({ relationships = [], earlierHistory =
     {earlierHistory.map(section => <section className="txn-earlier" key={section.id} data-earlier-section={section.id}>
       <button type="button" className="txn-earlier-toggle" aria-expanded={!!open[section.id]} aria-controls={`${prefix}-history-${section.id}`} onClick={() => toggle(section.id)}>
         {open[section.id] ? <ChevronDown aria-hidden="true" /> : <ChevronRight aria-hidden="true" />}
-        <History aria-hidden="true" /> earlier history <span className="tnum">{section.turns.length}</span>
+        <History aria-hidden="true" /> earlier history {section.countText === undefined
+          ? <span className="tnum">{section.turns.length}</span>
+          : section.countText !== '' && <span className="tnum">{section.countText}</span>}
         <span className="txn-context-status">{section.state.label}</span>
       </button>
       <div id={`${prefix}-history-${section.id}`} hidden={!open[section.id]}>
         <p className="txn-context-note">{section.state.explanation}</p>
         <UsageScopes scopes={section.usageScopes} label="earlier history usage by scope" />
+        {open[section.id] && section.status === 'loading' && <p className="txn-context-note" role="status">{POSITIONED_READ_COPY.historyLoading}</p>}
+        {open[section.id] && section.failure && <div className="txn-held-window" role="alert">
+          <span>{failureSentence(section.failure.kind)}</span>{' '}
+          {section.retry && <button type="button" className="txn-segboundary-load" onClick={section.retry}>{POSITIONED_READ_COPY.retryAction}</button>}
+        </div>}
         {open[section.id] && section.turns.map(turn => <TurnCard key={turn.identity} turn={turn} openTools={openTools} toggleTool={toggleTool} imageUrl={resolvedImageUrl} headingLevel={headingLevel} />)}
       </div>
     </section>)}
