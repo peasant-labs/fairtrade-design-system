@@ -5,6 +5,7 @@ requiredCases:
   - cut-replaces-control-with-notice
   - failed-shows-host-control
 requiredMutationNames:
+  - restore scrubber caption
   - observer requests more
   - drop open-directory state
   - loading stays enabled
@@ -14,6 +15,7 @@ requiredMutationNames:
   - completed directory reports an open range
   - unknown continuation state is silently accepted
 requiredAssertions:
+  - open-directory-scrubber-draws-no-caption
   - continuation-values-are-exported
   - unknown-continuation-state-throws
   - ended-directory-drops-loaded-so-far
@@ -43,6 +45,11 @@ requiredAssertions:
   - complete-tail-keeps-final-response
   - no-continuation-prop-is-unchanged
 mutations:
+  - name: restore scrubber caption
+    file: src/ui/transcript/Scrubber.jsx
+    find: '      <span className="txn-scrub-bracket"'
+    replace: '      <span className="txn-scope">loaded so far</span><span className="txn-scrub-bracket"'
+    expectedDiagnostic: open-directory-scrubber-draws-no-caption
   - name: unknown continuation state is silently accepted
     file: src/ui/transcript/TranscriptViewer.jsx
     find: "if (continuationProp != null && !CONTINUATION_STATES.has(continuationProp.state)) {"
