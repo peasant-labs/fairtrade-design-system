@@ -835,7 +835,7 @@ function PositionedTranscriptDemo({ theme }) {
   const { openSection, landing } = controls
   useEffect(() => { if (demo.openHistory) openSection(0) }, [demo.openHistory]) // eslint-disable-line react-hooks/exhaustive-deps -- open once on mount
   const prelude = landing?.snapped && landing.requestedAnchor !== undefined
-    ? <p role="status">Turn {landing.requestedAnchor} is not in this transcript's served view, so the viewer opened turn {landing.anchorTurn}.</p>
+    ? <p role="status">turn {landing.requestedAnchor} is not in this transcript's served view, so the viewer opened turn {landing.anchorTurn}.</p>
     : undefined
   return (
     <TranscriptViewer
