@@ -178,6 +178,7 @@ export function createPositionedReader({ transport, target, landing, residency =
       context: null,
       directory: null,
       directoryPages: 1,
+      pageRefetched: false,
       windows: { default: null, target: null },
       fetchSet: null,
       landing: null,
@@ -218,8 +219,8 @@ export function createPositionedReader({ transport, target, landing, residency =
   /* ── one request ──────────────────────────────────────────────────────────── */
 
   /** Send one request, map its status, parse its body and check its read context. */
-  async function read(operation, request, parser, check) {
-    const signal = controller.signal
+  async function read(operation, request, parser, check, scope) {
+    const signal = scope ? AbortSignal.any([controller.signal, scope]) : controller.signal
     const mine = generation
     let response
     try {
@@ -329,13 +330,16 @@ export function createPositionedReader({ transport, target, landing, residency =
       emit()
       return true
     } catch (error) {
-      if (error instanceof ReadFailure && error.kind === PositionedReadFailureKind.Denied) {
+      if (error instanceof ReadFailure && error.kind === PositionedReadFailureKind.Denied && !state.pageRefetched) {
+        state.pageRefetched = true
         state.directory = null
         emit()
         await loadDirectory(1)
         return false
       }
-      fail(error, () => loadDirectoryPage(page))
+      /* a later page past the last a second time is a paging failure, never a denial of the transcript */
+      const pagingError = error instanceof ReadFailure && error.kind === PositionedReadFailureKind.Denied ? new ReadFailure(PositionedReadFailureKind.Failed, 'directory') : error
+      fail(pagingError, () => loadDirectoryPage(page))
       return false
     }
   }
@@ -406,13 +410,10 @@ export function createPositionedReader({ transport, target, landing, residency =
     return run
   }
 
-  /** A section read also stops when its section closes. */
-  async function readScoped(operation, request, parser, check, sectionSignal) {
-    if (!sectionSignal) return read(operation, request, parser, check)
-    if (sectionSignal.aborted) throw new ReadFailure('aborted', operation)
-    const result = await read(operation, request, parser, check)
-    if (sectionSignal.aborted) throw new ReadFailure('aborted', operation)
-    return result
+  /** A section read also stops when its section closes: the transport sees the abort, and an answer
+      that still arrives is dropped. */
+  function readScoped(operation, request, parser, check, sectionSignal) {
+    return read(operation, request, parser, check, sectionSignal)
   }
 
   function installSegment(ordinal, body, section) {
@@ -450,16 +451,16 @@ export function createPositionedReader({ transport, target, landing, residency =
       focused on, has selected or has a control open in. An open history section is pinned whole. */
   function pinnedMain() {
     const pinned = new Set()
-    const target = state.landing?.anchorSegment
     const landed = landingSegment()
     if (landed !== undefined) pinned.add(landed)
-    if (Number.isInteger(target)) pinned.add(target)
-    if (landed !== undefined) { pinned.add(landed - 1); pinned.add(landed + 1) }
+    if (landed !== undefined) for (const neighbour of [landed - 1, landed + 1]) pinned.add(neighbour)
     for (const ordinal of state.pins.focus) pinned.add(ordinal)
     for (const ordinal of state.pins.selection) pinned.add(ordinal)
     for (const ordinal of state.pins.openControl) pinned.add(ordinal)
     return pinned
   }
+  /** An open history section is pinned whole while it stays open. */
+  const sectionPinned = (section) => section.open === true
 
   /** The segment that holds the landing row, from the directory's position ranges. */
   function landingSegment() {
@@ -476,11 +477,17 @@ export function createPositionedReader({ transport, target, landing, residency =
     let resident = state.segments.size
     for (const section of state.history.values()) resident += section.segments.size
     if (resident <= residency) return
-    const candidates = [...state.segments.values()].filter((record) => !pinned.has(record.index)).sort((a, b) => a.visited - b.visited)
-    for (const record of candidates) {
+    const candidates = []
+    for (const record of state.segments.values()) if (!pinned.has(record.index)) candidates.push({ record, from: state.segments, main: true })
+    for (const section of state.history.values()) {
+      if (sectionPinned(section)) continue
+      for (const record of section.segments.values()) candidates.push({ record, from: section.segments, main: false })
+    }
+    candidates.sort((a, b) => a.record.visited - b.record.visited)
+    for (const { record, from, main } of candidates) {
       if (resident <= residency) break
-      state.segments.delete(record.index)
-      state.evicted.add(record.index)
+      from.delete(record.index)
+      if (main) state.evicted.add(record.index)
       resident -= 1
     }
   }
