@@ -3770,6 +3770,9 @@ describe('fairtest host export ownership', async () => {
     'component-mutations.test.mjs',
     'product.journey.mjs',
     'component.journey.mjs',
+    'artifact-digest-record.mjs',
+    'digest-boundary.mjs',
+    'digest-boundary.test.mjs',
     'run-mounted.mjs',
     'run-product-contract.mjs',
     'verify-fairtest.mjs',
@@ -4385,7 +4388,7 @@ describe('adapter source boundary', () => {
     const row = source.slice(source.indexOf('export async function captureProductRow'))
     assert.ok(row.length > 0, 'product-producer.mjs: the mounted row is missing at path producer.captureProductRow; repair: keep the row that writes the six artifact classes.')
     const prepared = row.indexOf('prepareProductRowDir(')
-    const firstWrite = row.indexOf('writeFileSync(')
+    const firstWrite = row.search(/write(?:RowArtifact|FileSync)\(/)
     assert.ok(prepared > -1, 'product-producer.mjs: the mounted row no longer prepares its run directory at path producer.captureProductRow; repair: call prepareProductRowDir({ runRoot, theme }) so the freshness guard runs first.')
     assert.ok(!/assertProductRowDirFresh/.test(source), 'product-producer.mjs: still exposes the old named run-root guard at path producer.assertProductRowDirFresh; repair: keep the refusal private to the preparation seam so a row cannot reach it after a write.')
     assert.equal(source.split('refuseStaleRunSubtree(').length - 1, 2, 'product-producer.mjs: the stale-subtree refusal must have exactly one call site at path producer.refuseStaleRunSubtree; repair: call it once, inside prepareProductRowDir, before the row directory is created.')

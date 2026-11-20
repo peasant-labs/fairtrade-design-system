@@ -1,0 +1,211 @@
+# Producer-to-verifier digest boundary cases. Each case runs the REAL verifier
+# CLI over an isolated copy of the real mounted producer output, with only the
+# declared mutation applied. A "none" case copies every producer row and must
+# verify complete; a mutation case copies its target row only, so the digest
+# reader reaches the changed row and fails before any JSON artifact is parsed.
+#
+# The digest record is row metadata and never a seventh ARTIFACT_CLASSES entry.
+# No case table is inline: every row/artifact pair and every expected diagnostic
+# lives here plus the required-name manifest.
+expectedCaseCount: 26
+cases:
+  - name: untouched-run-verifies
+    check: verifier
+    mutation: none
+    expectStatus: 0
+
+  # Each of the six classes on a real product row. The JSON mutations append
+  # invalid JSON bytes; the verifier must report digest-mismatch before it
+  # reaches JSON.parse, so a malformed artifact cannot be mistaken for a
+  # producer parse defect.
+  - name: product-record-json-changed
+    check: verifier
+    mutation: mutate-json-artifact
+    row: product-dark
+    artifact: record.json
+    expectStatus: 1
+    expectedErrorContains: [digest-mismatch, product-dark, record.json, 'repair:']
+  - name: product-aria-json-changed
+    check: verifier
+    mutation: mutate-json-artifact
+    row: product-dark
+    artifact: aria.json
+    expectStatus: 1
+    expectedErrorContains: [digest-mismatch, product-dark, aria.json, 'repair:']
+  - name: product-axe-json-changed
+    check: verifier
+    mutation: mutate-json-artifact
+    row: product-dark
+    artifact: axe.json
+    expectStatus: 1
+    expectedErrorContains: [digest-mismatch, product-dark, axe.json, 'repair:']
+  - name: product-screenshot-changed
+    check: verifier
+    mutation: mutate-binary-artifact
+    row: product-dark
+    artifact: screenshot.png
+    expectStatus: 1
+    expectedErrorContains: [digest-mismatch, product-dark, screenshot.png, 'repair:']
+  - name: product-provenance-json-changed
+    check: verifier
+    mutation: mutate-json-artifact
+    row: product-dark
+    artifact: provenance.json
+    expectStatus: 1
+    expectedErrorContains: [digest-mismatch, product-dark, provenance.json, 'repair:']
+  - name: product-resolution-json-changed
+    check: verifier
+    mutation: mutate-json-artifact
+    row: product-dark
+    artifact: resolution.json
+    expectStatus: 1
+    expectedErrorContains: [digest-mismatch, product-dark, resolution.json, 'repair:']
+
+  # The same six classes on a real component row, proving both mounted kinds
+  # write and are checked through the one digest-record reader.
+  - name: component-record-json-changed
+    check: verifier
+    mutation: mutate-json-artifact
+    row: component-dark
+    artifact: record.json
+    expectStatus: 1
+    expectedErrorContains: [digest-mismatch, component-dark, record.json, 'repair:']
+  - name: component-aria-json-changed
+    check: verifier
+    mutation: mutate-json-artifact
+    row: component-dark
+    artifact: aria.json
+    expectStatus: 1
+    expectedErrorContains: [digest-mismatch, component-dark, aria.json, 'repair:']
+  - name: component-axe-json-changed
+    check: verifier
+    mutation: mutate-json-artifact
+    row: component-dark
+    artifact: axe.json
+    expectStatus: 1
+    expectedErrorContains: [digest-mismatch, component-dark, axe.json, 'repair:']
+  - name: component-screenshot-changed
+    check: verifier
+    mutation: mutate-binary-artifact
+    row: component-dark
+    artifact: screenshot.png
+    expectStatus: 1
+    expectedErrorContains: [digest-mismatch, component-dark, screenshot.png, 'repair:']
+  - name: component-provenance-json-changed
+    check: verifier
+    mutation: mutate-json-artifact
+    row: component-dark
+    artifact: provenance.json
+    expectStatus: 1
+    expectedErrorContains: [digest-mismatch, component-dark, provenance.json, 'repair:']
+  - name: component-resolution-json-changed
+    check: verifier
+    mutation: mutate-json-artifact
+    row: component-dark
+    artifact: resolution.json
+    expectStatus: 1
+    expectedErrorContains: [digest-mismatch, component-dark, resolution.json, 'repair:']
+
+  # Digest record failures. No case may fall back to re-hashing the current
+  # bytes for an absent, malformed, incomplete, or invalid record.
+  - name: digest-record-absent
+    check: verifier
+    mutation: delete-digest-record
+    row: product-dark
+    expectStatus: 1
+    expectedErrorContains: [missing-digest-record, product-dark, digests.json, 'repair:']
+  # An absent record must fail even when the artifact bytes changed. A verifier
+  # that fell back to hashing the current bytes would pass this case, so it is
+  # the named guard against a missing-record rehash fallback.
+  - name: digest-record-absent-with-mutated-artifact
+    check: verifier
+    mutation: delete-digest-record-and-mutate-artifact
+    row: product-dark
+    artifact: screenshot.png
+    expectStatus: 1
+    expectedErrorContains: [missing-digest-record, product-dark, digests.json, 'repair:']
+  - name: digest-record-malformed
+    check: verifier
+    mutation: malform-digest-record
+    row: product-dark
+    expectStatus: 1
+    expectedErrorContains: [malformed-digest-record, product-dark, digests.json, 'repair:']
+  # A record copied from another row keeps a valid digest map but names the
+  # wrong row. The verifier must attribute it to the target row, not accept the
+  # source row's record.
+  - name: digest-record-wrong-row
+    check: verifier
+    mutation: copy-digest-record-from-other-row
+    row: product-dark
+    sourceRow: product-light
+    expectStatus: 1
+    expectedErrorContains: [malformed-digest-record, product-dark, digests.json, '.row', product-light, 'repair:']
+  # An unsupported schema version must be refused by name, not read as v1.
+  - name: digest-record-wrong-version
+    check: verifier
+    mutation: set-digest-record-version
+    row: product-dark
+    version: 2
+    expectStatus: 1
+    expectedErrorContains: [malformed-digest-record, product-dark, digests.json, '.version', '2', 'repair:']
+  # Top-level field membership is exact: an extra field and a missing field are
+  # both malformed records, with the observed field set named.
+  - name: digest-record-extra-top-level-field
+    check: verifier
+    mutation: add-digest-record-field
+    row: product-dark
+    field: extra
+    expectStatus: 1
+    expectedErrorContains: [malformed-digest-record, product-dark, digests.json, extra, 'repair:']
+  - name: digest-record-missing-top-level-field
+    check: verifier
+    mutation: remove-digest-record-field
+    row: product-dark
+    field: row
+    expectStatus: 1
+    expectedErrorContains: [malformed-digest-record, product-dark, digests.json, row, 'repair:']
+  - name: digest-record-extra-entry
+    check: verifier
+    mutation: add-digest-entry
+    row: product-dark
+    expectStatus: 1
+    expectedErrorContains: [unexpected-digest-entry, product-dark, scratch.txt, 'repair:']
+  - name: digest-record-missing-entry
+    check: verifier
+    mutation: remove-digest-entry
+    row: product-dark
+    artifact: aria.json
+    expectStatus: 1
+    expectedErrorContains: [missing-digest-entry, product-dark, aria.json, 'repair:']
+  - name: digest-record-invalid-hash
+    check: verifier
+    mutation: invalid-digest
+    row: product-dark
+    artifact: aria.json
+    expectStatus: 1
+    expectedErrorContains: [invalid-digest, product-dark, aria.json, 'repair:']
+
+  # Artifact-set failures: a recorded class with no file, and an extra file the
+  # closed six-class set never declared.
+  - name: artifact-missing
+    check: verifier
+    mutation: delete-artifact
+    row: component-dark
+    artifact: aria.json
+    expectStatus: 1
+    expectedErrorContains: [missing-artifact, component-dark, aria.json, 'repair:']
+  - name: artifact-extra-file
+    check: verifier
+    mutation: add-artifact
+    row: product-dark
+    expectStatus: 1
+    expectedErrorContains: [unexpected-artifact, product-dark, scratch.bin, 'repair:']
+
+  # Two independent copies: a mutation in one must fail while the untouched
+  # copy still verifies complete, and neither may write the source run root.
+  - name: independent-copies-isolate-a-mutation
+    check: isolation
+    mutation: mutate-json-artifact
+    row: product-dark
+    artifact: record.json
+    expectedErrorContains: [digest-mismatch, product-dark, record.json, 'repair:']

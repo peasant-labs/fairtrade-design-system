@@ -267,6 +267,8 @@
     "test:fairtest:product-contract": "node scripts/fairtest/run-product-contract.mjs",
     "test:fairtest:compat": "node scripts/fairtest-surface-manifest.mjs",
     "test:fairtest:capture": "node scripts/fairtest/capture-fairtest.mjs",
+    "test:fairtest:digest-boundary": "node scripts/fairtest/digest-boundary.mjs",
+    "test:fairtest:digest-boundary:contract": "node --test scripts/fairtest/digest-boundary.test.mjs",
     "test:fairtest:verify": "node scripts/fairtest/verify-fairtest.mjs",
     "test:transcript-system-groups": "node scripts/transcript-system-groups.test.mjs",
     "test:transcript-system-groups:mutations": "node scripts/parts-mutations.mjs scripts/transcript-system-groups.test.mjs scripts/testdata/transcript-system-groups.manifest.yaml",

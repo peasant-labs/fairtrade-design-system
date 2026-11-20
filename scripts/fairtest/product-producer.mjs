@@ -11,9 +11,9 @@
 // product class-name literal, no shell id selector, and no product display
 // label of its own: the shell root, the section item, the active-state class,
 // and the action label all come from the registry. The caller supplies the
-// Playwright page; this module performs the row-scoped observation sequence
-// and writes exactly six artifact classes per theme row into an immutable run
-// root.
+// Playwright page; this module performs the row-scoped observation sequence,
+// writes exactly six artifact classes per theme row into an immutable run root,
+// and records one row-owned digest record after those six writes.
 //
 // Row sequence per route entry and theme (dark, light): serve the row route,
 // wait for genuine mount (selector readiness, never a fixed sleep alone),
@@ -60,7 +60,7 @@
 // repair. A failing row never writes a passing record.
 
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import http from 'node:http'
 import { dirname, join, resolve } from 'node:path'
 import { importFairtestSource } from '../fairtest-source.mjs'
@@ -90,6 +90,7 @@ import {
   productThemeRow,
 } from './fairtrade-targets.mjs'
 import { AXE_RESULT_FIELDS, scanAxe, seriousViolations } from '../journey/lib/assertions.mjs'
+import { ARTIFACT_DIGEST_RECORD, readVerifiedRowArtifacts, writeArtifactDigestRecord, writeRowArtifact } from './artifact-digest-record.mjs'
 import { ARTIFACT_CLASSES, assertServedDigestsMatchRunRoot } from './fairtest-artifacts.mjs'
 import { requireEnvelopeForRun, resolveRunId, resolveRunRoot } from './run-envelope-contract.mjs'
 
@@ -390,16 +391,17 @@ export function productRowDir(runRoot, theme, route = PRODUCT_DEFAULT_ROUTE) {
 }
 
 /**
- * Refuse a row directory that already carries one of the six artifact
- * classes. A rerun must use a fresh run root, never silently append into a
- * previous run subtree. Module-private on purpose: prepareProductRowDir is the
- * only way the row can reach this refusal, so freshness can never be
- * validated after a write has already overwritten a previous run's bytes.
+ * Refuse a row directory that already carries one of the six artifact classes
+ * or a digest record. A rerun must use a fresh run root, never silently append
+ * into a previous run subtree. Module-private on purpose:
+ * prepareProductRowDir is the only way the row can reach this refusal, so
+ * freshness can never be validated after a write has already overwritten a
+ * previous run's bytes.
  * @param {string} rowDir row directory
  * @returns {void}
  */
 function refuseStaleRunSubtree(rowDir) {
-  for (const name of PRODUCT_ARTIFACT_CLASSES) {
+  for (const name of [...PRODUCT_ARTIFACT_CLASSES, ARTIFACT_DIGEST_RECORD]) {
     if (existsSync(join(rowDir, name))) {
       throw new Error(
         `product producer: stale artifact ${JSON.stringify(name)} for field "artifact" at path run.rowDir/${name}; ` +
@@ -1620,9 +1622,10 @@ function assertProductNotice(notice, observed, point) {
 }
 
 /**
- * Capture one product theme row on the real built surface and write its six
- * durable artifacts. The page must already belong to a browser owned by the
- * Playwright runner; the loopback service must already be ready.
+ * Capture one product theme row on the real built surface, write its six
+ * durable artifacts, and record their row-owned digests. The page must already
+ * belong to a browser owned by the Playwright runner; the loopback service must
+ * already be ready.
  *
  * Three fail-closed invariants run inside the row, so none of these defects
  * can reach durable evidence again: prepareProductRowDir validates the run
@@ -1956,7 +1959,7 @@ export async function captureProductRow(page, theme, options = {}) {
     pageWide: { scope: PRODUCT_A11Y_SCOPES.page, root: PRODUCT_A11Y_SCOPES.pageRoot, ...pageWide },
   }
   const axePath = join(rowDir, 'axe.json')
-  writeFileSync(axePath, `${JSON.stringify(axeRecord, null, 2)}\n`)
+  const axeWrite = writeRowArtifact(rowDir, 'axe.json', `${JSON.stringify(axeRecord, null, 2)}\n`)
   // The section each receipt carries is read from the page, not copied from the
   // declaration: the initial slot is gated against the section the pre-action
   // observation read, and the after-action slot against the section the
@@ -1986,16 +1989,21 @@ export async function captureProductRow(page, theme, options = {}) {
     )
   }
 
+  // Capture into memory so the digest is computed from the exact bytes the
+  // browser returned, then write those same bytes. Hashing a file read back
+  // later would let a mutation between capture and write hide behind the
+  // record; this path never re-reads the screenshot to build its digest.
   const screenshotPath = join(rowDir, 'screenshot.png')
-  await page.screenshot({ path: screenshotPath })
-  const screenshotBytes = statSync(screenshotPath).size
+  const screenshotBuffer = await page.screenshot()
+  const screenshotBytes = screenshotBuffer.byteLength
   if (screenshotBytes < 8000) {
     throw new Error(
       `product producer: blank screenshot for field "screenshot" at path evidence.screenshot; ` +
-      `wrote ${screenshotBytes} bytes to ${JSON.stringify(screenshotPath)}; ` +
+      `captured ${screenshotBytes} bytes for ${JSON.stringify(screenshotPath)}; ` +
       'repair: keep the mounted product view rendered so the capture is non-blank.',
     )
   }
+  const screenshotWrite = writeRowArtifact(rowDir, 'screenshot.png', screenshotBuffer)
 
   // The record a verifier reads is assembled once, then read back through the
   // one supported reader: a row can never write accessibility evidence whose
@@ -2067,19 +2075,16 @@ export async function captureProductRow(page, theme, options = {}) {
     producedAtMs: Date.now(),
   }
 
-  writeFileSync(join(rowDir, 'record.json'), `${JSON.stringify(record, null, 2)}\n`)
-  writeFileSync(join(rowDir, 'aria.json'), `${JSON.stringify({ target: PRODUCT_TARGET_ID, rowTheme: theme, snapshot: ariaSnapshot }, null, 2)}\n`)
-  writeFileSync(join(rowDir, 'provenance.json'), `${JSON.stringify(provenance, null, 2)}\n`)
-  writeFileSync(join(rowDir, 'resolution.json'), `${JSON.stringify(proof, null, 2)}\n`)
-
-  for (const name of PRODUCT_ARTIFACT_CLASSES) {
-    if (!existsSync(join(rowDir, name))) {
-      throw new Error(
-        `product producer: missing artifact ${JSON.stringify(name)} for field "artifact" at path run.rowDir/${name}; ` +
-        'repair: keep the six artifact writes intact so every row ends with the complete set.',
-      )
-    }
-  }
+  const recordWrite = writeRowArtifact(rowDir, 'record.json', `${JSON.stringify(record, null, 2)}\n`)
+  const ariaWrite = writeRowArtifact(rowDir, 'aria.json', `${JSON.stringify({ target: PRODUCT_TARGET_ID, rowTheme: theme, snapshot: ariaSnapshot }, null, 2)}\n`)
+  const provenanceWrite = writeRowArtifact(rowDir, 'provenance.json', `${JSON.stringify(provenance, null, 2)}\n`)
+  const resolutionWrite = writeRowArtifact(rowDir, 'resolution.json', `${JSON.stringify(proof, null, 2)}\n`)
+  const rowKey = `${route.key}-${theme}`
+  // The digest record is written once, after all six artifacts, and the row is
+  // read back through the verifier's own reader so a partial write or a
+  // concurrent mutation cannot end the row with a green summary.
+  writeArtifactDigestRecord(rowDir, [recordWrite, ariaWrite, axeWrite, screenshotWrite, provenanceWrite, resolutionWrite])
+  readVerifiedRowArtifacts({ rowDir, rowKey, artifactClasses: PRODUCT_ARTIFACT_CLASSES })
 
   return {
     theme,

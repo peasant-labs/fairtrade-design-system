@@ -330,6 +330,7 @@ function writeRunRoot(spec, run) {
   mkdirSync(join(root, 'guards'), { recursive: true })
   writeFileSync(join(root, 'guards', 'run-envelope.json'), `${JSON.stringify({ runId: run.runId }, null, 2)}\n`)
   mkdirSync(join(root, 'producer'), { recursive: true })
+  const artifactClasses = /** @type {string[]} */ (/** @type {Record<string, unknown>} */ (spec.policy).artifactClasses)
   for (const row of /** @type {Record<string, any>[]} */ (spec.rows)) {
     if (row.deleted) continue
     const dir = join(root, 'producer', row.key)
@@ -338,10 +339,20 @@ function writeRunRoot(spec, run) {
     const identityId = identityIdFor(row.kind, run)
     const record = /** @type {Record<string, unknown>} */ ({ target: row.key, kind: row.kind, rowTheme: row.theme, theme: { expected: row.theme, observed: row.theme, source: 'mutation-fixture', observedAtMs } })
     if (row.dropProducedAt !== true) record.producedAtMs = observedAtMs
-    writeFileSync(join(dir, 'record.json'), `${JSON.stringify(record, null, 2)}\n`)
-    writeFileSync(join(dir, 'resolution.json'), `${JSON.stringify(buildProof(row.kind, row.theme, identityId, observedAtMs), null, 2)}\n`)
-    writeFileSync(join(dir, 'provenance.json'), `${JSON.stringify({ root: row.provenanceRoot, servedFrom: run.servedFrom, row: row.key }, null, 2)}\n`)
-    for (const [name, content] of Object.entries(row.artifacts)) writeFileSync(join(dir, name), /** @type {string} */ (content))
+    // The row-owned digest record mirrors the producer contract: one digest per
+    // declared class, written after the six artifact files. A case that removes
+    // an artifact keeps its recorded digest so the verifier reports the missing
+    // class instead of falling back to a fresh hash.
+    /** @type {Record<string, string>} */
+    const contents = {
+      'record.json': `${JSON.stringify(record, null, 2)}\n`,
+      'resolution.json': `${JSON.stringify(buildProof(row.kind, row.theme, identityId, observedAtMs), null, 2)}\n`,
+      'provenance.json': `${JSON.stringify({ root: row.provenanceRoot, servedFrom: run.servedFrom, row: row.key }, null, 2)}\n`,
+    }
+    for (const [name, content] of Object.entries(row.artifacts)) contents[name] = /** @type {string} */ (content)
+    for (const [name, content] of Object.entries(contents)) writeFileSync(join(dir, name), content)
+    const artifacts = Object.fromEntries(artifactClasses.map((name) => [name, artifactDigest(contents[name] ?? '')]))
+    writeFileSync(join(dir, 'digests.json'), `${JSON.stringify({ version: 1, row: row.key, artifacts }, null, 2)}\n`)
   }
   return { parent, root }
 }

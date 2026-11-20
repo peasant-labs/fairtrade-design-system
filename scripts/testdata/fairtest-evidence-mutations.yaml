@@ -77,13 +77,16 @@ cases:
     mutation: {kind: none}
     expectComplete: true
     expectedCodes: []
-  # missing-class: a required artifact class is absent from a row.
+  # missing-class: a required artifact class is absent from a row. The
+  # row-owned digest record still names the six classes, so the verifier
+  # refuses the absent file before it builds a report; the refusal names the
+  # missing class and leaves no evidence/evidence.json behind.
   - name: missing-artifact-class
     family: missing-class
-    owner: run-root
+    owner: run-root-refusal
     mutation: {kind: delete-artifact, target: product-dark, artifact: screenshot.png}
-    expectComplete: false
-    expectedCodes: [missing-artifact]
+    expectStatus: 1
+    expectedField: missing-artifact
   # stale-digest: an artifact observation records a digest that no longer
   # matches the bytes it describes. Owned by the neutral verifier, the only
   # boundary that compares a recorded digest to its content.

@@ -11,14 +11,22 @@
 // check comes from the private child evidence core through the sole source
 // route.
 //
+// Artifact digests come from the producer's row-owned digests.json, never from
+// the bytes currently on disk. Each row's recorded digests are compared against
+// the current artifacts before any JSON artifact is parsed, so a changed byte
+// fails closed as a digest mismatch relative to the unchanged record. This is
+// change detection, not authenticated provenance: a writer who changes both an
+// artifact and its digest record is not detected by a run-root-only check.
+//
 // Invocation: FAIRTEST_RUN_ROOT=<run-root> FAIRTEST_RUN_ID=<run-id> pnpm test:fairtest:verify
 //
 // REQUIRED-CI MOUNT: ENFORCED. The Fairtest required-CI job in
 // .github/workflows/ci.yml invokes this command after the mounted producers, so
 // the browser-neutral verifier is now enforced rather than merely declared.
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { importFairtestSource } from '../fairtest-source.mjs'
+import { readVerifiedRowArtifacts } from './artifact-digest-record.mjs'
 import { FAIRTEST_EVIDENCE_ROW_KEYS, fairtestEvidencePolicyInput } from './fairtest-evidence-policy.mjs'
 import { resolveRunRoot } from './run-envelope-contract.mjs'
 
@@ -77,6 +85,73 @@ function readJson(path, label) {
 }
 
 /**
+ * Parse one verified artifact buffer as a JSON record. The buffer is the exact
+ * byte snapshot readVerifiedRowArtifacts hashed, so this parser can never read
+ * a second copy from disk after validation.
+ * @param {Uint8Array} content verified artifact bytes
+ * @param {string} path diagnostic path
+ * @param {string} label record label used in diagnostics
+ * @returns {Record<string, unknown>} parsed JSON record
+ */
+export function parseVerifiedJson(content, path, label) {
+  if (!(content instanceof Uint8Array)) {
+    throw new Error(
+      `fairtest verify: invalid verified bytes for field "${label}" at path ${path}; ` +
+      `observed ${JSON.stringify(typeof content)}; ` +
+      'repair: parse the artifact buffer readVerifiedRowArtifacts returned instead of a second file read.',
+    )
+  }
+  let parsed
+  try {
+    parsed = JSON.parse(Buffer.from(content).toString('utf8'))
+  } catch (error) {
+    const cause = error instanceof Error ? error.message : String(error)
+    throw new Error(
+      `fairtest verify: invalid JSON in verified bytes for field "${label}" at path ${path}; caused by ${cause}; ` +
+      `repair: rebuild the run root so ${label} holds valid JSON.`,
+    )
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    throw new Error(
+      `fairtest verify: invalid JSON record in verified bytes for field "${label}" at path ${path}; ` +
+      `observed ${JSON.stringify(parsed)}; ` +
+      `repair: rebuild the run root so ${label} holds a JSON object.`,
+    )
+  }
+  return parsed
+}
+
+/**
+ * Pick one verified artifact's exact byte snapshot. readVerifiedRowArtifacts
+ * already refuses a missing class, so this is a defensive type narrowing that
+ * never silently re-reads the file.
+ * @param {readonly { name: string, content: Buffer }[]} artifacts verified artifacts
+ * @param {string} name artifact class name
+ * @param {string} rowKey row key used in diagnostics
+ * @returns {Buffer} the verified buffer
+ */
+function verifiedArtifactContent(artifacts, name, rowKey) {
+  const artifact = artifacts.find((entry) => entry.name === name)
+  if (!artifact) {
+    throw new Error(
+      `fairtest verify: missing verified artifact ${JSON.stringify(name)} for field "artifact" at path producer/${rowKey}/${name}; ` +
+      'repair: read every artifact through readVerifiedRowArtifacts before parsing row JSON.',
+    )
+  }
+  return artifact.content
+}
+
+/**
+ * The producer record fields the verifier reads before the neutral row model
+ * validates the full shape.
+ * @typedef {object} ProducerRowRecord
+ * @property {string} kind
+ * @property {string} [rowTheme]
+ * @property {{ expected: 'dark' | 'light', observed: 'dark' | 'light', source: string, observedAtMs: number }} theme
+ * @property {number} producedAtMs
+ */
+
+/**
  * Resolve the run identity id the produce run actually belongs to. The run
  * envelope is authoritative when present; otherwise the caller-supplied
  * FAIRTEST_RUN_ID names it.
@@ -131,9 +206,16 @@ function readProducedAtMs(record, key) {
 
 /**
  * Rebuild one neutral evidence row from a producer row directory. A row whose
- * essential records are absent is returned as null so the verifier reports it
- * as a missing row instead of the CLI crashing; a row whose records are present
- * but malformed fails closed with an actionable error.
+ * directory is absent or empty is returned as null so the verifier reports it
+ * as a missing row instead of the CLI crashing; a row that carries any bytes
+ * is read through the digest record first and fails closed with an actionable
+ * row/artifact error when the record is missing, malformed, incomplete, or
+ * disagrees with the current artifact bytes.
+ *
+ * Ordering is the point: every artifact digest is compared BEFORE the row's
+ * JSON records are parsed, so an artifact byte mutation that also makes
+ * record.json, resolution.json, or provenance.json invalid JSON is reported as
+ * a digest mismatch instead of a parse error.
  * @param {string} root resolved run root
  * @param {{ key: string, kind: string, theme: string }} required required row
  * @param {string[]} artifactClasses caller-declared artifact classes
@@ -141,19 +223,29 @@ function readProducedAtMs(record, key) {
  */
 function readProducerRow(root, required, artifactClasses) {
   const dir = join(root, 'producer', required.key)
-  const recordPath = join(dir, 'record.json')
-  const proofPath = join(dir, 'resolution.json')
-  if (!existsSync(recordPath) || !existsSync(proofPath)) return null
-  const record = readJson(recordPath, `${required.key}/record.json`)
-  const proof = readJson(proofPath, `${required.key}/resolution.json`)
-  const provenancePath = join(dir, 'provenance.json')
-  const provenance = existsSync(provenancePath) ? readJson(provenancePath, `${required.key}/provenance.json`) : null
-  const artifacts = artifactClasses
-    .filter((name) => existsSync(join(dir, name)))
-    .map((name) => {
-      const bytes = readFileSync(join(dir, name))
-      return evidence.createArtifactObservation({ name, content: bytes, digest: evidence.artifactDigest(bytes) })
-    })
+  if (!existsSync(dir)) return null
+  if (readdirSync(dir).length === 0) return null
+  const verified = readVerifiedRowArtifacts({ rowDir: dir, rowKey: required.key, artifactClasses })
+  // Parse the SAME buffers the digest comparison accepted. A second file read
+  // would reopen a TOCTOU window between validation and parsing, and the
+  // neutral verifier must also receive these same bytes.
+  const record = /** @type {ProducerRowRecord} */ (parseVerifiedJson(
+    verifiedArtifactContent(verified.artifacts, 'record.json', required.key),
+    `${required.key}/record.json`,
+    `${required.key}/record.json`,
+  ))
+  const proof = /** @type {import('../fairtest-source.mjs').ProductResolution | import('../fairtest-source.mjs').ComponentResolution} */ (parseVerifiedJson(
+    verifiedArtifactContent(verified.artifacts, 'resolution.json', required.key),
+    `${required.key}/resolution.json`,
+    `${required.key}/resolution.json`,
+  ))
+  const provenance = /** @type {{ root: string, servedFrom: string }} */ (parseVerifiedJson(
+    verifiedArtifactContent(verified.artifacts, 'provenance.json', required.key),
+    `${required.key}/provenance.json`,
+    `${required.key}/provenance.json`,
+  ))
+  const artifacts = verified.artifacts.map((entry) =>
+    evidence.createArtifactObservation({ name: entry.name, content: entry.content, digest: entry.digest }))
   const observedAtMs = readProducedAtMs(record, required.key)
   return evidence.createEvidenceRow({
     key: required.key,
@@ -162,9 +254,7 @@ function readProducerRow(root, required, artifactClasses) {
     identity: proof.identity,
     proof,
     themeObservation: record.theme,
-    provenance: provenance === null
-      ? null
-      : { root: provenance.root, servedFrom: provenance.servedFrom },
+    provenance: { root: provenance.root, servedFrom: provenance.servedFrom },
     artifacts,
     observedAtMs,
   })

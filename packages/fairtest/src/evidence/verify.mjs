@@ -65,9 +65,9 @@ function verifyArtifacts(row, policy, label) {
       failures.push(createEvidenceFailure({
         code: 'digest-mismatch',
         path: `${label}.artifacts.${artifact.name}.digest`,
-        expected: recomputed,
-        observed: artifact.digest,
-        repair: `rebuild the ${JSON.stringify(artifact.name)} artifact and record its SHA-256 digest beside the row`,
+        expected: artifact.digest,
+        observed: recomputed,
+        repair: `restore the ${JSON.stringify(artifact.name)} artifact bytes the row recorded, or rebuild the row and record the new SHA-256 beside it`,
       }))
     }
   }

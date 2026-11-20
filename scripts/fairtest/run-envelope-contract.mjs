@@ -184,7 +184,8 @@ export const FAIRTEST_BUDGET = Object.freeze({
     Object.freeze({ name: 'adapter-startup-and-teardown', minutes: 1.0 }),
     Object.freeze({ name: 'mounted-rows', minutes: 6.5 }),
     Object.freeze({ name: 'process-lifecycle', minutes: 2.0 }),
-    Object.freeze({ name: 'evidence-verification', minutes: 1.0 }),
+    Object.freeze({ name: 'digest-boundary', minutes: 0.3 }),
+    Object.freeze({ name: 'evidence-verification', minutes: 0.7 }),
     Object.freeze({ name: 'preflight-and-upload', minutes: 1.0 }),
   ]),
 })

@@ -183,3 +183,26 @@ records:
       budget: One page load per theme project with a 30-second timeout, inside the journeys matrix job.
       cleanup: The browser context is closed in finally on every exit path.
     exitCondition: Delete the check when the base UI no longer uses backdrop blur, or replace the CDP call once Playwright emulates the feature directly.
+  - name: fairtest-artifact-digest-boundary
+    answers:
+      subject: An artifact byte changed after the real mounted producer wrote its six classes must fail the real verifier against the row-owned digest record, and the verifier must never regenerate an expected digest from the current bytes.
+      necessity: The neutral evidence fixture proves verifyEvidenceRun compares a recorded digest with a recomputed one, but it never runs the producer writer or the verifier CLI on produced bytes. Only the real command can observe that the CLI loads the producer record rather than passing a fresh hash, and that it compares bytes before it parses JSON.
+      productionPath: pnpm test:fairtest:digest-boundary runs after pnpm test:fairtest:mounted -- --target=all on the real FAIRTEST_RUN_ROOT. It copies the producer subtrees into isolated run roots and runs scripts/fairtest/verify-fairtest.mjs over each copy; the browser-free contract command runs the same fixture and command over a writer-built run root.
+      cost: One browser-free fixture command plus 26 named cases and 27 bounded verifier invocations (the isolation case runs one mutated and one clean copy) over copies of the mounted producer output; no second producer run, browser, service, port, or artifact upload.
+      lifetime: Every case owns one mkdtemp parent under the OS temp directory and removes it with rmSync in a finally step. The source run root is snapshotted before and after and is never written.
+      concurrency: The command runs as its own sequential step after the mounted producer; each case owns a unique temp parent and the final path segment equals the run id, so parallel jobs cannot share a copy. No port or service is claimed.
+      ciParity: The exact command pnpm test:fairtest:digest-boundary runs in the required Fairtest CI job between the mounted producer and the verifier, and pnpm test:fairtest:digest-boundary:contract runs in the same job's browser-free contracts step. The workflow guard fails if either step or command is removed.
+      evidence: A pass line naming the source run root, the run id, the case count, and the unchanged-source proof; each named case asserts the exact real verifier exit status, a complete report only on the untouched case and the untouched isolation copy, and the exact row/field diagnostic for every mutation.
+      mutation: The untouched run must pass; each of the six artifact classes on a product row and a component row must fail as digest-mismatch with unchanged record; absent, malformed, wrong-row, wrong-version, extra-field, missing-field, extra-entry, missing-entry, and invalid-hash records must fail closed; missing and extra files must fail; and two independent copies must isolate one mutation.
+      exitCondition: Replace the copied-run-root cases with a lower-level producer-to-verifier seam once one exists, or delete the command when the verifier can prove the same recorded-digest binding over a produced row without spawning it.
+    lowerLayer:
+      result: promote
+      detail: The neutral evidence fixture covers the in-memory digest comparison only. It cannot observe the producer writer, the CLI's record loading, or the digest-before-parse order, so the focused process command is justified.
+    decision:
+      verdict: approve
+      rationale: All ten answers are present, the lower layer cannot observe the real writer-to-verifier binding, and the harness is bounded to copies of existing output with no new browser run or service.
+    executionPolicy:
+      runner: Browser-free node CLI over isolated copies of the real mounted producer output, invoking the real verifier as a child process.
+      budget: 27 bounded verifier invocations plus one writer-built run root inside the existing Fairtest job budget; no retries and no additional mounted stage.
+      cleanup: Each case removes its mkdtemp parent in a finally step; the source run root is only read and its file digests are compared before and after.
+    exitCondition: Replace the copied-run-root cases with a lower-level producer-to-verifier seam once one exists, or delete the command when the verifier can prove the same recorded-digest binding over a produced row without spawning it.

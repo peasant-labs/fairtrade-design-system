@@ -1,0 +1,90 @@
+# Required-name inventory and executable fixture mutations for
+# digest-boundary.testdata.yaml. Every required case name below must appear
+# exactly once in the corpus; each mutation must fail for its intended field.
+expectedCaseCount: 26
+requiredCaseNames:
+  - untouched-run-verifies
+  - product-record-json-changed
+  - product-aria-json-changed
+  - product-axe-json-changed
+  - product-screenshot-changed
+  - product-provenance-json-changed
+  - product-resolution-json-changed
+  - component-record-json-changed
+  - component-aria-json-changed
+  - component-axe-json-changed
+  - component-screenshot-changed
+  - component-provenance-json-changed
+  - component-resolution-json-changed
+  - digest-record-absent
+  - digest-record-absent-with-mutated-artifact
+  - digest-record-malformed
+  - digest-record-wrong-row
+  - digest-record-wrong-version
+  - digest-record-extra-top-level-field
+  - digest-record-missing-top-level-field
+  - digest-record-extra-entry
+  - digest-record-missing-entry
+  - digest-record-invalid-hash
+  - artifact-missing
+  - artifact-extra-file
+  - independent-copies-isolate-a-mutation
+expectedMutationCount: 9
+requiredMutationNames:
+  - removing a required case breaks the required inventory
+  - duplicating a case name breaks uniqueness
+  - inventing a check kind breaks the closed vocabulary
+  - inventing a mutation kind breaks the closed vocabulary
+  - naming an unknown row breaks the policy inventory
+  - naming an unknown artifact breaks the closed class set
+  - omitting the expected diagnostic breaks the failure case shape
+  - adding an unknown case field breaks exact membership
+  - appending a trailing document breaks single-document loading
+mutations:
+  - name: removing a required case breaks the required inventory
+    kind: delete-record
+    target: untouched-run-verifies
+    expectedField: untouched-run-verifies
+  - name: duplicating a case name breaks uniqueness
+    kind: duplicate-name
+    target: untouched-run-verifies
+    expectedField: untouched-run-verifies
+  - name: inventing a check kind breaks the closed vocabulary
+    kind: bad-value
+    target: product-record-json-changed
+    field: check
+    value: invented-check
+    expectedField: check
+  - name: inventing a mutation kind breaks the closed vocabulary
+    kind: bad-value
+    target: product-record-json-changed
+    field: mutation
+    value: invented-mutation
+    expectedField: mutation
+  - name: naming an unknown row breaks the policy inventory
+    kind: bad-value
+    target: product-record-json-changed
+    field: row
+    value: unknown-row
+    expectedField: row
+  - name: naming an unknown artifact breaks the closed class set
+    kind: bad-value
+    target: product-record-json-changed
+    field: artifact
+    value: scratch.png
+    expectedField: artifact
+  - name: omitting the expected diagnostic breaks the failure case shape
+    kind: delete-field
+    target: product-record-json-changed
+    field: expectedErrorContains
+    expectedField: expectedErrorContains
+  - name: adding an unknown case field breaks exact membership
+    kind: unknown-field
+    target: untouched-run-verifies
+    field: extra
+    value: true
+    expectedField: extra
+  - name: appending a trailing document breaks single-document loading
+    kind: trailing-document
+    target: document
+    expectedField: document
