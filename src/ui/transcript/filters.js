@@ -32,6 +32,7 @@
    this default, never the resolved filter object, so a reader who never touched the toggle
    keeps following the default. */
 
+import { Role } from '@peasant-labs/schema'
 import { TOOL_GROUPS } from './view-model.js'
 
 /**
@@ -144,10 +145,10 @@ export function encodeFilterIntent(filters = DEFAULT_TRANSCRIPT_FILTERS) {
 export function filtersActive(filters = DEFAULT_TRANSCRIPT_FILTERS) {
   const defaults = DEFAULT_TRANSCRIPT_FILTERS
   let count = 0
-  for (const key of ['prompts', 'responses', 'thinking', 'toolcalls', 'system']) {
+  for (const key of Object.values(Category)) {
     // `system` is the one category whose documented default is off, so absence reads as
     // off rather than as a deviation.
-    const on = key === 'system' ? filters.categories?.system === true : filters.categories?.[key] !== false
+    const on = key === Category.System ? filters.categories?.system === true : filters.categories?.[key] !== false
     if (on !== defaults.categories[key]) count += 1
   }
   if (filters.categories?.toolcalls !== false) {
@@ -168,7 +169,14 @@ const TAG_KIND = { errors: 'error', retries: 'retry', revert: 'revert' }
 /** @typedef {import('./view-model.js').ToolGroup} ToolGroup */
 /** @typedef {import('./state-capabilities.js').TranscriptFilters} TranscriptFilters */
 
-/** @typedef {'prompts' | 'responses' | 'thinking' | 'toolcalls' | 'system'} Category */
+export const Category = Object.freeze({
+  Prompts: 'prompts',
+  Responses: 'responses',
+  Thinking: 'thinking',
+  Toolcalls: 'toolcalls',
+  System: 'system',
+})
+/** @typedef {(typeof Category)[keyof typeof Category]} Category */
 
 /**
  * Every part kind a cooked turn carries, in rail order. Empty for turns no
@@ -179,18 +187,18 @@ const TAG_KIND = { errors: 'error', retries: 'retry', revert: 'revert' }
  * @returns {Category[]}
  */
 export function kindsOf(turn) {
-  if (turn.role === 'user') return ['prompts']
-  if (turn.role === 'system') return ['system']
-  if (turn.role !== 'assistant') return []
+  if (turn.role === Role.User) return [Category.Prompts]
+  if (turn.role === Role.System) return [Category.System]
+  if (turn.role !== Role.Assistant) return []
   /** @type {Category[]} */
   const kinds = []
-  if ((turn.content ?? '').trim() !== '') kinds.push('responses')
-  if (turn.thinking) kinds.push('thinking')
-  if (turn.toolCalls && turn.toolCalls.length > 0) kinds.push('toolcalls')
+  if ((turn.content ?? '').trim() !== '') kinds.push(Category.Responses)
+  if (turn.thinking) kinds.push(Category.Thinking)
+  if (turn.toolCalls && turn.toolCalls.length > 0) kinds.push(Category.Toolcalls)
   // An assistant turn with none of the three (empty content, no thinking, no
   // calls) is still a response slot; keep it under `responses` so it cannot
   // become unfilterable.
-  return kinds.length ? kinds : ['responses']
+  return kinds.length ? kinds : [Category.Responses]
 }
 
 /**
@@ -240,9 +248,9 @@ export function projectTurn(turn, filters, ctx = {}) {
   if (checkpointTurn != null && turn.index > checkpointTurn) return null
   if (!passesTags(turn, tags, annotationsByTurn)) return null
 
-  if (turn.role === 'user') return categories.prompts ? turn : null
-  if (turn.role === 'system') return categories.system === true ? turn : null
-  if (turn.role !== 'assistant') return turn
+  if (turn.role === Role.User) return categories.prompts ? turn : null
+  if (turn.role === Role.System) return categories.system === true ? turn : null
+  if (turn.role !== Role.Assistant) return turn
 
   const hasText = (turn.content ?? '').trim() !== ''
   const hasThinking = !!turn.thinking

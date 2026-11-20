@@ -4,6 +4,7 @@
    body and every aesthetic (role accent, flags, footer). No node markup or
    styling lives here, so the graph and the mockup render the same visual. */
 
+import { Role } from '@peasant-labs/schema'
 import { memo } from 'react'
 import { Handle, Position } from '@xyflow/react'
 import { GraphTurnNode } from '../../GraphTurnNode.jsx'
@@ -31,7 +32,7 @@ function TurnCardNodeImpl({ data, selected }) {
   const { turn, annotations, isSearchMatch, isFilteredOut, isSelected, turnNumber, provider } = data
 
   const depth = turn.depth ?? 0
-  const isSubagent = turn.role === 'assistant' && depth > 0
+  const isSubagent = turn.role === Role.Assistant && depth > 0
   const hasError = annotations.some((a) => a.type === 'error')
   const hasRetry = annotations.some((a) => a.type === 'retry')
   const hasRevert = annotations.some((a) => a.type === 'revert')
@@ -41,7 +42,7 @@ function TurnCardNodeImpl({ data, selected }) {
     // with the edge endpoint the mapper computed; the card fills this shell.
     <div
       data-turn-index={turn.index}
-      data-harness={isSubagent ? undefined : turn.role === 'assistant' ? provider : undefined}
+      data-harness={isSubagent ? undefined : turn.role === Role.Assistant ? provider : undefined}
       style={{ width: NODE_DIMENSIONS.turnWidth }}
     >
       <Handle type="target" position={Position.Top} className="tb-gnode-handle tb-gnode-handle-top" />

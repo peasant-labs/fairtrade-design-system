@@ -27,11 +27,12 @@
 
 import { parseArgs, parseResult, extractPath, callDiff, diffLines } from './adapter.parse.js'
 import { computeAnalytics, computeTurnLabels, computeTaskGroups } from './analytics.js'
-import { zObservedModelID, zContentProvenance, zSourceEntryRef, zSessionRelationshipNavigation, parseSessionDetailPayloadValue } from '@peasant-labs/schema'
+import { Role, EntryType, ToolCallKind, TurnPartType, Harness, SessionRelationshipKind, RelationshipTargetState, RelationshipNavigationStatus, PublicSourceAnchorKind, zObservedModelID, zContentProvenance, zSourceEntryRef, zSessionRelationshipNavigation, parseSessionDetailPayloadValue, TranscriptSegmentPartitionKind } from '@peasant-labs/schema'
 import { aggregateUsage } from './usage.js'
 import { isKnownTime } from './time.js'
 import { unwrapUserQuery, userQueryLeadLength, USER_QUERY_OPEN_TAG, USER_QUERY_CLOSE_TAG } from './title.js'
 import { EarlierHistoryState, UnknownEarlierHistoryState, parseEarlierHistoryState } from './earlier-history-state.js'
+import { TranscriptTail } from './continuation-values.js'
 
 /** @typedef {import('./wire-types.js').TranscriptWireInput} TranscriptWireInput */
 /** @typedef {import('./wire-types.js').SessionDetailPayload} SessionDetailPayload */
@@ -103,6 +104,61 @@ export function thinkingDurationMs(previous, turn) {
   return ms > 0 ? ms : undefined
 }
 
+/**
+ * The nearest turn before position `at` at the given depth, or undefined.
+ * @param {TurnDetail[]} turns @param {number} at @param {number} depth
+ * @returns {TurnDetail | undefined}
+ */
+function previousAtDepth(turns, at, depth) {
+  for (let q = at - 1; q >= 0; q--) if ((turns[q].depth ?? 0) === depth) return turns[q]
+  return undefined
+}
+
+/**
+ * The position of the reply the turn at `at` is one block of, or -1. A turn is a block of a reply
+ * when it is nested (depth above 0) and its `parentIndex` names an earlier top-level (depth 0) turn:
+ * a producer that stores one agent reply as one entry nests the reply's thinking under it. A nested
+ * turn whose parent is itself nested (a subagent's own turn) is not a reply block. The thinking time
+ * and the views' subagent rule both read this one predicate.
+ * @param {TurnDetail[]} turns every known turn, in order
+ * @param {number} at the turn's position in `turns`
+ * @returns {number}
+ */
+export function replyPositionOf(turns, at) {
+  const turn = turns[at]
+  if (!turn || (turn.depth ?? 0) <= 0 || turn.parentIndex == null) return -1
+  for (let q = at - 1; q >= 0; q--) {
+    if (turns[q].index === turn.parentIndex) return (turns[q].depth ?? 0) === 0 ? q : -1
+  }
+  return -1
+}
+
+/**
+ * The time the standalone thinking turn at position `at` took, measured from the event before it.
+ * A thinking turn on its own is measured from the previous turn at its depth. A thinking turn that
+ * is one block of a reply (`replyPositionOf`)
+ * is measured inside the reply instead: from the nearest earlier block of the same reply, else from
+ * the reply itself, whose tools have not run yet. When the reply's own time is not before the
+ * thinking (the reply opens with it), the event before the reply is the start. A block of another
+ * reply is never the start.
+ * @param {TurnDetail[]} turns every known turn, in order
+ * @param {number} at the thinking turn's position in `turns`
+ * @returns {number | undefined}
+ */
+export function thinkingTimeMs(turns, at) {
+  const turn = turns[at]
+  if (!turn) return undefined
+  const depth = turn.depth ?? 0
+  const replyAt = replyPositionOf(turns, at)
+  if (replyAt < 0) return thinkingDurationMs(previousAtDepth(turns, at, depth), turn)
+  for (let q = at - 1; q > replyAt; q--) {
+    const block = turns[q]
+    if ((block.depth ?? 0) === depth && block.parentIndex === turn.parentIndex) return thinkingDurationMs(block, turn)
+  }
+  const reply = turns[replyAt]
+  return thinkingDurationMs({ ...reply, toolCalls: [] }, turn) ?? thinkingDurationMs(previousAtDepth(turns, replyAt, reply.depth ?? 0), turn)
+}
+
 /** Compact token count, e.g. 1700 → "1.7k". @param {number} n @returns {string} */
 function formatTokens(n) {
   if (!n || n <= 0) return '0'
@@ -141,7 +197,7 @@ function protectedTurn(turn) {
  * @returns {string | undefined}
  */
 function displayedPrompt(role, content, harness) {
-  if (harness !== 'cursor' || role !== 'user') return undefined
+  if (harness !== 'cursor' || role !== Role.User) return undefined
   const shown = unwrapUserQuery(content)
   return shown === content ? undefined : shown
 }
@@ -220,7 +276,7 @@ function withKnownTime(turn) {
  * @param {TurnDetail} turn
  */
 function hasImageBlock(turn) {
-  return (turn.contentParts ?? []).some((part) => part?.type === 'image' && !!part.image)
+  return (turn.contentParts ?? []).some((part) => part?.type === TurnPartType.Image && !!part.image)
 }
 
 /**
@@ -235,8 +291,8 @@ function contentPartsOf(turn) {
   /** @type {import('./view-model.js').ContentPartVM[]} */
   const cooked = []
   for (const part of parts) {
-    if (part?.type === 'text' && typeof part.text === 'string') cooked.push({ type: 'text', text: part.text })
-    else if (part?.type === 'image' && part.image) cooked.push({ type: 'image', image: part.image })
+    if (part?.type === TurnPartType.Text && typeof part.text === 'string') cooked.push({ type: 'text', text: part.text })
+    else if (part?.type === TurnPartType.Image && part.image) cooked.push({ type: 'image', image: part.image })
   }
   return cooked.length > 0 ? cooked : undefined
 }
@@ -304,7 +360,7 @@ export function prefilterTurns(turns) {
     const hasContent = !!t.content?.trim()
     const hasTools = (t.toolCalls?.length ?? 0) > 0
     if (!hasContent && !hasTools) return false
-    if (t.role === 'system' && !hasTools && (!t.content || t.content.trim().length < 8)) return false
+    if (t.role === Role.System && !hasTools && (!t.content || t.content.trim().length < 8)) return false
     return true
   })
   /** @type {TurnDetail[]} */
@@ -332,7 +388,7 @@ export function prefilterTurns(turns) {
  * @returns {string | undefined}
  */
 function validObservedModel(turn) {
-  if (turn.role !== 'assistant') return undefined
+  if (turn.role !== Role.Assistant) return undefined
   const parsed = zObservedModelID.safeParse(turn.observedModel)
   return parsed.success ? parsed.data : undefined
 }
@@ -353,7 +409,7 @@ function resolveStickyModels(turns, seed) {
   for (const turn of turns) {
     const depth = turn.depth ?? 0
     const observed = validObservedModel(turn)
-    if (turn.role !== 'assistant') {
+    if (turn.role !== Role.Assistant) {
       resolved.set(turn.index, {})
       continue
     }
@@ -376,7 +432,18 @@ function resolveStickyModels(turns, seed) {
  * @typedef {object} AdaptTranscriptOptions
  * @property {readonly number[]} [visibleTurnIndices] post-resolution projection by canonical turn index
  * @property {import('@peasant-labs/schema').SessionRelationshipNavigation[]} [relationshipNavigation] separately authorized read metadata; never durable content
- * @property {'local' | 'published'} [payloadMode] published requires a detail already validated by schema's published envelope parser; defaults to local
+ * @property {'local' | 'published' | 'segment'} [payloadMode] published requires a detail already validated by schema's published envelope parser; segment takes one positioned segment already parsed by schema's zPositionedSegment; defaults to local
+ * @property {'complete' | 'incomplete'} [tail] whether the last loaded response is known to end the session
+ * @property {import('@peasant-labs/schema').TranscriptReadContext} [context] segment mode: the read context, already parsed
+ * @property {Partial<SessionVM> & Record<string, unknown>} [session] segment mode: session chrome from the header or the host's metadata
+ */
+
+/**
+ * What segment mode returns: the served rows cooked to `TurnVM`s, nothing whole-document.
+ * @typedef {object} PositionedSegmentVM
+ * @property {TurnVM[]} turns
+ * @property {Map<string, ToolCallVM>} toolCallsById
+ * @property {import('@peasant-labs/schema').NativeMetadataRecord[]} [nativeMetadata]
  */
 
 /* ── Tool-call cooking ───────────────────────────────────────────────────────── */
@@ -414,11 +481,11 @@ function groupFor(call) {
   if (n === 'webfetch' || n === 'web_fetch' || n === 'fetch' || n === 'readwebsite') return 'fetch'
   if (n === 'task' || n === 'taskcreate' || n === 'taskupdate' || n === 'task_create' || n === 'task_update' || n === 'todowrite' || n === 'agent') return 'tasks'
   switch (call.toolKind) {
-    case 'read': return 'read'
-    case 'edit': return 'edits'
-    case 'execute': return 'bash'
-    case 'search': return 'search'
-    case 'fetch': return 'fetch'
+    case ToolCallKind.Read: return 'read'
+    case ToolCallKind.Edit: return 'edits'
+    case ToolCallKind.Execute: return 'bash'
+    case ToolCallKind.Search: return 'search'
+    case ToolCallKind.Fetch: return 'fetch'
     default: return 'other'
   }
 }
@@ -687,11 +754,11 @@ function indexAnnotations(patternAnns, entryAnns) {
 /* ── Diffs, files, highlights, filter index (from cooked turns) ──────────────── */
 
 /** @param {TurnVM[]} turnVMs @returns {DiffEntryVM[]} */
-function buildDiffs(turnVMs) {
+export function buildDiffs(turnVMs) {
   /** @type {DiffEntryVM[]} */
   const out = []
   for (const turn of turnVMs) {
-    for (const tc of turn.toolCalls) {
+    for (const tc of turn.toolCalls ?? []) {
       if (!tc.diff) continue
       const path = tc.filePath ?? '(unknown)'
       /** @type {DiffEntryVM} */
@@ -752,7 +819,7 @@ function buildHighlights(turnVMs, phases, git) {
   /** @type {HighlightVM[]} */
   const out = []
 
-  const firstUser = turnVMs.find((t) => t.role === 'user' && t.content.trim() !== '')
+  const firstUser = turnVMs.find((t) => t.role === Role.User && t.content.trim() !== '')
   if (firstUser) {
     out.push({ id: 'hl-request', kind: 'request', turn: firstUser.index, icon: 'request', title: 'initial request', sub: preview(firstUser.displayContent ?? firstUser.content, 160) })
   }
@@ -786,7 +853,7 @@ function buildHighlights(turnVMs, phases, git) {
     out.push({ id: `hl-commit-${c.hash}`, kind: 'checkpoint', turn: anchor, icon: 'commit', title: c.shortHash || c.hash || 'checkpoint', sub: c.message })
   }
 
-  const lastAssistant = [...turnVMs].reverse().find((t) => t.role === 'assistant' && t.depth === 0 && t.content.trim() !== '')
+  const lastAssistant = [...turnVMs].reverse().find((t) => t.role === Role.Assistant && t.depth === 0 && t.content.trim() !== '')
   if (lastAssistant) {
     /** @type {HighlightVM} */
     const h = { id: 'hl-final', kind: 'final', turn: lastAssistant.index, icon: 'final', title: 'final response', sub: preview(lastAssistant.content, 200) }
@@ -858,8 +925,15 @@ function buildFilterIndex(turnVMs, annotationsByTurn) {
  */
 export function adaptTranscript(payload, annotations, analytics, options) {
   const payloadMode = options?.payloadMode ?? 'local'
+  if (payloadMode === PayloadMode.Segment) {
+    return /** @type {TranscriptViewModel} */ (/** @type {unknown} */ (adaptPositionedSegment(/** @type {unknown} */ (payload), annotations, analytics, options)))
+  }
+  const incompleteTail = options?.tail === TranscriptTail.Incomplete
+  if (options?.tail !== undefined && options.tail !== TranscriptTail.Complete && options.tail !== TranscriptTail.Incomplete) {
+    throw new TypeError('Fairtrade adaptTranscript refused tail: pass complete or incomplete to describe the loaded transcript.')
+  }
   if (payloadMode !== 'local' && payloadMode !== 'published') {
-    throw new TypeError('Fairtrade adaptTranscript refused payloadMode: select local or published; use published only after validating the envelope with parseTranscriptContentText.')
+    throw new TypeError('Fairtrade adaptTranscript refused payloadMode: select local, published or segment; use published only after validating the envelope with parseTranscriptContentText, and segment only for a body parsed by zPositionedSegment.')
   }
   const hasEvidence = hasNormalizedEvidence(payload)
   // A future string state is preserved, while canonical validation still checks
@@ -899,9 +973,13 @@ export function adaptTranscript(payload, annotations, analytics, options) {
     diffs: buildDiffs(turnVMs),
     files: buildFiles(turnVMs),
     tasks: withDisplayedPrompts(an.taskGroups ?? computeTaskGroups(turns), turnVMs),
-    highlights: buildHighlights(turnVMs, phases, git),
+    highlights: buildHighlights(turnVMs, phases, git).map(highlight => incompleteTail && highlight.id === 'hl-final' ? { ...highlight, title: 'latest loaded response' } : highlight),
     filterIndex: buildFilterIndex(turnVMs, annotationsByTurn),
     analytics: an,
+  }
+  if (incompleteTail) {
+    for (const turn of vm.turns) delete turn.isFinal
+    vm.incompleteTail = true
   }
   if (payload.nativeMetadata) vm.nativeMetadata = payload.nativeMetadata
   if (hasEvidence) vm.usageScopes = aggregateUsage(completeTurns)
@@ -909,6 +987,7 @@ export function adaptTranscript(payload, annotations, analytics, options) {
   vm.earlierHistory = (payload.earlierHistory ?? []).map((section, index) => {
     const id = `earlier-${index}`
     const earlier = cookPartition(payload, section.turns, section.nativeMetadata, id)
+    if (incompleteTail) for (const turn of earlier.turns) delete turn.isFinal
     return {
       id, state: historyStates[index],
       turns: earlier.turns,
@@ -919,9 +998,76 @@ export function adaptTranscript(payload, annotations, analytics, options) {
   return vm
 }
 
+/**
+ * The served facts of one positioned row, carried beside its turn through the cook. The number is
+ * the server's: segment mode prints it and never computes one.
+ * @typedef {object} ServedRow
+ * @property {number} position
+ * @property {string | undefined} displayNumber
+ * @property {number | undefined} recordedIndex
+ * @property {import('@peasant-labs/schema').TranscriptRecordedIndexState} recordedIndexState
+ * @property {number} segmentIndex
+ */
+
+/** The partition id a positioned read cooks into: `main`, or `earlier-N` for history section N. @param {{ kind?: string, sectionIndex?: number | null } | undefined} partition @returns {string} */
+export function positionedPartitionId(partition) {
+  if (partition?.kind === TranscriptSegmentPartitionKind.History) return `earlier-${partition.sectionIndex ?? 0}`
+  return MAIN_PARTITION_ID
+}
+
+/**
+ * Segment mode: cook one positioned segment's served rows. The rows are the server's kept rows in
+ * served order, so nothing is filtered, merged or renumbered here: each row prints its own
+ * `displayNumber`, and a row without one prints none.
+ * @param {unknown} segment
+ * @param {AnnotationSummary[] | undefined} annotations
+ * @param {unknown} analytics
+ * @param {AdaptTranscriptOptions | undefined} options
+ * @returns {PositionedSegmentVM}
+ */
+function adaptPositionedSegment(segment, annotations, analytics, options) {
+  if (analytics !== undefined) {
+    throw new TypeError('Fairtrade adaptTranscript refused analytics in segment mode: precomputed analytics describe a whole document, and a positioned segment is one served run of it. Pass undefined for analytics and read whole-document facts from the header and directory instead.')
+  }
+  const context = options?.context
+  if (context === null || typeof context !== 'object' || typeof context.revision !== 'string') {
+    throw new TypeError('Fairtrade adaptTranscript refused segment mode without a read context: pass options.context, the TranscriptReadContext parsed by zPositionedSegment from the same response, so the rows are cooked against the served harness and model.')
+  }
+  const body = /** @type {{ index?: unknown, rows?: unknown, partition?: unknown, nativeMetadata?: import('@peasant-labs/schema').NativeMetadataRecord[] }} */ (segment ?? {})
+  if (!Array.isArray(body.rows) || typeof body.index !== 'number') {
+    throw new TypeError('Fairtrade adaptTranscript refused the segment in segment mode: it has no rows or no segment index. Parse the response with zPositionedSegment and pass the parsed value.')
+  }
+  const segmentIndex = body.index
+  const partition = positionedPartitionId(/** @type {{ kind?: string, sectionIndex?: number | null }} */ (body.partition))
+  /** @type {Map<TurnDetail, ServedRow>} */
+  const served = new Map()
+  /** @type {TurnDetail[]} */
+  const turns = []
+  for (const row of /** @type {import('@peasant-labs/schema').TranscriptSegmentRow[]} */ (body.rows)) {
+    const turn = /** @type {TurnDetail} */ (/** @type {unknown} */ ({ ...row.turn }))
+    served.set(turn, { position: row.position, displayNumber: row.displayNumber, recordedIndex: row.recordedIndex, recordedIndexState: row.recordedIndexState, segmentIndex })
+    turns.push(turn)
+  }
+  const payload = /** @type {TranscriptWireInput} */ (/** @type {unknown} */ ({ harness: context.harness, model: context.model }))
+  const cooked = cookPartition(payload, turns, body.nativeMetadata, partition, annotations, POSITIONED_ANALYTICS, undefined, served)
+  /** @type {PositionedSegmentVM} */
+  const vm = { turns: cooked.turns, toolCallsById: cooked.toolCallsById }
+  if (body.nativeMetadata) vm.nativeMetadata = body.nativeMetadata
+  return vm
+}
+
+/** The adapter's boundary modes. */
+const PayloadMode = Object.freeze({ Local: 'local', Published: 'published', Segment: 'segment' })
+
+/** The id of a transcript's main partition; history sections are `earlier-N`. */
+export const MAIN_PARTITION_ID = 'main'
+
+/** A positioned segment carries no whole-document analytics: no phases, no pattern annotations. */
+const POSITIONED_ANALYTICS = /** @type {TranscriptAnalyticsVM} */ (Object.freeze({ phases: [], patternAnnotations: [], taskGroups: [] }))
+
 /** @param {TranscriptWireInput} payload */
 function hasNormalizedEvidence(payload) {
-  return payload.harness === 'pi' || ['nativeMetadata', 'inputSubmissionCount', 'rootSessionId', 'purpose', 'relationships', 'earlierHistory'].some(key => present(payload, key)) ||
+  return payload.harness === Harness.Pi || ['nativeMetadata', 'inputSubmissionCount', 'rootSessionId', 'purpose', 'relationships', 'earlierHistory'].some(key => present(payload, key)) ||
     !!payload.turns?.some(hasTurnEvidence)
 }
 
@@ -944,34 +1090,34 @@ function cookRelationships(relationships, navigation) {
   if (new Set(nav.map(item => item.kind)).size !== nav.length) {
     throw new TypeError('Fairtrade adaptTranscript refused relationship navigation during cooking: duplicate relationship kinds make the authorized target ambiguous. No links were produced. Return one schema-valid read result per relationship kind and retry.')
   }
-  const context = relationships.find(item => item.kind === 'context_from')
-  const starter = relationships.find(item => item.kind === 'started_by')
-  const rows = [context, starter].filter(item => item !== undefined).filter(item => item.targetState !== 'explicit_none').map(relation => {
+  const context = relationships.find(item => item.kind === SessionRelationshipKind.ContextFrom)
+  const starter = relationships.find(item => item.kind === SessionRelationshipKind.StartedBy)
+  const rows = [context, starter].filter(item => item !== undefined).filter(item => item.targetState !== RelationshipTargetState.ExplicitNone).map(relation => {
     const item = nav.find(candidate => candidate.kind === relation.kind)
-    const known = relation.targetState === 'target_known' || relation.targetState === 'target_known_retained'
-    const resolved = item && (item.status === 'resolved' || item.status === 'general_link_only')
+    const known = relation.targetState === RelationshipTargetState.Known || relation.targetState === RelationshipTargetState.KnownRetained
+    const resolved = item && (item.status === RelationshipNavigationStatus.Resolved || item.status === RelationshipNavigationStatus.GeneralLinkOnly)
     const targetCount = Number(!!item?.localId) + Number(!!item?.transcriptId)
     const usable = known && resolved && targetCount === 1 && (!item.localId || item.localId === relation.targetLocalId)
     /** @type {import('./view-model.js').RelationshipVM} */
     const row = {
       kind: relation.kind,
-      label: relation.kind === 'context_from' ? 'context inherited from' : 'started by',
-      statusLabel: relation.targetState === 'conflicting_current_native_evidence' || item?.status === 'conflicting' ? 'conflicting source evidence'
-        : !known || item?.status === 'unknown' ? 'unknown source'
-          : item?.status === 'inaccessible' ? 'source inaccessible'
+      label: relation.kind === SessionRelationshipKind.ContextFrom ? 'context inherited from' : 'started by',
+      statusLabel: relation.targetState === RelationshipTargetState.ConflictingCurrentNativeEvidence || item?.status === RelationshipNavigationStatus.Conflicting ? 'conflicting source evidence'
+        : !known || item?.status === RelationshipNavigationStatus.Unknown ? 'unknown source'
+          : item?.status === RelationshipNavigationStatus.Inaccessible ? 'source inaccessible'
             : 'source unavailable',
     }
     if (usable && item) {
       row.statusLabel = 'current session'
       const saved = relation.anchor
       const verified = item.anchor
-      const exact = relation.kind === 'context_from' && item.status === 'resolved' && saved && verified &&
-        saved.kind !== 'general_source_session' && saved.kind === verified.kind &&
+      const exact = relation.kind === SessionRelationshipKind.ContextFrom && item.status === RelationshipNavigationStatus.Resolved && saved && verified &&
+        saved.kind !== PublicSourceAnchorKind.General && saved.kind === verified.kind &&
         saved.sourceEntryRef === verified.sourceEntryRef && saved.sourceRevisionRef === verified.sourceRevisionRef
       row.navigation = { kind: item.kind, status: exact ? 'resolved' : 'general_link_only',
         ...(item.localId ? { localId: item.localId } : { transcriptId: item.transcriptId }),
         ...(exact ? { anchor: verified } : {}) }
-      if (relation.kind === 'context_from') row.note = exact
+      if (relation.kind === SessionRelationshipKind.ContextFrom) row.note = exact
         ? 'opens the current source at the recorded branch point. captured child history stays unchanged.'
         : 'opens the current source. the earlier source state is not verified; captured child history stays unchanged.'
     }
@@ -997,8 +1143,10 @@ function cookRelationships(relationships, navigation) {
  * @param {AnnotationSummary[]} [annotations]
  * @param {TranscriptAnalyticsVM} [analytics]
  * @param {readonly number[]} [visibleIndices]
+ * @param {Map<TurnDetail, ServedRow>} [servedRows] segment mode: the served row of each turn; when present
+ *   the rows are already the kept rows and carry their own numbers, so nothing is filtered or labelled
  */
-function cookPartition(payload, completeTurns, nativeMetadata, partition, annotations, analytics, visibleIndices) {
+function cookPartition(payload, completeTurns, nativeMetadata, partition, annotations, analytics, visibleIndices, servedRows) {
   const indexCounts = new Map()
   const idCounts = new Map()
   for (const turn of completeTurns) {
@@ -1010,18 +1158,21 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
      withKnownTime's copy, so a served position still finds a turn whose time was dropped */
   /** @type {Map<TurnDetail, number>} */
   const sourcePositions = new Map()
-  if (partition === 'main') completeTurns.forEach((turn, i) => sourcePositions.set(turn, i))
+  if (partition === 'main' && !servedRows) completeTurns.forEach((turn, i) => sourcePositions.set(turn, i))
   // an unknown time is no time at all
-  const filteredTurns = (payload.harness === 'pi' ? completeTurns : prefilterTurns(completeTurns))
+  const kept = servedRows ? completeTurns : payload.harness === Harness.Pi ? completeTurns : prefilterTurns(completeTurns)
+  const filteredTurns = kept
     .map((turn) => {
       const copy = withKnownTime(turn)
       const position = sourcePositions.get(turn)
       if (copy !== turn && position !== undefined) sourcePositions.set(copy, position)
+      const row = servedRows?.get(turn)
+      if (copy !== turn && row) servedRows?.set(copy, row)
       return copy
     })
   const visibleTurnIndices = visibleIndices === undefined ? null : new Set(visibleIndices)
   const turns = visibleTurnIndices === null ? filteredTurns : filteredTurns.filter((turn) => visibleTurnIndices.has(turn.index))
-  const labels = computeTurnLabels(turns)
+  const labels = servedRows ? turns.map((turn) => servedRows.get(turn)?.displayNumber) : computeTurnLabels(turns)
   const provider = payload.harness
 
   // Genuine analytics — accepted precomputed, else derived once and reused below.
@@ -1033,9 +1184,10 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
 
   // Last top-level assistant turn carries the `isFinal` marker.
   let finalPos = -1
-  for (let p = 0; p < turns.length; p++) {
+  /* a served segment is one run of the document, so its last reply is not the session's */
+  if (!servedRows) for (let p = 0; p < turns.length; p++) {
     const t = turns[p]
-    if (t.role === 'assistant' && (t.depth ?? 0) === 0 && t.content?.trim()) finalPos = p
+    if (t.role === Role.Assistant && (t.depth ?? 0) === 0 && t.content?.trim()) finalPos = p
   }
 
   /** @type {Map<string, ToolCallVM>} */
@@ -1059,14 +1211,11 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
     let content = t.content ?? ''
     /** @type {import('./view-model.js').ThinkingVM | undefined} */
     let thinking
-    if (t.entryType === 'thinking' && (protectedTurn(t) || content.trim() !== '')) {
+    if (t.entryType === EntryType.Thinking && (protectedTurn(t) || content.trim() !== '')) {
       // STANDALONE thinking entry: the whole turn IS the thinking. This path is LIVE on the real wire —
       // peasant emits a standalone entryType=thinking turn — so a real consumer renders it today.
       thinking = { text: content, words: wordCount(content) }
-      const at = positionOf.get(t) ?? -1
-      let previous
-      for (let q = at - 1; q >= 0 && !previous; q--) if ((filteredTurns[q].depth ?? 0) === (t.depth ?? 0)) previous = filteredTurns[q]
-      const durationMs = thinkingDurationMs(previous, t)
+      const durationMs = thinkingTimeMs(filteredTurns, positionOf.get(t) ?? -1)
       if (durationMs !== undefined) thinking.durationMs = durationMs
       content = ''
     } else if (!protectedTurn(t)) {
@@ -1089,23 +1238,34 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
     }
 
     const depth = t.depth ?? 0
-    const isError = t.entryType === 'error' || toolCalls.some((c) => c.isError)
+    const isError = t.entryType === EntryType.Error || toolCalls.some((c) => c.isError)
+    const row = servedRows?.get(t)
     /** @type {TurnVM} */
     const turnVM = {
-      index: t.index,
-      sourceIndexUnique: indexCounts.get(t.index) === 1,
-      identity: `${partition}:${t.sourceEntryRef || t.index}`,
+      index: row ? row.position : t.index,
+      sourceIndexUnique: row ? true : indexCounts.get(t.index) === 1,
+      identity: row ? `${partition}:position-${row.position}` : `${partition}:${t.sourceEntryRef || t.index}`,
       partition,
       role: t.role,
-      label: labels[p] ?? String(p + 1),
+      label: row ? row.displayNumber ?? '' : labels[p] ?? String(p + 1),
       content,
       depth,
       toolCalls,
       annotations: annotationsByTurn[t.index] ?? [],
     }
     if (sourcePositions.has(t)) turnVM.sourcePosition = sourcePositions.get(t)
-    if (depth === 0 && t.role === 'assistant') turnVM.provider = provider
+    if (row) {
+      turnVM.position = row.position
+      turnVM.sourcePosition = row.position
+      turnVM.segmentIndex = row.segmentIndex
+      turnVM.recordedIndexState = row.recordedIndexState
+      if (row.recordedIndex !== undefined) turnVM.recordedIndex = row.recordedIndex
+      if (row.displayNumber === undefined) turnVM.numberAbsent = true
+    }
+    if (depth === 0 && t.role === Role.Assistant) turnVM.provider = provider
     if (t.agentName) turnVM.agentName = t.agentName
+    const replyAt = replyPositionOf(filteredTurns, positionOf.get(t) ?? -1)
+    if (replyAt >= 0) turnVM.replyIndex = servedRows ? servedRows.get(filteredTurns[replyAt])?.position : filteredTurns[replyAt].index
     if (t.controlKind) {
       turnVM.controlKind = t.controlKind
       turnVM.isControl = true

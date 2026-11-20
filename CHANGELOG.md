@@ -4,6 +4,33 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.2.1
+
+- show the minimap timeline in a preview (#325)
+
+## 0.2.0
+
+- read positioned transcript segments with served numbers (#319)
+- drop the scrubber's loaded-so-far caption (#321)
+
+## 0.1.1
+
+- draw a reply's nested thinking as the reply's detail and time it inside the reply (#307)
+- pin the schema package to 0.58.0 (#310)
+
+## 0.1.0
+
+- page a loading transcript in with a manual load more control (#303)
+
+## 0.0.71
+
+- bump to 0.54.0 and widen the harness surface (#295)
+
+## 0.0.70
+
+- cut a release (#287)
+- cut a release (#290)
+
 ## 0.0.69
 
 - `SelectionTree` gains the preview contract. With `onPreview` and a host-owned `previewId`, a row's title is its own button outside the checkbox's label: the title previews and never selects, the checkbox selects and never previews, and the caret still folds. The previewed row's title carries `aria-pressed` and the row carries the amber selection inset over a quiet fill, so the mark is not colour alone. Every row kind previews, locked rows included. With no `onPreview` the title stays inside the checkbox label and a click on it toggles the row, as before.

@@ -50,7 +50,7 @@ export default function TranscriptSystemGroup({ group, open: openProp, onToggle,
   }
   useLayoutEffect(() => {
     if (revealRequest) setOpen(true)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- adding setOpen, recreated each render, would reopen a disclosure the reader just closed
   }, [revealRequest])
   if (!group) return null
   /* One kind is not a choice: a group of a single kind gets no facet, so the head stays one

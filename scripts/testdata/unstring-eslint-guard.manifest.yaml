@@ -1,0 +1,20 @@
+requiredCaseNames:
+  - named-disable
+  - named-disable-line
+  - named-disable-next-line
+  - named-block-multiline
+  - bare-disable
+  - bare-disable-with-reason
+  - bare-disable-line-with-reason
+  - bare-disable-next-line-with-reason
+  - bare-disable-line
+  - bare-disable-next-line
+  - bare-block-multiline
+  - inline-rule-config
+  - clean-source
+  - unrelated-rule-with-reason
+  - hooks-disable-with-reason
+  - hooks-disable-without-reason
+  - unrelated-inline-rule-config
+  - named-disable-with-reason
+  - empty-reason

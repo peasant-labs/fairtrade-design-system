@@ -35,6 +35,7 @@ export { TOOL_GROUPS } from './view-model.js'
    analytics helpers keep their canonical wire-shaped signatures so consumers
    import one stable contract. Pure-render derivations live in the adapter. ─────────── */
 export { adaptTranscript, prefilterTurns, diffLines, buildFiles, buildToolGroupCounts } from './adapter.js'
+export { TranscriptContinuationState, TranscriptContinuationLabels, TranscriptTail } from './continuation-values.js'
 export { default as TranscriptControlRow } from './ControlRow.jsx'
 export { default as TranscriptSystemGroup } from './SystemGroup.jsx'
 export { systemGroups } from './system-groups.js'
@@ -123,6 +124,17 @@ export {
   turnsFromSegments,
   windowCoverage,
 } from './segments.js'
+/* the positioned (v2) reader: one controller for every host, which supplies transport only */
+export {
+  PositionedReadFailureKind,
+  PositionedLanding,
+  PositionedReadStatus,
+  isPositionedReadFailureKind,
+  isPositionedLanding,
+  isPositionedReadStatus,
+  createPositionedReader,
+  usePositionedTranscript,
+} from './positioned-read.js'
 export { default as TranscriptScorecard } from './Scorecard.jsx'
 export { default as TranscriptLabelPopover } from './LabelPopover.jsx'
 export {
@@ -144,6 +156,17 @@ export { default as useTranscriptInitialPosition } from './useTranscriptInitialP
 /** @typedef {import('./analytics.js').PhaseType} PhaseType */
 
 /* ── schema-backed wire types (JSDoc re-exports; erased at build) ─────────────── */
+/* the positioned reader's host contract */
+/** @typedef {import('./positioned-read.js').PositionedReadTransport} PositionedReadTransport */
+/** @typedef {import('./positioned-read.js').PositionedHostResponse} PositionedHostResponse */
+/** @typedef {import('./positioned-read.js').PositionedTarget} PositionedTarget */
+/** @typedef {import('./positioned-read.js').PositionedReadFailure} PositionedReadFailure */
+/** @typedef {import('./positioned-read.js').PositionedReaderOptions} PositionedReaderOptions */
+/** @typedef {import('./positioned-read.js').PositionedReadControls} PositionedReadControls */
+/** @typedef {import('./positioned-read.js').PositionedTranscript} PositionedTranscript */
+/** @typedef {import('./positioned-read.js').PositionedReadFailureKindValue} PositionedReadFailureKindValue */
+/** @typedef {import('./positioned-read.js').PositionedLandingValue} PositionedLandingValue */
+/** @typedef {import('./positioned-read.js').PositionedReadStatusValue} PositionedReadStatusValue */
 /** @typedef {import('./wire-types.js').Role} Role */
 /** @typedef {import('./wire-types.js').EntryType} EntryType */
 /** @typedef {import('./wire-types.js').ToolCallKind} ToolCallKind */

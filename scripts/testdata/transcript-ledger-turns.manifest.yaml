@@ -30,6 +30,13 @@ requiredThinkingDurationNames:
   - an unrecorded tool duration adds nothing
   - an unknown previous time leaves the time out
   - a thinking entry with nothing before it has no time
+requiredThinkingPlacementNames:
+  - a reply that opens with thinking is timed from the event before the reply
+  - a later thinking block is timed from the block before it in the same reply
+  - thinking after the reply's own time is timed from the reply without its tools
+  - a reply's first thinking block is never timed from another reply's block
+  - a nested thinking turn with no reply before it keeps the same-depth rule
+  - a reply that opens with thinking and has nothing before it has no time
 requiredCaseNames:
   - classic keeps the turn's tools flat
   - ledger groups one turn's tools into one panel
@@ -49,6 +56,9 @@ requiredCaseNames:
   - a role change draws one rule and the first turn draws none
   - each prose turn owns the actions that follow it
   - a turn with no words is inline detail, not a card
+  - classic draws a reply's thinking as the reply's detail, not a subagent
+  - ledger keeps a reply's thinking in the reply's actions
+  - classic still draws a subagent's own thinking as a subagent
   - the system turn's heading follows the page level
 requiredCaseKinds:
   classic keeps the turn's tools flat: classic
@@ -69,6 +79,9 @@ requiredCaseKinds:
   a role change draws one rule and the first turn draws none: turn-rules
   each prose turn owns the actions that follow it: model-actions
   a turn with no words is inline detail, not a card: detail-turns
+  classic draws a reply's thinking as the reply's detail, not a subagent: reply-thinking-classic
+  ledger keeps a reply's thinking in the reply's actions: reply-thinking-ledger
+  classic still draws a subagent's own thinking as a subagent: subagent-thinking-classic
   the system turn's heading follows the page level: heading-level
 
 # Production mutations the gate must kill (scripts/parts-mutations.mjs).
@@ -105,7 +118,45 @@ requiredMutationNames:
   - relocated search returns to the source article
   - positioning-only action reveal selects its source
   - keyboard action sources lose their insertion position
+  - a reply's thinking is timed from another reply's block
+  - a reply that opens with thinking is timed from itself
+  - a later thinking block skips the block before it
+  - classic labels a reply's thinking a subagent
+  - a subagent's thinking counts as a reply block
+  - nested thinking with no parent counts as a reply block
 mutations:
+  - name: a subagent's thinking counts as a reply block
+    file: src/ui/transcript/adapter.js
+    find: "    if (turns[q].index === turn.parentIndex) return (turns[q].depth ?? 0) === 0 ? q : -1\n"
+    replace: "    if (turns[q].index === turn.parentIndex) return q\n"
+    expectedDiagnostic: "classic still draws a subagent's own thinking as a subagent: turn 3 must draw as a subagent"
+  - name: nested thinking with no parent counts as a reply block
+    file: src/ui/transcript/work-summary.js
+    find: "  const replyThinking = turn.replyIndex !== undefined && turn.role === Role.Assistant"
+    replace: "  const replyThinking = turn.role === Role.Assistant"
+    expectedDiagnostic: "classic still draws a subagent's own thinking as a subagent: turn 4 must draw as a subagent"
+
+  - name: a reply's thinking is timed from another reply's block
+    file: src/ui/transcript/adapter.js
+    find: "  if (replyAt < 0) return thinkingDurationMs(previousAtDepth(turns, at, depth), turn)\n"
+    replace: "  return thinkingDurationMs(previousAtDepth(turns, at, depth), turn)\n"
+    expectedDiagnostic: "a reply's first thinking block is never timed from another reply's block: the thinking time must be 14000"
+  - name: a reply that opens with thinking is timed from itself
+    file: src/ui/transcript/adapter.js
+    find: "  return thinkingDurationMs({ ...reply, toolCalls: [] }, turn) ?? thinkingDurationMs(previousAtDepth(turns, replyAt, reply.depth ?? 0), turn)\n"
+    replace: "  return thinkingDurationMs({ ...reply, toolCalls: [] }, turn)\n"
+    expectedDiagnostic: "a reply that opens with thinking is timed from the event before the reply: the thinking time must be 4000"
+  - name: a later thinking block skips the block before it
+    file: src/ui/transcript/adapter.js
+    find: "    if ((block.depth ?? 0) === depth && block.parentIndex === turn.parentIndex) return thinkingDurationMs(block, turn)\n"
+    replace: ""
+    expectedDiagnostic: "a later thinking block is timed from the block before it in the same reply: the thinking time must be 4000"
+  - name: classic labels a reply's thinking a subagent
+    file: src/ui/transcript/work-summary.js
+    find: "  return !replyThinking\n"
+    replace: "  return true\n"
+    expectedDiagnostic: "classic draws a reply's thinking as the reply's detail, not a subagent: turn 2 must not draw a subagent"
+
   - name: positioning-only action reveal selects its source
     file: src/ui/transcript/TranscriptViewer.jsx
     find: "if (searchReveal.select) selectTurn(searchReveal.turn)"
@@ -158,8 +209,8 @@ mutations:
     expectedDiagnostic: "compact mode must collapse the action list"
   - name: the system category ignores its checkbox
     file: src/ui/transcript/filters.js
-    find: "  if (turn.role === 'system') return categories.system === true ? turn : null"
-    replace: "  if (turn.role === 'system') return turn"
+    find: "  if (turn.role === Role.System) return categories.system === true ? turn : null"
+    replace: "  if (turn.role === Role.System) return turn"
     expectedDiagnostic: "the system category hides and restores only system turns: system rows must be absent at rest"
   - name: Bash input regains its icon
     file: src/ui/transcript/ToolBody.jsx
@@ -183,13 +234,13 @@ mutations:
     expectedDiagnostic: "no ledger turn keeps a work row of its own beside the block"
   - name: a user turn does not start a new block
     file: src/ui/transcript/action-groups.js
-    find: "if (source.role === 'user') { flush(); continue }"
-    replace: "if (source.role === 'user') continue"
+    find: "if (source.role === Role.User) { flush(); continue }"
+    replace: "if (source.role === Role.User) continue"
     expectedDiagnostic: "each prose turn starts its own run"
   - name: a system turn splits a run
     file: src/ui/transcript/action-groups.js
-    find: "    if (source.role === 'system') continue"
-    replace: "    if (source.role === 'system') { flush(); continue }"
+    find: "    if (source.role === Role.System) continue"
+    replace: "    if (source.role === Role.System) { flush(); continue }"
     expectedDiagnostic: "exact run owners"
   - name: the block does not restart at each prose turn
     file: src/ui/transcript/action-groups.js

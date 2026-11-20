@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react'
+import { Role } from '@peasant-labs/schema'
+import { useCallback, useEffect, useRef } from 'react'
 
 /* Scrubber — the condensed position track in the pinned trace header, lifted verbatim from the
    canonical mockup (src/mockups/inuse/TranscriptApp.jsx:1619).
@@ -40,7 +41,7 @@ export default function Scrubber({ turns = [], ticks, active = 0, activeTick = 0
   const bracketPct = last > 0 ? (activeIdx / last) * 100 : 0
   const activeTickEntry = segmentMode ? ticks[activeIdx] : null
 
-  function seekTick(clientX, track) {
+  const seekTick = useCallback((clientX, track) => {
     if (!segmentMode || ticks.length === 0 || typeof onSeekTick !== 'function') return
     const rect = track.getBoundingClientRect()
     const frac = rect.width > 0 ? Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)) : 0
@@ -51,7 +52,7 @@ export default function Scrubber({ turns = [], ticks, active = 0, activeTick = 0
       if (next < distance) { distance = next; nearest = tick }
     }
     onSeekTick(nearest)
-  }
+  }, [segmentMode, ticks, onSeekTick])
 
   function down(e) {
     if (e.button !== undefined && e.button !== 0) return
@@ -70,7 +71,7 @@ export default function Scrubber({ turns = [], ticks, active = 0, activeTick = 0
     window.addEventListener('mousemove', move)
     window.addEventListener('mouseup', up)
     return () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up) }
-  }, [onSeek, onSeekTick, dragging, segmentMode, ticks])
+  }, [onSeek, onSeekTick, dragging, segmentMode, ticks, seekTick])
 
   return (
     <div
@@ -100,7 +101,7 @@ export default function Scrubber({ turns = [], ticks, active = 0, activeTick = 0
         : turns.map((turn, i) => (
           <span
             key={turn.index}
-            className={'txn-scrub-tick' + (turn.role === 'user' ? ' txn-tick-user' : '') + (turn.isError ? ' txn-tick-err' : '') + (active === turn.index ? ' txn-tick-on' : '')}
+            className={'txn-scrub-tick' + (turn.role === Role.User ? ' txn-tick-user' : '') + (turn.isError ? ' txn-tick-err' : '') + (active === turn.index ? ' txn-tick-on' : '')}
             style={{ left: (last > 0 ? (i / last) * 100 : 0) + '%' }}
           />
         ))}

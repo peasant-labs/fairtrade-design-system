@@ -1,3 +1,4 @@
+import { Role } from '@peasant-labs/schema'
 /* system-groups — runs of consecutive visible system turns, as one navigation unit.
 
    Consecutive system turns are harness bookkeeping: the ledger folds a run of two or
@@ -36,7 +37,7 @@ export function systemGroups(visibleTurns = []) {
     run = []
   }
   for (const turn of visibleTurns) {
-    if (turn?.role === 'system') run.push(turn)
+    if (turn?.role === Role.System) run.push(turn)
     else flush()
   }
   flush()

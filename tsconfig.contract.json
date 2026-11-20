@@ -38,6 +38,7 @@
     "src/ui/transcript/earlier-history-state.contract.type-test.js",
     "src/ui/transcript/adapter.contract.type-test.js",
     "src/ui/transcript/state-capabilities.contract.type-test.js",
+    "src/ui/transcript/positioned-read.contract.type-test.js",
     "src/ui/transcript/initial-position.contract.type-test.js",
     "src/ui/transcript/view-model.js",
     "src/ui/transcript/wire-types.js",

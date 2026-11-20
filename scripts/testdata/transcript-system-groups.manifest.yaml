@@ -111,11 +111,11 @@ mutations:
     expectedDiagnostic: "control_row_drops_the_repeated_kind"
   - name: a bookkeeping-only span becomes a user turn again
     file: src/ui/transcript/analytics.js
-    find: ".filter(({ tg }) => turns[tg.startIndex]?.role !== 'system')"
+    find: ".filter(({ tg }) => turns[tg.startIndex]?.role !== Role.System)"
     replace: ".filter(() => true)"
     expectedDiagnostic: "rail_lists_only_conversation_turns"
   - name: a turn count counts every entry again
     file: src/ui/transcript/TranscriptViewer.jsx
-    find: ": id === 'trace' ? conversationTurns.length"
+    find: ": id === 'trace' ? traceBadgeCount"
     replace: ": id === 'trace' ? turns.length"
     expectedDiagnostic: "turn_counts_report_conversation_turns_only"

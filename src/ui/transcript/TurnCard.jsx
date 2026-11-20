@@ -1,3 +1,5 @@
+import { Role } from '@peasant-labs/schema'
+import { Presentation } from './state-capabilities.js'
 import { CornerDownRight, User, Wrench, Check, Link as LinkIcon, AlertTriangle, Coins } from 'lucide-react'
 import { useId, useLayoutEffect, useState } from 'react'
 import ProviderIcon from '../ProviderIcon.jsx'
@@ -12,7 +14,7 @@ import TranscriptImageAttachment from './ImageAttachment.jsx'
 import { imageParts } from './image-parts.js'
 import { useImageUrl } from './image-url.js'
 import TranscriptWorkGroup, { ModelActions } from './WorkGroup.jsx'
-import { turnHasProse } from './work-summary.js'
+import { drawsAsSubagent, turnHasProse } from './work-summary.js'
 import UsageDisclosure from './UsageDisclosure.jsx'
 import { Term } from '../Explainer.jsx'
 import { formatRelative as formatRelativeTime, isKnownTime } from './time.js'
@@ -57,6 +59,7 @@ function turnTimeLabel(ts) {
  * @property {Record<string, boolean>} [openTools]   tool id → open?
  * @property {(id: string) => void} [toggleTool]
  * @property {(turnIndex: number) => void} [onCopyAnchor]
+ * @property {boolean} [allowClipboard]
  * @property {boolean} [copied]
  * @property {(turnIndex: number, el: HTMLElement | null) => void} [registerRef]
  * @property {(turnIndex: number) => void} [onLabel]   omit to hide the "label" affordance
@@ -88,6 +91,7 @@ export default function TurnCard({
   openTools = {},
   toggleTool = () => {},
   onCopyAnchor = () => {},
+  allowClipboard = true,
   copied = false,
   registerRef = () => {},
   onLabel,
@@ -103,7 +107,7 @@ export default function TurnCard({
   actionReveal,
   registerActionRef,
   suppressWork = false,
-  presentation = 'classic',
+  presentation = Presentation.Classic,
   flagged = false,
   flaggedPositions,
 }) {
@@ -112,7 +116,7 @@ export default function TurnCard({
   /* the hidden suffix that makes a flagged turn's accessible name say so; the visible mark is aria-hidden */
   const flagName = flagged ? <span className="txn-sr">{INTEGRITY_COPY.turnName}</span> : null
   const flagMark = flagged ? <IntegrityMark /> : null
-  const ledger = presentation === 'ledger'
+  const ledger = presentation === Presentation.Ledger
   const [expanded, setExpanded] = useState(true)
   const bodyId = useId()
   const headingId = useId()
@@ -120,18 +124,20 @@ export default function TurnCard({
     if (revealRequest) setExpanded(true)
   }, [revealRequest])
   if (!turn) return null
-  const isUser = turn.role === 'user'
+  const isUser = turn.role === Role.User
   const isEarlier = !!turn.partition && turn.partition !== 'main'
   /* Only a turn with words earns a card. An agent turn that is only thinking or tool work is
      inline detail: no role line, no number, no time, just its lines under the previous turn. */
   const hasProse = turnHasProse(turn)
   const ledgerDetail = ledger && !isUser && !hasProse
   const timeLabel = turn.time || turnTimeLabel(turn.timestamp)
-  const isSub = !!turn.depth && turn.depth > 0
+  // A nested turn is a subagent's unless it is only thinking under a top-level reply; the one
+  // predicate decides it for both presentations.
+  const isSub = drawsAsSubagent(turn)
   // Only nested assistant prose draws an inset card. Tool/thinking-only entries
   // remain inline work, even when their source carries a nesting depth. Clamp
   // presentation only: the recorded depth remains intact on the turn and DOM.
-  const insetAgent = ledger && turn.role === 'assistant' && isSub && hasProse
+  const insetAgent = ledger && turn.role === Role.Assistant && isSub && hasProse
   // The assistant is the agent, so a present canonical provider selects its
   // accent. Curated turns may omit provider and use the neutral assistant
   // fallback; a present invalid value fails through providerAccent.
@@ -141,8 +147,8 @@ export default function TurnCard({
   const accentName = provider === undefined ? 'amber' : providerAccent(provider)
   const asstAccent = `var(--${accentName})`
 
-  const roleStyle = turn.role === 'assistant' && !isSub ? { color: asstAccent } : undefined
-  const roleGlyph = turn.role === 'assistant' && !isSub && provider !== undefined ? (
+  const roleStyle = turn.role === Role.Assistant && !isSub ? { color: asstAccent } : undefined
+  const roleGlyph = turn.role === Role.Assistant && !isSub && provider !== undefined ? (
     <ProviderIcon
       harness={provider}
       accent
@@ -155,14 +161,20 @@ export default function TurnCard({
   ) : (
     <Wrench size={14} aria-hidden="true" />
   )
-  const anchorButton = !isEarlier ? (
+  /* A positioned row the server sent no number for prints none: no guess, no local count. Its
+     name says the number was not served, so a screen reader hears the same fact. */
+  const numbered = !turn.numberAbsent
+  const turnName = numbered ? `turn ${turn.label}` : 'turn, number not served'
+  /* The copy link addresses the recorded index; a positioned row without one has no address. */
+  const linkIndex = turn.position === undefined ? turn.index : turn.recordedIndex
+  const anchorButton = !isEarlier && allowClipboard && linkIndex !== undefined ? (
     <button
       type="button"
       className="txn-anchor"
       data-turn-control={turn.index}
-      aria-label={'copy link to turn ' + turn.label}
+      aria-label={numbered ? 'copy link to turn ' + turn.label : `copy link to this ${roleLabel} turn`}
       title="copy link to this turn"
-      onClick={() => onCopyAnchor(turn.index)}
+      onClick={() => onCopyAnchor(linkIndex)}
     >
       {copied ? <Check size={14} aria-hidden="true" /> : <LinkIcon size={14} aria-hidden="true" />}
     </button>
@@ -170,7 +182,7 @@ export default function TurnCard({
 
   const head = (
     <div className={'txn-turnhead' + (ledger ? ' txn-turnhead-ledger' : '')}>
-      <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}{flagName}</TurnHeading>
+      <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} {turnName}{flagName}</TurnHeading>
       {ledger ? (
         <>
           {/* the ledger head: the square role well and the role word, then the turn number, the
@@ -178,7 +190,7 @@ export default function TurnCard({
               accessible name; the role word beside it names the role either way. */}
           <span className="txn-roleico" style={roleStyle}>{roleGlyph}</span>
           <span className="txn-rolelabel" style={roleStyle}>{roleLabel}</span>
-          <span className="txn-turnnum tnum">#{turn.label}</span>
+          {numbered && <span className="txn-turnnum tnum">#{turn.label}</span>}
           {flagMark}
           {timeLabel && (
             <Term className="txn-turntime" def={turn.timeTitle ?? turn.timestamp ?? turn.time}>
@@ -196,10 +208,10 @@ export default function TurnCard({
           </span>
           {turn.effectiveModel && <span className="txn-turnmodel mono">{turn.effectiveModel}</span>}
           {isSub && <span className="txn-depth tnum">depth {turn.depth}</span>}
-          <span className="txn-turnnum tnum">#{turn.label}</span>
+          {numbered && <span className="txn-turnnum tnum">#{turn.label}</span>}
           {flagMark}
           <button type="button" className="txn-turn-disclosure" aria-expanded={expanded} aria-controls={bodyId} onClick={() => setExpanded(value => !value)}>
-            {expanded ? 'collapse' : 'expand'} turn {turn.label}
+            {expanded ? 'collapse' : 'expand'} {numbered ? `turn ${turn.label}` : 'this turn'}
           </button>
           {timeLabel && (
             <Term className="txn-turntime" def={turn.timeTitle ?? turn.timestamp ?? turn.time}>
@@ -296,8 +308,8 @@ export default function TurnCard({
   const workBlock = ledger && !suppressWork && (hasWork || modelActions?.length) ? (
     <div className="txn-turnwork">
       {/* a work block drawn without group rows has no row to carry the mark, so it leads the block */}
-      {ledgerDetail && !modelActions?.length && turn.role !== 'system' ? flagMark : null}
-      {modelActions?.length || turn.role === 'user' || turn.role === 'system' ? (
+      {ledgerDetail && !modelActions?.length && turn.role !== Role.System ? flagMark : null}
+      {modelActions?.length || turn.role === Role.User || turn.role === Role.System ? (
         <ModelActions turns={modelActions?.length ? modelActions : [turn]} openTools={openTools} onToggle={toggleTool} expandAll={expandAll} compact={compact} flaggedPositions={flaggedPositions} cardTurn={ledgerDetail ? undefined : turn} reveal={actionReveal} registerActionRef={registerActionRef} />
       ) : turn.toolCalls?.length ? (
         <TranscriptWorkGroup
@@ -315,7 +327,7 @@ export default function TurnCard({
 
   const cardClass =
     'turn txn-turn ' +
-    (isUser ? 'user' : isSub ? 'sub' : turn.role === 'system' ? 'system' : 'asst') +
+    (isUser ? 'user' : isSub ? 'sub' : turn.role === Role.System ? 'system' : 'asst') +
     (active ? ' txn-active' : '') +
     (compact ? ' txn-compact' : '') +
     (ledger ? ' txn-turn-ledger' : '')
@@ -327,7 +339,7 @@ export default function TurnCard({
      and the row as its children. The row keeps the same trailing cluster every ledger turn has:
      the copy anchor plus the host's own per-turn actions, so a host extension survives the role
      switch. */
-  const systemRow = ledger && turn.role === 'system'
+  const systemRow = ledger && turn.role === Role.System
   /* The server says which system rows are control records. Only a ledger system row with
      a producer kind becomes a control row; every other system row keeps the system row. */
   const controlRow = systemRow && !!turn.controlKind
@@ -346,7 +358,7 @@ export default function TurnCard({
     >
       {systemRow ? (
         <>
-          <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}{flagName}</TurnHeading>
+          <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} {turnName}{flagName}</TurnHeading>
           {controlRow ? (
             <TranscriptControlRow
               turn={turn}
@@ -387,7 +399,7 @@ export default function TurnCard({
             </div>
           ) : ledgerDetail ? (
             <>
-              <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} turn {turn.label}{flagName}</TurnHeading>
+              <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} {turnName}{flagName}</TurnHeading>
               {workBlock ?? (flagged && !suppressWork ? <div className="txn-turnwork txn-turnwork-solo">{flagMark}</div> : null)}
             </>
           ) : (

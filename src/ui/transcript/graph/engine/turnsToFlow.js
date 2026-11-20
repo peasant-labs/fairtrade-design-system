@@ -5,6 +5,7 @@
    topology can be verified without the optional peer dependency. The emitted
    node/edge shapes are structurally assignable to `@xyflow/react`'s Node / Edge. */
 
+import { Role } from '@peasant-labs/schema'
 import { NODE_DIMENSIONS, EDGE_DEFAULTS } from './constants.js'
 
 /** @typedef {import('./types.js').TurnDetail} TurnDetail */
@@ -115,7 +116,7 @@ export function turnsToFlow({
     const hasContent = !!turn.content?.trim()
     const hasTools = (turn.toolCalls?.length ?? 0) > 0
     if (!hasContent && !hasTools) continue
-    if (turn.role === 'system' && !hasTools && (!turn.content || turn.content.trim().length < 8)) continue
+    if (turn.role === Role.System && !hasTools && (!turn.content || turn.content.trim().length < 8)) continue
 
     const depth = turn.depth ?? 0
     // Phase lookup, search matches, and filtered indices all use display positions (ti).

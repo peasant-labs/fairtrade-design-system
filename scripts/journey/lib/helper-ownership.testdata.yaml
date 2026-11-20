@@ -51,6 +51,10 @@ cases:
     file: assertions.mjs
     symbol: scanAxe
     owner: shared-vendored-source
+  - name: helper-assertions-with-axe-retry
+    file: assertions.mjs
+    symbol: withAxeRetry
+    owner: shared-vendored-source
   - name: helper-assertions-serious-violations
     file: assertions.mjs
     symbol: seriousViolations

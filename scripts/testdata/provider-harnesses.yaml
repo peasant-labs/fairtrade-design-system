@@ -1,4 +1,4 @@
-expectedHarnessCount: 14
+expectedHarnessCount: 16
 expectedBrandCount: 11
 expectedAliasCount: 9
 expectedInvalidHarnessCount: 3
@@ -116,6 +116,14 @@ harnesses:
     accessibleName: Kiro Crew
     brand: kiro
     accent: mauve
+  - slug: antigravity-cli
+    accessibleName: Antigravity CLI
+    brand: gemini
+    accent: teal
+  - slug: antigravity-ide
+    accessibleName: Antigravity IDE
+    brand: gemini
+    accent: teal
 invalidHarnesses:
   - id: company-name
     value: google

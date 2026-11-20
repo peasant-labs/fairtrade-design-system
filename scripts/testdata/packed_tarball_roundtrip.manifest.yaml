@@ -9,6 +9,9 @@ requiredImportables:
   - adaptTranscript
   - prefilterTurns
   - TranscriptViewer
+  - TranscriptContinuationState
+  - TranscriptContinuationLabels
+  - TranscriptTail
   - TranscriptLibraryTable
   - groupPageRows
   - groupKeysFor

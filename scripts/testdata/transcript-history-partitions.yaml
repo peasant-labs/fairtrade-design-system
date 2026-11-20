@@ -1,0 +1,14 @@
+# History sections read through the positioned reader. The main directory records the
+# section's count (qualified as recorded); the opened section's own directory states the
+# exact served count; its rows carry their own numbering from 1.
+section:
+  index: 0
+  state: uncertain_migrated
+  recordedConversationTurns: 5
+  rows: 4
+closedText: earlier history 5 recorded turns
+openText: earlier history 4 turns
+cases:
+  - name: history-closed-count-qualified
+  - name: history-open-exact-count
+  - name: history-numbering-restarts

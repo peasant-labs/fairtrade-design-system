@@ -79,7 +79,7 @@ mutations:
     expectedDiagnostic: "ledger swaps the scrubber for the title and minimap: task-boundary must be absent"
   - name: the rail ignores the presentation
     file: src/ui/transcript/OutlineRail.jsx
-    find: "if (tab === 'trace' && presentation === 'ledger') {"
+    find: "if (tab === 'trace' && presentation === PresentationValue.Ledger) {"
     replace: "if (tab === 'trace') {"
     expectedDiagnostic: "an explicit classic presentation keeps the classic chrome: rail-waterfall must be present"
   - name: the minimap loses its slider role

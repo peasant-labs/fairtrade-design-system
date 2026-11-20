@@ -37,7 +37,7 @@ export default function TranscriptSystemRow({ turn, actions, open: openProp, onT
   useLayoutEffect(() => {
     if (revealRequest) setOpen(true)
     // the reveal sequence is the only trigger; the setter closes over the current mode
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- adding setOpen, recreated each render, would reopen a disclosure the reader just closed
   }, [revealRequest])
   const bodyId = useId()
   if (!turn) return null

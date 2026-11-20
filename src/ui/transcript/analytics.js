@@ -23,7 +23,7 @@
    (`adapter.parse.js`) — never the adapter — so there is no import cycle.
    ─────────────────────────────────────────────────────────────────────────── */
 
-import { isConversationTurn } from '@peasant-labs/schema'
+import { Role, SessionOutcome, isConversationTurn } from '@peasant-labs/schema'
 import { extractPath, countDiff } from './adapter.parse.js'
 
 /** @typedef {import('./wire-types.js').TurnDetail} TurnDetail */
@@ -73,7 +73,7 @@ export function computeTasks(turns) {
   const boundaries = []
   for (let i = 0; i < turns.length; i++) {
     const t = turns[i]
-    if (t.role === 'user' && (t.depth ?? 0) === 0 && t.content?.trim()) boundaries.push(i)
+    if (t.role === Role.User && (t.depth ?? 0) === 0 && t.content?.trim()) boundaries.push(i)
   }
   if (boundaries.length === 0 || boundaries[0] !== 0) boundaries.unshift(0)
 
@@ -107,7 +107,7 @@ function summarizeTask(turns, start, end) {
   for (let i = start; i <= end; i++) {
     const t = turns[i]
     tokens += (t.tokensIn ?? 0) + (t.tokensOut ?? 0)
-    if (t.role === 'assistant' && (t.depth ?? 0) === 0) finalEntryIndex = t.index
+    if (t.role === Role.Assistant && (t.depth ?? 0) === 0) finalEntryIndex = t.index
     for (const c of t.toolCalls ?? []) {
       toolCallCount++
       if (c.isError) hasErrors = true
@@ -370,7 +370,7 @@ function extractFailedAttempts(turns) {
 
   for (let i = 0; i < turns.length; i++) {
     const turn = turns[i]
-    if (turn.role === 'user') {
+    if (turn.role === Role.User) {
       if (currentTools.length > 0 && startIdx >= 0) {
         currentTools = []
         startIdx = -1
@@ -437,7 +437,7 @@ function classifyTurn(turn, displayIndex, prevPhase, recentErrorCount, retryRang
   for (const [start, end] of retryRanges) {
     if (displayIndex >= start && displayIndex <= end) return 'retry-loop'
   }
-  if (turn.role === 'user') {
+  if (turn.role === Role.User) {
     if (CORRECTION_SIGNALS.some((p) => p.test(turn.content))) return 'user-correction'
     return prevPhase ?? 'planning'
   }
@@ -449,7 +449,7 @@ function classifyTurn(turn, displayIndex, prevPhase, recentErrorCount, retryRang
     return 'implementation'
   }
   if (hasOnlyTools(turn, READ_TOOLS) && recentErrorCount === 0) return 'exploration'
-  if (turn.role === 'assistant' && !turn.toolCalls?.length && turn.content.length > 100) return 'planning'
+  if (turn.role === Role.Assistant && !turn.toolCalls?.length && turn.content.length > 100) return 'planning'
   return prevPhase ?? 'planning'
 }
 
@@ -522,8 +522,8 @@ function detectPhaseSegments(turns) {
   if (segments.length > 0) {
     const lastTurn = turns[turns.length - 1]
     const lastSegment = segments[segments.length - 1]
-    const hasEndError = turnHasError(lastTurn) && lastTurn.role === 'assistant'
-    const hasTaskSwitch = lastTurn.role === 'user' && TASK_SWITCH.test(lastTurn.content)
+    const hasEndError = turnHasError(lastTurn) && lastTurn.role === Role.Assistant
+    const hasTaskSwitch = lastTurn.role === Role.User && TASK_SWITCH.test(lastTurn.content)
     const lastQuarter = turns.slice(Math.floor(turns.length * 0.8))
     const noWritesLate = !lastQuarter.some((t) => hasTools(t, WRITE_TOOLS))
     if (hasEndError || hasTaskSwitch || (noWritesLate && lastSegment.type !== 'planning')) {
@@ -682,7 +682,7 @@ export function assessScorecard(sc, medians = {}) {
       if (v < OUTPUT_SURVIVAL_RISK) flags.push(`Only ${Math.round(v)}% of output survived`)
     }
     if (
-      sc.outcome === 'failed' && present(sc.costTotalUsd) && share !== undefined &&
+      sc.outcome === SessionOutcome.Failed && present(sc.costTotalUsd) && share !== undefined &&
       medians.retryShare !== undefined && share > medians.retryShare
     ) {
       bands.push('bad')
@@ -835,7 +835,7 @@ function taskToVM(tg, i, turns) {
 export function computeTaskGroups(turns) {
   return computeTasks(turns)
     .map((tg, i) => ({ tg, i }))
-    .filter(({ tg }) => turns[tg.startIndex]?.role !== 'system')
+    .filter(({ tg }) => turns[tg.startIndex]?.role !== Role.System)
     .map(({ tg, i }) => taskToVM(tg, i, turns))
 }
 

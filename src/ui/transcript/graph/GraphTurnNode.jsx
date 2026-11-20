@@ -28,6 +28,7 @@
    clay (overrides). Everything else reads by ink weight + mono chrome, radius 0,
    hairline borders — the house style. */
 
+import { Role } from '@peasant-labs/schema'
 import { providerAccent } from '../../provider-policy.js'
 import { formatCount } from '../../format.js'
 
@@ -137,7 +138,7 @@ export function GraphTurnNode({
       </header>
 
       {contentPreview && (
-        <div className={`ft-gnode-prev${role === 'user' ? ' ft-gnode-prev-user' : ''}`}>
+        <div className={`ft-gnode-prev${role === Role.User ? ' ft-gnode-prev-user' : ''}`}>
           {contentPreview}
         </div>
       )}

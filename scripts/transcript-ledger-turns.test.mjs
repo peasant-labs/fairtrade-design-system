@@ -14,6 +14,8 @@
 import { readFileSync } from 'node:fs'
 import { ROOT, loadFixturePair, assertExactNames, assertFields, withMountedSource, click, createReport } from './mounted-parts.mjs'
 import { workSummary, workCountLabel, workMetaLabel, workActionsLabel } from '../src/ui/transcript/work-summary.js'
+import { Presentation } from '../src/ui/transcript/state-capabilities.js'
+import { Role } from '@peasant-labs/schema'
 import './transcript-search-ranges.test.mjs'
 
 const FIXTURE = 'scripts/testdata/transcript-ledger-turns.yaml'
@@ -21,6 +23,7 @@ const MANIFEST = 'scripts/testdata/transcript-ledger-turns.manifest.yaml'
 const { fixture, manifest } = loadFixturePair(FIXTURE, MANIFEST, {
   summaryCases: 'requiredSummaryNames',
   thinkingDurationCases: 'requiredThinkingDurationNames',
+  thinkingPlacementCases: 'requiredThinkingPlacementNames',
   cases: 'requiredCaseNames',
 })
 const { fixture: ownership } = loadFixturePair('scripts/testdata/transcript-action-ownership.yaml', 'scripts/testdata/transcript-action-ownership.manifest.yaml', {
@@ -99,16 +102,25 @@ for (const row of fixture.summaryCases) {
 
 assertExactNames(Object.keys(fixture.mountedThinking), ['kind', 'words', 'duration'], `${FIXTURE} mountedThinking`)
 for (const row of fixture.thinkingDurationCases) assertFields(row, ['name', 'turn', 'expected'], `${FIXTURE} ${row.name}`, ['previous'])
+for (const row of fixture.thinkingPlacementCases) assertFields(row, ['name', 'turns', 'at', 'expected'], `${FIXTURE} ${row.name}`)
+assertExactNames(Object.keys(fixture.replyThinking), ['turns', 'durations'], `${FIXTURE} replyThinking`)
+assertExactNames(Object.keys(fixture.subagentThinking), ['turns'], `${FIXTURE} subagentThinking`)
 
 /* canLabel on, so the classic head's built-in label affordance exists to prove the ledger head drops it */
 const CAPABILITIES = { canEdit: false, canLabel: true, canContribute: false, canChangeVisibility: false, canExport: false }
 const HOST_ACTION = 'host action'
 
 await withMountedSource(async ({ load, mount, window, React }) => {
-  const { adaptTranscript, thinkingDurationMs } = await load('/src/ui/transcript/adapter.js')
+  const { COMMAND_INPUT_HEADING } = await load('/src/ui/transcript/ToolBody.jsx')
+  const { adaptTranscript, thinkingDurationMs, thinkingTimeMs } = await load('/src/ui/transcript/adapter.js')
   /* the thinking-time rule, through the loaded adapter so a mutation of it is the one under test */
   for (const row of fixture.thinkingDurationCases) {
     const actual = thinkingDurationMs(row.previous, row.turn) ?? null
+    report.check(actual === row.expected, `${row.name}: the thinking time must be ${JSON.stringify(row.expected)}, received ${JSON.stringify(actual)}`)
+  }
+  /* which event a thinking turn is timed from, through the same loaded adapter */
+  for (const row of fixture.thinkingPlacementCases) {
+    const actual = thinkingTimeMs(row.turns, row.at) ?? null
     report.check(actual === row.expected, `${row.name}: the thinking time must be ${JSON.stringify(row.expected)}, received ${JSON.stringify(actual)}`)
   }
   const { default: TranscriptViewer } = await load('/src/ui/transcript/TranscriptViewer.jsx')
@@ -168,7 +180,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     report.check(same(articles.map(el => Number(el.dataset.turn)), nesting.payload.turns.map(turn => turn.index)), `${theme}/${presentation}: nesting preserves source order and turn navigation identities`)
     for (const row of nesting.cases) {
       const article = mounted.container.querySelector(`#turn-${row.index}`)
-      const inset = presentation === 'ledger' ? row.inset : 0
+      const inset = presentation === Presentation.Ledger ? row.inset : 0
       report.check(article?.getAttribute('data-agent-depth') === (inset ? String(row.depth) : null), `${row.name}/${theme}/${presentation}: only nested assistant prose gains its recorded depth marker`)
       report.check(article?.style.getPropertyValue('--txn-agent-depth') === (inset ? String(inset) : ''), `${row.name}/${theme}/${presentation}: visual nesting caps the inset without changing depth`)
       report.check(nestedVM.turns.find(turn => turn.index === row.index)?.depth === row.depth, `${row.name}/${theme}/${presentation}: the adapter's original depth remains intact`)
@@ -324,7 +336,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(open?.getAttribute('aria-expanded') === 'true', `${row.name}: the clicked row must stay open`)
       report.check(!!panel?.querySelector('.txn-toolcall .txn-tcbody'), `${row.name}: the clicked row must reveal its body`)
       const input = panel?.querySelector('.txn-toolcall .txn-term')
-      report.check(text(input?.previousElementSibling) === 'input', `${row.name}: Bash must label its command input`)
+      report.check(text(input?.previousElementSibling) === COMMAND_INPUT_HEADING, `${row.name}: Bash must label its command input`)
       report.check(text(input?.querySelector('.mono')) === row.input, `${row.name}: Bash input must preserve the recorded command`)
       report.check(!!input && input.querySelector('svg') === null, `${row.name}: Bash input must contain no icon`)
       report.check(text(input?.querySelector('.txn-term-prompt')) === '$', `${row.name}: Bash input keeps its dollar prompt`)
@@ -418,7 +430,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       const systemCheck = () => [...container.querySelectorAll('.txn-catlist .txn-checkrow')].find((el) => text(el.querySelector('.txn-cr-label')) === 'system')
       const checkbox = () => systemCheck()?.querySelector('input[type="checkbox"]')
       const visibleIndices = () => [...container.querySelectorAll('.txn-stream [data-turn]')].map((el) => Number(el.getAttribute('data-turn')))
-      const systemTurns = vm.turns.filter((turn) => turn.role === 'system')
+      const systemTurns = vm.turns.filter((turn) => turn.role === Role.System)
       const hiddenBaseline = visibleIndices()
       report.check(checkbox()?.checked === false, `${row.name}: the system category must start unchecked`)
       report.check(container.querySelector('.txn-stream .txn-systemrow') === null, `${row.name}: system rows must be absent at rest`)
@@ -503,6 +515,38 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(!!block?.querySelector('.txn-modelactions-rows'), `${row.name}: the action list starts expanded`)
       const heading = byId(mounted.container, article?.getAttribute('aria-labelledby'))
       report.check(!!heading && heading.classList.contains('txn-turn-heading'), `${row.name}: the article keeps its heading for assistive tech`)
+      await mounted.unmount()
+    } else if (row.kind === 'reply-thinking-classic' || row.kind === 'reply-thinking-ledger') {
+      /* a reply's thinking is stored as nested blocks of the reply: it is the reply's detail in
+         both presentations, never a subagent turn, and each block is timed inside its reply */
+      const ledger = row.kind === 'reply-thinking-ledger'
+      const replyVM = adaptTranscript(fixture.replyPayload)
+      const mounted = await mountViewer(ledger ? 'ledger' : 'classic', { viewModel: replyVM })
+      const container = mounted.container
+      for (const index of fixture.replyThinking.turns) {
+        const article = container.querySelector(`#turn-${index}`)
+        report.check(!!article, `${row.name}: thinking turn ${index} must mount`)
+        report.check(article?.querySelector('.subtask') === null && article?.querySelector('.txn-turn.sub') === null, `${row.name}: turn ${index} must not draw a subagent`)
+        report.check(article?.querySelector('.txn-depth') === null && article?.dataset.agentDepth === undefined, `${row.name}: turn ${index} must not show a nesting depth`)
+        report.check(!/subagent/.test(text(article)), `${row.name}: turn ${index} must not be named a subagent, received ${JSON.stringify(text(article))}`)
+      }
+      const durations = [...container.querySelectorAll('.txn-thinking-toggle')].map((toggle) => text(toggle.querySelector('.txn-tc-dur')))
+      report.check(same(durations, fixture.replyThinking.durations), `${row.name}: the thinking rows must read ${JSON.stringify(fixture.replyThinking.durations)} in source order, received ${JSON.stringify(durations)}`)
+      if (ledger) {
+        const owned = [...container.querySelectorAll('#turn-1 .txn-thinking-toggle')].length
+        report.check(owned === 2, `${row.name}: reply 1 must own its two thinking rows, received ${owned}`)
+      }
+      await mounted.unmount()
+    } else if (row.kind === 'subagent-thinking-classic') {
+      /* the reply-block rule is narrow: a subagent's own thinking, and nested thinking that names
+         no top-level reply as its parent, keep their subagent frame */
+      const subagentVM = adaptTranscript(fixture.subagentPayload)
+      const mounted = await mountViewer('classic', { viewModel: subagentVM })
+      for (const index of fixture.subagentThinking.turns) {
+        const article = mounted.container.querySelector(`#turn-${index}`)
+        report.check(!!article?.querySelector('.subtask'), `${row.name}: turn ${index} must draw as a subagent`)
+        report.check(subagentVM.turns.find((turn) => turn.index === index)?.replyIndex === undefined, `${row.name}: turn ${index} must not be cooked as a reply block`)
+      }
       await mounted.unmount()
     } else if (row.kind === 'model-actions') {
       const grouped = adaptTranscript(ownership.payload)

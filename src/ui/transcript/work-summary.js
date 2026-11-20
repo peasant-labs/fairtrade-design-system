@@ -19,6 +19,7 @@
        leaves the call count out, so one number is never printed in both slots.
    ─────────────────────────────────────────────────────────────────────────────── */
 
+import { Role } from '@peasant-labs/schema'
 import { formatDurationMs } from './time.js'
 
 /** @typedef {import('./view-model.js').ToolCallVM} ToolCallVM */
@@ -78,6 +79,21 @@ export function turnHasProse(turn) {
   if (parts.some((part) => part?.type === 'image')) return true
   if (parts.some((part) => part?.type === 'text' && String(part.text ?? '').trim() !== '')) return true
   return String(turn?.displayContent ?? turn?.content ?? '').trim().length > 0
+}
+
+/**
+ * True when a nested turn draws as a subagent turn. A nested turn is a subagent's unless it is only
+ * an agent's thinking (no words, no tools, no subagent name of its own) under a top-level reply
+ * (`replyIndex`, which the adapter sets from `replyPositionOf`): that turn is a block of the reply
+ * and both presentations draw it as the reply's inline detail.
+ * @param {{ depth?: number, role?: string, thinking?: unknown, toolCalls?: unknown[], agentName?: string, replyIndex?: number, displayContent?: unknown, content?: unknown, contentParts?: import('./view-model.js').ContentPartVM[] } | null | undefined} turn
+ * @returns {boolean}
+ */
+export function drawsAsSubagent(turn) {
+  if (!turn?.depth || turn.depth <= 0) return false
+  const replyThinking = turn.replyIndex !== undefined && turn.role === Role.Assistant && !!turn.thinking &&
+    !turnHasProse(turn) && !turn.toolCalls?.length && !turn.agentName
+  return !replyThinking
 }
 
 /**

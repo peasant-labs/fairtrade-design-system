@@ -98,7 +98,6 @@ export default function GroupedMultiSelect({
     () => (searching
       ? groups.map((g) => ({ ...g, items: g.items.filter((it) => matchesQuery(itemText(it), query)) })).filter((g) => g.items.length > 0)
       : groups),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [groups, query, searching],
   )
   const [internal, setInternal] = useState(() => new Set(defaultValue ?? []))

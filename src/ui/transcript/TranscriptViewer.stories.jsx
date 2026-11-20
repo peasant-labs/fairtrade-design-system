@@ -6,6 +6,7 @@ import { adaptTranscript } from './adapter.js'
 import { readingPayload } from '../../mockups/inuse/reading-fixture.js'
 import { integrityBoundProps, integrityOtherHash } from '../../mockups/inuse/integrity-fixture.js'
 import { INTEGRITY_COPY } from './integrity.js'
+import { TranscriptContinuationLabels } from './continuation-values.js'
 
 export const Pi = {
   args: { viewModel: adaptTranscript(piPayload) },
@@ -111,6 +112,49 @@ const meta = {
   decorators: frame('full'),
 }
 export default meta
+
+const previewRef = { index: 0, firstTurn: 0, lastTurn: 4, byteLength: 500, conversationTurns: { before: 0, count: 4 } }
+const previewArgs = {
+  viewModel: { ...viewModel, session: { ...viewModel.session, conversationTurnCount: 4 } },
+  capabilities: { canEdit: false, canLabel: false, canContribute: false, canChangeVisibility: false, canExport: false },
+  directory: { complete: false, segments: [previewRef] },
+  segments: [{ ...previewRef, turns: turns.map(turn => ({ ...turn, entryType: 'text' })) }],
+  allowClipboard: false,
+}
+
+const previewFrame = (Story) => (
+  <div style={{ height: '100vh', minHeight: 640, display: 'flex', flexDirection: 'column' }}>
+    <Story />
+  </div>
+)
+const pinPreview = async (canvasElement) => {
+  const stream = canvasElement.querySelector('.txn-stream')
+  stream.scrollTop = 300
+  fireEvent.scroll(stream)
+  await waitFor(() => expect(canvasElement.querySelector('.txn-sticky .txn-minimap')).toBeVisible())
+}
+
+export const PreviewMore = {
+  decorators: [previewFrame],
+  args: { ...previewArgs, continuation: { state: 'more', onLoadMore: fn() } },
+  play: async ({ canvasElement, args }) => {
+    await pinPreview(canvasElement)
+    const button = within(canvasElement).getByRole('button', { name: TranscriptContinuationLabels.LoadMore })
+    button.focus()
+    await userEvent.keyboard('{Enter} ')
+    await expect(args.continuation.onLoadMore).toHaveBeenCalledTimes(2)
+  },
+}
+export const PreviewLoading = { decorators: [previewFrame], args: { ...previewArgs, continuation: { state: 'loading' } }, play: async ({ canvasElement }) => pinPreview(canvasElement) }
+const finishedDirectory = { ...previewArgs.directory, complete: true, totalSegments: 1, totalTurns: 5, totalConversationTurns: 4 }
+const finishedPlay = async ({ canvasElement }) => {
+  await pinPreview(canvasElement)
+  await expect(canvasElement.querySelector('.txn-trace-count')).toHaveTextContent('4 turns')
+  await expect(canvasElement.textContent).not.toContain('loaded so far')
+}
+export const PreviewEnd = { decorators: [previewFrame], args: { ...previewArgs, directory: finishedDirectory, continuation: { state: 'end', notice: 'this session has grown since the preview opened.' } }, play: finishedPlay }
+export const PreviewCut = { decorators: [previewFrame], args: { ...previewArgs, directory: finishedDirectory, continuation: { state: 'cut', notice: 'the preview reached its limit.' } }, play: finishedPlay }
+export const PreviewFailed = { args: { ...previewArgs, continuation: { state: 'failed', notice: <button type="button">read again</button> } } }
 
 /* Unmanaged: only the two required props. Proves the state defaults (trace tab, dark theme). */
 export const Default = {
@@ -843,3 +887,52 @@ export const ImagesUnavailable = {
     await expect(canvasElement.querySelectorAll('.txn-image-thumb').length).toBe(0)
   },
 }
+
+/* ── a reply's thinking as nested blocks ──────────────────────────────────────
+   A producer that stores one reply as one entry keeps its thinking as nested blocks under it
+   (depth 1, parentIndex naming the reply) and folds its tool calls into the reply. The thinking
+   is the reply's own detail in both presentations, never a subagent turn, and each block is timed
+   inside its reply. */
+const replyThinkingPayload = {
+  id: 'reply-thinking',
+  harness: 'claude-code',
+  startTime: '2026-09-20T10:00:00Z',
+  endTime: '2026-09-20T10:00:20Z',
+  durationMins: 1,
+  totalTokens: 30,
+  tokensIn: 20,
+  tokensOut: 10,
+  turnCount: 6,
+  toolCallCount: 1,
+  outcome: 'resolved',
+  inputSubmissionCount: 1,
+  conversationTurnCount: 3,
+  turns: [
+    { index: 0, role: 'user', depth: 0, content: 'read the fixture and summarize it', timestamp: '2026-09-20T10:00:00Z' },
+    {
+      index: 1, role: 'assistant', depth: 0, content: 'reading the fixture first.', timestamp: '2026-09-20T10:00:04Z', hasThinking: true,
+      toolCalls: [{ id: 'reply-read', name: 'Read', filePath: 'notes/plan.md', arguments: '{"file_path":"notes/plan.md"}', result: 'records: 1', durationMs: 2000 }],
+    },
+    { index: 2, role: 'assistant', depth: 1, parentIndex: 1, entryType: 'thinking', content: 'the fixture is small enough to read whole.', timestamp: '2026-09-20T10:00:04Z' },
+    { index: 3, role: 'assistant', depth: 1, parentIndex: 1, entryType: 'thinking', content: 'one read is enough here.', timestamp: '2026-09-20T10:00:10Z' },
+    { index: 4, role: 'assistant', depth: 0, content: 'the fixture holds one record.', timestamp: '2026-09-20T10:00:20Z', hasThinking: true },
+    { index: 5, role: 'assistant', depth: 1, parentIndex: 4, entryType: 'thinking', content: 'summarize in one line.', timestamp: '2026-09-20T10:00:20Z' },
+  ],
+  title: 'Read the fixture',
+}
+
+const replyThinkingPlay = async ({ canvasElement }) => {
+  for (const index of [2, 3, 5]) {
+    const article = canvasElement.querySelector(`#turn-${index}`)
+    await expect(article).not.toBeNull()
+    await expect(article.querySelector('.subtask')).toBeNull()
+    await expect(article.querySelector('.txn-depth')).toBeNull()
+  }
+  const times = [...canvasElement.querySelectorAll('.txn-thinking-toggle .txn-tc-dur')].map((node) => node.textContent)
+  await expect(times).toEqual(['4s', '6s', '14s'])
+}
+
+const replyThinkingArgs = { viewModel: adaptTranscript(replyThinkingPayload), capabilities: readOnlyCaps, filters: ledgerFilters }
+
+export const ReplyThinkingLedger = { decorators: [ledgerFrame], args: { ...replyThinkingArgs, presentation: 'ledger' }, play: replyThinkingPlay }
+export const ReplyThinkingClassic = { args: { ...replyThinkingArgs, presentation: 'classic' }, play: replyThinkingPlay }

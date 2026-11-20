@@ -1,0 +1,20 @@
+# Required-NAME manifest for transcript-positioned-numbering.yaml: deletion protection.
+# Membership is asserted, never a count. number-fixture-replay-js is pending until the
+# Schema release that exports the numbering corpus is pinned.
+requiredCaseNames:
+  - number-segment-prints-served-value
+  - number-segment-never-cooks
+  - number-segment-renders-exactly-served-rows
+  - number-absent-on-v2-row-shows-no-number
+  - number-malformed-value-discarded
+  - number-whole-document-render-computes
+  - number-accessible-name-includes-served-value
+  - number-copy-link-unaffected
+  - number-search-and-filter-unaffected
+  - number-history-section-prints-own-numbering
+  - segment-mode-refuses-analytics
+  - number-fixture-replay-js
+# The cases the runner may skip, exactly: a case marked pending in the fixture and not named
+# here, or named here and not pending, fails the gate.
+pendingCaseNames:
+  - number-fixture-replay-js

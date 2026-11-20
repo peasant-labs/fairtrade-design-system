@@ -1,6 +1,6 @@
 # Required-name inventory and executable mutations for
 # helper-ownership.testdata.yaml.
-expectedCaseCount: 14
+expectedCaseCount: 15
 requiredCaseNames:
   - helper-constants-frozen-epoch
   - helper-constants-prng-seed
@@ -10,6 +10,7 @@ requiredCaseNames:
   - helper-assertions-axe-tags
   - helper-assertions-axe-result-fields
   - helper-assertions-scan-axe
+  - helper-assertions-with-axe-retry
   - helper-assertions-serious-violations
   - helper-assertions-expect-theme
   - helper-assertions-expect-computed-tokens

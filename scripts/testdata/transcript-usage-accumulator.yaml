@@ -1,0 +1,27 @@
+# The incremental usage accumulator. `expected` was captured once from the pre-change
+# whole-list aggregate over these turns, so equality pins today's display exactly: the
+# signed decimal sum, a single value kept verbatim (-0), and the negative pad spelling.
+turns:
+  - usage: {scope: assistant, ownerId: o, sourceEntryRef: r, completeness: complete, tokens: {input: 100, output: 20}, cost: {total: '0.10', input: '-0.035'}}
+    toolCalls:
+      - usage: {scope: assistant, ownerId: o, sourceEntryRef: r, completeness: complete, tokens: {input: 5}, cost: {total: 1e-3}}
+  - usage: {scope: assistant, ownerId: o, sourceEntryRef: r, completeness: complete, tokens: {input: '7', reasoning: 3}, cost: {total: '-0.2'}}
+  - usage: {scope: tool, ownerId: o, sourceEntryRef: r, completeness: complete, tokens: {output: 9}, cost: {total: '-0'}}
+  - usage: null
+expected:
+  - scope: assistant
+    ownerCount: 3
+    tokens: {input: ['112', complete], output: ['20', partial], reasoning (subset): ['3', partial]}
+    cost: {input: ['-0.035', partial], total: ['0.-99', complete]}
+  - scope: tool
+    ownerCount: 1
+    tokens: {output: ['9', complete]}
+    cost: {total: ['-0', complete]}
+cases:
+  - name: usage-accumulator-equals-aggregate
+  - name: usage-hidden-unless-present
+    presences: [present, empty, unknown]
+  # A RangeError guard, not a timing case: the pre-change aggregate spread every owner's
+  # cost scale into one call. The owners are generated in process from this count.
+  - name: usage-no-spread-150000-owners
+    owners: 150000

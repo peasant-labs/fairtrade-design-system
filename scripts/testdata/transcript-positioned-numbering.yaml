@@ -1,0 +1,48 @@
+# Served numbering in a positioned (v2) segment. The reader prints each row's served
+# displayNumber and never computes one for a positioned row; the whole-document render
+# keeps computing its own numbers. Every case is run by scripts/transcript-positioned-reader.test.mjs.
+#
+# One served segment of the main partition: positions are the served order, recorded
+# indexes are the turns' own (deliberately unlike the positions), and one row came from a
+# server that sent no number. Row 52 is blank system noise the whole-document filter drops;
+# a served row is never dropped.
+segment:
+  index: 4
+  rows:
+    - {position: 40, recordedIndex: 1052, displayNumber: '7', role: user, content: Open the reader at the far deep link.}
+    - {position: 41, recordedIndex: 1053, displayNumber: 7a, role: assistant, content: The window names its own run.}
+    - {position: 42, recordedIndex: 1055, role: assistant, content: This row came from a server that sent no number.}
+    - {position: 43, recordedIndex: 1056, displayNumber: 7b, role: system, content: ' '}
+    - {position: 44, recordedIndex: 1057, displayNumber: '8', role: user, content: Check the history numbering next.}
+# A history section's served rows restart at 1 in their own partition.
+historySegment:
+  index: 0
+  sectionIndex: 0
+  rows:
+    - {position: 0, recordedIndex: 3, displayNumber: '1', role: user, content: An earlier request.}
+    - {position: 1, recordedIndex: 4, displayNumber: 1a, role: assistant, content: An earlier reply.}
+# The whole-document render numbers with the whole-document rule.
+wholeDocument:
+  turns:
+    - {index: 0, role: user, content: first request}
+    - {index: 1, role: assistant, content: first reply}
+    - {index: 2, role: user, content: second request}
+  labels: ['1', 1a, '2']
+# A value outside the served pattern ^[1-9][0-9]*[a-z]*$ is refused by the parser, and the
+# reader discards the whole response.
+malformedNumber: 7A
+cases:
+  - name: number-segment-prints-served-value
+  - name: number-segment-never-cooks
+  - name: number-segment-renders-exactly-served-rows
+  - name: number-absent-on-v2-row-shows-no-number
+  - name: number-malformed-value-discarded
+  - name: number-whole-document-render-computes
+  - name: number-accessible-name-includes-served-value
+  - name: number-copy-link-unaffected
+  - name: number-search-and-filter-unaffected
+  - name: number-history-section-prints-own-numbering
+  - name: segment-mode-refuses-analytics
+  - name: number-fixture-replay-js
+    pending: true
+    note: needs @peasant-labs/schema/fixtures/transcript-numbering, the numbering corpus export the next Schema release adds; enabled by the Fairtrade re-pin to that release

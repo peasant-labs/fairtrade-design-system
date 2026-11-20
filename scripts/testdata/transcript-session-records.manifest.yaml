@@ -76,8 +76,8 @@ mutations:
     expectedDiagnostic: "an evidence-bearing cursor prompt shows without its wrapper: the recorded content"
   - name: every harness is unwrapped
     file: src/ui/transcript/adapter.js
-    find: "  if (harness !== 'cursor' || role !== 'user') return undefined"
-    replace: "  if (role !== 'user') return undefined"
+    find: "  if (harness !== 'cursor' || role !== Role.User) return undefined"
+    replace: "  if (role !== Role.User) return undefined"
     expectedDiagnostic: "another harness shows its prompt as written: the shown prompt"
   - name: the trace outline shows the recorded prompt
     file: src/ui/transcript/OutlineRail.jsx

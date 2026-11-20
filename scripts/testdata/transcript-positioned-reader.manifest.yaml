@@ -1,0 +1,166 @@
+# Required-NAME manifest for transcript-positioned-reader.yaml, plus the production
+# mutations the reader gate must kill (run by scripts/parts-mutations.mjs). Each mutation's
+# expectedDiagnostic is the name of the case that kills it; the gate's failure output must
+# name it, so the killer is the case that fails.
+requiredCaseNames:
+  - controller-request-set-equals-F
+  - controller-target-first
+  - controller-evicts-oldest-visited
+  - controller-pin-target
+  - controller-pin-neighbour
+  - controller-pin-focus
+  - controller-pin-selection
+  - controller-pin-open-control
+  - controller-pin-open-history
+  - controller-refetch-keeps-number
+  - controller-status-kind-table
+  - controller-failure-never-whole-document
+  - controller-retry-after-partial-failure-settles-ready
+  - controller-transport-mismatch-discards
+  - controller-directory-paging-refetch-page-one
+  - controller-section-open-close-aborts
+  - controller-landing-exact-vs-snapped
+  - controller-closed-sets
+  - demo-mock-refuses-invalid-body
+  - hook-strict-mode-reaches-ready
+  - hook-viewer-props-mount-every-failure-state
+requiredMutationNames:
+  - print position plus one instead of the served number
+  - served number off by one
+  - segment mode calls computeTurnLabels
+  - absent number falls back to a computed label
+  - failure path calls the whole-document adapter
+  - fetch the range between the two runs
+  - evict newest instead of oldest
+  - skip the target pin
+  - skip the neighbour pin
+  - skip the focus pin
+  - skip the selection pin
+  - skip the open-control pin
+  - skip the open-history pin
+  - renumber on refetch
+  - map 503 to stale
+  - map an unmapped status to malformed
+  - leave a 4xx status unmapped
+  - add a failure kind
+  - remove a landing
+  - share one reader across effect runs
+  - add a read status
+  - report the status over a failure kind
+  - a retry never settles the read
+mutations:
+  - name: print position plus one instead of the served number
+    file: src/ui/transcript/adapter.js
+    find: "label: row ? row.displayNumber ?? '' : labels[p] ?? String(p + 1),"
+    replace: "label: row ? String(row.position + 1) : labels[p] ?? String(p + 1),"
+    expectedDiagnostic: number-segment-prints-served-value
+  - name: served number off by one
+    file: src/ui/transcript/adapter.js
+    find: "label: row ? row.displayNumber ?? '' : labels[p] ?? String(p + 1),"
+    replace: "label: row ? (row.displayNumber === undefined ? '' : String(Number.parseInt(row.displayNumber, 10) + 1) + row.displayNumber.replace(/^[0-9]+/, '')) : labels[p] ?? String(p + 1),"
+    expectedDiagnostic: number-segment-prints-served-value
+  - name: segment mode calls computeTurnLabels
+    file: src/ui/transcript/adapter.js
+    find: "  const labels = servedRows ?"
+    replace: "  if (servedRows) computeTurnLabels(turns)\n  const labels = servedRows ?"
+    expectedDiagnostic: number-segment-never-cooks
+  - name: absent number falls back to a computed label
+    file: src/ui/transcript/adapter.js
+    find: "label: row ? row.displayNumber ?? '' : labels[p] ?? String(p + 1),"
+    replace: "label: row ? row.displayNumber ?? computeTurnLabels(turns)[p] : labels[p] ?? String(p + 1),"
+    expectedDiagnostic: number-absent-on-v2-row-shows-no-number
+  - name: failure path calls the whole-document adapter
+    file: src/ui/transcript/positioned-read.js
+    find: "  function fail(error, retry) {"
+    replace: "  function fail(error, retry) {\n    adaptTranscript({ turns: [] })"
+    expectedDiagnostic: controller-failure-never-whole-document
+  - name: fetch the range between the two runs
+    file: src/ui/transcript/positioned-read.js
+    find: "    for (const ordinal of w_d.segments) add(ordinal)"
+    replace: "    for (const ordinal of w_d.segments) add(ordinal)\n    if (w_t) for (let ordinal = Math.max(...w_d.segments) + 1; ordinal < Math.min(...w_t.segments); ordinal += 1) add(ordinal)"
+    expectedDiagnostic: controller-request-set-equals-F
+  - name: evict newest instead of oldest
+    file: src/ui/transcript/positioned-read.js
+    find: "candidates.sort((a, b) => a.record.visited - b.record.visited)"
+    replace: "candidates.sort((a, b) => b.record.visited - a.record.visited)"
+    expectedDiagnostic: controller-evicts-oldest-visited
+  - name: skip the target pin
+    file: src/ui/transcript/positioned-read.js
+    find: "    if (landed !== undefined) pinned.add(landed)\n"
+    replace: "\n"
+    expectedDiagnostic: controller-pin-target
+  - name: skip the neighbour pin
+    file: src/ui/transcript/positioned-read.js
+    find: "    if (landed !== undefined) for (const neighbour of [landed - 1, landed + 1]) pinned.add(neighbour)\n"
+    replace: "\n"
+    expectedDiagnostic: controller-pin-neighbour
+  - name: skip the focus pin
+    file: src/ui/transcript/positioned-read.js
+    find: "    for (const ordinal of state.pins.focus) pinned.add(ordinal)\n"
+    replace: "\n"
+    expectedDiagnostic: controller-pin-focus
+  - name: skip the selection pin
+    file: src/ui/transcript/positioned-read.js
+    find: "    for (const ordinal of state.pins.selection) pinned.add(ordinal)\n"
+    replace: "\n"
+    expectedDiagnostic: controller-pin-selection
+  - name: skip the open-control pin
+    file: src/ui/transcript/positioned-read.js
+    find: "    for (const ordinal of state.pins.openControl) pinned.add(ordinal)\n"
+    replace: "\n"
+    expectedDiagnostic: controller-pin-open-control
+  - name: skip the open-history pin
+    file: src/ui/transcript/positioned-read.js
+    find: "const sectionPinned = (section) => section.open === true"
+    replace: "const sectionPinned = (section) => false"
+    expectedDiagnostic: controller-pin-open-history
+  - name: renumber on refetch
+    file: src/ui/transcript/positioned-read.js
+    find: "    const record = {\n      index: ordinal,"
+    replace: "    state.seen ??= new Set()\n    if (section === undefined && state.seen.has(ordinal)) for (const turn of cooked.turns) turn.label = String(turn.position + 1)\n    if (section === undefined) state.seen.add(ordinal)\n    const record = {\n      index: ordinal,"
+    expectedDiagnostic: controller-refetch-keeps-number
+  - name: map 503 to stale
+    file: src/ui/transcript/positioned-read.js
+    find: "  if (status === 503) return PositionedReadFailureKind.Busy"
+    replace: "  if (status === 503) return PositionedReadFailureKind.Stale"
+    expectedDiagnostic: status-503-busy
+  - name: map an unmapped status to malformed
+    file: src/ui/transcript/positioned-read.js
+    find: "  if (status === 410) return PositionedReadFailureKind.Unavailable\n  return PositionedReadFailureKind.Failed"
+    replace: "  if (status === 410) return PositionedReadFailureKind.Unavailable\n  return PositionedReadFailureKind.Malformed"
+    expectedDiagnostic: status-500-failed
+  - name: leave a 4xx status unmapped
+    file: src/ui/transcript/positioned-read.js
+    find: "  if (status === 410) return PositionedReadFailureKind.Unavailable\n  return PositionedReadFailureKind.Failed"
+    replace: "  if (status === 410) return PositionedReadFailureKind.Unavailable\n  return status >= 500 ? PositionedReadFailureKind.Failed : undefined"
+    expectedDiagnostic: status-400-failed
+  - name: add a failure kind
+    file: src/ui/transcript/positioned-read.js
+    find: "  Network: 'network',\n})"
+    replace: "  Network: 'network',\n  Timeout: 'timeout',\n})"
+    expectedDiagnostic: controller-closed-sets
+  - name: remove a landing
+    file: src/ui/transcript/positioned-read.js
+    find: "  Snapped: 'snapped',\n})"
+    replace: "})"
+    expectedDiagnostic: controller-closed-sets
+  - name: share one reader across effect runs
+    file: src/ui/transcript/positioned-read.js
+    find: "    const instance = createPositionedReader(readerOptions)"
+    replace: "    const shared = (globalThis.__fairtradeSharedReaders ??= new WeakMap())\n    if (!shared.has(readerOptions)) shared.set(readerOptions, createPositionedReader(readerOptions))\n    const instance = shared.get(readerOptions)"
+    expectedDiagnostic: hook-strict-mode-reaches-ready
+  - name: add a read status
+    file: src/ui/transcript/positioned-read.js
+    find: "  Ready: 'ready',\n  Failed: 'failed',\n})"
+    replace: "  Ready: 'ready',\n  Failed: 'failed',\n  Busy: 'busy',\n})"
+    expectedDiagnostic: controller-closed-sets
+  - name: report the status over a failure kind
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "data-positioned-read={positionedRead ? positionedRead.failure?.kind ?? positionedRead.status : undefined}"
+    replace: "data-positioned-read={positionedRead ? positionedRead.status : undefined}"
+    expectedDiagnostic: hook-viewer-props-mount-every-failure-state
+  - name: a retry never settles the read
+    file: src/ui/transcript/positioned-read.js
+    find: "        if (mine === generation && !state.failure) settleReady()"
+    replace: ""
+    expectedDiagnostic: controller-retry-after-partial-failure-settles-ready

@@ -4,6 +4,8 @@ import { DiffHunks } from './DiffEntryCard.jsx'
 import TaskBody from './TaskBody.jsx'
 import { formatDurationMs } from './time.js'
 
+export const COMMAND_INPUT_HEADING = 'input'
+
 /* ToolBody — the per-kind tool-call body, lifted verbatim from the canonical mockup
    (src/mockups/inuse/TranscriptApp.jsx:400). DUMB: it dispatches on the cooked
    `ToolCallVM.group` to one of the six lifted renderers — read / edit / bash / grep (search) /
@@ -85,7 +87,7 @@ function BashBody({ tool }) {
   return (
     <div className="txn-tcbody">
       {description && <div className="txn-tc-desc">{description}</div>}
-      <div className="txn-out-eyebrow"><span>input</span></div>
+      <div className="txn-out-eyebrow"><span>{COMMAND_INPUT_HEADING}</span></div>
       <div className="txn-term">
         <span className="txn-term-prompt" aria-hidden="true">$</span>
         <span className="mono">{command}</span>

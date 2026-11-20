@@ -191,7 +191,6 @@ export function DateRangeCalendar({
   useEffect(() => {
     const f = parseISO(range?.from)
     if (f) setCursor((c) => (c.y === f.y && c.m === f.m ? c : { y: f.y, m: f.m }))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range?.from])
 
   const today = todayISO()
@@ -266,7 +265,7 @@ export function DateRangeCalendar({
   // mount auto-focus (used when the popover opens)
   useEffect(() => {
     if (autoFocus) { wantFocus.current = true; const el = dayRefs.current.get(focusISO); if (el) { el.focus(); wantFocus.current = false } }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- adding focusISO would refocus the calendar during navigation instead of only on autofocus
   }, [autoFocus])
 
   // skip aria-disabled (out-of-bounds) days when arrowing
@@ -484,7 +483,6 @@ export default function DateRange({
       document.removeEventListener('mousedown', onDocDown)
       document.removeEventListener('keydown', onKey)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
   /* keep the popover inside the viewport: the two-month grid can be wider than the room to the right of

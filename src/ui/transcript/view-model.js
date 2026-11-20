@@ -230,6 +230,7 @@ export const TOOL_GROUPS = Object.freeze([
  * @property {string} [modelChangedFrom]     prior root model when this turn carries the observation that changed it
  * @property {import('@peasant-labs/schema').Harness} [provider] canonical provider identity for a top-level assistant turn
  * @property {string} [agentName]           subagent name when depth > 0
+ * @property {number} [replyIndex]          the index of the top-level reply this nested turn is one block of
  * @property {string} [controlKind]         the producer's control-record kind for this turn, when the
  *                                          server classified it (mode / permission-mode / attachment /
  *                                          agent-name / custom-title); never inferred from any other field
@@ -249,6 +250,13 @@ export const TOOL_GROUPS = Object.freeze([
  * @property {number} [segmentIndex]        the segment this turn arrived in, when read as part of loaded regions
  * @property {boolean} [truncated]          this turn's own text was bounded by the served-text bound
  * @property {number} [byteLength]          pre-bound JSON size of content + arguments + result; the truncation notice's size
+ * @property {number} [position]            positioned reads only: the row's place in its partition's served order;
+ *                                          a positioned turn's `index` is this position, its row identity
+ * @property {number} [recordedIndex]       positioned reads only: the turn's own recorded index, when recorded; the
+ *                                          copy link and saved labels address it
+ * @property {import('@peasant-labs/schema').TranscriptRecordedIndexState} [recordedIndexState] positioned reads only
+ * @property {boolean} [numberAbsent]       positioned reads only: the server sent no display number for this row, so
+ *                                          the reader prints none (`label` is empty)
  */
 
 /* ── Annotations (cooked, per-turn) ──────────────────────────────────────────── */
@@ -414,6 +422,7 @@ export const TOOL_GROUPS = Object.freeze([
  * empty arrays) so components never branch on existence for the core surfaces.
  *
  * @typedef {object} TranscriptViewModel
+ * @property {boolean} [incompleteTail] the final response has not yet been loaded
  * @property {SessionVM} session
  * @property {TurnVM[]} turns
  * @property {Map<string, ToolCallVM>} toolCallsById   parsed once; turns reference the same objects
@@ -460,6 +469,12 @@ export const TOOL_GROUPS = Object.freeze([
  * @property {TurnVM[]} turns
  * @property {import('@peasant-labs/schema').NativeMetadataRecord[]} [nativeMetadata]
  * @property {UsageScopeVM[]} usageScopes
+ * @property {number} [section]    positioned reads: the history section index
+ * @property {string} [countText]  positioned reads: the toggle's count, the recorded one qualified while closed
+ *                                 and the exact served one once open; empty when the server sent none
+ * @property {'closed' | 'loading' | 'ready' | 'failed'} [status] positioned reads: the section's read state
+ * @property {{ kind: string, operation: string } | null} [failure] positioned reads: why the section did not load
+ * @property {() => unknown} [retry] positioned reads: read the failed section again
  */
 
 export {}

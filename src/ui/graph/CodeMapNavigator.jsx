@@ -1,3 +1,4 @@
+import { MapNodeKind } from '@peasant-labs/schema'
 import { useMemo, useRef, useState } from 'react'
 import { formatCount as compactCount } from '../format.js'
 import { ChevronRight, FileCode, Folder, Map as MapIcon, Search } from 'lucide-react'
@@ -57,6 +58,7 @@ export default function CodeMapNavigator({
     selectedId,
     navigatorFocusedId: effectiveFocus,
     navigatorFilter: filter,
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- adding expanded identity would recompute for equal expansion collections from the parent
   })), [payload, grain, expandedIdsKey(expanded), selectedId, effectiveFocus, filter])
   const filtering = filter.trim() !== ''
   // the rows a reader sees: the shared view, less the children of a grain-opened folder they closed
@@ -240,6 +242,10 @@ export default function CodeMapNavigator({
   )
 }
 
+/**
+ * @param {object} props
+ * @param {import('./codeMapState.js').CodeMapNavigatorRow} props.row
+ */
 function NavigatorRow({ row, hasDisclosure, isExpanded, selected, tabbable, setRef, onFocus, onSelect, onToggle, onKeyDown, lineCounts }) {
   return (
     <div
@@ -280,7 +286,7 @@ function NavigatorRow({ row, hasDisclosure, isExpanded, selected, tabbable, setR
         }}
         onKeyDown={onKeyDown}
       >
-        {row.node.kind === 'file' ? <FileCode aria-hidden="true" /> : <Folder aria-hidden="true" />}
+        {row.node.kind === MapNodeKind.File ? <FileCode aria-hidden="true" /> : <Folder aria-hidden="true" />}
         <span className="gmp-navigator-path">{row.node.name || row.node.id}</span>
         <span className="gmp-navigator-meta">
           {lineCounts === 'unknown' ? null : <span>{formatCount(row.node.loc ?? 0)} lines</span>}

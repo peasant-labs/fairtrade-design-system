@@ -1,0 +1,75 @@
+cases:
+  - name: named-disable
+    rejected: true
+    source: '/* eslint-disable unstring/closed-set-literal */'
+  - name: named-disable-line
+    rejected: true
+    source: 'const value = 1 // eslint-disable-line unstring/closed-set-literal'
+  - name: named-disable-next-line
+    rejected: true
+    source: |
+      // eslint-disable-next-line unstring/closed-set-literal
+      const value = 1
+  - name: named-block-multiline
+    rejected: true
+    source: |
+      /* eslint-disable
+       * unstring/closed-set-literal
+       */
+  - name: bare-disable-with-reason
+    rejected: true
+    source: '/* eslint-disable -- temporary exception */'
+  - name: bare-disable-line-with-reason
+    rejected: true
+    source: 'const value = 1 // eslint-disable-line -- temporary exception'
+  - name: bare-disable-next-line-with-reason
+    rejected: true
+    source: |
+      // eslint-disable-next-line -- temporary exception
+      const value = 1
+  - name: bare-disable
+    rejected: true
+    source: '/* eslint-disable */'
+  - name: bare-disable-line
+    rejected: true
+    source: 'const value = 1 // eslint-disable-line'
+  - name: bare-disable-next-line
+    rejected: true
+    source: |
+      // eslint-disable-next-line
+      const value = 1
+  - name: bare-block-multiline
+    rejected: true
+    source: |
+      /* eslint-disable
+       */
+  - name: inline-rule-config
+    rejected: true
+    source: '/* eslint "unstring/closed-set-literal": "off" */'
+  - name: clean-source
+    rejected: false
+    source: 'const value = 1'
+  - name: unrelated-rule-with-reason
+    rejected: false
+    source: |
+      // eslint-disable-next-line other/rule -- documented reason
+      const value = 1
+  - name: hooks-disable-with-reason
+    rejected: false
+    source: |
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- preserve the mount snapshot
+      const value = 1
+  - name: hooks-disable-without-reason
+    rejected: true
+    source: |
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      const value = 1
+  - name: unrelated-inline-rule-config
+    rejected: true
+    source: '/* eslint react-hooks/exhaustive-deps: "off" */'
+  - name: named-disable-with-reason
+    rejected: true
+    source: '/* eslint-disable unstring/closed-set-literal -- forbidden */'
+  - name: empty-reason
+    rejected: true
+    source: '// eslint-disable-line other/rule -- '

@@ -27,6 +27,9 @@ import { hasImageParts } from './image-parts.js'
 
 /** @typedef {import('./view-model.js').TurnVM} TurnVM */
 
+/** Which unloaded edge a boundary stands at. */
+const BOUNDARY_SIDE = Object.freeze({ Older: 'older', Newer: 'newer', Between: 'between', All: 'all' })
+
 /** The scrubber's fixed sample size; the mounted tick count is `min(this, totalSegments)`. */
 export const SEGMENT_SCRUBBER_TICKS = 200
 
@@ -59,6 +62,8 @@ export const SEGMENT_OVERSCAN_TURNS = 0
  * @property {number} lastTurn
  * @property {number} byteLength
  * @property {ConversationTurnSpanVM} [conversationTurns]
+ * @property {number} [sourceFirstPosition]  positioned directories: the segment's first position in served order
+ * @property {number} [sourceLastPosition]   positioned directories: the segment's last position in served order
  */
 
 /**
@@ -66,8 +71,9 @@ export const SEGMENT_OVERSCAN_TURNS = 0
  * @typedef {object} SegmentDirectoryVM
  * @property {string} [sessionId]
  * @property {string} [revision]
- * @property {number} totalTurns
- * @property {number} totalSegments
+ * @property {boolean} [complete] false while the directory can grow; defaults to true
+ * @property {number} [totalTurns]
+ * @property {number} [totalSegments]
  * @property {number} [totalConversationTurns]  the total a position is stated against. A host passes a directory its server validated; absent means no position is shown
  * @property {SegmentRefVM[]} [segments]
  * @property {number} [directoryPage]
@@ -126,6 +132,7 @@ export const SEGMENT_OVERSCAN_TURNS = 0
  * @property {number} byteLength
  * @property {number} loadSegment   the segment a load-more on this edge appends/prepends
  * @property {ConversationPositionVM | null} position   the conversation turns behind this edge, or null when the directory does not carry them for every segment of the gap
+ * @property {boolean} [positioned]  the edge's refs are positioned, so it is placed by segment ordinal
  */
 
 /**
@@ -143,9 +150,42 @@ export const SEGMENT_OVERSCAN_TURNS = 0
 
 const isFiniteNumber = (value) => typeof value === 'number' && Number.isFinite(value)
 
+/** Whether a ref names its run by served position (a positioned directory). A positioned viewer
+    keys every turn on its position, so the ref's coordinates are positions, not recorded indexes. */
+export const isPositionedRef = (ref) => isFiniteNumber(ref?.sourceFirstPosition) && isFiniteNumber(ref?.sourceLastPosition)
+
+/** A ref's first and last coordinate in the viewer's turn key: positions for a positioned ref,
+    recorded indexes otherwise. Undefined when the ref carries neither. */
+const refFirst = (ref) => (isPositionedRef(ref) ? ref.sourceFirstPosition : isFiniteNumber(ref?.firstTurn) ? ref.firstTurn : undefined)
+const refLast = (ref) => (isPositionedRef(ref) ? ref.sourceLastPosition : isFiniteNumber(ref?.lastTurn) ? ref.lastTurn : undefined)
+
+/** The smallest and largest turn key of a list, in one pass: a dense segment can hold more turns
+    than a spread call accepts. */
+function turnKeyBounds(turns) {
+  let min = Infinity
+  let max = -Infinity
+  for (const turn of turns) {
+    const key = turn?.index
+    if (!isFiniteNumber(key)) continue
+    if (key < min) min = key
+    if (key > max) max = key
+  }
+  return { min, max }
+}
+
 /** The directory's conversation-turn total, or null when it sent none. Every position
     is stated against it, so without it no surface names a position. */
-const conversationTotal = (directory) => (isFiniteNumber(directory?.totalConversationTurns) ? directory.totalConversationTurns : null)
+const conversationTotal = (directory) => {
+  if (isFiniteNumber(directory?.totalConversationTurns)) return directory.totalConversationTurns
+  if (directory?.complete === false) {
+    const refs = directory.segments ?? []
+    if (refs.length && refs.every(hasSpan)) {
+      const span = refs[refs.length - 1].conversationTurns
+      return span.before + span.count
+    }
+  }
+  return null
+}
 
 /** Whether a ref carries its span. Presence only: the counts are the producer's, and
     are trusted exactly as `index` and `byteLength` are. */
@@ -205,12 +245,18 @@ export function turnsFromSegments(segments) {
 
 /** A segment ref from a loaded segment when the directory does not carry one. */
 function refOfSegment(segment) {
-  return {
+  const bounds = turnKeyBounds(segment.turns)
+  const ref = {
     index: segment.index,
-    firstTurn: isFiniteNumber(segment.firstTurn) ? segment.firstTurn : Math.min(...segment.turns.map((turn) => turn.index)),
-    lastTurn: isFiniteNumber(segment.lastTurn) ? segment.lastTurn : Math.max(...segment.turns.map((turn) => turn.index)),
+    firstTurn: isFiniteNumber(segment.firstTurn) ? segment.firstTurn : bounds.min,
+    lastTurn: isFiniteNumber(segment.lastTurn) ? segment.lastTurn : bounds.max,
     byteLength: isFiniteNumber(segment.byteLength) ? segment.byteLength : 0,
   }
+  if (isPositionedRef(segment)) {
+    ref.sourceFirstPosition = segment.sourceFirstPosition
+    ref.sourceLastPosition = segment.sourceLastPosition
+  }
+  return ref
 }
 
 /** Every ref the directory knows, sorted, extended with loaded segments the directory
@@ -234,6 +280,9 @@ export function loadedRegions(directory, segments) {
   /** @type {SegmentRegionVM[]} */
   const regions = []
   let current = null
+  /* one resident key set per region: a turn key already held is not added twice, and the check
+     is constant time so a dense region stays linear */
+  let held = new Set()
   for (const ref of refsOf(directory, list)) {
     const segment = loaded.get(ref.index)
     if (!segment) {
@@ -241,24 +290,26 @@ export function loadedRegions(directory, segments) {
       continue
     }
     if (!current) {
+      const bounds = turnKeyBounds(segment.turns)
+      held = new Set()
       current = {
         key: `segment-region-${ref.index}`,
         firstSegment: ref.index,
         lastSegment: ref.index,
-        firstTurn: isFiniteNumber(ref.firstTurn) ? ref.firstTurn : Math.min(...segment.turns.map((turn) => turn.index)),
-        lastTurn: isFiniteNumber(ref.lastTurn) ? ref.lastTurn : Math.max(...segment.turns.map((turn) => turn.index)),
+        firstTurn: refFirst(ref) ?? bounds.min,
+        lastTurn: refLast(ref) ?? bounds.max,
         refs: [ref],
         turns: [],
       }
     } else {
       current.lastSegment = ref.index
-      current.lastTurn = isFiniteNumber(ref.lastTurn) ? ref.lastTurn : current.lastTurn
+      current.lastTurn = refLast(ref) ?? current.lastTurn
       current.refs.push(ref)
     }
     for (const turn of segment.turns) {
-      if (!current.turns.some((existing) => existing.index === turn.index)) {
-        current.turns.push({ ...turn, segmentIndex: turn.segmentIndex ?? ref.index })
-      }
+      if (held.has(turn.index)) continue
+      held.add(turn.index)
+      current.turns.push({ ...turn, segmentIndex: turn.segmentIndex ?? ref.index })
     }
   }
   if (current) regions.push(current)
@@ -281,7 +332,7 @@ export function regionBoundaries(directory, regions) {
   for (const ref of refsOf(directory, [])) byIndex.set(ref.index, ref)
   for (const region of regions) for (const ref of region.refs) if (!byIndex.has(ref.index)) byIndex.set(ref.index, ref)
   const refs = [...byIndex.values()].sort((a, b) => a.index - b.index)
-  const total = Math.max(0, isFiniteNumber(directory?.totalSegments) ? directory.totalSegments : refs.length)
+  const total = Math.max(0, directory?.complete === false ? refs.length : isFiniteNumber(directory?.totalSegments) ? directory.totalSegments : refs.length)
   if (total === 0) return []
   const conversationTurns = conversationTotal(directory)
   /* One pass over the gap: the refs the directory has received for it, and whether every
@@ -304,8 +355,9 @@ export function regionBoundaries(directory, regions) {
     return {
       key: `segment-boundary-${side}-${first.index}-${last.index}`,
       side,
-      firstTurn: first.firstTurn,
-      lastTurn: last.lastTurn,
+      firstTurn: refFirst(first),
+      lastTurn: refLast(last),
+      positioned: isPositionedRef(first) && isPositionedRef(last),
       segmentIndexes: list.map((ref) => ref.index),
       segmentCount: list.length,
       byteLength: list.reduce((sum, ref) => sum + (isFiniteNumber(ref.byteLength) ? ref.byteLength : 0), 0),
@@ -341,6 +393,50 @@ export function regionBoundaries(directory, regions) {
   return boundaries
 }
 
+/**
+ * Where each boundary renders among the rendered rows. A positioned edge is placed by segment
+ * ordinal: after the last row from an earlier segment, else before the first row from a later
+ * one. Any other edge keeps its turn-index placement.
+ * @param {SegmentBoundaryVM[]} boundaries
+ * @param {TurnVM[]} rows  the rendered rows, in order
+ * @returns {{ leading: SegmentBoundaryVM | null, trailing: SegmentBoundaryVM | null, after: Map<number, SegmentBoundaryVM>, before: Map<number, SegmentBoundaryVM>, count: number }}
+ */
+export function placeBoundaries(boundaries, rows) {
+  const side = BOUNDARY_SIDE
+  const after = new Map()
+  const before = new Map()
+  for (const boundary of boundaries) {
+    if (boundary.side !== side.Between) continue
+    const firstOrdinal = boundary.segmentIndexes[0]
+    const lastOrdinal = boundary.segmentIndexes[boundary.segmentIndexes.length - 1]
+    const precedes = boundary.positioned
+      ? (turn) => isFiniteNumber(turn.segmentIndex) && turn.segmentIndex < firstOrdinal
+      : (turn) => turn.index < boundary.firstTurn
+    const follows = boundary.positioned
+      ? (turn) => isFiniteNumber(turn.segmentIndex) && turn.segmentIndex > lastOrdinal
+      : (turn) => turn.index > boundary.lastTurn
+    let preceding
+    for (let i = rows.length - 1; i >= 0; i -= 1) if (precedes(rows[i])) { preceding = rows[i]; break }
+    if (preceding) after.set(preceding.index, boundary)
+    else {
+      const following = rows.find(follows)
+      if (following) before.set(following.index, boundary)
+    }
+  }
+  const leading = boundaries.find((boundary) => boundary.side === side.Older || boundary.side === side.All) ?? null
+  const trailing = boundaries.find((boundary) => boundary.side === side.Newer) ?? null
+  return { leading, trailing, after, before, count: after.size + before.size + (leading ? 1 : 0) + (trailing ? 1 : 0) }
+}
+
+/** The turn a scrubber seek lands on once its segment is in hand: the tick's first turn when the
+    tick names one, else the first loaded turn of the tick's segment ordinal. Null until loaded. */
+export function scrubberSeekTarget(tick, turns) {
+  if (!tick) return null
+  if (isFiniteNumber(tick.firstTurn)) return turns.some((turn) => turn.index === tick.firstTurn) ? tick.firstTurn : null
+  const first = turns.find((turn) => turn.segmentIndex === tick.index)
+  return first ? first.index : null
+}
+
 /** Human byte extent: the boundary caption's size, and the truncation notice's own. */
 export function formatByteExtent(bytes) {
   if (!isFiniteNumber(bytes) || bytes <= 0) return '0 bytes'
@@ -371,7 +467,7 @@ export function windowFailureCaption(directory, failure) {
   const refs = refsOf(directory, [])
   const covering = Array.isArray(failure?.segments) && failure.segments.length > 0
     ? failure.segments.map((index) => refs.find((ref) => ref.index === index))
-    : [refs.find((ref) => isFiniteNumber(failure?.anchor) && ref.firstTurn <= failure.anchor && failure.anchor <= ref.lastTurn)]
+    : [refs.find((ref) => isFiniteNumber(failure?.anchor) && refFirst(ref) <= failure.anchor && failure.anchor <= refLast(ref))]
   const total = conversationTotal(directory)
   const position = total != null && covering.every(hasSpan) ? positionOf(total, covering) : null
   return position != null && position.count > 0
@@ -386,31 +482,38 @@ export function windowFailureCaption(directory, failure) {
  */
 export function scrubberTicks(directory) {
   const refs = refsOf(directory, [])
-  const total = Math.max(refs.length, isFiniteNumber(directory?.totalSegments) ? directory.totalSegments : refs.length)
+  const open = directory?.complete === false
+  const total = open ? refs.length : Math.max(refs.length, isFiniteNumber(directory?.totalSegments) ? directory.totalSegments : refs.length)
   if (total === 0) return []
   const sample = Math.min(SEGMENT_SCRUBBER_TICKS, total)
   const indexes = new Set()
   if (refs.length <= SEGMENT_SCRUBBER_TICKS) {
     for (const ref of refs) indexes.add(ref.index)
   } else {
-    const last = total - 1
-    for (let i = 0; i < sample; i += 1) indexes.add(Math.round((i / (sample - 1)) * last))
+    const last = open ? refs.length - 1 : total - 1
+    for (let i = 0; i < sample; i += 1) {
+      const offset = Math.round((i / (sample - 1)) * last)
+      indexes.add(open ? refs[offset].index : offset)
+    }
   }
   const conversationTurns = conversationTotal(directory)
   const byIndex = new Map(refs.map((ref) => [ref.index, ref]))
+  /* A positioned directory never invents a tick coordinate: a sampled ordinal whose ref is on a
+     page not yet received jumps by its ordinal alone. */
+  const positioned = refs.some(isPositionedRef)
   return [...indexes].sort((a, b) => a - b).map((index) => {
-    const ref = byIndex.get(index) ?? { index, firstTurn: index, lastTurn: index, byteLength: 0 }
+    const ref = byIndex.get(index) ?? (positioned ? { index } : { index, firstTurn: index, lastTurn: index, byteLength: 0 })
     const position = conversationTurns != null && hasSpan(ref) ? positionOf(conversationTurns, [ref]) : null
-    const ordinal = `segment ${formatInteger(index + 1)} of ${formatInteger(total)}`
+    const ordinal = open ? `segment ${formatInteger(index + 1)} loaded so far` : `segment ${formatInteger(index + 1)} of ${formatInteger(total)}`
     return {
       key: `segment-tick-${index}`,
       index,
-      firstTurn: ref.firstTurn,
-      lastTurn: ref.lastTurn,
+      firstTurn: refFirst(ref),
+      lastTurn: refLast(ref),
       label: position ? positionRange(position) : ordinal,
       valueText: position == null
         ? ordinal
-        : position.count === 0 ? `${positionRange(position)}, ${ordinal}` : `${positionRange(position)} of ${formatInteger(position.total)}`,
+        : position.count === 0 ? `${positionRange(position)}, ${ordinal}` : open ? `${positionRange(position)} loaded so far` : `${positionRange(position)} of ${formatInteger(position.total)}`,
       leftPct: total > 1 ? (index / (total - 1)) * 100 : 0,
       position,
     }
@@ -423,7 +526,7 @@ export function loadedScope(directory, regions) {
   const loadedSegments = regions.reduce((sum, region) => sum + region.refs.length, 0)
   const loadedTurns = regions.reduce((sum, region) => sum + region.turns.length, 0)
   const totalTurns = Math.max(loadedTurns, isFiniteNumber(directory?.totalTurns) ? directory.totalTurns : loadedTurns)
-  const complete = totalSegments > 0 && loadedSegments >= totalSegments
+  const complete = directory?.complete !== false && totalSegments > 0 && loadedSegments >= totalSegments
   /* With a directory total the sentence is in conversation turns, the unit the header
      and every boundary use. The held count is never compared with the total. */
   const totalConversationTurns = conversationTotal(directory)
@@ -439,7 +542,9 @@ export function loadedScope(directory, regions) {
     complete,
     loadedConversationTurns,
     totalConversationTurns,
-    filesText: totalConversationTurns == null
+    filesText: directory?.complete === false
+      ? `derived from the loaded part of the session`
+      : totalConversationTurns == null
       ? complete
         ? `derived from all ${formatInteger(loadedTurns)} loaded ${turnUnit(loadedTurns)}`
         : `derived from ${formatInteger(loadedTurns)} of ${formatInteger(totalTurns)} ${turnUnit(totalTurns)}, ${segmentPart}`

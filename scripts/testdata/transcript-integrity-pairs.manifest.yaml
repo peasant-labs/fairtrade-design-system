@@ -1,0 +1,4 @@
+# Required-NAME manifest for transcript-integrity-pairs.yaml.
+requiredCaseNames:
+  - integrity-mark-on-served-pair
+  - integrity-no-mark-without-hash

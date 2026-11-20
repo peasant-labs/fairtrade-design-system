@@ -15,7 +15,24 @@
    carries `// @ts-check` because that program sets `checkJs: false`. */
 
 import { closed } from './closed-value.js'
-import { ColumnAlign, TranscriptLibraryTable } from './index.js'
+import { ColumnAlign, TranscriptLibraryTable, TranscriptContinuationState, TranscriptContinuationLabels, TranscriptTail, adaptTranscript } from './index.js'
+
+/** @type {import('./index.js').TranscriptViewerProps['continuation']} */
+const continuation = { state: TranscriptContinuationState.More }
+void continuation
+/** @type {'load more of this session'} */
+const continuationLabel = TranscriptContinuationLabels.LoadMore
+void continuationLabel
+/** @param {import('./transcript/wire-types.js').TranscriptWireInput} payload */
+function acceptsTail(payload) {
+  adaptTranscript(payload, undefined, undefined, { tail: TranscriptTail.Incomplete })
+  // @ts-expect-error - the tail set excludes unknown values
+  adaptTranscript(payload, undefined, undefined, { tail: 'unknown' })
+}
+void acceptsTail
+// @ts-expect-error - continuation states are a closed set
+const invalidContinuation = /** @type {import('./index.js').TranscriptViewerProps['continuation']} */ ({ state: 'unknown' })
+void invalidContinuation
 
 /** @typedef {{ title: string, project: string }} Row */
 
