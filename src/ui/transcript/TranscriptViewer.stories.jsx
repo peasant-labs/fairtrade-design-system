@@ -122,23 +122,38 @@ const previewArgs = {
   allowClipboard: false,
 }
 
+const previewFrame = (Story) => (
+  <div style={{ height: '100vh', minHeight: 640, display: 'flex', flexDirection: 'column' }}>
+    <Story />
+  </div>
+)
+const pinPreview = async (canvasElement) => {
+  const stream = canvasElement.querySelector('.txn-stream')
+  stream.scrollTop = 300
+  fireEvent.scroll(stream)
+  await waitFor(() => expect(canvasElement.querySelector('.txn-sticky .txn-minimap')).toBeVisible())
+}
+
 export const PreviewMore = {
+  decorators: [previewFrame],
   args: { ...previewArgs, continuation: { state: 'more', onLoadMore: fn() } },
   play: async ({ canvasElement, args }) => {
+    await pinPreview(canvasElement)
     const button = within(canvasElement).getByRole('button', { name: TranscriptContinuationLabels.LoadMore })
     button.focus()
     await userEvent.keyboard('{Enter} ')
     await expect(args.continuation.onLoadMore).toHaveBeenCalledTimes(2)
   },
 }
-export const PreviewLoading = { args: { ...previewArgs, continuation: { state: 'loading' } } }
+export const PreviewLoading = { decorators: [previewFrame], args: { ...previewArgs, continuation: { state: 'loading' } }, play: async ({ canvasElement }) => pinPreview(canvasElement) }
 const finishedDirectory = { ...previewArgs.directory, complete: true, totalSegments: 1, totalTurns: 5, totalConversationTurns: 4 }
 const finishedPlay = async ({ canvasElement }) => {
+  await pinPreview(canvasElement)
   await expect(canvasElement.querySelector('.txn-trace-count')).toHaveTextContent('4 turns')
   await expect(canvasElement.textContent).not.toContain('loaded so far')
 }
-export const PreviewEnd = { args: { ...previewArgs, directory: finishedDirectory, continuation: { state: 'end', notice: 'this session has grown since the preview opened.' } }, play: finishedPlay }
-export const PreviewCut = { args: { ...previewArgs, directory: finishedDirectory, continuation: { state: 'cut', notice: 'the preview reached its limit.' } }, play: finishedPlay }
+export const PreviewEnd = { decorators: [previewFrame], args: { ...previewArgs, directory: finishedDirectory, continuation: { state: 'end', notice: 'this session has grown since the preview opened.' } }, play: finishedPlay }
+export const PreviewCut = { decorators: [previewFrame], args: { ...previewArgs, directory: finishedDirectory, continuation: { state: 'cut', notice: 'the preview reached its limit.' } }, play: finishedPlay }
 export const PreviewFailed = { args: { ...previewArgs, continuation: { state: 'failed', notice: <button type="button">read again</button> } } }
 
 /* Unmanaged: only the two required props. Proves the state defaults (trace tab, dark theme). */

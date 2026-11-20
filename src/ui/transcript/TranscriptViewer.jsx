@@ -2107,9 +2107,8 @@ export default function TranscriptViewer({
               <Collapsible open={sticky && viewMode === 'list'} className="txn-sticky-disclosure">
                 <div className="txn-sticky">
                   {ledger ? (
-                    segmentMode ? (
-                      /* the ledger timeline is the same bounded segment sample: the
-                         transcript never mounts one tick per turn in either presentation */
+                    segmentMode && !previewSegments ? (
+                      /* A windowed read does not hold the whole transcript. */
                       <Scrubber
                         ticks={scrubTicks}
                         activeTick={activeSegmentTick}

@@ -5,6 +5,7 @@ requiredCases:
   - cut-replaces-control-with-notice
   - failed-shows-host-control
 requiredMutationNames:
+  - preview uses segment ticks
   - restore scrubber caption
   - observer requests more
   - drop open-directory state
@@ -15,6 +16,9 @@ requiredMutationNames:
   - completed directory reports an open range
   - unknown continuation state is silently accepted
 requiredAssertions:
+  - preview-timeline-is-the-minimap-over-loaded-turns
+  - preview-minimap-grows-when-a-segment-appends
+  - windowed-segment-read-keeps-segment-ticks
   - open-directory-scrubber-draws-no-caption
   - continuation-values-are-exported
   - unknown-continuation-state-throws
@@ -45,6 +49,11 @@ requiredAssertions:
   - complete-tail-keeps-final-response
   - no-continuation-prop-is-unchanged
 mutations:
+  - name: preview uses segment ticks
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "segmentMode && !previewSegments ? ("
+    replace: "segmentMode ? ("
+    expectedDiagnostic: preview-timeline-is-the-minimap-over-loaded-turns
   - name: restore scrubber caption
     file: src/ui/transcript/Scrubber.jsx
     find: '      <span className="txn-scrub-bracket"'
