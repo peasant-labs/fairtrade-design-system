@@ -24,6 +24,8 @@ const FIXTURE_RELATIVE_PATH = 'testdata/release-guard.yaml'
 const MANIFEST_RELATIVE_PATH = 'testdata/release-guard.manifest.yaml'
 const fixturePath = path.join(import.meta.dirname, FIXTURE_RELATIVE_PATH)
 const manifestPath = path.join(import.meta.dirname, MANIFEST_RELATIVE_PATH)
+const PRIVATE_INSTALL_FIXTURE_RELATIVE_PATH = 'testdata/private-install.yaml'
+const privateInstallFixturePath = path.join(import.meta.dirname, PRIVATE_INSTALL_FIXTURE_RELATIVE_PATH)
 const PROVENANCE_FIXTURE_RELATIVE_PATH = 'testdata/release-provenance.yaml'
 const provenanceFixturePath = path.join(import.meta.dirname, PROVENANCE_FIXTURE_RELATIVE_PATH)
 /** Per-command ceiling for one throwaway-repository git call, in ms. */
@@ -809,4 +811,30 @@ test('release candidate provenance runs the real workflow step', async (t) => {
       }
     })
   }
+})
+
+test('workflow npm installs stay job-private', () => {
+  const directory = path.join(REPO_ROOT, '.github/workflows')
+  const config = YAML.parse(fs.readFileSync(privateInstallFixturePath, 'utf8'))
+  const regex = (pattern) => new RegExp(pattern.replace(/^\(\?m\)/, ''), 'm')
+  const global = regex(config.global_pattern)
+  const normalize = (s) => s.replace(/\\\n\s*/g, ' ')
+  const names = config.cases.map((row) => row.name)
+  assert.deepEqual([...new Set(names)].sort(), [...config.required_names].sort()); assert.equal(names.length, new Set(names).size)
+  for (const row of config.cases) assert.equal(global.test(normalize(row.input)), row.want, row.name)
+  const files = fs.readdirSync(directory).filter((name) => /\.ya?ml$/.test(name))
+  assert.ok(files.length > 0)
+  const target = []
+  for (const file of files) {
+    const doc = YAML.parse(fs.readFileSync(path.join(directory, file), 'utf8'))
+    for (const [job, value] of Object.entries(doc.jobs ?? {})) {
+      for (const step of value.steps ?? []) {
+        const run = normalize(step.run ?? '')
+        assert.doesNotMatch(run, global, `${file} ${job} ${step.name}`)
+        if (file === config.workflow && job === config.job && step.name === config.step) target.push(run)
+      }
+    }
+  }
+  assert.equal(target.length, 1)
+  for (const pattern of [config.prefix_pattern, config.install_pattern, config.path_pattern]) assert.match(target[0], regex(pattern))
 })
