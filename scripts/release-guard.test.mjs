@@ -812,24 +812,27 @@ test('release candidate provenance runs the real workflow step', async (t) => {
 })
 
 test('workflow npm installs stay job-private', () => {
-  const config = YAML.parse(fs.readFileSync(path.join(import.meta.dirname, 'testdata/private-install.yaml'), 'utf8'))
-  const checks = new Map(config.checks.map((row) => [row.name, row]))
-  assert.deepEqual([...checks.keys()].sort(), ['no_global_npm', 'private_ast_grep'])
-  assert.equal(config.checks.length, checks.size)
-  assert.deepEqual([...checks.keys()].sort(), [...config.required_names].sort())
   const directory = path.join(REPO_ROOT, '.github/workflows')
+  const config = YAML.parse(fs.readFileSync(path.join(import.meta.dirname, 'testdata/private-install.yaml'), 'utf8'))
+  const regex = (pattern) => new RegExp(pattern.replace(/^\(\?m\)/, ''), 'm')
+  const global = regex(config.global_pattern)
+  const normalize = (s) => s.replace(/\\\n\s*/g, ' ')
+  const names = config.cases.map((row) => row.name)
+  assert.deepEqual([...new Set(names)].sort(), [...config.required_names].sort()); assert.equal(names.length, new Set(names).size)
+  for (const row of config.cases) assert.equal(global.test(normalize(row.input)), row.want, row.name)
   const files = fs.readdirSync(directory).filter((name) => /\.ya?ml$/.test(name))
-  assert.ok(files.length > 0, 'workflow directory must not be empty')
-  const forbidden = new RegExp(checks.get('no_global_npm').pattern.replace(/^\(\?m\)/, ''), 'm')
+  assert.ok(files.length > 0)
+  const target = []
   for (const file of files) {
     const doc = YAML.parse(fs.readFileSync(path.join(directory, file), 'utf8'))
     for (const [job, value] of Object.entries(doc.jobs ?? {})) {
-      for (const step of value.steps ?? []) assert.doesNotMatch(step.run ?? '', forbidden, `${file} ${job} ${step.name}`)
+      for (const step of value.steps ?? []) {
+        const run = normalize(step.run ?? '')
+        assert.doesNotMatch(run, global, `${file} ${job} ${step.name}`)
+        if (file === config.workflow && job === config.job && step.name === config.step) target.push(run)
+      }
     }
   }
-  const row = checks.get('private_ast_grep')
-  const doc = YAML.parse(fs.readFileSync(path.join(directory, row.workflow), 'utf8'))
-  const steps = doc.jobs[row.job].steps.filter((step) => step.name === row.step)
-  assert.equal(steps.length, 1)
-  assert.equal(steps[0].run, row.run)
+  assert.equal(target.length, 1)
+  for (const pattern of [config.prefix_pattern, config.install_pattern, config.path_pattern]) assert.match(target[0], regex(pattern))
 })
