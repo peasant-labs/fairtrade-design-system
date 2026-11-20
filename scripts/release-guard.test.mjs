@@ -24,6 +24,8 @@ const FIXTURE_RELATIVE_PATH = 'testdata/release-guard.yaml'
 const MANIFEST_RELATIVE_PATH = 'testdata/release-guard.manifest.yaml'
 const fixturePath = path.join(import.meta.dirname, FIXTURE_RELATIVE_PATH)
 const manifestPath = path.join(import.meta.dirname, MANIFEST_RELATIVE_PATH)
+const PRIVATE_INSTALL_FIXTURE_RELATIVE_PATH = 'testdata/private-install.yaml'
+const privateInstallFixturePath = path.join(import.meta.dirname, PRIVATE_INSTALL_FIXTURE_RELATIVE_PATH)
 const PROVENANCE_FIXTURE_RELATIVE_PATH = 'testdata/release-provenance.yaml'
 const provenanceFixturePath = path.join(import.meta.dirname, PROVENANCE_FIXTURE_RELATIVE_PATH)
 /** Per-command ceiling for one throwaway-repository git call, in ms. */
@@ -813,7 +815,7 @@ test('release candidate provenance runs the real workflow step', async (t) => {
 
 test('workflow npm installs stay job-private', () => {
   const directory = path.join(REPO_ROOT, '.github/workflows')
-  const config = YAML.parse(fs.readFileSync(path.join(import.meta.dirname, 'testdata/private-install.yaml'), 'utf8'))
+  const config = YAML.parse(fs.readFileSync(privateInstallFixturePath, 'utf8'))
   const regex = (pattern) => new RegExp(pattern.replace(/^\(\?m\)/, ''), 'm')
   const global = regex(config.global_pattern)
   const normalize = (s) => s.replace(/\\\n\s*/g, ' ')
