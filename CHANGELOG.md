@@ -4,6 +4,10 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.2.1
+
+- show the minimap timeline in a preview (#325)
+
 ## 0.2.0
 
 - read positioned transcript segments with served numbers (#319)
