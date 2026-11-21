@@ -1,9 +1,9 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
 import { spawnSync } from 'node:child_process'
-import { pathToFileURL } from 'node:url'
 import YAML from 'yaml'
+import { rewriteTranscriptImports } from './transcript-module-artifact.mjs'
 
 const manifest = YAML.parse(readFileSync('scripts/testdata/pi-transcript.manifest.yaml', 'utf8'), { strict: true, uniqueKeys: true })
 if (manifest.mutations?.length !== 1 || manifest.mutations[0] !== 'namespace-presence-dispatch') throw new Error('Pi transcript mutation inventory is incomplete')
@@ -13,15 +13,7 @@ if (source.split(find).length !== 2) throw new Error('namespace presence mutatio
 const temp = mkdtempSync(join(tmpdir(), 'fairtrade-pi-transcript-'))
 try {
   const artifact = join(temp, 'adapter.mjs')
-  const rewritten = source
-    .replaceAll("from './adapter.parse.js'", `from '${new URL('../src/ui/transcript/adapter.parse.js', import.meta.url).href}'`)
-    .replaceAll("from './analytics.js'", `from '${new URL('../src/ui/transcript/analytics.js', import.meta.url).href}'`)
-    .replaceAll("from './usage.js'", `from '${new URL('../src/ui/transcript/usage.js', import.meta.url).href}'`)
-    .replaceAll("from './time.js'", `from '${new URL('../src/ui/transcript/time.js', import.meta.url).href}'`)
-    .replaceAll("from './title.js'", `from '${new URL('../src/ui/transcript/title.js', import.meta.url).href}'`)
-    .replaceAll("from './earlier-history-state.js'", `from '${new URL('../src/ui/transcript/earlier-history-state.js', import.meta.url).href}'`)
-    .replaceAll("from './continuation-values.js'", `from '${new URL('../src/ui/transcript/continuation-values.js', import.meta.url).href}'`)
-    .replace("from '@peasant-labs/schema'", `from '${pathToFileURL(resolve('node_modules/@peasant-labs/schema/dist/index.js')).href}'`)
+  const rewritten = rewriteTranscriptImports(source, 'adapter.js')
     .replace(find, '')
   writeFileSync(artifact, rewritten)
   const result = spawnSync(process.execPath, ['scripts/pi-transcript.test.mjs'], {

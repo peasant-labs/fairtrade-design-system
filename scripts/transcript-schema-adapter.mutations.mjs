@@ -3,8 +3,8 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
-import { pathToFileURL } from 'node:url'
 import YAML from 'yaml'
+import { rewriteTranscriptImports } from './transcript-module-artifact.mjs'
 
 const manifestPath = resolve('scripts/testdata/transcript-schema-adapter.manifest.yaml')
 const document = YAML.parseDocument(readFileSync(manifestPath, 'utf8'), { strict: true, uniqueKeys: true })
@@ -26,15 +26,7 @@ try {
     const occurrences = source.split(mutation.find).length - 1
     if (occurrences !== 1) throw new Error(`${mutation.name}: mutation target must occur exactly once, received ${occurrences}`)
     const artifact = join(temp, `${basename(sourcePaths[mutation.file], '.js')}-${index}.mjs`)
-    const rewritten = source
-      .replaceAll("from './adapter.parse.js'", `from '${new URL('../src/ui/transcript/adapter.parse.js', import.meta.url).href}'`)
-      .replaceAll("from './analytics.js'", `from '${new URL('../src/ui/transcript/analytics.js', import.meta.url).href}'`)
-      .replaceAll("from './usage.js'", `from '${new URL('../src/ui/transcript/usage.js', import.meta.url).href}'`)
-      .replaceAll("from './time.js'", `from '${new URL('../src/ui/transcript/time.js', import.meta.url).href}'`)
-      .replaceAll("from './title.js'", `from '${new URL('../src/ui/transcript/title.js', import.meta.url).href}'`)
-      .replaceAll("from './earlier-history-state.js'", `from '${new URL('../src/ui/transcript/earlier-history-state.js', import.meta.url).href}'`)
-      .replaceAll("from './continuation-values.js'", `from '${new URL('../src/ui/transcript/continuation-values.js', import.meta.url).href}'`)
-      .replace("from '@peasant-labs/schema'", `from '${pathToFileURL(resolve('node_modules/@peasant-labs/schema/dist/index.js')).href}'`)
+    const rewritten = rewriteTranscriptImports(source, sourcePaths[mutation.file])
       .replace(mutation.find, mutation.replace)
     writeFileSync(artifact, rewritten)
     const envName = mutation.file === 'adapter' ? 'FAIRTRADE_SCHEMA_ADAPTER_MODULE' : 'FAIRTRADE_SCHEMA_WIRE_TYPES_MODULE'
