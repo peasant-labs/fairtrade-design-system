@@ -27,7 +27,7 @@ import {
   zPositionedWindow,
   zTranscriptContentHeader,
 } from '@peasant-labs/schema'
-import { loadFixturePair, withMountedSource, click, createReport } from './mounted-parts.mjs'
+import { assertExactNames, loadFixturePair, withMountedSource, click, createReport } from './mounted-parts.mjs'
 
 const NUMBERING = 'scripts/testdata/transcript-positioned-numbering.yaml'
 const NUMBERING_MANIFEST = 'scripts/testdata/transcript-positioned-numbering.manifest.yaml'
@@ -49,6 +49,11 @@ const families = {
   history: loadFixturePair(HISTORY, HISTORY_MANIFEST, { cases: 'requiredCaseNames' }).fixture,
   integrity: loadFixturePair(INTEGRITY, INTEGRITY_MANIFEST, { cases: 'requiredCaseNames' }).fixture,
 }
+assertExactNames(
+  families.reader.cases.find((row) => row.name === 'controller-status-kind-table').rows.map((row) => row.name),
+  loadFixturePair(READER, READER_MANIFEST, { cases: 'requiredCaseNames' }).manifest.requiredStatusNames,
+  `${READER} status rows`,
+)
 /** The transport's request names, as the recording transport logs them. */
 const Operation = Object.freeze({ Header: 'header', Directory: 'directory', Window: 'window', Segment: 'segment', Locate: 'locate' })
 const report = createReport('transcript positioned reader')

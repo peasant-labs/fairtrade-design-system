@@ -24,6 +24,19 @@ requiredCaseNames:
   - demo-mock-refuses-invalid-body
   - hook-strict-mode-reaches-ready
   - hook-viewer-props-mount-every-failure-state
+requiredStatusNames:
+  - status-409-stale
+  - status-503-busy
+  - status-404-denied
+  - status-410-unavailable
+  - status-500-failed
+  - status-400-failed
+  - status-parse-refusal-malformed
+  - status-context-mismatch-malformed
+  - status-rejected-network
+  - retry-after-absent-1s
+  - retry-after-nan-1s
+  - retry-after-negative-1s
 requiredMutationNames:
   - print position plus one instead of the served number
   - served number off by one
