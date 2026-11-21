@@ -395,8 +395,7 @@ jobs:
       - name: Timeline route gate (production build + source mutation)
         if: matrix.project == 'dark'
         run: |
-          CHROME_PATH="$(pnpm exec node -e "console.log(require('@playwright/test').chromium.executablePath())")"
-          export CHROME_PATH
+          export CHROME_PATH="$(pnpm exec node -e "console.log(require('@playwright/test').chromium.executablePath())")"
           test -x "$CHROME_PATH"
           pnpm test:timeline-rendered && pnpm test:timeline-session-route:mutations
 
