@@ -38,6 +38,17 @@ jobs:
     secrets:
       RUNNER_STATUS_TOKEN: ${{ secrets.RUNNER_STATUS_TOKEN }}
 
+  # Title and release-content guard inside CI for the shadow merge-gate.
+  # Runs on pull_request and merge_group only; title-guard.yml remains the
+  # legacy required check and handles pull_request edited events without
+  # restarting the heavy CI jobs on PR body edits.
+  title-check:
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/title-guard.yml
+
   # Continuous gate on the PUBLISHABLE artifact. Before this, the library build
   # chain (vite.lib + vite.lib-css + finalize + tsc + smoke-lib + contrast-on-dist
   # + the pack-content assertion) ran ONLY at prepack/publish time — so a PR that
@@ -384,7 +395,8 @@ jobs:
       - name: Timeline route gate (production build + source mutation)
         if: matrix.project == 'dark'
         run: |
-          export CHROME_PATH="$(pnpm exec node -e "console.log(require('@playwright/test').chromium.executablePath())")"
+          CHROME_PATH="$(pnpm exec node -e "console.log(require('@playwright/test').chromium.executablePath())")"
+          export CHROME_PATH
           test -x "$CHROME_PATH"
           pnpm test:timeline-rendered && pnpm test:timeline-session-route:mutations
 
@@ -435,3 +447,49 @@ jobs:
         run: |
           test "${{ needs.fairtest.result }}" = "success"
           test "${{ needs.journeys.result }}" = "success"
+
+  # Shadow aggregator for the future single merge-gate rollout. Legacy required
+  # contexts (`lib`, `gates`, `title-guard`) remain emitted unchanged and no
+  # costly job is skipped or inherited here. Emits the exact full verdict marker
+  # only after title-check, lib, fairtest, both journey shards, and gates all
+  # succeed.
+  merge-gate:
+    name: merge-gate
+    needs: [determine-runner, title-check, lib, fairtest, journeys, gates]
+    if: always()
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require title guard, lib, fairtest, and journeys
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::merge-gate: $*"; exit 1; }
+          result() { jq -r --arg job "$1" '.[$job].result // empty' <<< "$RESULTS"; }
+          jq -e 'type == "object" and length > 0 and (to_entries | all(.[]; .value.result == "success" or .value.result == "skipped"))' <<< "$RESULTS" > /dev/null || fail "a needed job failed or was cancelled"
+          [ "$(result determine-runner)" = success ] || fail "determine-runner did not succeed"
+          [ "$(result lib)" = success ] || fail "lib did not succeed"
+          [ "$(result fairtest)" = success ] || fail "fairtest did not succeed"
+          [ "$(result journeys)" = success ] || fail "journeys did not succeed"
+          [ "$(result gates)" = success ] || fail "gates did not succeed"
+          case "$EVENT" in
+            pull_request|merge_group)
+              [ "$(result title-check)" = success ] || fail "title guard is required for ${EVENT} runs"
+              ;;
+            push|workflow_dispatch)
+              case "$(result title-check)" in
+                success|skipped) ;;
+                *) fail "title guard must succeed or be skipped for ${EVENT} runs" ;;
+              esac
+              ;;
+            *)
+              fail "unsupported event ${EVENT}"
+              ;;
+          esac
+      - name: "verdict-source: full"
+        if: needs.title-check.result == 'success' && needs.lib.result == 'success' && needs.fairtest.result == 'success' && needs.journeys.result == 'success' && needs.gates.result == 'success'
+        run: echo "verdict-source=full" >> "$GITHUB_STEP_SUMMARY"

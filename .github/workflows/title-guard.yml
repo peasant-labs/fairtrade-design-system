@@ -21,6 +21,7 @@ on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
   merge_group:
+  workflow_call:
 
 # read-only: this workflow validates titles and release content from git and
 # the API; it never pushes, opens, edits, or closes a PR
@@ -29,7 +30,7 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: title-guard-${{ github.ref }}
+  group: title-guard-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # The checks build release-intent from the pinned infra checkout below.

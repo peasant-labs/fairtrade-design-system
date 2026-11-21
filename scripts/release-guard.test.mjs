@@ -28,6 +28,8 @@ const PRIVATE_INSTALL_FIXTURE_RELATIVE_PATH = 'testdata/private-install.yaml'
 const privateInstallFixturePath = path.join(import.meta.dirname, PRIVATE_INSTALL_FIXTURE_RELATIVE_PATH)
 const PROVENANCE_FIXTURE_RELATIVE_PATH = 'testdata/release-provenance.yaml'
 const provenanceFixturePath = path.join(import.meta.dirname, PROVENANCE_FIXTURE_RELATIVE_PATH)
+const SHADOW_MERGE_GATE_FIXTURE_RELATIVE_PATH = 'testdata/shadow-merge-gate.yaml'
+const shadowMergeGateFixturePath = path.join(import.meta.dirname, SHADOW_MERGE_GATE_FIXTURE_RELATIVE_PATH)
 /** Per-command ceiling for one throwaway-repository git call, in ms. */
 const GIT_COMMAND_TIMEOUT_MS = 10000
 /** Ceiling for the whole release-tag case, in ms: a regression fails instead of hanging. */
@@ -837,4 +839,80 @@ test('workflow npm installs stay job-private', () => {
   }
   assert.equal(target.length, 1)
   for (const pattern of [config.prefix_pattern, config.install_pattern, config.path_pattern]) assert.match(target[0], regex(pattern))
+})
+
+test('shadow merge-gate preserves old contexts and runs the real gate shell', async (t) => {
+  const fixture = YAML.parse(fs.readFileSync(shadowMergeGateFixturePath, 'utf8'), { merge: true })
+  const queuePolicy = YAML.parse(fs.readFileSync(path.join(REPO_ROOT, RepoPath.QueuePolicy), 'utf8'))
+  assert.deepEqual(queuePolicy.queue?.required, fixture.expected_required_contexts, 'old required contexts must remain unchanged during shadow rollout')
+
+  const ci = readWorkflow('ci.yml')
+  const titleGuard = readWorkflow('title-guard.yml')
+  assert.equal(titleGuard.workflow.name, 'title-guard')
+  assert.deepEqual(titleGuard.trigger.pull_request?.types, ['opened', 'edited', 'synchronize', 'reopened'])
+  assert.ok(Object.hasOwn(titleGuard.trigger, 'merge_group'))
+  assert.ok(Object.hasOwn(titleGuard.trigger, 'workflow_call'))
+  assert.doesNotMatch(ci.text, /inherit_verdict|verdict-source:\s*inherited|verdict-source=inherited/, 'shadow PR must not carry verdict inheritance')
+  assert.equal(ci.trigger.pull_request?.paths, undefined, 'ci.yml must not filter pull_request by paths')
+  assert.equal(ci.trigger.pull_request?.['paths-ignore'], undefined, 'ci.yml must not filter pull_request by paths-ignore')
+
+  const titleCheck = jobOf(ci, 'title-check')
+  assert.equal(normalizeIf(String(titleCheck.if ?? '')), "github.event_name == 'pull_request' || github.event_name == 'merge_group'")
+  assert.equal(titleCheck.uses, './.github/workflows/title-guard.yml')
+
+  const mergeGate = jobOf(ci, 'merge-gate')
+  assert.equal(mergeGate.name, 'merge-gate')
+  assert.equal(normalizeIf(String(mergeGate.if ?? '')), 'always()')
+  assert.deepEqual(mergeGate.needs, fixture.expected_needs, 'merge-gate must depend on the exact needed jobs')
+  assert.equal(mergeGate.steps.length, 2, 'merge-gate must have exactly the gate step and full-marker step')
+
+  const [gateStep, markerStep] = mergeGate.steps
+  assert.ok(typeof gateStep.run === 'string' && gateStep.run.length > 0)
+  assert.equal(markerStep.name, fixture.expected_full_marker_step)
+  const markerClauses = normalizeIf(string(markerStep.if, 'merge-gate full-marker if')).split(/\s*&&\s*/)
+  const markerJobs = markerClauses.map((clause) => {
+    const match = /^needs\.([A-Za-z0-9_-]+)\.result == 'success'$/.exec(clause)
+    assert.ok(match, `full-marker step if must only require job success, got ${clause}`)
+    return match[1]
+  })
+  assert.deepEqual(markerJobs, fixture.expected_full_marker_jobs)
+  assert.ok(typeof markerStep.run === 'string' && markerStep.run.includes(fixture.expected_full_marker_summary))
+
+  const names = fixture.cases.map((row) => row.name)
+  assert.equal(new Set(names).size, names.length, 'shadow merge-gate fixture case names must be unique')
+  assert.deepEqual(new Set(names), new Set(fixture.required_cases), 'shadow merge-gate fixture must cover every required case')
+
+  for (const row of fixture.cases) {
+    await t.test(row.name, () => {
+      const result = spawnSync('bash', ['-c', gateStep.run], {
+        cwd: REPO_ROOT,
+        encoding: 'utf8',
+        timeout: 10000,
+        env: { ...process.env, RESULTS: JSON.stringify(row.needs), EVENT: row.event },
+      })
+      assert.equal(result.error, undefined)
+      assert.equal(result.status, row.expected_exit, `${row.name}: ${result.stdout}${result.stderr}`)
+      if (row.expected_exit !== 0 && row.error_contains) {
+        assert.ok((result.stdout + result.stderr).includes(row.error_contains), `${row.name}: ${result.stdout}${result.stderr}`)
+      }
+      const wouldEmitFull = markerJobs.every((job) => row.needs[job]?.result === 'success')
+      assert.equal(wouldEmitFull, row.expected_full_marker, `${row.name}: full-marker condition mismatch`)
+      if (row.expected_exit === 0 && wouldEmitFull) {
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fairtrade-merge-gate-summary-'))
+        try {
+          const summaryFile = path.join(dir, 'summary.txt')
+          const markerResult = spawnSync('bash', ['-euo', 'pipefail', '-c', markerStep.run], {
+            cwd: REPO_ROOT,
+            encoding: 'utf8',
+            timeout: 10000,
+            env: { ...process.env, GITHUB_STEP_SUMMARY: summaryFile },
+          })
+          assert.equal(markerResult.status, 0, markerResult.stderr)
+          assert.equal(fs.readFileSync(summaryFile, 'utf8').trim(), fixture.expected_full_marker_summary)
+        } finally {
+          fs.rmSync(dir, { recursive: true, force: true })
+        }
+      }
+    })
+  }
 })
