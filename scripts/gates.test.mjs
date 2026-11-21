@@ -27,6 +27,7 @@ import { turnAtReadingLine } from '../src/ui/transcript/scroll-position.js'
 import { rewriteTranscriptImports } from './transcript-module-artifact.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
+const ARTIFACT_FIXTURE = 'scripts/testdata/transcript-module-artifact.yaml'
 
 /** @type {{requiredNames: string[], cases: {name: string, count: number, stride: number, line: number, expected: number}[], mutations: {name: string, lineDelta: number, case: string}[], readMutation: {name: string, case: string, find: string, replace: string}}} */
 const scrollSpec = loadStrictYaml('scripts/testdata/transcript-scroll.yaml')
@@ -226,7 +227,7 @@ check('png-diff: vendored harness copies match the canonical diff logic (no drif
 })
 
 /** @type {{requiredNames: string[], cases: {name: string, file: string, source: string, expectError: string | null}[]}} */
-const artifactSpec = loadStrictYaml('scripts/testdata/transcript-module-artifact.yaml')
+const artifactSpec = loadStrictYaml(ARTIFACT_FIXTURE)
 assertExactNames(artifactSpec.cases.map((row) => row.name), artifactSpec.requiredNames, 'transcript module artifact')
 const schemaUrl = new URL('../node_modules/@peasant-labs/schema/dist/index.js', import.meta.url).href
 for (const row of artifactSpec.cases) {
