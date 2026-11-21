@@ -10,6 +10,7 @@ requiredCaseNames:
   - number-whole-document-render-computes
   - number-accessible-name-includes-served-value
   - number-copy-link-unaffected
+  - number-saved-label-keys-recorded-index
   - number-search-and-filter-unaffected
   - number-history-section-prints-own-numbering
   - segment-mode-refuses-analytics

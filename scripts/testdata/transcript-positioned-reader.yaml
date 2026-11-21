@@ -85,6 +85,12 @@ cases:
     perPage: 5
     pages: [1, 2, 1, 2, 3]
   - name: controller-section-open-close-aborts
+  # A segment read from before a restart settles after the new read took its place: the new
+  # read stays recorded, so asking for the segment again sends no third request.
+  - name: controller-segment-fetch-survives-restart
+    segment: 5
+    staleSegment: 6
+    requests: 2
   - name: controller-landing-exact-vs-snapped
     # recorded index 1013 is the second row of segment 4; the window anchors on its user row
     turn: 1013
@@ -108,3 +114,17 @@ cases:
   - name: hook-viewer-props-mount-every-failure-state
     kinds: [busy, stale, denied, unavailable, failed, malformed, network]
     statuses: {busy: busy, stale: stale, denied: denied, unavailable: unavailable, failed: failed, malformed: malformed, network: network}
+  # An open history section belongs to the transcript it was opened on: after the host swaps to
+  # another transcript, the new reader opens nothing and the section shows closed.
+  - name: hook-history-closes-on-transcript-swap
+  # One builder and one parser name a history section for the adapter, the viewer and the hook.
+  # `rejected` are values that are not section ids; the hook must open nothing for them.
+  - name: hook-history-section-id-shared
+    ids:
+      - {section: 0, id: earlier-0}
+      - {section: 12, id: earlier-12}
+    rejected: [earlier-, earlier-01, earlier--1, earlier-1.5, xearlier-1, 'earlier-1 ', main]
+  # Under StrictMode, which runs state updaters twice, one toggle tells the reader once.
+  - name: hook-history-toggle-tells-reader-once
+    opens: 1
+    closes: 1
