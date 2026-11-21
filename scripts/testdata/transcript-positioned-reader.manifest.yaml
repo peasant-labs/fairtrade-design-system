@@ -69,6 +69,8 @@ requiredMutationNames:
   - carry open history sections to another transcript
   - read a section id loosely
   - tell the reader inside the state updater
+  - key saved labels by display index in TranscriptViewer
+  - key label callback by display index in TurnCard
 mutations:
   - name: print position plus one instead of the served number
     file: src/ui/transcript/adapter.js
@@ -205,3 +207,13 @@ mutations:
     find: "    const previous = historyOpenRef.current\n    const value = typeof next === 'function' ? next(previous) : next\n    historyOpenRef.current = value\n    for (const [id, open] of Object.entries(value)) {\n      const section = parseHistorySectionId(id)\n      if (section === undefined) continue\n      if (open && !previous[id]) live.openSection(section)\n      if (!open && previous[id]) live.closeSection(section)\n    }\n    setHistoryState({ for: readerOptions, open: value })"
     replace: "    setHistoryState((current) => {\n      const previous = current.for === readerOptions ? current.open : NO_SECTIONS_OPEN\n      const value = typeof next === 'function' ? next(previous) : next\n      for (const [id, open] of Object.entries(value)) {\n        const section = parseHistorySectionId(id)\n        if (section === undefined) continue\n        if (open && !previous[id]) live.openSection(section)\n        if (!open && previous[id]) live.closeSection(section)\n      }\n      return { for: readerOptions, open: value }\n    })"
     expectedDiagnostic: hook-history-toggle-tells-reader-once
+  - name: key saved labels by display index in TranscriptViewer
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "savedLabel={savedLabels[recordedTurnIndex(t)]}"
+    replace: "savedLabel={savedLabels[t.index]}"
+    expectedDiagnostic: number-saved-label-keys-recorded-index
+  - name: key label callback by display index in TurnCard
+    file: src/ui/transcript/TurnCard.jsx
+    find: "          ) : onLabel && linkIndex !== undefined && (\n            <button type=\"button\" className=\"txn-labelbtn\" onClick={() => onLabel(linkIndex)}>"
+    replace: "          ) : onLabel && (\n            <button type=\"button\" className=\"txn-labelbtn\" onClick={() => onLabel(turn.index)}>"
+    expectedDiagnostic: number-saved-label-keys-recorded-index
