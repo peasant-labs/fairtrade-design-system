@@ -458,8 +458,23 @@ export function createPositionedReader(options) {
         const body = await readScoped('segment', withEcho({ partition, index: ordinal }), zPositionedSegment, (payload) => contextMatches(payload.context) && samePartition(payload.partition, partition) && payload.index === ordinal, signal)
         installSegment(ordinal, body, section)
       } catch (error) {
-        if (section === undefined) fail(error, () => loadSegment(ordinal))
-        else failSection(section, error)
+        try {
+          if (section === undefined) fail(error, () => loadSegment(ordinal))
+          else failSection(section, error)
+        } catch {
+          if (section === undefined && !state.failure) {
+            state.failure = { kind: PositionedReadFailureKind.Failed, operation: 'segment' }
+            if (state.status === PositionedReadStatus.Loading && state.segments.size === 0) state.status = PositionedReadStatus.Failed
+            snapshot = freeze()
+          } else if (section !== undefined) {
+            const record = state.history.get(section)
+            if (record && !record.failure) {
+              record.status = PositionedReadStatus.Failed
+              record.failure = { kind: PositionedReadFailureKind.Failed, operation: 'segment' }
+              snapshot = freeze()
+            }
+          }
+        }
       } finally {
         if (inFlight.get(key) === run) inFlight.delete(key)
         settled()

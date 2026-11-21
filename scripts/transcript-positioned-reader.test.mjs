@@ -471,6 +471,34 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     check(after.failure === null && after.segments.has(row.segment) && after.status === PositionedReadStatus.Ready, `a retry that answers settles the read as ready, received ${JSON.stringify({ status: after.status, failure: after.failure, held: [...after.segments.keys()] })}`)
     instance.dispose()
   })
+  await run('reader', 'controller-throwing-failure-handler-settled', async (row, check) => {
+    let refuse = true
+    const { transport } = documentTransport({
+      respond: (operation, request) => (refuse && operation === Operation.Segment && request.index === row.segment ? { status: row.status, body: null } : undefined),
+    })
+    const unhandled = []
+    const onUnhandled = (reason) => unhandled.push(reason)
+    process.on('unhandledRejection', onUnhandled)
+    const instance = await start({ transport, target: { transport: DOC.transport } })
+    const unsubscribe = instance.subscribe(() => {
+      if (instance.getSnapshot().failure) throw new Error('boom in listener')
+    })
+    try {
+      await instance.loadSegment(row.segment)
+      await settle()
+      const afterFail = instance.getSnapshot()
+      check(unhandled.length === 0, `a throwing failure handler produces no unhandled rejection, received ${unhandled.length}`)
+      check(afterFail.failure?.kind === PositionedReadFailureKind.Failed && afterFail.failure?.operation === Operation.Segment, `the reader records the segment failure consistently, received ${JSON.stringify(afterFail.failure)}`)
+      unsubscribe()
+      refuse = false
+      await instance.retry()
+      await settle()
+      check(instance.getSnapshot().segments.has(row.segment) && instance.getSnapshot().failure === null, 'in-flight state is cleared so retry loads the segment')
+    } finally {
+      process.off('unhandledRejection', onUnhandled)
+      instance.dispose()
+    }
+  })
   await run('reader', 'controller-transport-mismatch-discards', async (row, check) => {
     const { transport, main } = documentTransport({
       respond: (operation, request) => (operation === Operation.Segment && request.index === row.segment

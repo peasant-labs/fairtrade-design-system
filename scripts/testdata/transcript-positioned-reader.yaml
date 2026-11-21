@@ -79,6 +79,9 @@ cases:
     turn: 1031
     segment: 11
     status: 500
+  - name: controller-throwing-failure-handler-settled
+    segment: 5
+    status: 500
   - name: controller-transport-mismatch-discards
     segment: 0
   - name: controller-directory-paging-refetch-page-one
