@@ -716,6 +716,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       check(historySectionId(section) === id && parseHistorySectionId(id) === section, `section ${section} is named ${id} and read back, received ${JSON.stringify([historySectionId(section), parseHistorySectionId(id)])}`)
     }
     for (const value of row.rejected) check(parseHistorySectionId(value) === undefined, `${JSON.stringify(value)} is not a section id, received ${parseHistorySectionId(value)}`)
+    const barrel = await load('/src/ui/transcript/index.js')
+    check(barrel.historySectionId === historySectionId && barrel.parseHistorySectionId === parseHistorySectionId, 'historySectionId and parseHistorySectionId are exported from the transcript barrel')
     const { view, recorded, read } = await historyHost()
     const section = read().viewerProps.viewModel.earlierHistory[0]
     check(section.id === historySectionId(H.section.index) && view.container.querySelector('.txn-earlier')?.getAttribute('data-earlier-section') === section.id, `the hook's view and the mounted viewer name the section ${historySectionId(H.section.index)}, received ${section.id}`)

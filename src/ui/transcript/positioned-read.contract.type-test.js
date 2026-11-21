@@ -17,6 +17,15 @@
 /** @typedef {import('./index.js').PositionedReadStatusValue} PositionedReadStatusValue */
 /** @typedef {import('./index.js').PositionedReadDataValue} PositionedReadDataValue */
 
+import { historySectionId, parseHistorySectionId } from './index.js'
+
+/** @type {string} */
+const sectionId = historySectionId(0)
+// @ts-expect-error historySectionId requires a numeric section index
+const badSectionId = historySectionId('0')
+/** @type {number | undefined} */
+const parsedSection = parseHistorySectionId(sectionId)
+
 /** @type {PositionedHostResponse} */
 const busy = { status: 503, retryAfterSeconds: 2, body: null }
 /** @param {object} _request @param {AbortSignal} _signal @returns {Promise<PositionedHostResponse>} */
@@ -65,4 +74,4 @@ function host(read) {
   return { again, snapped, vm, props }
 }
 
-export { partial, nearest, loose, failure, timeout, ready, dataValue, unknownDataValue, options, host }
+export { partial, nearest, loose, failure, timeout, ready, dataValue, unknownDataValue, options, host, sectionId, badSectionId, parsedSection }

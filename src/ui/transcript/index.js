@@ -135,6 +135,7 @@ export {
   createPositionedReader,
   usePositionedTranscript,
 } from './positioned-read.js'
+export { historySectionId, parseHistorySectionId } from './history-section-id.js'
 export { default as TranscriptScorecard } from './Scorecard.jsx'
 export { default as TranscriptLabelPopover } from './LabelPopover.jsx'
 export {

@@ -15,7 +15,13 @@
    carries `// @ts-check` because that program sets `checkJs: false`. */
 
 import { closed } from './closed-value.js'
-import { ColumnAlign, TranscriptLibraryTable, TranscriptContinuationState, TranscriptContinuationLabels, TranscriptTail, adaptTranscript } from './index.js'
+import { ColumnAlign, TranscriptLibraryTable, TranscriptContinuationState, TranscriptContinuationLabels, TranscriptTail, adaptTranscript, historySectionId, parseHistorySectionId } from './index.js'
+
+/** @type {string} */
+const earlierSectionId = historySectionId(0)
+/** @type {number | undefined} */
+const earlierSectionIndex = parseHistorySectionId(earlierSectionId)
+void earlierSectionIndex
 
 /** @type {import('./index.js').TranscriptViewerProps['continuation']} */
 const continuation = { state: TranscriptContinuationState.More }
