@@ -50,7 +50,8 @@ export const Presentation = Object.freeze({ Classic: 'classic', Ledger: 'ledger'
 
 /**
  * A per-turn saved label (the LabelPopover's output). `outcome` is the verdict
- * band; `flag` is an optional friction tag. Keyed by turn index in `savedLabels`.
+ * band; `flag` is an optional friction tag. Keyed by the turn's recorded index in `savedLabels`:
+ * a positioned row's served position can move between revisions, so it is never the key.
  * @typedef {object} SavedLabel
  * @property {'good' | 'neutral' | 'bad'} outcome
  * @property {string} [flag]
@@ -112,7 +113,7 @@ export const Presentation = Object.freeze({ Classic: 'classic', Ledger: 'ledger'
  *
  * @typedef {object} ViewerCallbacks
  * @property {() => void} [onEdit]
- * @property {(turnIndex: number, label: SavedLabel) => void} [onLabel]
+ * @property {(turnIndex: number, label: SavedLabel) => void} [onLabel]  `turnIndex` is the turn's recorded index
  * @property {() => void} [onContribute]
  * @property {() => void} [onCopyLink]
  * @property {() => void} [onChangeVisibility]
@@ -186,7 +187,7 @@ export const Presentation = Object.freeze({ Classic: 'classic', Ledger: 'ledger'
  * @property {(query: string) => void} [onSearchChange]
  * @property {TranscriptFilters} [filters]
  * @property {(filters: TranscriptFilters) => void} [onFiltersChange]
- * @property {Record<number, SavedLabel>} [savedLabels]                turn index → saved label
+ * @property {Record<number, SavedLabel>} [savedLabels]                recorded index → saved label
  * @property {(savedLabels: Record<number, SavedLabel>) => void} [onSavedLabelsChange]
  * @property {boolean} [shareOpen]                                     share action-menu disclosure (default closed)
  * @property {(open: boolean) => void} [onShareOpenChange]

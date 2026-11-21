@@ -15,7 +15,7 @@ const FLAGS = [['', 'none'], ['error', 'error'], ['retry-loop', 'retry loop'], [
 
 /**
  * @param {object} props
- * @param {number} [props.turnId]                                  the turn index being labelled
+ * @param {number} [props.turnId]                                  the recorded index of the turn being labelled
  * @param {SavedLabel} [props.current]                             the existing label, if any
  * @param {(outcome: SavedLabel['outcome'], flag: string) => void} [props.onSave]
  * @param {Function} [props.onClose]

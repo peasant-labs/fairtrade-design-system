@@ -296,6 +296,30 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     check(bare.container.querySelector('.txn-anchor') === null, 'a row with no recorded index offers no copy link')
     await bare.unmount()
   })
+  await run('numbering', 'number-saved-label-keys-recorded-index', async (_, check) => {
+    const { turns } = cookSegment(mainSegment)
+    const turn = turns.find((item) => item.label === '7a')
+    const recorded = N.segment.rows.find((row) => row.displayNumber === '7a').recordedIndex
+    const labelled = []
+    const card = await mount(React.createElement(TurnCard, { turn, onLabel: (index) => labelled.push(index) }))
+    click(window, card.container.querySelector('.txn-labelbtn'))
+    check(labelled[0] === recorded && recorded !== turn.position, `the label names the recorded index ${recorded}, not the position ${turn.position}, received ${JSON.stringify(labelled)}`)
+    await card.unmount()
+    const bare = await mount(React.createElement(TurnCard, { turn: { ...turn, recordedIndex: undefined }, onLabel: () => {} }))
+    check(bare.container.querySelector('.txn-labelbtn') === null, 'a row with no recorded index offers no label')
+    await bare.unmount()
+    const ref = { index: N.segment.index, byteLength: 100, sourceFirstPosition: turns[0].position, sourceLastPosition: turns.at(-1).position }
+    const viewer = (savedLabels) => React.createElement(TranscriptViewer, {
+      viewModel: { session: { id: 'labels', harness: 'claude-code' }, turns: [], tasks: [], relationships: [], earlierHistory: [] },
+      capabilities: {}, presentation: 'classic', directory: { complete: true, totalSegments: 1, totalTurns: turns.length, segments: [ref] }, segments: [{ ...ref, turns }], savedLabels,
+    })
+    const chips = (container) => [...container.querySelectorAll('[title^="saved label"]')].map((node) => node.closest('[data-turn]')?.getAttribute('data-turn') ?? node.textContent)
+    const byRecorded = await mount(viewer({ [recorded]: { outcome: 'good' } }))
+    const byPosition = await mount(viewer({ [turn.position]: { outcome: 'good' } }))
+    check(chips(byRecorded.container).length === 1 && chips(byPosition.container).length === 0, `the viewer shows a label saved under the recorded index and none saved under the position, received ${JSON.stringify([chips(byRecorded.container), chips(byPosition.container)])}`)
+    await byRecorded.unmount()
+    await byPosition.unmount()
+  })
   await run('numbering', 'number-search-and-filter-unaffected', async (_, check) => {
     const { turns } = cookSegment(mainSegment)
     const ref = { index: N.segment.index, byteLength: 100, sourceFirstPosition: turns[0].position, sourceLastPosition: turns.at(-1).position }

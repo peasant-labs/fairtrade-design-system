@@ -69,6 +69,7 @@ import Tooltip from '../Tooltip.jsx'
 import { toolStateKey } from './tool-state-key.js'
 import { renderedSearchRanges, searchExpression } from './search-highlights.js'
 import SearchHighlights from './SearchHighlights.jsx'
+import { recordedTurnIndex } from './recorded-turn.js'
 
 /** @type {AnimationPlayState} */
 const runningAnimation = 'running'
@@ -2259,7 +2260,7 @@ export default function TranscriptViewer({
                             onLabel={labelTurn}
                             renderActions={renderTurnActions}
                             imageUrl={resolvedImageUrl}
-                            savedLabel={savedLabels[t.index]}
+                            savedLabel={savedLabels[recordedTurnIndex(t)]}
                             compact={filters.views.compact}
                             expandAll={filters.views.expandAll}
                             modelActions={groups.get(t.index)}
