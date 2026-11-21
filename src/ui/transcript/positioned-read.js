@@ -28,6 +28,7 @@ import {
 import { adaptTranscript, positionedPartitionId } from './adapter.js'
 import { createUsageAccumulator } from './usage.js'
 import { parseEarlierHistoryState } from './earlier-history-state.js'
+import { historySectionId, parseHistorySectionId } from './history-section-id.js'
 import { positionedIntegrity } from './integrity.js'
 
 /** Why a positioned read did not produce content. Closed. */
@@ -190,6 +191,9 @@ function validateReaderOptions(options) {
     throw new TypeError(`createPositionedReader refused residency ${String(residency)}: pass a positive whole number of segments, or omit it for the reader's default.`)
   }
 }
+
+/** No history section open: the hook's starting value, and its value for a target it has not opened one on. */
+const NO_SECTIONS_OPEN = Object.freeze({})
 
 /** The stand-in a hook reads before its effect has created a reader: loading, nothing held. */
 const IDLE_SNAPSHOT = Object.freeze({ status: PositionedReadStatus.Loading, header: null, context: null, directory: null, windows: { default: null, target: null }, fetchSet: null, landing: null, segments: new Map(), history: new Map(), failure: null, usageScopes: undefined })
@@ -435,7 +439,9 @@ export function createPositionedReader(options) {
   /* ── segments: install, visit, evict ──────────────────────────────────────── */
 
   const inFlight = new Map()
-  /** Read one segment of the main partition (or of an open history section) unless it is resident. */
+  /** Read one segment of the main partition (or of an open history section) unless it is resident.
+      The run's promise is recorded before its first await, and it removes its own key only: a run
+      from before a restart settles after a newer run took the key, and must leave that one alone. */
   function loadSegment(ordinal, section) {
     const segments = section === undefined ? state.segments : state.history.get(section)?.segments
     if (!segments) return Promise.resolve()
@@ -444,7 +450,10 @@ export function createPositionedReader(options) {
     if (inFlight.has(key)) return inFlight.get(key)
     const partition = partitionRequest(section)
     const signal = section === undefined ? undefined : state.history.get(section)?.abort.signal
-    const run = (async () => {
+    let settled
+    const run = new Promise((done) => { settled = done })
+    inFlight.set(key, run)
+    ;(async () => {
       try {
         const body = await readScoped('segment', withEcho({ partition, index: ordinal }), zPositionedSegment, (payload) => contextMatches(payload.context) && samePartition(payload.partition, partition) && payload.index === ordinal, signal)
         installSegment(ordinal, body, section)
@@ -452,10 +461,10 @@ export function createPositionedReader(options) {
         if (section === undefined) fail(error, () => loadSegment(ordinal))
         else failSection(section, error)
       } finally {
-        inFlight.delete(key)
+        if (inFlight.get(key) === run) inFlight.delete(key)
+        settled()
       }
     })()
-    inFlight.set(key, run)
     return run
   }
 
@@ -737,7 +746,7 @@ function historyVM(directory, history, reopen) {
     const exact = open?.directory ? open.directory.context.totalConversationTurns ?? open.directory.context.totalTurns : undefined
     const recorded = typeof meta.totalConversationTurns === 'number' ? meta.totalConversationTurns : undefined
     return {
-      id: `earlier-${meta.index}`,
+      id: historySectionId(meta.index),
       section: meta.index,
       state: parseEarlierHistoryState(meta.state),
       turns,
@@ -808,7 +817,11 @@ export function usePositionedTranscript(options) {
   }, [readerOptions])
   const live = reader ?? IDLE_READER
   const snapshot = useSyncExternalStore(live.subscribe, live.getSnapshot, live.getSnapshot)
-  const [historyOpen, setHistoryOpen] = useState({})
+  /* Which history sections the reader has open, for this target only: the state names the options
+     it was set for, so a swap to another transcript starts with every section closed instead of
+     opening the same section numbers on the new one. */
+  const [historyState, setHistoryState] = useState(() => ({ for: readerOptions, open: NO_SECTIONS_OPEN }))
+  const historyOpen = historyState.for === readerOptions ? historyState.open : NO_SECTIONS_OPEN
   const historyOpenRef = useRef(historyOpen)
   historyOpenRef.current = historyOpen
 
@@ -820,25 +833,27 @@ export function usePositionedTranscript(options) {
     return () => clearTimeout(handle)
   }, [failure, live])
 
+  /* The reader is told outside the state updater: React may run an updater more than once. The ref
+     moves with each change, so two changes before the next render each see the one before. */
   const onEarlierHistoryOpenChange = useCallback((next) => {
-    setHistoryOpen((previous) => {
-      const value = typeof next === 'function' ? next(previous) : next
-      for (const [id, open] of Object.entries(value)) {
-        const section = Number(id.replace('earlier-', ''))
-        if (!Number.isInteger(section)) continue
-        if (open && !previous[id]) live.openSection(section)
-        if (!open && previous[id]) live.closeSection(section)
-      }
-      return value
-    })
-  }, [live])
+    const previous = historyOpenRef.current
+    const value = typeof next === 'function' ? next(previous) : next
+    historyOpenRef.current = value
+    for (const [id, open] of Object.entries(value)) {
+      const section = parseHistorySectionId(id)
+      if (section === undefined) continue
+      if (open && !previous[id]) live.openSection(section)
+      if (!open && previous[id]) live.closeSection(section)
+    }
+    setHistoryState({ for: readerOptions, open: value })
+  }, [live, readerOptions])
 
   /* a section opened before this reader existed (or by the reader it replaced) opens on it too */
   useEffect(() => {
     if (!reader) return
     for (const [id, open] of Object.entries(historyOpenRef.current)) {
-      const section = Number(id.replace('earlier-', ''))
-      if (open && Number.isInteger(section)) reader.openSection(section)
+      const section = parseHistorySectionId(id)
+      if (open && section !== undefined) reader.openSection(section)
     }
   }, [reader])
 
@@ -899,8 +914,8 @@ export function usePositionedTranscript(options) {
   }), [viewModel, directory, segments, live, historyOpen, onEarlierHistoryOpenChange, onActiveTurnChange, integrity, positionedRead, snapshot.landing])
   const controls = useMemo(() => ({
     retry: live.retry,
-    openSection: (section) => onEarlierHistoryOpenChange((previous) => ({ ...previous, [`earlier-${section}`]: true })),
-    closeSection: (section) => onEarlierHistoryOpenChange((previous) => ({ ...previous, [`earlier-${section}`]: false })),
+    openSection: (section) => onEarlierHistoryOpenChange((previous) => ({ ...previous, [historySectionId(section)]: true })),
+    closeSection: (section) => onEarlierHistoryOpenChange((previous) => ({ ...previous, [historySectionId(section)]: false })),
     header,
     landing: snapshot.landing,
   }), [live, onEarlierHistoryOpenChange, header, snapshot.landing])

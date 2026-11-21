@@ -19,11 +19,15 @@ requiredCaseNames:
   - controller-transport-mismatch-discards
   - controller-directory-paging-refetch-page-one
   - controller-section-open-close-aborts
+  - controller-segment-fetch-survives-restart
   - controller-landing-exact-vs-snapped
   - controller-closed-sets
   - demo-mock-refuses-invalid-body
   - hook-strict-mode-reaches-ready
   - hook-viewer-props-mount-every-failure-state
+  - hook-history-closes-on-transcript-swap
+  - hook-history-section-id-shared
+  - hook-history-toggle-tells-reader-once
 requiredStatusNames:
   - status-409-stale
   - status-503-busy
@@ -61,6 +65,10 @@ requiredMutationNames:
   - add a read status
   - report the status over a failure kind
   - a retry never settles the read
+  - an older run clears a newer run's in-flight read
+  - carry open history sections to another transcript
+  - read a section id loosely
+  - tell the reader inside the state updater
 mutations:
   - name: print position plus one instead of the served number
     file: src/ui/transcript/adapter.js
@@ -177,3 +185,23 @@ mutations:
     find: "        if (mine === generation && !state.failure) settleReady()"
     replace: ""
     expectedDiagnostic: controller-retry-after-partial-failure-settles-ready
+  - name: an older run clears a newer run's in-flight read
+    file: src/ui/transcript/positioned-read.js
+    find: "        if (inFlight.get(key) === run) inFlight.delete(key)"
+    replace: "        inFlight.delete(key)"
+    expectedDiagnostic: controller-segment-fetch-survives-restart
+  - name: carry open history sections to another transcript
+    file: src/ui/transcript/positioned-read.js
+    find: "  const historyOpen = historyState.for === readerOptions ? historyState.open : NO_SECTIONS_OPEN"
+    replace: "  const historyOpen = historyState.open"
+    expectedDiagnostic: hook-history-closes-on-transcript-swap
+  - name: read a section id loosely
+    file: src/ui/transcript/history-section-id.js
+    find: "  const match = ID_PATTERN.exec(id)\n  return match ? Number(match[1]) : undefined"
+    replace: "  const section = Number(id.replace('earlier-', ''))\n  return Number.isInteger(section) ? section : undefined"
+    expectedDiagnostic: hook-history-section-id-shared
+  - name: tell the reader inside the state updater
+    file: src/ui/transcript/positioned-read.js
+    find: "    const previous = historyOpenRef.current\n    const value = typeof next === 'function' ? next(previous) : next\n    historyOpenRef.current = value\n    for (const [id, open] of Object.entries(value)) {\n      const section = parseHistorySectionId(id)\n      if (section === undefined) continue\n      if (open && !previous[id]) live.openSection(section)\n      if (!open && previous[id]) live.closeSection(section)\n    }\n    setHistoryState({ for: readerOptions, open: value })"
+    replace: "    setHistoryState((current) => {\n      const previous = current.for === readerOptions ? current.open : NO_SECTIONS_OPEN\n      const value = typeof next === 'function' ? next(previous) : next\n      for (const [id, open] of Object.entries(value)) {\n        const section = parseHistorySectionId(id)\n        if (section === undefined) continue\n        if (open && !previous[id]) live.openSection(section)\n        if (!open && previous[id]) live.closeSection(section)\n      }\n      return { for: readerOptions, open: value }\n    })"
+    expectedDiagnostic: hook-history-toggle-tells-reader-once
