@@ -848,17 +848,35 @@ test('shadow merge-gate preserves old contexts and runs the real gate shell', as
 
   const ci = readWorkflow('ci.yml')
   const titleGuard = readWorkflow('title-guard.yml')
-  assert.equal(titleGuard.workflow.name, 'title-guard')
-  assert.deepEqual(titleGuard.trigger.pull_request?.types, ['opened', 'edited', 'synchronize', 'reopened'])
+  assert.equal(titleGuard.workflow.name, fixture.expected_title_guard.name)
+  assert.deepEqual(titleGuard.trigger.pull_request?.types, fixture.expected_title_guard.pull_request_types)
+  assert.ok(titleGuard.trigger.pull_request?.types.includes('edited'), 'standalone title-guard must still handle edited PRs')
   assert.ok(Object.hasOwn(titleGuard.trigger, 'merge_group'))
   assert.ok(Object.hasOwn(titleGuard.trigger, 'workflow_call'))
+  assert.equal(
+    titleGuard.workflow.concurrency?.group,
+    fixture.expected_title_guard.concurrency_group,
+    'title-guard concurrency group must include github.workflow to isolate standalone and reusable runs',
+  )
+  assert.match(
+    String(titleGuard.workflow.concurrency?.group ?? ''),
+    /\$\{\{\s*github\.workflow\s*\}\}/,
+    'title-guard concurrency group must reference github.workflow',
+  )
+  assert.equal(
+    normalizeIf(String(titleGuard.workflow.concurrency?.['cancel-in-progress'] ?? '')),
+    fixture.expected_title_guard.cancel_in_progress,
+    'title-guard must only cancel in-progress runs for pull_request',
+  )
   assert.doesNotMatch(ci.text, /inherit_verdict|verdict-source:\s*inherited|verdict-source=inherited/, 'shadow PR must not carry verdict inheritance')
+  assert.deepEqual(ci.trigger.pull_request?.types, fixture.expected_ci_pull_request_types, 'ci.yml pull_request types must not trigger heavy CI on PR edits')
+  assert.ok(!ci.trigger.pull_request?.types?.includes('edited'), 'ci.yml must not run heavy CI on pull_request edited events')
   assert.equal(ci.trigger.pull_request?.paths, undefined, 'ci.yml must not filter pull_request by paths')
   assert.equal(ci.trigger.pull_request?.['paths-ignore'], undefined, 'ci.yml must not filter pull_request by paths-ignore')
 
   const titleCheck = jobOf(ci, 'title-check')
   assert.equal(normalizeIf(String(titleCheck.if ?? '')), "github.event_name == 'pull_request' || github.event_name == 'merge_group'")
-  assert.equal(titleCheck.uses, './.github/workflows/title-guard.yml')
+  assert.equal(titleCheck.uses, fixture.expected_title_guard.reuse_target)
 
   const mergeGate = jobOf(ci, 'merge-gate')
   assert.equal(mergeGate.name, 'merge-gate')

@@ -3,6 +3,22 @@ expected_required_contexts:
   - {context: gates, workflow: ci.yml, job: gates, aggregator: true}
   - {context: title-guard, workflow: title-guard.yml, job: title-guard, guard: true}
 
+expected_ci_pull_request_types:
+  - opened
+  - synchronize
+  - reopened
+
+expected_title_guard:
+  name: title-guard
+  pull_request_types:
+    - opened
+    - edited
+    - synchronize
+    - reopened
+  concurrency_group: "title-guard-${{ github.workflow }}-${{ github.ref }}"
+  cancel_in_progress: "${{ github.event_name == 'pull_request' }}"
+  reuse_target: "./.github/workflows/title-guard.yml"
+
 expected_needs:
   - determine-runner
   - title-check
