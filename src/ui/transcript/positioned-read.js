@@ -58,6 +58,7 @@ export const PositionedReadStatus = Object.freeze({
 /** @typedef {(typeof PositionedReadFailureKind)[keyof typeof PositionedReadFailureKind]} PositionedReadFailureKindValue */
 /** @typedef {(typeof PositionedLanding)[keyof typeof PositionedLanding]} PositionedLandingValue */
 /** @typedef {(typeof PositionedReadStatus)[keyof typeof PositionedReadStatus]} PositionedReadStatusValue */
+/** @typedef {PositionedReadStatusValue | PositionedReadFailureKindValue} PositionedReadDataValue */
 
 const FAILURE_KINDS = new Set(Object.values(PositionedReadFailureKind))
 const LANDINGS = new Set(Object.values(PositionedLanding))
@@ -775,7 +776,7 @@ function loadedTasks(turns) {
  * @property {import('@peasant-labs/schema').TranscriptContentHeader | null} header
  * @property {{ mode: PositionedLandingValue, position?: number, requestedAnchor?: number, anchorTurn?: number, requestedPosition?: number, anchorPosition?: number, anchorSegment?: number, snapped: boolean } | null} landing
  * @typedef {object} PositionedTranscript
- * @property {Partial<import('./state-capabilities.js').TranscriptViewerBaseProps>} viewerProps  every prop the viewer needs for this read; spread it onto TranscriptViewer
+ * @property {Partial<import('./state-capabilities.js').TranscriptViewerBaseProps> & Pick<import('./state-capabilities.js').TranscriptViewerBaseProps, 'viewModel'>} viewerProps  every prop the viewer needs for this read; spread it onto TranscriptViewer
  * @property {PositionedReadControls} controls
  */
 
