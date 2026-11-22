@@ -4,6 +4,10 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.2.2
+
+- keep positioned reader fetches, history state and labels per read (#329)
+
 ## 0.2.1
 
 - show the minimap timeline in a preview (#325)
