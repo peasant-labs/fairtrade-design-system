@@ -1,0 +1,178 @@
+expected_required_contexts:
+  - {context: lib, workflow: ci.yml, job: lib}
+  - {context: gates, workflow: ci.yml, job: gates, aggregator: true}
+  - {context: title-guard, workflow: title-guard.yml, job: title-guard, guard: true}
+
+expected_ci_pull_request_types:
+  - opened
+  - synchronize
+  - reopened
+
+expected_title_guard:
+  name: title-guard
+  pull_request_types:
+    - opened
+    - edited
+    - synchronize
+    - reopened
+  concurrency_group: "title-guard-${{ github.workflow }}-${{ github.ref }}"
+  cancel_in_progress: "${{ github.event_name == 'pull_request' }}"
+  reuse_target: "./.github/workflows/title-guard.yml"
+
+expected_needs:
+  - determine-runner
+  - title-check
+  - lib
+  - fairtest
+  - journeys
+  - gates
+
+expected_full_marker_step: "verdict-source: full"
+expected_full_marker_jobs:
+  - title-check
+  - lib
+  - fairtest
+  - journeys
+  - gates
+expected_full_marker_summary: "verdict-source=full"
+
+all_success_needs: &all-success
+  determine-runner: {result: success}
+  title-check: {result: success}
+  lib: {result: success}
+  fairtest: {result: success}
+  journeys: {result: success}
+  gates: {result: success}
+
+required_cases:
+  - pull_request-all-success
+  - merge_group-all-success
+  - push-title-check-skipped
+  - workflow_dispatch-title-check-skipped
+  - pull_request-title-check-skipped
+  - merge_group-title-check-skipped
+  - pull_request-lib-skipped
+  - pull_request-fairtest-skipped
+  - pull_request-journeys-skipped
+  - pull_request-gates-skipped
+  - pull_request-determine-runner-skipped
+  - pull_request-lib-failed
+  - push-title-check-failed
+  - unsupported-event-schedule
+
+cases:
+  - name: pull_request-all-success
+    event: pull_request
+    needs: *all-success
+    expected_exit: 0
+    expected_full_marker: true
+
+  - name: merge_group-all-success
+    event: merge_group
+    needs: *all-success
+    expected_exit: 0
+    expected_full_marker: true
+
+  - name: push-title-check-skipped
+    event: push
+    needs:
+      <<: *all-success
+      title-check: {result: skipped}
+    expected_exit: 0
+    expected_full_marker: false
+
+  - name: workflow_dispatch-title-check-skipped
+    event: workflow_dispatch
+    needs:
+      <<: *all-success
+      title-check: {result: skipped}
+    expected_exit: 0
+    expected_full_marker: false
+
+  - name: pull_request-title-check-skipped
+    event: pull_request
+    needs:
+      <<: *all-success
+      title-check: {result: skipped}
+    expected_exit: 1
+    expected_full_marker: false
+    error_contains: "::error::merge-gate: title guard is required for pull_request runs"
+
+  - name: merge_group-title-check-skipped
+    event: merge_group
+    needs:
+      <<: *all-success
+      title-check: {result: skipped}
+    expected_exit: 1
+    expected_full_marker: false
+    error_contains: "::error::merge-gate: title guard is required for merge_group runs"
+
+  - name: pull_request-lib-skipped
+    event: pull_request
+    needs:
+      <<: *all-success
+      lib: {result: skipped}
+    expected_exit: 1
+    expected_full_marker: false
+    error_contains: "::error::merge-gate: lib did not succeed"
+
+  - name: pull_request-fairtest-skipped
+    event: pull_request
+    needs:
+      <<: *all-success
+      fairtest: {result: skipped}
+    expected_exit: 1
+    expected_full_marker: false
+    error_contains: "::error::merge-gate: fairtest did not succeed"
+
+  - name: pull_request-journeys-skipped
+    event: pull_request
+    needs:
+      <<: *all-success
+      journeys: {result: skipped}
+    expected_exit: 1
+    expected_full_marker: false
+    error_contains: "::error::merge-gate: journeys did not succeed"
+
+  - name: pull_request-gates-skipped
+    event: pull_request
+    needs:
+      <<: *all-success
+      gates: {result: skipped}
+    expected_exit: 1
+    expected_full_marker: false
+    error_contains: "::error::merge-gate: gates did not succeed"
+
+  - name: pull_request-determine-runner-skipped
+    event: pull_request
+    needs:
+      <<: *all-success
+      determine-runner: {result: skipped}
+    expected_exit: 1
+    expected_full_marker: true
+    error_contains: "::error::merge-gate: determine-runner did not succeed"
+
+  - name: pull_request-lib-failed
+    event: pull_request
+    needs:
+      <<: *all-success
+      lib: {result: failure}
+    expected_exit: 1
+    expected_full_marker: false
+    error_contains: "::error::merge-gate: a needed job failed or was cancelled"
+
+  - name: push-title-check-failed
+    event: push
+    needs:
+      <<: *all-success
+      title-check: {result: failure}
+    expected_exit: 1
+    expected_full_marker: false
+    error_contains: "::error::merge-gate: a needed job failed or was cancelled"
+
+  - name: unsupported-event-schedule
+    event: schedule
+    needs: *all-success
+    expected_exit: 1
+    expected_full_marker: true
+    error_contains: "::error::merge-gate: unsupported event schedule"
