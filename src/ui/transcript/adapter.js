@@ -32,6 +32,7 @@ import { aggregateUsage } from './usage.js'
 import { isKnownTime } from './time.js'
 import { unwrapUserQuery, userQueryLeadLength, USER_QUERY_OPEN_TAG, USER_QUERY_CLOSE_TAG } from './title.js'
 import { EarlierHistoryState, UnknownEarlierHistoryState, parseEarlierHistoryState } from './earlier-history-state.js'
+import { historySectionId } from './history-section-id.js'
 import { TranscriptTail } from './continuation-values.js'
 
 /** @typedef {import('./wire-types.js').TranscriptWireInput} TranscriptWireInput */
@@ -985,7 +986,7 @@ export function adaptTranscript(payload, annotations, analytics, options) {
   if (hasEvidence) vm.usageScopes = aggregateUsage(completeTurns)
   vm.relationships = cookRelationships(payload.relationships ?? [], options?.relationshipNavigation)
   vm.earlierHistory = (payload.earlierHistory ?? []).map((section, index) => {
-    const id = `earlier-${index}`
+    const id = historySectionId(index)
     const earlier = cookPartition(payload, section.turns, section.nativeMetadata, id)
     if (incompleteTail) for (const turn of earlier.turns) delete turn.isFinal
     return {
@@ -1011,7 +1012,7 @@ export function adaptTranscript(payload, annotations, analytics, options) {
 
 /** The partition id a positioned read cooks into: `main`, or `earlier-N` for history section N. @param {{ kind?: string, sectionIndex?: number | null } | undefined} partition @returns {string} */
 export function positionedPartitionId(partition) {
-  if (partition?.kind === TranscriptSegmentPartitionKind.History) return `earlier-${partition.sectionIndex ?? 0}`
+  if (partition?.kind === TranscriptSegmentPartitionKind.History) return historySectionId(partition.sectionIndex ?? 0)
   return MAIN_PARTITION_ID
 }
 

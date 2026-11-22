@@ -22,6 +22,7 @@ import { formatCount } from '../format.js'
 import { toolStateKey } from './tool-state-key.js'
 import { IntegrityMark } from './IntegrityBadge.jsx'
 import { INTEGRITY_COPY } from './integrity.js'
+import { recordedTurnIndex } from './recorded-turn.js'
 
 /* TurnCard — one transcript turn, lifted verbatim from the canonical mockup
    (src/mockups/inuse/TranscriptApp.jsx:541). DUMB: it renders a cooked `TurnVM`
@@ -62,7 +63,7 @@ function turnTimeLabel(ts) {
  * @property {boolean} [allowClipboard]
  * @property {boolean} [copied]
  * @property {(turnIndex: number, el: HTMLElement | null) => void} [registerRef]
- * @property {(turnIndex: number) => void} [onLabel]   omit to hide the "label" affordance
+ * @property {(turnIndex: number) => void} [onLabel]   called with the turn's recorded index; omit to hide the "label" affordance, which a positioned row without a recorded index never shows
  * @property {(turn: object) => unknown} [renderActions]  host-owned per-turn actions; replaces the built-in label button (hosts with their own label models render their own popover)
  * @property {{ outcome: string, flag?: string }} [savedLabel]
  * @property {boolean} [compact]
@@ -165,8 +166,8 @@ export default function TurnCard({
      name says the number was not served, so a screen reader hears the same fact. */
   const numbered = !turn.numberAbsent
   const turnName = numbered ? `turn ${turn.label}` : 'turn, number not served'
-  /* The copy link addresses the recorded index; a positioned row without one has no address. */
-  const linkIndex = turn.position === undefined ? turn.index : turn.recordedIndex
+  /* The copy link and the label address the recorded index; a positioned row without one has no address. */
+  const linkIndex = recordedTurnIndex(turn)
   const anchorButton = !isEarlier && allowClipboard && linkIndex !== undefined ? (
     <button
       type="button"
@@ -221,8 +222,8 @@ export default function TurnCard({
           {anchorButton}
           {renderActions ? (
             renderActions(turn)
-          ) : onLabel && (
-            <button type="button" className="txn-labelbtn" onClick={() => onLabel(turn.index)}>
+          ) : onLabel && linkIndex !== undefined && (
+            <button type="button" className="txn-labelbtn" onClick={() => onLabel(linkIndex)}>
               label
             </button>
           )}

@@ -135,6 +135,7 @@ export {
   createPositionedReader,
   usePositionedTranscript,
 } from './positioned-read.js'
+export { historySectionId, parseHistorySectionId } from './history-section-id.js'
 export { default as TranscriptScorecard } from './Scorecard.jsx'
 export { default as TranscriptLabelPopover } from './LabelPopover.jsx'
 export {
@@ -167,6 +168,7 @@ export { default as useTranscriptInitialPosition } from './useTranscriptInitialP
 /** @typedef {import('./positioned-read.js').PositionedReadFailureKindValue} PositionedReadFailureKindValue */
 /** @typedef {import('./positioned-read.js').PositionedLandingValue} PositionedLandingValue */
 /** @typedef {import('./positioned-read.js').PositionedReadStatusValue} PositionedReadStatusValue */
+/** @typedef {import('./positioned-read.js').PositionedReadDataValue} PositionedReadDataValue */
 /** @typedef {import('./wire-types.js').Role} Role */
 /** @typedef {import('./wire-types.js').EntryType} EntryType */
 /** @typedef {import('./wire-types.js').ToolCallKind} ToolCallKind */

@@ -15,6 +15,16 @@
 /** @typedef {import('./index.js').PositionedLandingValue} PositionedLandingValue */
 /** @typedef {import('./index.js').PositionedReadFailureKindValue} PositionedReadFailureKindValue */
 /** @typedef {import('./index.js').PositionedReadStatusValue} PositionedReadStatusValue */
+/** @typedef {import('./index.js').PositionedReadDataValue} PositionedReadDataValue */
+
+import { historySectionId, parseHistorySectionId } from './index.js'
+
+/** @type {string} */
+const sectionId = historySectionId(0)
+// @ts-expect-error historySectionId requires a numeric section index
+const badSectionId = historySectionId('0')
+/** @type {number | undefined} */
+const parsedSection = parseHistorySectionId(sectionId)
 
 /** @type {PositionedHostResponse} */
 const busy = { status: 503, retryAfterSeconds: 2, body: null }
@@ -46,16 +56,22 @@ const failure = { kind: 'busy', operation: 'segment', retryAfterSeconds: 2 }
 
 /** @type {PositionedReadStatusValue} */
 const ready = 'ready'
+/** @type {PositionedReadDataValue} */
+const dataValue = 'busy'
+// @ts-expect-error the DOM value is limited to statuses and failure kinds
+/** @type {PositionedReadDataValue} */ const unknownDataValue = 'unknown'
 
 /** @param {PositionedTranscript} read */
 function host(read) {
   const { viewerProps, controls } = read
+  /** @type {import('./index.js').TranscriptViewerProps} */
+  const props = { ...viewerProps, capabilities: { canEdit: false, canLabel: false, canContribute: false, canChangeVisibility: false, canExport: false } }
   /** @type {Promise<unknown>} */ const again = controls.retry()
   controls.openSection(0)
   controls.closeSection(0)
   /** @type {boolean | undefined} */ const snapped = controls.landing?.snapped
   /** @type {import('./index.js').TranscriptViewModel | undefined} */ const vm = viewerProps.viewModel
-  return { again, snapped, vm }
+  return { again, snapped, vm, props }
 }
 
-export { partial, nearest, loose, failure, timeout, ready, options, host }
+export { partial, nearest, loose, failure, timeout, ready, dataValue, unknownDataValue, options, host, sectionId, badSectionId, parsedSection }

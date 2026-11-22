@@ -24,8 +24,10 @@ import { lintCssText } from './css-token-lint.mjs'
 import { LIB_EXTERNALS } from './lib-externals.mjs'
 import { loadStrictYaml, assertExactNames } from './css-source.mjs'
 import { turnAtReadingLine } from '../src/ui/transcript/scroll-position.js'
+import { rewriteTranscriptImports } from './transcript-module-artifact.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
+const ARTIFACT_FIXTURE = 'scripts/testdata/transcript-module-artifact.yaml'
 
 /** @type {{requiredNames: string[], cases: {name: string, count: number, stride: number, line: number, expected: number}[], mutations: {name: string, lineDelta: number, case: string}[], readMutation: {name: string, case: string, find: string, replace: string}}} */
 const scrollSpec = loadStrictYaml('scripts/testdata/transcript-scroll.yaml')
@@ -223,6 +225,22 @@ check('png-diff: vendored harness copies match the canonical diff logic (no drif
   }
   console.log(`  compared ${compared}/${VENDORED.length} vendored png-diff copies against the canonical`)
 })
+
+/** @type {{requiredNames: string[], cases: {name: string, file: string, source: string, expectError: string | null}[]}} */
+const artifactSpec = loadStrictYaml(ARTIFACT_FIXTURE)
+assertExactNames(artifactSpec.cases.map((row) => row.name), artifactSpec.requiredNames, 'transcript module artifact')
+const schemaUrl = new URL('../node_modules/@peasant-labs/schema/dist/index.js', import.meta.url).href
+for (const row of artifactSpec.cases) {
+  check(`transcript-module-artifact: ${row.name}`, () => {
+    if (row.expectError === null) {
+      const out = rewriteTranscriptImports(row.source, row.file)
+      assert.ok(out.includes(schemaUrl), `${row.name}: schema import must resolve relative to helper location`)
+      assert.ok(!out.includes("'./helper.js'") && !out.includes("'@peasant-labs/schema'"), `${row.name}: relative and schema specifiers must be rewritten`)
+    } else {
+      assert.throws(() => rewriteTranscriptImports(row.source, row.file), (err) => err instanceof Error && err.message.includes(row.expectError), `${row.name}: expected error naming ${row.expectError}`)
+    }
+  })
+}
 
 if (failed) {
   console.error(`\ntest:gates — ${failed} gate teeth-test(s) FAILED`)

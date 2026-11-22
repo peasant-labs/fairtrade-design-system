@@ -1,0 +1,25 @@
+requiredNames:
+  - static-relative-and-schema-rewritten
+  - dynamic-import-rejected
+  - side-effect-import-rejected
+cases:
+  - name: static-relative-and-schema-rewritten
+    file: example.js
+    source: |
+      import { Role } from '@peasant-labs/schema'
+      import { helper } from './helper.js'
+      export { Role, helper }
+    expectError: null
+  - name: dynamic-import-rejected
+    file: dynamic.js
+    source: |
+      export async function load() {
+        return import('./lazy.js')
+      }
+    expectError: rewriteTranscriptImports left a relative import in dynamic.js
+  - name: side-effect-import-rejected
+    file: side-effect.js
+    source: |
+      import './setup.js'
+      export const x = 1
+    expectError: rewriteTranscriptImports left a relative import in side-effect.js

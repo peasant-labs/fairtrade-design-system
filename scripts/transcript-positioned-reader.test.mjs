@@ -27,7 +27,7 @@ import {
   zPositionedWindow,
   zTranscriptContentHeader,
 } from '@peasant-labs/schema'
-import { loadFixturePair, withMountedSource, click, createReport } from './mounted-parts.mjs'
+import { assertExactNames, loadFixturePair, withMountedSource, click, createReport } from './mounted-parts.mjs'
 
 const NUMBERING = 'scripts/testdata/transcript-positioned-numbering.yaml'
 const NUMBERING_MANIFEST = 'scripts/testdata/transcript-positioned-numbering.manifest.yaml'
@@ -49,6 +49,11 @@ const families = {
   history: loadFixturePair(HISTORY, HISTORY_MANIFEST, { cases: 'requiredCaseNames' }).fixture,
   integrity: loadFixturePair(INTEGRITY, INTEGRITY_MANIFEST, { cases: 'requiredCaseNames' }).fixture,
 }
+assertExactNames(
+  families.reader.cases.find((row) => row.name === 'controller-status-kind-table').rows.map((row) => row.name),
+  loadFixturePair(READER, READER_MANIFEST, { cases: 'requiredCaseNames' }).manifest.requiredStatusNames,
+  `${READER} status rows`,
+)
 /** The transport's request names, as the recording transport logs them. */
 const Operation = Object.freeze({ Header: 'header', Directory: 'directory', Window: 'window', Segment: 'segment', Locate: 'locate' })
 const report = createReport('transcript positioned reader')
@@ -78,12 +83,14 @@ async function run(family, name, body) {
 }
 
 /* read-only counters on the production functions a positioned read must not call */
-const spy = { prefilter: 0, labels: 0, wholeDocument: 0 }
+const spy = { prefilter: 0, labels: 0, wholeDocument: 0, sectionOpens: 0, sectionCloses: 0 }
 globalThis.__fairtradePositionedSpy = spy
 const COUNTERS = [
   { file: 'src/ui/transcript/analytics.js', find: 'export function computeTurnLabels(turns) {', add: 'globalThis.__fairtradePositionedSpy && (globalThis.__fairtradePositionedSpy.labels += 1)' },
   { file: 'src/ui/transcript/adapter.js', find: 'export function prefilterTurns(turns) {', add: 'globalThis.__fairtradePositionedSpy && (globalThis.__fairtradePositionedSpy.prefilter += 1)' },
   { file: 'src/ui/transcript/adapter.js', find: "  const payloadMode = options?.payloadMode ?? 'local'\n", add: "if (payloadMode !== PayloadMode.Segment && globalThis.__fairtradePositionedSpy) globalThis.__fairtradePositionedSpy.wholeDocument += 1" },
+  { file: 'src/ui/transcript/positioned-read.js', find: '  async function openSection(section) {', add: 'globalThis.__fairtradePositionedSpy && (globalThis.__fairtradePositionedSpy.sectionOpens += 1)' },
+  { file: 'src/ui/transcript/positioned-read.js', find: '  function closeSection(section) {', add: 'globalThis.__fairtradePositionedSpy && (globalThis.__fairtradePositionedSpy.sectionCloses += 1)' },
 ]
 const counterPlugin = {
   name: 'fairtrade-positioned-call-counters',
@@ -99,7 +106,7 @@ const counterPlugin = {
     return next === code ? null : { code: next, map: null }
   },
 }
-const resetSpy = () => { spy.prefilter = 0; spy.labels = 0; spy.wholeDocument = 0 }
+const resetSpy = () => { spy.prefilter = 0; spy.labels = 0; spy.wholeDocument = 0; spy.sectionOpens = 0; spy.sectionCloses = 0 }
 const settle = async (rounds = 20) => { for (let i = 0; i < rounds; i += 1) await new Promise((done) => setTimeout(done, 0)) }
 
 /* ── the synthetic positioned document ─────────────────────────────────────────── */
@@ -116,7 +123,7 @@ const parse = (parser, body, name) => {
 }
 
 /** One partition: `segments` tasks of `rowsPerSegment` rows each, numbered as the server's cook would. */
-function partitionOf({ segments, rowsPerSegment, partition, offset, usage }) {
+function partitionOf({ segments, rowsPerSegment, partition, offset, usage, transcript = DOC.transport }) {
   const rows = []
   for (let segment = 0; segment < segments; segment += 1) {
     for (let row = 0; row < rowsPerSegment; row += 1) {
@@ -128,7 +135,7 @@ function partitionOf({ segments, rowsPerSegment, partition, offset, usage }) {
   }
   const totals = { totalTurns: rows.length, totalSegments: segments, totalConversationTurns: rows.length }
   const bodies = Array.from({ length: segments }, (_, index) => ({
-    index, partition, rows: rows.slice(index * rowsPerSegment, (index + 1) * rowsPerSegment), byteLength: 100, hasOlder: index > 0, hasNewer: index < segments - 1, context: context(totals),
+    index, partition, rows: rows.slice(index * rowsPerSegment, (index + 1) * rowsPerSegment), byteLength: 100, hasOlder: index > 0, hasNewer: index < segments - 1, context: context(totals, transcript),
   }))
   const refs = bodies.map((body) => ({ index: body.index, byteLength: 100, sourceFirstPosition: body.rows[0].position, sourceLastPosition: body.rows.at(-1).position, conversationTurns: { before: body.rows[0].position, count: body.rows.length } }))
   return { rows, totals, bodies, refs, partition }
@@ -138,9 +145,9 @@ function partitionOf({ segments, rowsPerSegment, partition, offset, usage }) {
  * The recording transport. `respond(operation, request)` may return a host response, a promise, or
  * undefined for the document's own answer. Every call is logged with its request and signal.
  */
-function documentTransport({ respond, perPage, usagePresent = 'empty', history } = {}) {
-  const main = partitionOf({ segments: DOC.segments, rowsPerSegment: DOC.rowsPerSegment, partition: { kind: 'main' }, offset: DOC.recordedOffset, usage: usagePresent === TranscriptUsagePresence.Present })
-  const section = history ? partitionOf({ segments: 1, rowsPerSegment: history.rows, partition: { kind: 'history', sectionIndex: history.index }, offset: 0 }) : null
+function documentTransport({ respond, perPage, usagePresent = 'empty', history, transcript = DOC.transport } = {}) {
+  const main = partitionOf({ segments: DOC.segments, rowsPerSegment: DOC.rowsPerSegment, partition: { kind: 'main' }, offset: DOC.recordedOffset, usage: usagePresent === TranscriptUsagePresence.Present, transcript })
+  const section = history ? partitionOf({ segments: 1, rowsPerSegment: history.rows, partition: { kind: 'history', sectionIndex: history.index }, offset: 0, transcript }) : null
   const log = []
   const ok = (body) => Promise.resolve({ status: 200, body })
   const answer = (operation, request) => {
@@ -181,6 +188,7 @@ function documentTransport({ respond, perPage, usagePresent = 'empty', history }
   const transport = Object.fromEntries(Object.values(Operation).map((operation) => [operation, call(operation)]))
   return { transport, log, main, section }
 }
+const historyRequests = (log) => log.filter((entry) => entry.request?.partition?.kind === TranscriptSegmentPartitionKind.History)
 const segmentRequests = (log) => log.filter((entry) => entry.operation === Operation.Segment && entry.request.partition.kind === TranscriptSegmentPartitionKind.Main).map((entry) => entry.request.index)
 const residentOf = (reader) => [...reader.getSnapshot().segments.keys()].sort((a, b) => a - b)
 
@@ -192,6 +200,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   const { default: TurnCard } = await load('/src/ui/transcript/TurnCard.jsx')
   const { default: TranscriptViewer } = await load('/src/ui/transcript/TranscriptViewer.jsx')
   const { buildPositionedDemo } = await load('/src/mockups/inuse/positioned-fixture.js')
+  const { historySectionId, parseHistorySectionId } = await load('/src/ui/transcript/history-section-id.js')
   const { createPositionedReader, usePositionedTranscript, PositionedLanding, PositionedReadFailureKind, PositionedReadStatus } = reader
   const start = async (options) => {
     const instance = createPositionedReader({ landing: PositionedLanding.Exact, ...options })
@@ -286,6 +295,30 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     const bare = await mount(React.createElement(TurnCard, { turn: unaddressed }))
     check(bare.container.querySelector('.txn-anchor') === null, 'a row with no recorded index offers no copy link')
     await bare.unmount()
+  })
+  await run('numbering', 'number-saved-label-keys-recorded-index', async (_, check) => {
+    const { turns } = cookSegment(mainSegment)
+    const turn = turns.find((item) => item.label === '7a')
+    const recorded = N.segment.rows.find((row) => row.displayNumber === '7a').recordedIndex
+    const labelled = []
+    const card = await mount(React.createElement(TurnCard, { turn, onLabel: (index) => labelled.push(index) }))
+    click(window, card.container.querySelector('.txn-labelbtn'))
+    check(labelled[0] === recorded && recorded !== turn.position, `the label names the recorded index ${recorded}, not the position ${turn.position}, received ${JSON.stringify(labelled)}`)
+    await card.unmount()
+    const bare = await mount(React.createElement(TurnCard, { turn: { ...turn, recordedIndex: undefined }, onLabel: () => {} }))
+    check(bare.container.querySelector('.txn-labelbtn') === null, 'a row with no recorded index offers no label')
+    await bare.unmount()
+    const ref = { index: N.segment.index, byteLength: 100, sourceFirstPosition: turns[0].position, sourceLastPosition: turns.at(-1).position }
+    const viewer = (savedLabels) => React.createElement(TranscriptViewer, {
+      viewModel: { session: { id: 'labels', harness: 'claude-code' }, turns: [], tasks: [], relationships: [], earlierHistory: [] },
+      capabilities: {}, presentation: 'classic', directory: { complete: true, totalSegments: 1, totalTurns: turns.length, segments: [ref] }, segments: [{ ...ref, turns }], savedLabels,
+    })
+    const chips = (container) => [...container.querySelectorAll('[title^="saved label"]')].map((node) => node.closest('[data-turn]')?.getAttribute('data-turn') ?? node.textContent)
+    const byRecorded = await mount(viewer({ [recorded]: { outcome: 'good' } }))
+    const byPosition = await mount(viewer({ [turn.position]: { outcome: 'good' } }))
+    check(chips(byRecorded.container).length === 1 && chips(byPosition.container).length === 0, `the viewer shows a label saved under the recorded index and none saved under the position, received ${JSON.stringify([chips(byRecorded.container), chips(byPosition.container)])}`)
+    await byRecorded.unmount()
+    await byPosition.unmount()
   })
   await run('numbering', 'number-search-and-filter-unaffected', async (_, check) => {
     const { turns } = cookSegment(mainSegment)
@@ -438,6 +471,34 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     check(after.failure === null && after.segments.has(row.segment) && after.status === PositionedReadStatus.Ready, `a retry that answers settles the read as ready, received ${JSON.stringify({ status: after.status, failure: after.failure, held: [...after.segments.keys()] })}`)
     instance.dispose()
   })
+  await run('reader', 'controller-throwing-failure-handler-settled', async (row, check) => {
+    let refuse = true
+    const { transport } = documentTransport({
+      respond: (operation, request) => (refuse && operation === Operation.Segment && request.index === row.segment ? { status: row.status, body: null } : undefined),
+    })
+    const unhandled = []
+    const onUnhandled = (reason) => unhandled.push(reason)
+    process.on('unhandledRejection', onUnhandled)
+    const instance = await start({ transport, target: { transport: DOC.transport } })
+    const unsubscribe = instance.subscribe(() => {
+      if (instance.getSnapshot().failure) throw new Error('boom in listener')
+    })
+    try {
+      await instance.loadSegment(row.segment)
+      await settle()
+      const afterFail = instance.getSnapshot()
+      check(unhandled.length === 0, `a throwing failure handler produces no unhandled rejection, received ${unhandled.length}`)
+      check(afterFail.failure?.kind === PositionedReadFailureKind.Failed && afterFail.failure?.operation === Operation.Segment, `the reader records the segment failure consistently, received ${JSON.stringify(afterFail.failure)}`)
+      unsubscribe()
+      refuse = false
+      await instance.retry()
+      await settle()
+      check(instance.getSnapshot().segments.has(row.segment) && instance.getSnapshot().failure === null, 'in-flight state is cleared so retry loads the segment')
+    } finally {
+      process.off('unhandledRejection', onUnhandled)
+      instance.dispose()
+    }
+  })
   await run('reader', 'controller-transport-mismatch-discards', async (row, check) => {
     const { transport, main } = documentTransport({
       respond: (operation, request) => (operation === Operation.Segment && request.index === row.segment
@@ -480,6 +541,43 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     await settle()
     check(pending?.signal.aborted === true, 'closing the section aborts its in-flight read')
     check(!instance.getSnapshot().history.has(families.history.section.index), 'a closed section releases its rows and installs nothing that arrives late')
+    instance.dispose()
+  })
+  await run('reader', 'controller-segment-fetch-survives-restart', async (row, check) => {
+    const held = []
+    let refused = false
+    const { transport, log, main } = documentTransport({
+      respond: (operation, request) => {
+        if (operation !== Operation.Segment) return undefined
+        if (request.index === row.staleSegment && !refused) { refused = true; return { status: 409, body: null } }
+        if (request.index !== row.segment) return undefined
+        let release
+        const answer = new Promise((done) => { release = done })
+        held.push(() => release({ status: 200, body: main.bodies[row.segment] }))
+        return answer
+      },
+    })
+    const instance = await start({ transport, target: { transport: DOC.transport } })
+    instance.loadSegment(row.segment)
+    await settle()
+    await instance.loadSegment(row.staleSegment)
+    await settle()
+    check(instance.getSnapshot().failure?.kind === PositionedReadFailureKind.Stale, `the stale answer fails the read, received ${JSON.stringify(instance.getSnapshot().failure)}`)
+    await instance.retry()
+    await settle()
+    const newer = instance.loadSegment(row.segment)
+    await settle()
+    held[0]()
+    await settle()
+    const again = instance.loadSegment(row.segment)
+    await settle()
+    const requests = segmentRequests(log).filter((index) => index === row.segment).length
+    check(requests === row.requests, `segment ${row.segment} is requested once before the restart and once after, received ${requests} requests`)
+    check(again === newer, 'asking again while the newer read is in flight joins that read')
+    for (const release of held.slice(1)) release()
+    await newer
+    await settle()
+    check(instance.getSnapshot().segments.has(row.segment), `the newer read installs segment ${row.segment}, received ${JSON.stringify(residentOf(instance))}`)
     instance.dispose()
   })
   await run('reader', 'controller-landing-exact-vs-snapped', async (row, check) => {
@@ -616,6 +714,64 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     const labels = section.turns.map((turn) => turn.label)
     const headings = [...view.container.querySelectorAll('.txn-earlier .txn-turn-heading')].map((node) => node.textContent)
     check(labels[0] === '1' && headings[0] === 'user turn 1' && section.turns.every((turn) => turn.partition === `earlier-${H.section.index}`), `the section numbers from 1 in its own partition, received ${JSON.stringify(labels)} ${JSON.stringify(headings.slice(0, 2))}`)
+    await view.unmount()
+  })
+
+  await run('reader', 'hook-history-closes-on-transcript-swap', async (_, check) => {
+    const first = documentTransport({ history: H.section })
+    const otherTranscript = { kind: DOC.transport.kind, transcriptId: DOC.otherTranscriptId }
+    const second = documentTransport({ history: H.section, transcript: otherTranscript })
+    let latest = null
+    const SwapHost = ({ transport, transcript }) => {
+      const read = usePositionedTranscript({ transport, target: { transport: transcript }, landing: PositionedLanding.Exact })
+      latest = read
+      return React.createElement(TranscriptViewer, { ...read.viewerProps, capabilities: {} })
+    }
+    const view = await mount(React.createElement(SwapHost, { transport: first.transport, transcript: DOC.transport }))
+    await view.settle(20)
+    await view.act(() => click(window, view.container.querySelector('.txn-earlier-toggle')))
+    await view.settle(20)
+    check(historyRequests(first.log).length > 0 && view.container.querySelector('.txn-earlier-toggle')?.getAttribute('aria-expanded') === 'true', 'the section opens on the first transcript')
+    await view.rerender(React.createElement(SwapHost, { transport: second.transport, transcript: otherTranscript }))
+    await view.settle(30)
+    const open = Object.entries(latest.viewerProps.earlierHistoryOpen).filter(([, value]) => value).map(([id]) => id)
+    check(historyRequests(second.log).length === 0, `the swapped-in transcript reads no history section, received ${historyRequests(second.log).length} history requests`)
+    check(open.length === 0 && view.container.querySelector('.txn-earlier-toggle')?.getAttribute('aria-expanded') === 'false', `the section shows closed after the swap, received open ${JSON.stringify(open)}`)
+    await view.unmount()
+  })
+  await run('reader', 'hook-history-section-id-shared', async (row, check) => {
+    for (const { section, id } of row.ids) {
+      check(historySectionId(section) === id && parseHistorySectionId(id) === section, `section ${section} is named ${id} and read back, received ${JSON.stringify([historySectionId(section), parseHistorySectionId(id)])}`)
+    }
+    for (const value of row.rejected) check(parseHistorySectionId(value) === undefined, `${JSON.stringify(value)} is not a section id, received ${parseHistorySectionId(value)}`)
+    const barrel = await load('/src/ui/transcript/index.js')
+    check(barrel.historySectionId === historySectionId && barrel.parseHistorySectionId === parseHistorySectionId, 'historySectionId and parseHistorySectionId are exported from the transcript barrel')
+    const { view, recorded, read } = await historyHost()
+    const section = read().viewerProps.viewModel.earlierHistory[0]
+    check(section.id === historySectionId(H.section.index) && view.container.querySelector('.txn-earlier')?.getAttribute('data-earlier-section') === section.id, `the hook's view and the mounted viewer name the section ${historySectionId(H.section.index)}, received ${section.id}`)
+    await view.act(() => read().viewerProps.onEarlierHistoryOpenChange(Object.fromEntries(row.rejected.map((value) => [value, true]))))
+    await view.settle(20)
+    check(historyRequests(recorded.log).length === 0, `an open state keyed by values that are not section ids opens nothing, received ${historyRequests(recorded.log).length} history requests`)
+    await view.act(() => read().controls.openSection(H.section.index))
+    await view.settle(20)
+    check(historyRequests(recorded.log).length > 0 && read().viewerProps.earlierHistoryOpen[section.id] === true, 'the controls open the section under the same id the viewer reads')
+    await view.unmount()
+  })
+  await run('reader', 'hook-history-toggle-tells-reader-once', async (row, check) => {
+    const recorded = documentTransport({ history: H.section })
+    const StrictHost = () => {
+      const read = usePositionedTranscript({ transport: recorded.transport, target: { transport: DOC.transport }, landing: PositionedLanding.Exact })
+      return React.createElement(TranscriptViewer, { ...read.viewerProps, capabilities: {} })
+    }
+    const view = await mount(React.createElement(React.StrictMode, null, React.createElement(StrictHost)))
+    await view.settle(20)
+    resetSpy()
+    await view.act(() => click(window, view.container.querySelector('.txn-earlier-toggle')))
+    await view.settle(20)
+    const opens = spy.sectionOpens
+    await view.act(() => click(window, view.container.querySelector('.txn-earlier-toggle')))
+    await view.settle(20)
+    check(opens === row.opens && spy.sectionCloses === row.closes, `one toggle open and one toggle closed tell the reader ${row.opens} and ${row.closes} times, received ${opens} and ${spy.sectionCloses}`)
     await view.unmount()
   })
 

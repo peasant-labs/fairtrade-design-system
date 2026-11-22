@@ -40,6 +40,8 @@ cases:
   - name: number-whole-document-render-computes
   - name: number-accessible-name-includes-served-value
   - name: number-copy-link-unaffected
+  # A saved label keys on the recorded index, like the copy link, never on the served position.
+  - name: number-saved-label-keys-recorded-index
   - name: number-search-and-filter-unaffected
   - name: number-history-section-prints-own-numbering
   - name: segment-mode-refuses-analytics

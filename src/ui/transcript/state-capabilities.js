@@ -50,7 +50,8 @@ export const Presentation = Object.freeze({ Classic: 'classic', Ledger: 'ledger'
 
 /**
  * A per-turn saved label (the LabelPopover's output). `outcome` is the verdict
- * band; `flag` is an optional friction tag. Keyed by turn index in `savedLabels`.
+ * band; `flag` is an optional friction tag. Keyed by the turn's recorded index in `savedLabels`:
+ * a positioned row's served position can move between revisions, so it is never the key.
  * @typedef {object} SavedLabel
  * @property {'good' | 'neutral' | 'bad'} outcome
  * @property {string} [flag]
@@ -112,7 +113,7 @@ export const Presentation = Object.freeze({ Classic: 'classic', Ledger: 'ledger'
  *
  * @typedef {object} ViewerCallbacks
  * @property {() => void} [onEdit]
- * @property {(turnIndex: number, label: SavedLabel) => void} [onLabel]
+ * @property {(turnIndex: number, label: SavedLabel) => void} [onLabel]  `turnIndex` is the turn's recorded index
  * @property {() => void} [onContribute]
  * @property {() => void} [onCopyLink]
  * @property {() => void} [onChangeVisibility]
@@ -186,7 +187,7 @@ export const Presentation = Object.freeze({ Classic: 'classic', Ledger: 'ledger'
  * @property {(query: string) => void} [onSearchChange]
  * @property {TranscriptFilters} [filters]
  * @property {(filters: TranscriptFilters) => void} [onFiltersChange]
- * @property {Record<number, SavedLabel>} [savedLabels]                turn index → saved label
+ * @property {Record<number, SavedLabel>} [savedLabels]                recorded index → saved label
  * @property {(savedLabels: Record<number, SavedLabel>) => void} [onSavedLabelsChange]
  * @property {boolean} [shareOpen]                                     share action-menu disclosure (default closed)
  * @property {(open: boolean) => void} [onShareOpenChange]
@@ -208,7 +209,7 @@ export const Presentation = Object.freeze({ Classic: 'classic', Ledger: 'ledger'
  * @property {boolean} [allowMarkdownImages]                          default true. Pass false for a local-only preview: Markdown images become text placeholders and make no image request. This does not change host-supplied image attachment resolvers.
  * @property {boolean} [allowClipboard] default true. False hides app-initiated copy controls without affecting native selection.
  * @property {{state: 'more' | 'loading' | 'end' | 'cut' | 'failed', notice?: import('react').ReactNode, onLoadMore?: () => void}} [continuation] segment-mode manual continuation; only activation requests more.
- * @property {{ status: string, failure: { kind: string, operation: string, retryAfterSeconds?: number } | null, retry: () => unknown }} [positionedRead] a positioned read's state, from `usePositionedTranscript`: the loading line, and each failure kind's notice with its retry or reload
+ * @property {{ status: import('./positioned-read.js').PositionedReadStatusValue, failure: import('./positioned-read.js').PositionedReadFailure | null, retry: () => unknown }} [positionedRead] a positioned read's state, from `usePositionedTranscript`: the loading line, and each failure kind's notice with its retry or reload
  * @property {Presentation} [presentation]                            chrome presentation; defaults to 'ledger'. `classic` retains the report-style surface. An unrecognized runtime value fails closed to classic.
  * @property {import('react').ReactNode} [subtitle]                    optional deck under the session title; rendered in either presentation when supplied
  * @property {unknown} [pullRequests]                                  host-owned node rendered under the meta row (a pull request list and its own "show all" control); omitted renders nothing

@@ -289,6 +289,8 @@ const expectedExports = [
   'SelectionNodeKind',
   'SelectionNodeParseError',
   'parseNodeKind',
+  'historySectionId',
+  'parseHistorySectionId',
   'VillageObservations',
 ]
 
