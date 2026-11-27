@@ -43,6 +43,8 @@ The adapter cooks the canonical parser's returned value, including its optional-
 normalization, while retaining the explicitly supported legacy `gitContext` extension.
 Optional empty refs do not weaken required usage-owner/source or attachment validation.
 
+The canonical wire carries no compaction part type or metadata, so the one signal is the notice peasant already serves as a depth-0 system turn's content. The adapter cooks `TurnVM.compaction` only when that content is one of the producer's exact previews: `Context compacted`, `Conversation compacted`, an optional recorded `(trigger)`, and an optional canonical count tail (`N -> N tokens`, `N -> N tokens in Nms`, `N tokens before`, `N tokens after`). The recorded content stays verbatim in `TurnVM.content`; a system message that only mentions compaction, an unrecognized tail, or a producer-classified control record is never reclassified. `parseCompactionNotice` in `compaction.js` is the sole detector and the renderer never parses.
+
 `TurnDetail.contentParts` is the producer's ordered text/image blocks, and the adapter copies them
 into `TurnVM.contentParts` in the recorded order. `content` stays the text fallback: a payload with
 no parts renders exactly as before, and a part kind this contract does not render is dropped rather
