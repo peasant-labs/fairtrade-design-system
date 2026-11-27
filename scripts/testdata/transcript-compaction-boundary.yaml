@@ -1,0 +1,189 @@
+# Cases for rendering a producer context-compaction boundary (adaptTranscript -> TranscriptViewer).
+# scripts/transcript-compaction-boundary.test.mjs cooks the REAL adapter, checks the pure
+# notice parser, and mounts the REAL viewer through vite. The fixture is a synthetic mixed
+# conversation and control input in the shape peasant serves:
+#   - the canonical notices `Conversation compacted` and `Context compacted` render as their
+#     own boundary row, never as a generic system row or a control row;
+#   - a trigger, a pre/post token delta, one side alone, or no counts at all;
+#   - a recorded duration;
+#   - an ordinary system message that merely mentions compaction, an unrecognized tail, and a
+#     producer-classified control record stay exactly what they were;
+#   - every turn keeps its recorded position.
+payload:
+  id: compaction-boundary
+  harness: claude-code
+  startTime: '2026-10-06T12:00:00Z'
+  endTime: '2026-10-06T12:08:00Z'
+  durationMins: 8
+  totalTokens: 0
+  tokensIn: 0
+  tokensOut: 0
+  turnCount: 5
+  toolCallCount: 0
+  turns:
+    - {index: 0, role: user, content: 'start the migration', timestamp: '2026-10-06T12:00:00Z', depth: 0}
+    - {index: 1, role: system, content: 'Conversation compacted', timestamp: '2026-10-06T12:01:00Z', depth: 0}
+    - {index: 2, role: assistant, content: 'the migration started', timestamp: '2026-10-06T12:02:00Z', depth: 0}
+    - {index: 3, role: system, content: 'Context compacted (auto): 168104 -> 24000 tokens', timestamp: '2026-10-06T12:03:00Z', depth: 0}
+    - {index: 4, role: system, content: 'mode: normal', controlKind: mode, timestamp: '2026-10-06T12:03:30Z', depth: 0}
+    - {index: 5, role: system, content: 'Context compacted: 120000 -> 40000 tokens in 1200ms', timestamp: '2026-10-06T12:04:00Z', depth: 0}
+    - {index: 6, role: user, content: 'continue the migration', timestamp: '2026-10-06T12:05:00Z', depth: 0}
+    - {index: 7, role: system, content: "the conversation was compacted.\nsummary: the migration notes were kept.", timestamp: '2026-10-06T12:06:00Z', depth: 0}
+    - {index: 8, role: assistant, content: 'the migration is done', timestamp: '2026-10-06T12:08:00Z', depth: 0}
+
+# The pure parser: every canonical preview cooks, and a notice that only looks similar does not.
+parserCases:
+  - name: an accepted bare context notice
+    input: Context compacted
+    expected: {label: context compacted, text: Context compacted}
+  - name: an accepted context notice with a trigger
+    input: Context compacted (auto)
+    expected: {label: context compacted, trigger: auto, text: Context compacted (auto)}
+  - name: an accepted trigger with a pre and post delta
+    input: 'Context compacted (auto): 168104 -> 24000 tokens'
+    expected: {label: context compacted, trigger: auto, preTokens: 168104, postTokens: 24000, text: 'Context compacted (auto): 168104 -> 24000 tokens'}
+  - name: an accepted delta with a duration
+    input: 'Context compacted: 120000 -> 40000 tokens in 1200ms'
+    expected: {label: context compacted, preTokens: 120000, postTokens: 40000, durationMs: 1200, text: 'Context compacted: 120000 -> 40000 tokens in 1200ms'}
+  - name: an accepted before count
+    input: 'Context compacted: 120000 tokens before'
+    expected: {label: context compacted, preTokens: 120000, text: 'Context compacted: 120000 tokens before'}
+  - name: an accepted after count
+    input: 'Context compacted: 120000 tokens after'
+    expected: {label: context compacted, postTokens: 120000, text: 'Context compacted: 120000 tokens after'}
+  - name: an accepted conversation notice
+    input: Conversation compacted
+    expected: {label: conversation compacted, text: Conversation compacted}
+  - name: a lower-case mention is not a boundary
+    input: the conversation was compacted.
+    expected: null
+  - name: a different compaction word is not a boundary
+    input: Context compaction complete
+    expected: null
+  - name: an unrecognized tail is not a boundary
+    input: 'Context compacted: the earlier turns were summarized'
+    expected: null
+  - name: the bare word is not a boundary
+    input: compacted
+    expected: null
+  - name: punctuation after the notice is not canonical
+    input: Context compacted.
+    expected: null
+
+cases:
+  - name: trigger and token delta cook
+    kind: descriptor
+    turn: 3
+    expected: {label: context compacted, trigger: auto, preTokens: 168104, postTokens: 24000, text: 'Context compacted (auto): 168104 -> 24000 tokens'}
+  - name: duration cooks
+    kind: descriptor
+    turn: 5
+    expected: {label: context compacted, preTokens: 120000, postTokens: 40000, durationMs: 1200, text: 'Context compacted: 120000 -> 40000 tokens in 1200ms'}
+  - name: one-sided before count cooks
+    kind: descriptor
+    turns:
+      - {index: 0, role: user, content: 'before the boundary', timestamp: '2026-10-06T12:00:00Z', depth: 0}
+      - {index: 1, role: system, content: 'Context compacted: 90000 tokens before', timestamp: '2026-10-06T12:01:00Z', depth: 0}
+      - {index: 2, role: assistant, content: 'after the boundary', timestamp: '2026-10-06T12:02:00Z', depth: 0}
+    turn: 1
+    expected: {label: context compacted, preTokens: 90000, text: 'Context compacted: 90000 tokens before'}
+  - name: one-sided after count cooks
+    kind: descriptor
+    turns:
+      - {index: 0, role: user, content: 'before the boundary', timestamp: '2026-10-06T12:00:00Z', depth: 0}
+      - {index: 1, role: system, content: 'Context compacted: 12000 tokens after', timestamp: '2026-10-06T12:01:00Z', depth: 0}
+      - {index: 2, role: assistant, content: 'after the boundary', timestamp: '2026-10-06T12:02:00Z', depth: 0}
+    turn: 1
+    expected: {label: context compacted, postTokens: 12000, text: 'Context compacted: 12000 tokens after'}
+  - name: absent counts still cook the boundary label
+    kind: descriptor
+    turns:
+      - {index: 0, role: user, content: 'before the boundary', timestamp: '2026-10-06T12:00:00Z', depth: 0}
+      - {index: 1, role: system, content: 'Context compacted (auto)', timestamp: '2026-10-06T12:01:00Z', depth: 0}
+      - {index: 2, role: assistant, content: 'after the boundary', timestamp: '2026-10-06T12:02:00Z', depth: 0}
+    turn: 1
+    expected: {label: context compacted, trigger: auto, text: 'Context compacted (auto)'}
+  - name: a conversation notice cooks
+    kind: descriptor
+    turn: 1
+    expected: {label: conversation compacted, text: Conversation compacted}
+  - name: an ordinary system message mentioning compaction stays a system row
+    kind: not-compaction
+    turn: 7
+  - name: an unrecognized tail is not a boundary
+    kind: not-compaction
+    turns:
+      - {index: 0, role: user, content: 'before the boundary', timestamp: '2026-10-06T12:00:00Z', depth: 0}
+      - {index: 1, role: system, content: 'Context compacted: the earlier turns were summarized', timestamp: '2026-10-06T12:01:00Z', depth: 0}
+      - {index: 2, role: assistant, content: 'after the boundary', timestamp: '2026-10-06T12:02:00Z', depth: 0}
+    turn: 1
+  - name: a control record keeps its control kind
+    kind: control-record
+    turn: 4
+    controlKind: mode
+  - name: a boundary keeps its recorded turn position
+    kind: position
+    expected: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+    before: 2
+    after: 4
+  - name: a boundary participates in system grouping
+    kind: group
+    owner: 3
+    members: [3, 4, 5]
+    summary: '3 entries: 2 system, 1 mode'
+    unclassified: 2
+  - name: a mounted boundary shows the trigger and delta
+    kind: mounted
+    turn: 3
+    expected: {label: context compacted, trigger: auto, pre: 168.1k, post: 24k}
+  - name: a mounted boundary shows its duration
+    kind: mounted
+    turn: 1
+    turns:
+      - {index: 0, role: user, content: 'before the boundary', timestamp: '2026-10-06T12:00:00Z', depth: 0}
+      - {index: 1, role: system, content: 'Context compacted: 120000 -> 40000 tokens in 1200ms', timestamp: '2026-10-06T12:01:00Z', depth: 0}
+      - {index: 2, role: assistant, content: 'after the boundary', timestamp: '2026-10-06T12:02:00Z', depth: 0}
+    expected: {label: context compacted, pre: 120k, post: 40k, duration: 1.2s}
+  - name: a mounted boundary discloses the recorded notice
+    kind: disclosure
+    turn: 3
+    expected: 'Context compacted (auto): 168104 -> 24000 tokens'
+  - name: a mounted one-sided count says before
+    kind: mounted
+    turn: 1
+    turns:
+      - {index: 0, role: user, content: 'before the boundary', timestamp: '2026-10-06T12:00:00Z', depth: 0}
+      - {index: 1, role: system, content: 'Context compacted: 90000 tokens before', timestamp: '2026-10-06T12:01:00Z', depth: 0}
+      - {index: 2, role: assistant, content: 'after the boundary', timestamp: '2026-10-06T12:02:00Z', depth: 0}
+    expected: {label: context compacted, deltaSide: before}
+  - name: a mounted one-sided count says after
+    kind: mounted
+    turn: 1
+    turns:
+      - {index: 0, role: user, content: 'before the boundary', timestamp: '2026-10-06T12:00:00Z', depth: 0}
+      - {index: 1, role: system, content: 'Context compacted: 12000 tokens after', timestamp: '2026-10-06T12:01:00Z', depth: 0}
+      - {index: 2, role: assistant, content: 'after the boundary', timestamp: '2026-10-06T12:02:00Z', depth: 0}
+    expected: {label: context compacted, deltaSide: after}
+  - name: a mounted boundary without counts still shows its label
+    kind: mounted
+    turn: 1
+    turns:
+      - {index: 0, role: user, content: 'before the boundary', timestamp: '2026-10-06T12:00:00Z', depth: 0}
+      - {index: 1, role: system, content: 'Context compacted (auto)', timestamp: '2026-10-06T12:01:00Z', depth: 0}
+      - {index: 2, role: assistant, content: 'after the boundary', timestamp: '2026-10-06T12:02:00Z', depth: 0}
+    expected: {label: context compacted, trigger: auto, noDelta: true}
+  - name: a mounted conversation boundary keeps its recorded label
+    kind: mounted
+    turn: 0
+    turns:
+      - {index: 0, role: system, content: 'Conversation compacted', timestamp: '2026-10-06T12:01:00Z', depth: 0}
+      - {index: 1, role: user, content: 'after the boundary', timestamp: '2026-10-06T12:02:00Z', depth: 0}
+      - {index: 2, role: assistant, content: 'done', timestamp: '2026-10-06T12:03:00Z', depth: 0}
+    expected: {label: conversation compacted, noDelta: true}
+  - name: a mounted ordinary system message stays a system row
+    kind: ordinary
+    turn: 7
+  - name: a mounted control record stays a control row
+    kind: control-row
+    turn: 4
+    controlKind: mode
