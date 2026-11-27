@@ -37,6 +37,7 @@ export { TOOL_GROUPS } from './view-model.js'
 export { adaptTranscript, prefilterTurns, diffLines, buildFiles, buildToolGroupCounts } from './adapter.js'
 export { TranscriptContinuationState, TranscriptContinuationLabels, TranscriptTail } from './continuation-values.js'
 export { default as TranscriptControlRow } from './ControlRow.jsx'
+export { default as TranscriptCompactionBoundary } from './CompactionBoundary.jsx'
 export { default as TranscriptSystemGroup } from './SystemGroup.jsx'
 export { systemGroups } from './system-groups.js'
 export {
@@ -227,6 +228,7 @@ export { default as useTranscriptInitialPosition } from './useTranscriptInitialP
 /** @typedef {import('./view-model.js').SessionGitVM} SessionGitVM */
 /** @typedef {import('./view-model.js').CommitVM} CommitVM */
 /** @typedef {import('./view-model.js').TurnVM} TurnVM */
+/** @typedef {import('./view-model.js').CompactionVM} CompactionVM */
 /** @typedef {import('./view-model.js').ThinkingVM} ThinkingVM */
 /** @typedef {import('./view-model.js').ToolCallVM} ToolCallVM */
 /** @typedef {import('./view-model.js').ToolGroup} ToolGroup */

@@ -34,6 +34,7 @@ import { unwrapUserQuery, userQueryLeadLength, USER_QUERY_OPEN_TAG, USER_QUERY_C
 import { EarlierHistoryState, UnknownEarlierHistoryState, parseEarlierHistoryState } from './earlier-history-state.js'
 import { historySectionId } from './history-section-id.js'
 import { TranscriptTail } from './continuation-values.js'
+import { parseCompactionNotice } from './compaction.js'
 
 /** @typedef {import('./wire-types.js').TranscriptWireInput} TranscriptWireInput */
 /** @typedef {import('./wire-types.js').SessionDetailPayload} SessionDetailPayload */
@@ -1270,6 +1271,13 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
     if (t.controlKind) {
       turnVM.controlKind = t.controlKind
       turnVM.isControl = true
+    }
+    /* the producer's compaction boundary is recognized only at the top level, only on an
+       unclassified system turn, and only when the recorded text is its exact notice. A
+       producer-classified control record keeps its control row even if the text matched. */
+    if (depth === 0 && t.role === Role.System && !t.controlKind) {
+      const compaction = parseCompactionNotice(content)
+      if (compaction) turnVM.compaction = compaction
     }
     if (thinking) turnVM.thinking = thinking
     /* A cursor prompt's <user_query> wrapper is display chrome, and it must leave a turn's ordered

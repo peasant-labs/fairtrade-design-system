@@ -4344,6 +4344,38 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 .txn-control-time { flex: none; color: var(--ink-4); }
 .txn-control-body { margin-top: var(--sp-1); padding-inline-start: var(--sp-5); border-inline-start: var(--bd); }
 
+/* a producer context-compaction boundary reads as its own action row: a boundary label, the
+   recorded trigger, the token delta, and the duration when recorded. It is not a system row and
+   not a control record; the recorded notice opens one indent under the row. Counts and the
+   duration carry tabular figures, and the recorded trigger keeps its case. */
+.txn-compaction { margin-top: var(--sp-3); border-top: var(--bd); }
+.txn-ledger .txn-compaction { border-top: 0; }
+.txn-compaction-head-row { display: flex; align-items: center; gap: var(--sp-2); }
+.txn-compaction-head {
+  display: flex; align-items: center; gap: var(--sp-2);
+  flex: 1 1 auto; min-width: 0;
+  min-height: var(--target-comfortable);
+  padding: 0;
+  background: transparent; border: 0;
+  font-family: var(--font-mono); font-size: var(--fs-label); line-height: var(--lh-mono);
+  color: var(--ink-3);
+  text-align: left; cursor: pointer;
+}
+.txn-compaction-head:hover { color: var(--ink-2); }
+.txn-compaction-head:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset-inset); }
+.txn-compaction-label { flex: none; font-weight: 700; color: var(--ink-2); }
+.txn-compaction-trigger { flex: none; color: var(--ink-4); text-transform: none; }
+.txn-compaction-delta {
+  display: flex; align-items: baseline; gap: var(--sp-1);
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--ink-2);
+}
+.txn-compaction-arrow { color: var(--ink-4); }
+.txn-compaction-unit { color: var(--ink-4); }
+.txn-compaction-duration { flex: none; color: var(--ink-4); }
+.txn-compaction-time { flex: none; color: var(--ink-4); }
+.txn-compaction-body { margin-top: var(--sp-1); padding-inline-start: var(--sp-5); border-inline-start: var(--bd); }
+
 /* a run of consecutive system entries folds into one head; the owner renders in place under
    it and members 2..N inside the disclosure, so a closed group is one laid-out row. Both the
    owner row and the folded members share one inset, so the run reads as one aligned column. */
