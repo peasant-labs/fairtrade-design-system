@@ -40,6 +40,7 @@
     "src/ui/transcript/state-capabilities.contract.type-test.js",
     "src/ui/transcript/positioned-read.contract.type-test.js",
     "src/ui/transcript/initial-position.contract.type-test.js",
+    "src/ui/transcript/scroll-restore.js",
     "src/ui/transcript/view-model.js",
     "src/ui/transcript/wire-types.js",
     "src/ui/graph/contract.type-test.js",

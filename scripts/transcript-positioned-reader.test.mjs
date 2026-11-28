@@ -201,6 +201,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   const { default: TranscriptViewer } = await load('/src/ui/transcript/TranscriptViewer.jsx')
   const { buildPositionedDemo } = await load('/src/mockups/inuse/positioned-fixture.js')
   const { historySectionId, parseHistorySectionId } = await load('/src/ui/transcript/history-section-id.js')
+  const { TranscriptScrollCause, isTranscriptScrollCause, createTranscriptScrollHandle } = await load('/src/ui/transcript/scroll-restore.js')
   const { createPositionedReader, usePositionedTranscript, PositionedLanding, PositionedReadFailureKind, PositionedReadStatus } = reader
   const start = async (options) => {
     const instance = createPositionedReader({ landing: PositionedLanding.Exact, ...options })
@@ -773,6 +774,139 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     await view.settle(20)
     check(opens === row.opens && spy.sectionCloses === row.closes, `one toggle open and one toggle closed tell the reader ${row.opens} and ${row.closes} times, received ${opens} and ${spy.sectionCloses}`)
     await view.unmount()
+  })
+
+  /* ── scroll-restore handle ──────────────────────────────────────────────────── */
+  const mountScrollHandleHost = async ({ turn, history } = {}) => {
+    const recorded = documentTransport({ history })
+    const viewerRef = React.createRef()
+    const ScrollHost = () => {
+      const read = usePositionedTranscript({
+        transport: recorded.transport,
+        target: { transport: DOC.transport, ...(turn === undefined ? {} : { turn }) },
+        landing: PositionedLanding.Exact,
+      })
+      return React.createElement(TranscriptViewer, { ...read.viewerProps, capabilities: {}, ref: viewerRef })
+    }
+    const view = await mount(React.createElement(ScrollHost))
+    await view.settle(30)
+    const stream = view.container.querySelector('.txn-stream')
+    const setRect = (el, top, bottom) => {
+      if (!el) return
+      el.getBoundingClientRect = () => ({ top, bottom, left: 0, right: 800, width: 800, height: bottom - top, x: 0, y: top, toJSON: () => ({}) })
+    }
+    return { view, viewerRef, stream, setRect }
+  }
+
+  await run('reader', 'scroll-handle-offset-read', async (row, check) => {
+    const { view, viewerRef, stream, setRect } = await mountScrollHandleHost()
+    setRect(stream, row.streamTop, row.streamBottom)
+    const rowEl = stream?.querySelector(`[data-turn="${row.position}"]`)
+    setRect(rowEl, row.rowTop, row.rowBottom)
+    const offset = viewerRef.current?.getRowOffset(row.position)
+    check(offset === row.expectedOffset, `getRowOffset(${row.position}) equals ${row.expectedOffset}, received ${offset}`)
+    await view.unmount()
+  })
+
+  await run('reader', 'scroll-handle-in-view', async (row, check) => {
+    const { view, viewerRef, stream, setRect } = await mountScrollHandleHost()
+    setRect(stream, row.streamTop, row.streamBottom)
+    setRect(stream?.querySelector(`[data-turn="${row.inViewPosition}"]`), row.inViewRowTop, row.inViewRowBottom)
+    setRect(stream?.querySelector(`[data-turn="${row.belowPosition}"]`), row.belowRowTop, row.belowRowBottom)
+    setRect(stream?.querySelector(`[data-turn="${row.abovePosition}"]`), row.aboveRowTop, row.aboveRowBottom)
+    const inView = viewerRef.current?.isRowInView(row.inViewPosition)
+    const below = viewerRef.current?.isRowInView(row.belowPosition)
+    const above = viewerRef.current?.isRowInView(row.abovePosition)
+    setRect(stream, row.streamTop, row.streamTop)
+    const zeroHeight = viewerRef.current?.isRowInView(row.inViewPosition)
+    check(inView === true && below === false && above === false && zeroHeight === false, `isRowInView classifies in-view/below/above/zero-height as [true,false,false,false], received ${JSON.stringify([inView, below, above, zeroHeight])}`)
+    await view.unmount()
+  })
+
+  await run('reader', 'scroll-handle-zero-height-stream-not-in-view', async (row, check) => {
+    const { view, viewerRef, stream, setRect } = await mountScrollHandleHost()
+    setRect(stream, row.streamTop, row.streamBottom)
+    setRect(stream?.querySelector(`[data-turn="${row.position}"]`), row.rowTop, row.rowBottom)
+    const inView = viewerRef.current?.isRowInView(row.position)
+    check(inView === false, `zero-height stream (${row.streamTop}..${row.streamBottom}) with straddling row (${row.rowTop}..${row.rowBottom}) is never in view, received ${inView}`)
+    await view.unmount()
+  })
+
+  await run('reader', 'scroll-handle-restore-applies-delta', async (row, check) => {
+    const { view, viewerRef, stream, setRect } = await mountScrollHandleHost()
+    setRect(stream, row.streamTop, row.streamBottom)
+    setRect(stream?.querySelector(`[data-turn="${row.position}"]`), row.rowTop, row.rowBottom)
+    stream.scrollTop = row.initialScrollTop
+    const applied = viewerRef.current?.restoreRowOffset(row.position, row.savedOffset)
+    const ignoredNan = viewerRef.current?.restoreRowOffset(row.position, Number.NaN)
+    check(applied === true && stream.scrollTop === row.expectedScrollTop && ignoredNan === false, `restoreRowOffset applies delta to ${row.expectedScrollTop}, received applied=${applied} scrollTop=${stream.scrollTop} ignoredNan=${ignoredNan}`)
+    await view.unmount()
+  })
+
+  await run('reader', 'scroll-handle-earlier-history-ignored', async (row, check) => {
+    const { view, viewerRef, stream, setRect } = await mountScrollHandleHost({ turn: row.turn, history: H.section })
+    await view.act(() => click(window, view.container.querySelector('.txn-earlier-toggle')))
+    await view.settle(20)
+    setRect(stream, 100, 500)
+    const earlierCard = view.container.querySelectorAll('.txn-earlier article')[row.earlierPosition]
+    setRect(earlierCard, 180, 260)
+    const viaViewerOffset = viewerRef.current?.getRowOffset(row.earlierPosition)
+    const viaViewerInView = viewerRef.current?.isRowInView(row.earlierPosition)
+    const viaViewerRestore = viewerRef.current?.restoreRowOffset(row.earlierPosition, 10)
+    const directHandle = createTranscriptScrollHandle({
+      getStream: () => stream,
+      getRow: () => earlierCard,
+      subscribe: () => () => {},
+    })
+    const directOffset = directHandle.getRowOffset(row.earlierPosition)
+    const directInView = directHandle.isRowInView(row.earlierPosition)
+    const directRestore = directHandle.restoreRowOffset(row.earlierPosition, 10)
+    check(
+      viaViewerOffset === undefined && viaViewerInView === false && viaViewerRestore === false &&
+      directOffset === undefined && directInView === false && directRestore === false,
+      `earlier-history rows are ignored by viewer and handle, received ${JSON.stringify({ viaViewerOffset, viaViewerInView, viaViewerRestore, directOffset, directInView, directRestore })}`,
+    )
+    await view.unmount()
+  })
+
+  await run('reader', 'scroll-handle-missing-row-safe', async (row, check) => {
+    const { view, viewerRef, stream, setRect } = await mountScrollHandleHost()
+    setRect(stream, 100, 500)
+    const results = [...row.missingPositions, Number.NaN].map((pos) => ({
+      offset: viewerRef.current?.getRowOffset(pos),
+      inView: viewerRef.current?.isRowInView(pos),
+      restore: viewerRef.current?.restoreRowOffset(pos, 10),
+    }))
+    check(results.every((r) => r.offset === undefined && r.inView === false && r.restore === false), `missing/invalid rows return undefined/false without throwing, received ${JSON.stringify(results)}`)
+    await view.unmount()
+  })
+
+  await run('reader', 'scroll-handle-subscription-causes-and-unsubscribe', async (row, check) => {
+    const { view, viewerRef, stream } = await mountScrollHandleHost()
+    const causes = []
+    const unsubscribe = viewerRef.current?.subscribeScroll((event) => causes.push(event.cause))
+    stream.dispatchEvent(new window.Event('wheel'))
+    stream.dispatchEvent(new window.Event('touchstart'))
+    stream.dispatchEvent(new window.Event('keydown'))
+    stream.dispatchEvent(new window.Event('scroll'))
+    unsubscribe?.()
+    stream.dispatchEvent(new window.Event('wheel'))
+    stream.dispatchEvent(new window.Event('scroll'))
+    check(JSON.stringify(causes) === JSON.stringify(row.expectedCauses), `subscribeScroll classifies reader input vs other and stops after unsubscribe, received ${JSON.stringify(causes)}`)
+    await view.unmount()
+  })
+
+  await run('reader', 'scroll-handle-closed-cause-set', async (row, check) => {
+    const sameMembers = (object, members) => Object.isFrozen(object) && JSON.stringify(Object.values(object).sort()) === JSON.stringify([...members].sort())
+    const barrel = await load('/src/ui/transcript/index.js')
+    check(
+      sameMembers(TranscriptScrollCause, row.causes) &&
+      row.causes.every(isTranscriptScrollCause) &&
+      !isTranscriptScrollCause('wheel') &&
+      barrel.TranscriptScrollCause === TranscriptScrollCause &&
+      barrel.isTranscriptScrollCause === isTranscriptScrollCause,
+      `TranscriptScrollCause is closed and exported from the transcript barrel, received ${JSON.stringify(Object.values(TranscriptScrollCause))}`,
+    )
   })
 
   /* ── integrity pairs ─────────────────────────────────────────────────────────── */

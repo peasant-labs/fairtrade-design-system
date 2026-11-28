@@ -131,3 +131,49 @@ cases:
   - name: hook-history-toggle-tells-reader-once
     opens: 1
     closes: 1
+  # Scroll-restore handle: main-row offset, viewport check, delta restore, earlier-history isolation,
+  # missing-row safety, stream scroll cause classification, and closed cause set.
+  - name: scroll-handle-offset-read
+    position: 0
+    streamTop: 100
+    streamBottom: 500
+    rowTop: 180
+    rowBottom: 260
+    expectedOffset: 80
+  - name: scroll-handle-in-view
+    streamTop: 100
+    streamBottom: 500
+    inViewPosition: 0
+    inViewRowTop: 180
+    inViewRowBottom: 260
+    belowPosition: 1
+    belowRowTop: 520
+    belowRowBottom: 600
+    abovePosition: 2
+    aboveRowTop: 20
+    aboveRowBottom: 90
+  - name: scroll-handle-zero-height-stream-not-in-view
+    position: 0
+    streamTop: 100
+    streamBottom: 100
+    rowTop: 80
+    rowBottom: 120
+  - name: scroll-handle-restore-applies-delta
+    position: 0
+    initialScrollTop: 200
+    streamTop: 100
+    streamBottom: 500
+    rowTop: 180
+    rowBottom: 260
+    savedOffset: 30
+    expectedScrollTop: 250
+  - name: scroll-handle-earlier-history-ignored
+    # recorded index 1012 is segment 4; default window loads segment 0 (positions 0..2), so position 3 is only in earlier history
+    turn: 1012
+    earlierPosition: 3
+  - name: scroll-handle-missing-row-safe
+    missingPositions: [9999, -1, 1.5]
+  - name: scroll-handle-subscription-causes-and-unsubscribe
+    expectedCauses: [reader-input, reader-input, reader-input, other]
+  - name: scroll-handle-closed-cause-set
+    causes: [reader-input, other]
