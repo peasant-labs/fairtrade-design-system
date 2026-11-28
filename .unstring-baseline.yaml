@@ -289,7 +289,6 @@ rules:
     src/ui/graph/CodeMapComposition.stories.jsx: 26
     src/ui/graph/CodeMapNavigator.stories.jsx: 6
     src/ui/transcript/DiffEntryCard.stories.jsx: 2
-    src/ui/transcript/Minimap.stories.jsx: 1
     src/ui/transcript/OutlineRail.stories.jsx: 1
     src/ui/transcript/Scorecard.stories.jsx: 3
     src/ui/transcript/SystemRow.stories.jsx: 1

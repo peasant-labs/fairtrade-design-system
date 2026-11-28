@@ -7,6 +7,7 @@ import { readingPayload } from '../../mockups/inuse/reading-fixture.js'
 import { integrityBoundProps, integrityOtherHash } from '../../mockups/inuse/integrity-fixture.js'
 import { INTEGRITY_COPY } from './integrity.js'
 import { TranscriptContinuationLabels } from './continuation-values.js'
+import { TranscriptMinimapLabels } from './Minimap.jsx'
 
 export const Pi = {
   args: { viewModel: adaptTranscript(piPayload) },
@@ -163,7 +164,7 @@ const hollowTailArgs = {
 }
 const hollowTailPlay = async ({ canvasElement }) => {
   await pinPreview(canvasElement)
-  const slider = within(canvasElement).getByRole('slider', { name: 'transcript timeline' })
+  const slider = within(canvasElement).getByRole('slider', { name: TranscriptMinimapLabels.Timeline })
   expect(slider.querySelector('.txn-minimap-loaded')).not.toBeNull()
   expect(slider.querySelector('.txn-minimap-tail')).not.toBeNull()
   expect(slider.getAttribute('aria-valuetext')).toContain('50% of source loaded')
@@ -208,13 +209,14 @@ const midSessionNumberedArgs = {
 }
 const midSessionNumberedPlay = async ({ canvasElement }) => {
   const canvas = within(canvasElement)
-  await expect(canvas.getAllByText('#9a').length).toBeGreaterThan(0)
-  await expect(canvas.getAllByText('#10').length).toBeGreaterThan(0)
-  await expect(canvas.getByText('#10a')).toBeVisible()
-  await expect(canvasElement.querySelector('#turn-17 .txn-turn-heading')).toHaveTextContent('assistant turn 9a')
-  await expect(canvasElement.querySelector('#turn-18 .txn-turn-heading')).toHaveTextContent('user turn 10')
+  const [firstTurn, secondTurn, thirdTurn] = midSessionNumberedPayload.turns
+  await expect(canvas.getAllByText(`#${firstTurn.displayNumber}`).length).toBeGreaterThan(0)
+  await expect(canvas.getAllByText(`#${secondTurn.displayNumber}`).length).toBeGreaterThan(0)
+  await expect(canvas.getByText(`#${thirdTurn.displayNumber}`)).toBeVisible()
+  await expect(canvasElement.querySelector(`#turn-${firstTurn.index} .txn-turn-heading`)).toHaveTextContent(`assistant turn ${firstTurn.displayNumber}`)
+  await expect(canvasElement.querySelector(`#turn-${secondTurn.index} .txn-turn-heading`)).toHaveTextContent(`user turn ${secondTurn.displayNumber}`)
   const railCards = [...canvasElement.querySelectorAll('.txn-rail-left .txn-rail-turn-top b')].map((el) => el.textContent)
-  await expect(railCards).toEqual(['#9a', '#10'])
+  await expect(railCards).toEqual([`#${firstTurn.displayNumber}`, `#${secondTurn.displayNumber}`])
 }
 export const MidSessionNumbered = { decorators: [previewFrame], args: midSessionNumberedArgs, play: midSessionNumberedPlay }
 export const MidSessionNumberedLight = { decorators: [previewFrame], args: { ...midSessionNumberedArgs, theme: 'light' }, play: midSessionNumberedPlay }

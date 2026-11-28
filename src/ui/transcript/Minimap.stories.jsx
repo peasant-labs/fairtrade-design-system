@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { expect, within, fireEvent } from 'storybook/test'
-import TranscriptMinimap from './Minimap.jsx'
+import TranscriptMinimap, { TranscriptMinimapLabels } from './Minimap.jsx'
 
 /* TranscriptMinimap story (exported as TranscriptMinimap). One focusable slider over the visible
    turns, in turn order: the decorative ticks form one filled 6px bar on a three-step shape
@@ -48,7 +48,7 @@ export default meta
    asserted in both. */
 async function play({ canvasElement }) {
   const canvas = within(canvasElement)
-  const slider = canvas.getByRole('slider', { name: 'transcript timeline' })
+  const slider = canvas.getByRole('slider', { name: TranscriptMinimapLabels.Timeline })
   // the set-position state the classic scrubber carries: one control, the active position, the total.
   expect(slider).toHaveAttribute('aria-valuemin', '0')
   expect(slider).toHaveAttribute('aria-valuemax', String(turns.length - 1))
@@ -114,7 +114,7 @@ export const LightTheme = { render: () => <Controlled theme="light" />, play }
 
 async function hollowPlay({ canvasElement }) {
   const canvas = within(canvasElement)
-  const slider = canvas.getByRole('slider', { name: 'transcript timeline' })
+  const slider = canvas.getByRole('slider', { name: TranscriptMinimapLabels.Timeline })
   expect(slider).toHaveAttribute('aria-valuetext', `turn ${turns[2].label} of ${turns.length}, 50% of source loaded`)
   const track = slider.querySelector('.txn-minimap-track')
   const loaded = slider.querySelector('.txn-minimap-loaded')

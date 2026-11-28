@@ -400,15 +400,16 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     check(JSON.stringify(forward) === JSON.stringify(expected) && JSON.stringify(reverse) === JSON.stringify(expected) && JSON.stringify(merged) === JSON.stringify(expected), `segment merges preserve wire labels regardless of load order, received ${JSON.stringify([forward, reverse, merged])}`)
   })
   await run('numbering', 'wire-numbered-mounted-surfaces-agree', async (_, check) => {
+    const { Presentation } = await load('/src/ui/transcript/state-capabilities.js')
     const vm = adaptTranscript(wirePayload('wire-mounted', N.wireSegment.midSession))
     let allPassed = true
     for (const theme of ['dark', 'light']) {
-      for (const presentation of ['ledger', 'classic']) {
+      for (const presentation of [Presentation.Ledger, Presentation.Classic]) {
         const view = await mount(React.createElement(TranscriptViewer, { viewModel: vm, capabilities: {}, theme, presentation }))
         const headings = [...view.container.querySelectorAll('.txn-turn-heading')].map((el) => el.textContent)
         const headNums = [...view.container.querySelectorAll('.txn-turnnum')].map((el) => el.textContent)
         const links = [...view.container.querySelectorAll('.txn-anchor')].map((el) => el.getAttribute('aria-label'))
-        const railLabels = presentation === 'ledger'
+        const railLabels = presentation === Presentation.Ledger
           ? [...view.container.querySelectorAll('.txn-rail-left .txn-rail-turn-top b')].map((el) => el.textContent)
           : [...view.container.querySelectorAll('.txn-rail-left .swf-index')].map((el) => el.textContent)
         const boundaryChip = view.container.querySelector('.txn-tb-chip')?.textContent ?? null
@@ -416,7 +417,7 @@ await withMountedSource(async ({ load, mount, window, React }) => {
         const okHeadNums = JSON.stringify(headNums) === JSON.stringify(['#9a', '#10', '#10a'])
         const okLinks = links.includes('copy link to turn 9a') && links.includes('copy link to turn 10')
         const okRail = JSON.stringify(railLabels) === JSON.stringify(['#9a', '#10'])
-        const okBoundary = presentation === 'ledger' ? boundaryChip === null : boundaryChip === 'user turn 10'
+        const okBoundary = presentation === Presentation.Ledger ? boundaryChip === null : boundaryChip === 'user turn 10'
         await view.act(() => click(window, view.container.querySelector('[role="tab"][id$="-annotations"]')))
         const annoTurn = view.container.querySelector('.txn-anno-turn')?.textContent ?? ''
         const annoRail = view.container.querySelector('.txn-rail-left .txn-ol-leaf')?.textContent ?? ''

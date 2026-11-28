@@ -27,6 +27,11 @@ function segmentKind(turn) {
   return 'agent'
 }
 
+/** Accessible copy owned by TranscriptMinimap. */
+export const TranscriptMinimapLabels = Object.freeze({
+  Timeline: 'transcript timeline',
+})
+
 /* the keyboard step for each handled key; Home/End are handled beside this map. */
 const KEY_STEP = { ArrowLeft: -1, ArrowRight: 1, PageUp: -10, PageDown: 10 }
 
@@ -52,7 +57,7 @@ export default function TranscriptMinimap({
   activeTurn,
   sourceBytes = null,
   onJump = () => {},
-  label = 'transcript timeline',
+  label = TranscriptMinimapLabels.Timeline,
 }) {
   const controlRef = useRef(null)
   const dragging = useRef(false)

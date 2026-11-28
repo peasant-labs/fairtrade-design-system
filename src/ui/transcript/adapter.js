@@ -974,7 +974,7 @@ export function adaptTranscript(payload, annotations, analytics, options) {
   }
   const hasEvidence = hasNormalizedEvidence(payload)
   const originalTurns = Array.isArray(payload.turns) ? payload.turns : []
-  const rawDisplayNumbers = hasEvidence && payloadMode === 'local'
+  const rawDisplayNumbers = hasEvidence && payloadMode === PayloadMode.Local
     ? parseWireDisplayNumbers(originalTurns)
     : null
   // A future string state is preserved, while canonical validation still checks
