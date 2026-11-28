@@ -83,6 +83,13 @@ cases:
         expect: exactly one system group, closed
       - action: open group
         expect: one control row and one system row
+  - name: transcript demo renders a compaction boundary
+    query: 'app=transcript&transcript=ledger-compaction'
+    width: 1440
+    root: .txn-app
+    text: [context compacted, (auto), 168.1k, 24k, 4.2s]
+    tabular: .txn-compaction-count
+    focus: .txn-compaction
   - name: returned provider
     query: app=commons&commons=explore-transcript
     width: 1440

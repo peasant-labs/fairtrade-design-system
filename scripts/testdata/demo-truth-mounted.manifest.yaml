@@ -10,5 +10,6 @@ requiredCaseNames:
   - published pull request digest
   - published completion
   - transcript demo reveals grouped system entries
+  - transcript demo renders a compaction boundary
   - returned provider
   - village calendar dates
