@@ -9,6 +9,7 @@
    Run: pnpm test:transcript-compaction-boundary;
    mutations: node scripts/parts-mutations.mjs scripts/transcript-compaction-boundary.test.mjs
    scripts/testdata/transcript-compaction-boundary.manifest.yaml */
+import { Role } from '@peasant-labs/schema'
 import { loadFixturePair, withMountedSource, click, createReport } from './mounted-parts.mjs'
 
 const FIXTURE = 'scripts/testdata/transcript-compaction-boundary.yaml'
@@ -85,8 +86,8 @@ await withMountedSource(async ({ load, mount, window, React }) => {
       report.check(same(indices, row.expected), `${name}: cooked turns must keep the recorded order ${JSON.stringify(row.expected)}, received ${JSON.stringify(indices)}`)
       const before = vm.turns.find((turn) => turn.index === row.before)
       const after = vm.turns.find((turn) => turn.index === row.after)
-      report.check(before?.role === 'assistant' && after?.role === 'system', `${name}: the boundary must sit between the same neighbouring turns, received ${JSON.stringify([before?.role, after?.role])}`)
-    } else if (row.kind === 'group') {
+      report.check(before?.role === Role.Assistant && after?.role === Role.System, `${name}: the boundary must sit between the same neighbouring turns, received ${JSON.stringify([before?.role, after?.role])}`)
+    } else if (row.kind === 'system-group') {
       const mounted = await viewer(cook(row))
       const group = mounted.container.querySelector('.txn-systemgroup')
       const members = [...(group?.querySelectorAll('article[data-turn]') ?? [])].map((entry) => Number(entry.dataset.turn))

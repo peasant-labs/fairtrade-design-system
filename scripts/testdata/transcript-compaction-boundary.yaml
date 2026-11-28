@@ -127,7 +127,7 @@ cases:
     before: 2
     after: 4
   - name: a boundary participates in system grouping
-    kind: group
+    kind: system-group
     owner: 3
     members: [3, 4, 5]
     summary: '3 entries: 2 system, 1 mode'

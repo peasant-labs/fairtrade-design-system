@@ -1,4 +1,4 @@
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, userEvent } from 'storybook/test'
 import TranscriptCompactionBoundary from './CompactionBoundary.jsx'
 import { frame } from '../story-frame.jsx'
 
@@ -72,11 +72,10 @@ export default meta
 export const TriggerAndDelta = {
   args: { turn, actions: <Anchor /> },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
     const head = canvasElement.querySelector('.txn-compaction-head')
     const body = canvasElement.querySelector('.txn-compaction-body')
-    await expect(canvas.getByText('context compacted')).toBeVisible()
-    await expect(canvas.getByText('(auto)')).toBeVisible()
+    await expect(canvasElement.querySelector('.txn-compaction-label')).toHaveTextContent(turn.compaction.label)
+    await expect(canvasElement.querySelector('.txn-compaction-trigger')).toHaveTextContent(`(${turn.compaction.trigger})`)
     await expect(canvasElement.querySelector('.txn-compaction-delta')).toHaveTextContent(/168\.1k.*24k.*tokens/)
     await expect(head).toHaveAttribute('aria-expanded', 'false')
     await expect(head.getAttribute('aria-label')).toMatch(/context compacted, auto, 168,104 tokens before, 24,000 tokens after/)

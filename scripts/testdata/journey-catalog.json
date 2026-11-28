@@ -341,6 +341,14 @@
   },
   {
     "project": "dark",
+    "title": "demo-truth.journey.mjs › demo truth transcript demo renders a compaction boundary dark"
+  },
+  {
+    "project": "dark",
+    "title": "demo-truth.journey.mjs › demo truth transcript demo renders a compaction boundary light"
+  },
+  {
+    "project": "dark",
     "title": "demo-truth.journey.mjs › demo truth transcript demo reveals grouped system entries dark"
   },
   {
@@ -1466,6 +1474,14 @@
   {
     "project": "light",
     "title": "demo-truth.journey.mjs › demo truth returned provider light"
+  },
+  {
+    "project": "light",
+    "title": "demo-truth.journey.mjs › demo truth transcript demo renders a compaction boundary dark"
+  },
+  {
+    "project": "light",
+    "title": "demo-truth.journey.mjs › demo truth transcript demo renders a compaction boundary light"
   },
   {
     "project": "light",
