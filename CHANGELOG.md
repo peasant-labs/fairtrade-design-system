@@ -4,6 +4,10 @@ All notable changes to `@peasant-labs/fairtrade` are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); this
 package is pre-1.0, so minor/patch semantics are best-effort.
 
+## 0.3.0
+
+- show wire turn display numbers and draw the unloaded preview as a hollow minimap tail (#336)
+
 ## 0.2.2
 
 - keep positioned reader fetches, history state and labels per read (#329)
