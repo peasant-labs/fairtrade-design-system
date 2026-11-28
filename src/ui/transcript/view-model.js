@@ -204,6 +204,21 @@ export const TOOL_GROUPS = Object.freeze([
  */
 
 /**
+ * A producer context-compaction boundary, cooked once from the notice peasant already serves.
+ * `label` is the lowercase chrome form of the recorded boundary; `trigger` keeps the recorded
+ * value verbatim. Counts and the duration are numbers so the renderer formats them through the
+ * shared formatters. `text` is the recorded content, preserved verbatim.
+ *
+ * @typedef {object} CompactionVM
+ * @property {string} label                 lowercase chrome, `context compacted` or `conversation compacted`
+ * @property {string} [trigger]             the recorded trigger, printed as recorded
+ * @property {number} [preTokens]           context size before compaction, when recorded
+ * @property {number} [postTokens]          context size after compaction, when recorded
+ * @property {number} [durationMs]          compaction duration, when recorded
+ * @property {string} text                  the recorded content, verbatim
+ */
+
+/**
  * One cooked turn. `toolCalls` here are the same `ToolCallVM` objects indexed in
  * `toolCallsById` (shared identity — index once, reference everywhere).
  *
@@ -235,6 +250,8 @@ export const TOOL_GROUPS = Object.freeze([
  *                                          server classified it (mode / permission-mode / attachment /
  *                                          agent-name / custom-title); never inferred from any other field
  * @property {boolean} [isControl]          true exactly when `controlKind` is present
+ * @property {CompactionVM} [compaction]    present exactly when this depth-0 system turn's recorded
+ *                                          content is the producer's compaction boundary notice
  * @property {ThinkingVM} [thinking]
  * @property {import('@peasant-labs/schema').UsageDetail} [usage]
  * @property {ToolCallVM[]} toolCalls

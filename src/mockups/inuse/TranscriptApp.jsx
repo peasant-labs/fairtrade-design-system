@@ -9,6 +9,7 @@ const mermaidGlyphs = JSON.parse(mermaidGlyphsRaw)
 import { Plus, Minus, Maximize, RefreshCw } from 'lucide-react'
 import {
   TranscriptViewer,
+  DEFAULT_TRANSCRIPT_FILTERS,
   adaptTranscript,
   GraphTurnNode,
   GraphToolNode,
@@ -859,6 +860,8 @@ function DefaultTranscriptApp({ theme }) {
   // `?transcript=ledger-system` keeps that canonical session and appends two adjacent system
   // entries — one producer-classified control record and one ordinary multi-line system message —
   // so the built app renders one folded group with a control row and a system row.
+  // `?transcript=ledger-compaction` appends the producer's context-compaction notice, so the
+  // built app renders one boundary action with its trigger, token delta and duration.
   // `?transcript=flagged` and `?transcript=flagged-classic` read the reading session with a served
   // integrity flag on two of its turns, in the ledger and the classic presentation.
   const flagged = search === 'flagged' || search === 'flagged-classic'
@@ -1032,6 +1035,23 @@ ${mermaidGlyphs.source}
       ]
       return { ...base, turns, session: { ...base.session, turnCount: turns.length } }
     }
+    if (search === 'ledger-compaction') {
+      // One producer notice at the end of the conversation, cooked by the real adapter. The built
+      // app must render it as a boundary action, not as an ordinary system row, with the trigger,
+      // both token sides and the duration.
+      const wire = buildWire()
+      const turns = [
+        ...wire.turns,
+        {
+          index: wire.turns.length,
+          role: 'system',
+          entryType: 'system',
+          content: 'Context compacted (auto): 168104 -> 24000 tokens in 4200ms',
+          depth: 0,
+        },
+      ]
+      return adaptTranscript({ ...wire, turns, turnCount: turns.length, conversationTurnCount: turns.filter(isConversationTurn).length }, [], buildAnalytics())
+    }
     if (search !== 'ledger-system') return base
     // Two ADJACENT system entries: the first is a control record the producer classified, the
     // second an ordinary multi-line system message. The ledger folds the run into one group, and
@@ -1065,6 +1085,12 @@ ${mermaidGlyphs.source}
   }, [search])
   // Tool details start collapsed; the reader opens them on demand.
   const [openTools, setOpenTools] = useState({})
+  // The compaction route starts with system entries visible, so the boundary action is on screen
+  // without the reader hunting for the system toggle.
+  const [compactionFilters, setCompactionFilters] = useState(() => ({
+    ...DEFAULT_TRANSCRIPT_FILTERS,
+    categories: { ...DEFAULT_TRANSCRIPT_FILTERS.categories, system: true },
+  }))
   // The ledger reading layout: the viewer reports every rail/zen change as one layout
   // object. The demo has no host sidebar, so `host` is carried but renders nothing here.
   const [sidebarLayout, setSidebarLayout] = useState({ outline: true, filters: true, host: true })
@@ -1080,6 +1106,7 @@ ${mermaidGlyphs.source}
         showOutcome={false}
         showSearchTrigger
         presentation={ledger ? 'ledger' : 'classic'}
+        {...(search === 'ledger-compaction' ? { filters: compactionFilters, onFiltersChange: setCompactionFilters } : {})}
         {...(flagged ? integrityBoundProps : {})}
         initialPosition={search === 'ledger-reading' && /^\d+$/.test(new URLSearchParams(window.location.search).get('turn') ?? '') ? { kind: 'turn', turnIndex: Number(new URLSearchParams(window.location.search).get('turn')) } : undefined}
         sidebarLayout={ledger ? sidebarLayout : undefined}

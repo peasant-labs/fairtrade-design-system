@@ -10,6 +10,7 @@ import Thinking from './Thinking.jsx'
 import ToolCall from './ToolCall.jsx'
 import TranscriptSystemRow from './SystemRow.jsx'
 import TranscriptControlRow from './ControlRow.jsx'
+import TranscriptCompactionBoundary from './CompactionBoundary.jsx'
 import TranscriptImageAttachment from './ImageAttachment.jsx'
 import { imageParts } from './image-parts.js'
 import { useImageUrl } from './image-url.js'
@@ -341,6 +342,9 @@ export default function TurnCard({
      the copy anchor plus the host's own per-turn actions, so a host extension survives the role
      switch. */
   const systemRow = ledger && turn.role === Role.System
+  /* A compaction boundary is an action of the conversation, so it renders through its own
+     component before the row kinds, but only when the adapter cooked a descriptor for it. */
+  const compactionBoundary = systemRow && !!turn.compaction
   /* The server says which system rows are control records. Only a ledger system row with
      a producer kind becomes a control row; every other system row keeps the system row. */
   const controlRow = systemRow && !!turn.controlKind
@@ -360,7 +364,13 @@ export default function TurnCard({
       {systemRow ? (
         <>
           <TurnHeading id={headingId} className="txn-turn-heading">{roleLabel} {turnName}{flagName}</TurnHeading>
-          {controlRow ? (
+          {compactionBoundary ? (
+            <TranscriptCompactionBoundary
+              turn={turn}
+              revealRequest={revealRequest}
+              actions={<>{flagMark}{anchorButton}{renderActions ? renderActions(turn) : null}</>}
+            />
+          ) : controlRow ? (
             <TranscriptControlRow
               turn={turn}
               revealRequest={revealRequest}

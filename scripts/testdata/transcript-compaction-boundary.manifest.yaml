@@ -1,0 +1,89 @@
+# Required-NAME manifests for transcript-compaction-boundary.yaml: deletion protection for the
+# parser cases, the mounted cases, and the production mutations the gate must kill.
+requiredParserNames:
+  - an accepted bare context notice
+  - an accepted context notice with a trigger
+  - an accepted trigger with a pre and post delta
+  - an accepted delta with a duration
+  - an accepted before count
+  - an accepted after count
+  - an accepted conversation notice
+  - a lower-case mention is not a boundary
+  - a different compaction word is not a boundary
+  - an unrecognized tail is not a boundary
+  - the bare word is not a boundary
+  - punctuation after the notice is not canonical
+
+requiredCaseNames:
+  - trigger and token delta cook
+  - duration cooks
+  - one-sided before count cooks
+  - one-sided after count cooks
+  - absent counts still cook the boundary label
+  - a conversation notice cooks
+  - an ordinary system message mentioning compaction stays a system row
+  - an unrecognized tail is not a boundary
+  - a control record keeps its control kind
+  - a boundary keeps its recorded turn position
+  - a boundary participates in system grouping
+  - a mounted boundary shows the trigger and delta
+  - a mounted boundary shows its duration
+  - a mounted boundary discloses the recorded notice
+  - a mounted one-sided count says before
+  - a mounted one-sided count says after
+  - a mounted boundary without counts still shows its label
+  - a mounted conversation boundary keeps its recorded label
+  - a mounted ordinary system message stays a system row
+  - a mounted control record stays a control row
+
+requiredMutationNames:
+  - any system text mentioning compaction becomes a boundary
+  - the boundary notice is never cooked
+  - the conversation label is lost
+  - the trigger is dropped
+  - the token delta is dropped
+  - the duration is dropped
+  - the disclosure never opens
+  - a one-sided count loses its side
+
+mutations:
+  - name: any system text mentioning compaction becomes a boundary
+    file: src/ui/transcript/adapter.js
+    find: "      const compaction = parseCompactionNotice(content)"
+    replace: "      const compaction = parseCompactionNotice(content) ?? (/compacted/i.test(content) ? { label: 'context compacted', text: content } : undefined)"
+    expectedDiagnostic: "an ordinary system message mentioning compaction stays a system row"
+  - name: the boundary notice is never cooked
+    file: src/ui/transcript/adapter.js
+    find: "      if (compaction) turnVM.compaction = compaction"
+    replace: "      void compaction"
+    expectedDiagnostic: "trigger and token delta cook: turn 3"
+  - name: the conversation label is lost
+    file: src/ui/transcript/compaction.js
+    find: "label: base === 'Conversation' ? 'conversation compacted' : 'context compacted',"
+    replace: "label: 'context compacted',"
+    expectedDiagnostic: "an accepted conversation notice: expected"
+  - name: the trigger is dropped
+    file: src/ui/transcript/CompactionBoundary.jsx
+    find: '          {notice.trigger !== undefined && <span className="txn-compaction-trigger">({notice.trigger})</span>}'
+    replace: '          {null}'
+    expectedDiagnostic: "a mounted boundary shows the trigger and delta: the trigger"
+  - name: the token delta is dropped
+    file: src/ui/transcript/CompactionBoundary.jsx
+    find: '          {hasDelta && <span className="txn-compaction-delta tnum">{delta}</span>}'
+    replace: '          {null}'
+    expectedDiagnostic: "a mounted boundary shows the trigger and delta: the token delta"
+  - name: the duration is dropped
+    file: src/ui/transcript/CompactionBoundary.jsx
+    find: '          {duration && <span className="txn-compaction-duration tnum">{duration}</span>}'
+    replace: '          {null}'
+    expectedDiagnostic: "a mounted boundary shows its duration: the duration"
+  - name: the disclosure never opens
+    file: src/ui/transcript/CompactionBoundary.jsx
+    find: '          onClick={() => setOpen(!open)}'
+    replace: '          onClick={() => {}}'
+    expectedDiagnostic: "a mounted boundary discloses the recorded notice: expanding"
+  - name: a one-sided count loses its side
+    file: src/ui/transcript/CompactionBoundary.jsx
+    find: '        <span className="txn-compaction-unit">tokens before</span>'
+    replace: '        <span className="txn-compaction-unit">tokens</span>'
+    expectedDiagnostic: "a mounted one-sided count says before: the delta"
