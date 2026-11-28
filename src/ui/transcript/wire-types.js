@@ -81,9 +81,16 @@ export const HARNESSES = Object.freeze(Object.values(SchemaHarness))
  */
 
 /**
+ * A wire turn accepted by `adaptTranscript`: either a canonical `TurnDetail` or
+ * a `TranscriptTurn` carrying segment read facts (`truncated`, `byteLength`, and
+ * optional producer-assigned `displayNumber`).
+ * @typedef {TurnDetail & { truncated?: boolean, byteLength?: number, displayNumber?: string }} TranscriptTurnInput
+ */
+
+/**
  * The one compatibility seam. Canonical flat fields always win when both
  * shapes are present; the adapter normalizes legacy workingDirectory here too.
- * @typedef {SessionDetailPayload & { gitContext?: LegacyGitContext }} TranscriptWireInput
+ * @typedef {Omit<SessionDetailPayload, 'turns'> & { turns?: TranscriptTurnInput[] | null, gitContext?: LegacyGitContext }} TranscriptWireInput
  */
 
 export {}

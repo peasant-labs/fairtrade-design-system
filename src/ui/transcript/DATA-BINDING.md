@@ -15,7 +15,11 @@ Two seams own this contract end to end:
   it is every component's prop contract.
 
 `adapter.js` (`adaptTranscript`) is the only code that reads the wire and the only legacy-compatibility
-boundary. Canonical flat `gitBranch`, `gitRemote`, and `workingDirectory` win when both shapes are
+boundary. The host passes wire turns unchanged: when every turn in a call supplies `displayNumber`
+(from `TranscriptTurn.displayNumber`), `adaptTranscript` uses those wire values as `TurnVM.label`
+without calling `computeTurnLabels` (partial or malformed `displayNumber` fails closed); when none
+supplies it, `adaptTranscript` computes labels with `computeTurnLabels` as before. Canonical flat
+`gitBranch`, `gitRemote`, and `workingDirectory` win when both shapes are
 present; nullable canonical `turns` becomes an empty list. Both data modules carry `// @ts-check` and are pinned by `tsc -p tsconfig.contract.json`
 (`pnpm test:contract`).
 

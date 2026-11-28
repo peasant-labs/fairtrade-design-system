@@ -73,6 +73,10 @@ requiredMutationNames:
   - key saved labels by display index in TranscriptViewer
   - key label callback by display index in TurnCard
   - leave segment failure handler unguarded
+  - ignore wire displayNumber in local adaptTranscript
+  - allow partial wire displayNumber in adaptTranscript
+  - classic TaskBoundary ignores turn label
+  - classic waterfall ignores turn label
 mutations:
   - name: print position plus one instead of the served number
     file: src/ui/transcript/adapter.js
@@ -224,3 +228,23 @@ mutations:
     find: "        try {\n          if (section === undefined) fail(error, () => loadSegment(ordinal))\n          else failSection(section, error)\n        } catch {\n          if (section === undefined && !state.failure) {\n            state.failure = { kind: PositionedReadFailureKind.Failed, operation: 'segment' }\n            if (state.status === PositionedReadStatus.Loading && state.segments.size === 0) state.status = PositionedReadStatus.Failed\n            snapshot = freeze()\n          } else if (section !== undefined) {\n            const record = state.history.get(section)\n            if (record && !record.failure) {\n              record.status = PositionedReadStatus.Failed\n              record.failure = { kind: PositionedReadFailureKind.Failed, operation: 'segment' }\n              snapshot = freeze()\n            }\n          }\n        }"
     replace: "        if (section === undefined) fail(error, () => loadSegment(ordinal))\n        else failSection(section, error)"
     expectedDiagnostic: controller-throwing-failure-handler-settled
+  - name: ignore wire displayNumber in local adaptTranscript
+    file: src/ui/transcript/adapter.js
+    find: "  const wireDisplayNumbers = servedRows ? null : parseWireDisplayNumbers(completeTurns)"
+    replace: "  const wireDisplayNumbers = null"
+    expectedDiagnostic: wire-mid-session-keeps-display-number
+  - name: allow partial wire displayNumber in adaptTranscript
+    file: src/ui/transcript/adapter.js
+    find: "  if (numbers.size !== turns.length) {"
+    replace: "  if (false) {"
+    expectedDiagnostic: wire-partial-or-malformed-display-number-refused
+  - name: classic TaskBoundary ignores turn label
+    file: src/ui/transcript/TranscriptViewer.jsx
+    find: "  const label = turn?.numberAbsent ? null : (turn?.label || task.index)"
+    replace: "  const label = task.index"
+    expectedDiagnostic: wire-numbered-mounted-surfaces-agree
+  - name: classic waterfall ignores turn label
+    file: src/ui/transcript/OutlineRail.jsx
+    find: "...(!firstTurn?.numberAbsent && firstTurn?.label ? { label: firstTurn.label } : {}),"
+    replace: ""
+    expectedDiagnostic: wire-numbered-mounted-surfaces-agree

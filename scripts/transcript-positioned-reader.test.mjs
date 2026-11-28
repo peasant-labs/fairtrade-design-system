@@ -347,6 +347,87 @@ await withMountedSource(async ({ load, mount, window, React }) => {
     try { adaptTranscript(mainSegment, undefined, {}, { payloadMode: 'segment', context: mainSegment.context }) } catch (error) { thrown = error }
     check(thrown instanceof TypeError && thrown.message.includes('analytics'), `precomputed analytics are refused with an actionable TypeError, received ${thrown?.message}`)
   })
+  const wirePayload = (id, turns) => ({
+    id,
+    harness: N.wireSegment.harness,
+    startTime: '2026-11-12T08:59:00Z',
+    endTime: '2026-11-12T09:05:00Z',
+    durationMins: 6,
+    totalTokens: 100,
+    tokensIn: 60,
+    tokensOut: 40,
+    turnCount: turns.length,
+    toolCallCount: turns.reduce((n, turn) => n + (turn.toolCalls?.length ?? 0), 0),
+    turns,
+  })
+  await run('numbering', 'wire-mid-session-keeps-display-number', async (_, check) => {
+    resetSpy()
+    const vm = adaptTranscript(wirePayload('wire-mid', N.wireSegment.midSession))
+    const got = vm.turns.map((turn) => turn.label)
+    check(JSON.stringify(got) === JSON.stringify(N.wireSegment.expectedLabels) && spy.labels === 0, `mid-session wire turns keep displayNumber without calling computeTurnLabels, received ${JSON.stringify(got)}, labels calls ${spy.labels}`)
+  })
+  await run('numbering', 'wire-absent-display-number-computes', async (_, check) => {
+    resetSpy()
+    const stripped = N.wireSegment.midSession.map(({ displayNumber: _drop, ...turn }) => turn)
+    const vm = adaptTranscript(wirePayload('wire-absent', stripped))
+    const got = vm.turns.map((turn) => turn.label)
+    check(JSON.stringify(got) === JSON.stringify(N.wireSegment.expectedFallbackLabels) && spy.labels > 0, `turns without displayNumber fall back to computeTurnLabels, received ${JSON.stringify(got)}, labels calls ${spy.labels}`)
+  })
+  await run('numbering', 'wire-partial-or-malformed-display-number-refused', async (_, check) => {
+    const partialTurns = N.wireSegment.midSession.map((turn, idx) => (idx === 1 ? (({ displayNumber: _drop, ...rest }) => rest)(turn) : turn))
+    let partialErr = null
+    try { adaptTranscript(wirePayload('wire-partial', partialTurns)) } catch (error) { partialErr = error }
+    let malformedOk = true
+    for (const bad of N.wireSegment.invalidDisplayNumbers) {
+      const badTurns = N.wireSegment.midSession.map((turn, idx) => (idx === 0 ? { ...turn, displayNumber: bad } : turn))
+      let err = null
+      try { adaptTranscript(wirePayload('wire-bad', badTurns)) } catch (error) { err = error }
+      if (!(err instanceof TypeError)) malformedOk = false
+    }
+    check(partialErr instanceof TypeError && malformedOk, `partial and malformed wire displayNumbers fail closed with TypeError`)
+  })
+  await run('numbering', 'wire-two-segments-either-order-keep-labels', async (_, check) => {
+    const { turnsFromSegments, loadedRegions } = await load('/src/ui/transcript/segments.js')
+    const vm0 = adaptTranscript(wirePayload('wire-two', N.wireSegment.previousSegment))
+    const vm1 = adaptTranscript(wirePayload('wire-two', N.wireSegment.midSession))
+    const seg0 = { index: 0, firstTurn: 15, lastTurn: 15, byteLength: 50, turns: vm0.turns }
+    const seg1 = { index: 1, firstTurn: 17, lastTurn: 19, byteLength: 100, turns: vm1.turns }
+    const dir = { sessionId: 'wire-two', revision: '1', totalSegments: 2, totalTurns: 4, segments: [{ index: 0, firstTurn: 15, lastTurn: 15, byteLength: 50 }, { index: 1, firstTurn: 17, lastTurn: 19, byteLength: 100 }] }
+    const forward = turnsFromSegments([seg0, seg1]).map((t) => t.label)
+    const reverse = turnsFromSegments([seg1, seg0]).map((t) => t.label)
+    const merged = loadedRegions(dir, [seg1, seg0])[0]?.turns.map((t) => t.label)
+    const expected = ['9', ...N.wireSegment.expectedLabels]
+    check(JSON.stringify(forward) === JSON.stringify(expected) && JSON.stringify(reverse) === JSON.stringify(expected) && JSON.stringify(merged) === JSON.stringify(expected), `segment merges preserve wire labels regardless of load order, received ${JSON.stringify([forward, reverse, merged])}`)
+  })
+  await run('numbering', 'wire-numbered-mounted-surfaces-agree', async (_, check) => {
+    const { Presentation } = await load('/src/ui/transcript/state-capabilities.js')
+    const vm = adaptTranscript(wirePayload('wire-mounted', N.wireSegment.midSession))
+    let allPassed = true
+    for (const theme of ['dark', 'light']) {
+      for (const presentation of [Presentation.Ledger, Presentation.Classic]) {
+        const view = await mount(React.createElement(TranscriptViewer, { viewModel: vm, capabilities: {}, theme, presentation }))
+        const headings = [...view.container.querySelectorAll('.txn-turn-heading')].map((el) => el.textContent)
+        const headNums = [...view.container.querySelectorAll('.txn-turnnum')].map((el) => el.textContent)
+        const links = [...view.container.querySelectorAll('.txn-anchor')].map((el) => el.getAttribute('aria-label'))
+        const railLabels = presentation === Presentation.Ledger
+          ? [...view.container.querySelectorAll('.txn-rail-left .txn-rail-turn-top b')].map((el) => el.textContent)
+          : [...view.container.querySelectorAll('.txn-rail-left .swf-index')].map((el) => el.textContent)
+        const boundaryChip = view.container.querySelector('.txn-tb-chip')?.textContent ?? null
+        const okHeadings = headings.includes('assistant turn 9a') && headings.includes('user turn 10') && headings.includes('assistant turn 10a')
+        const okHeadNums = JSON.stringify(headNums) === JSON.stringify(['#9a', '#10', '#10a'])
+        const okLinks = links.includes('copy link to turn 9a') && links.includes('copy link to turn 10')
+        const okRail = JSON.stringify(railLabels) === JSON.stringify(['#9a', '#10'])
+        const okBoundary = presentation === Presentation.Ledger ? boundaryChip === null : boundaryChip === 'user turn 10'
+        await view.act(() => click(window, view.container.querySelector('[role="tab"][id$="-annotations"]')))
+        const annoTurn = view.container.querySelector('.txn-anno-turn')?.textContent ?? ''
+        const annoRail = view.container.querySelector('.txn-rail-left .txn-ol-leaf')?.textContent ?? ''
+        const okAnnos = annoTurn.startsWith('turn 9a') && annoRail === 'turn 9a'
+        if (!okHeadings || !okHeadNums || !okLinks || !okRail || !okBoundary || !okAnnos) allPassed = false
+        await view.unmount()
+      }
+    }
+    check(allPassed, 'mounted headers, user-turns rail, classic TaskBoundary, copy links, accessible headings, and annotations agree on wire displayNumbers in both presentations and themes')
+  })
   await run('numbering', 'number-fixture-replay-js', async () => {})
 
   /* ── the reader controller ─────────────────────────────────────────────────── */

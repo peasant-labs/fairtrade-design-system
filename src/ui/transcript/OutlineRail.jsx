@@ -173,13 +173,17 @@ export default function OutlineRail({ viewModel, tab, onJump = () => {}, present
             <div key={kind} className="txn-ol-group">
               <div className="txn-ol-grouphead"><Term def={meta.tip}><Icon size={14} aria-hidden="true" /> {meta.label} <span className="chipx-count">{items.length}</span></Term></div>
               <ul className="txn-outline">
-                {items.map((a) => (
-                  <li key={a.id}>
-                    <button type="button" className="txn-ol-row" onClick={() => onJump(a.turn)}>
-                      <span className="txn-ol-leaf tnum">turn {a.turn}</span>
-                    </button>
-                  </li>
-                ))}
+                {items.map((a) => {
+                  const turn = (viewModel?.turns ?? []).find((t) => t.index === a.turn)
+                  const turnDisplay = turn && !turn.numberAbsent && turn.label ? turn.label : a.turn
+                  return (
+                    <li key={a.id}>
+                      <button type="button" className="txn-ol-row" onClick={() => onJump(a.turn)}>
+                        <span className="txn-ol-leaf tnum">turn {turnDisplay}</span>
+                      </button>
+                    </li>
+                  )
+                })}
               </ul>
             </div>
           )
@@ -199,15 +203,21 @@ export default function OutlineRail({ viewModel, tab, onJump = () => {}, present
 
   /* trace → the per-task duration trail. Map each cooked TaskGroupVM onto a StepsWaterfall row;
      `id` is the first turn of the task so onJump scrolls there (stays on the trace tab). */
-  const waterfallTasks = (viewModel?.tasks ?? []).map((t) => ({
-    id: String(t.turnIndices?.[0] ?? t.index),
-    index: t.index,
-    prompt: t.displayPrompt ?? t.prompt,
-    durationMs: t.durationMs ?? 0,
-    tools: t.tools,
-    outcome: t.outcome,
-    error: t.error,
-  }))
+  const turns = viewModel?.turns ?? []
+  const waterfallTasks = (viewModel?.tasks ?? []).map((t) => {
+    const first = t.turnIndices?.[0]
+    const firstTurn = first != null ? turns.find((turn) => turn.index === first) : undefined
+    return {
+      id: String(first ?? t.index),
+      index: t.index,
+      ...(!firstTurn?.numberAbsent && firstTurn?.label ? { label: firstTurn.label } : {}),
+      prompt: t.displayPrompt ?? t.prompt,
+      durationMs: t.durationMs ?? 0,
+      tools: t.tools,
+      outcome: t.outcome,
+      error: t.error,
+    }
+  })
   return (
     <StepsWaterfall
       className="txn-ol-waterfall"

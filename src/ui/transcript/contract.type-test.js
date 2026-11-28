@@ -191,6 +191,7 @@ void _pinCoreArrays
 /** @typedef {import('./index.js').TranscriptSegmentDirectory} TranscriptSegmentDirectory */
 /** @typedef {import('./index.js').TranscriptSegmentRef} TranscriptSegmentRef */
 /** @typedef {import('./index.js').SegmentDirectoryVM} SegmentDirectoryVM */
+/** @typedef {import('./index.js').PreviewSourceBytes} PreviewSourceBytes */
 /** @typedef {import('./index.js').SegmentRefVM} SegmentRefVM */
 /** @typedef {import('./index.js').ConversationTurnSpanVM} ConversationTurnSpanVM */
 /** @typedef {import('./index.js').ConversationPositionVM} ConversationPositionVM */
@@ -203,10 +204,13 @@ void _pinCoreArrays
   void ref
   const servedDirectory = /** @type {TranscriptSegmentDirectory} */ (/** @type {unknown} */ (null))
   /** @type {SegmentDirectoryVM} */
-  const directory = servedDirectory
+  const directory = { ...servedDirectory, sourceBytesLoaded: 512, sourceBytesTotal: 1024 }
   /** @type {number | undefined} */
   const total = directory.totalConversationTurns
   void total
+  /** @type {PreviewSourceBytes} */
+  const byteProgress = { loaded: 512, total: 1024 }
+  void byteProgress
   /** @type {ConversationTurnSpanVM} */
   const span = { before: 19, count: 24 }
   /** @type {ConversationPositionVM} */

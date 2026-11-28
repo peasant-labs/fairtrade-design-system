@@ -134,6 +134,76 @@ await withMountedSource(async ({ load, mount, window, React }) => {
   const legacy = await mount(React.createElement(Viewer, { viewModel: vm, capabilities: caps }))
   check('no-continuation-prop-is-unchanged', !legacy.container.querySelector('[data-transcript-continuation]') && !!legacy.container.querySelector('.txn-anchor'))
   await legacy.unmount()
+
+  const { previewSourceBytes } = await load('/src/ui/transcript/segments.js')
+  const { partial, appended, complete: fullBytes, invalidDirectories } = fixture.hollowTail
+  const partialDir = { complete: false, segments: [fortyEightRef], sourceBytesLoaded: partial.sourceBytesLoaded, sourceBytesTotal: partial.sourceBytesTotal }
+  const appendedDir = { complete: false, segments: [fortyEightRef, nextRef], sourceBytesLoaded: appended.sourceBytesLoaded, sourceBytesTotal: appended.sourceBytesTotal }
+  const fullDir = { complete: true, totalSegments: 2, totalTurns: 50, totalConversationTurns: 50, segments: [fortyEightRef, nextRef], sourceBytesLoaded: fullBytes.sourceBytesLoaded, sourceBytesTotal: fullBytes.sourceBytesTotal }
+  let active = 0
+  const ControlledPreview = ({ dir, segs, theme }) => {
+    const [turn, setTurn] = React.useState(0)
+    active = turn
+    return React.createElement(Viewer, {
+      viewModel: vm,
+      capabilities: {},
+      theme,
+      directory: dir,
+      segments: segs,
+      activeTurn: turn,
+      onActiveTurnChange: setTurn,
+      continuation: { state: dir.complete ? 'end' : 'more', onLoadMore() {} },
+    })
+  }
+  const lightHollow = await mount(React.createElement(ControlledPreview, { theme: 'light', dir: partialDir, segs: [{ ...fortyEightRef, turns: fortyEightTurns }] }))
+  await lightHollow.act(() => { const stream = lightHollow.container.querySelector('.txn-stream'); stream.scrollTop = 300; stream.dispatchEvent(new window.Event('scroll')) })
+  const lightSlider = lightHollow.container.querySelector('.txn-sticky .txn-minimap')
+  const lightLoadedEl = lightSlider?.querySelector('.txn-minimap-loaded')
+  const lightTailEl = lightSlider?.querySelector('.txn-minimap-tail')
+  const lightValueText = lightSlider?.getAttribute('aria-valuetext') ?? ''
+  report.check(!!lightLoadedEl && !!lightTailEl && lightLoadedEl.style.width === partial.loadedPct && lightValueText.includes(partial.valueTextSuffix), 'preview-hollow-tail-partial-progress: light theme')
+  await lightHollow.unmount()
+
+  const hollow = await mount(React.createElement(ControlledPreview, { dir: partialDir, segs: [{ ...fortyEightRef, turns: fortyEightTurns }] }))
+  await hollow.act(() => { const stream = hollow.container.querySelector('.txn-stream'); stream.scrollTop = 300; stream.dispatchEvent(new window.Event('scroll')) })
+  const slider = hollow.container.querySelector('.txn-sticky .txn-minimap')
+  const loadedEl = slider?.querySelector('.txn-minimap-loaded')
+  const tailEl = slider?.querySelector('.txn-minimap-tail')
+  const valueText = slider?.getAttribute('aria-valuetext') ?? ''
+  check('preview-hollow-tail-partial-progress', !!loadedEl && !!tailEl && loadedEl.style.width === partial.loadedPct && valueText.includes(partial.valueTextSuffix) && slider.querySelectorAll('.txn-minimap-seg').length === 48)
+  slider.getBoundingClientRect = () => ({ left: 0, top: 0, width: 400, height: 24, right: 400, bottom: 24, x: 0, y: 0, toJSON() {} })
+  const pointer = (type, clientX) => slider.dispatchEvent(new window.MouseEvent(type, { bubbles: true, cancelable: true, button: 0, clientX, clientY: 12 }))
+  await hollow.act(() => { pointer('pointerdown', 200) })
+  const atBoundary = slider.getAttribute('aria-valuenow') === '47' && slider.querySelector('.txn-minimap-cursor')?.style.left === '50%'
+  await hollow.act(() => { pointer('pointerdown', 360) })
+  const clampedHollow = slider.getAttribute('aria-valuenow') === '47' && slider.querySelector('.txn-minimap-cursor')?.style.left === '50%' && active === 47
+  await hollow.act(() => { pointer('pointerdown', 100); pointer('pointermove', 320); pointer('pointerup', 320) })
+  const dragClamped = slider.getAttribute('aria-valuenow') === '47' && slider.querySelector('.txn-minimap-cursor')?.style.left === '50%'
+  await hollow.act(() => { pointer('pointerdown', 100) })
+  const insideLoaded = slider.getAttribute('aria-valuenow') === '24' && parseFloat(slider.querySelector('.txn-minimap-cursor')?.style.left) < 50
+  await hollow.act(() => { slider.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true })) })
+  const keyStep = slider.getAttribute('aria-valuenow') === '25' && active === 25
+  check('preview-hollow-tail-seek-boundary-and-never-hollow', atBoundary && clampedHollow && dragClamped && insideLoaded && keyStep)
+  await hollow.rerender(React.createElement(ControlledPreview, { dir: appendedDir, segs: [{ ...fortyEightRef, turns: fortyEightTurns }, { ...nextRef, turns: nextTurns }] }))
+  const shrunk = hollow.container.querySelector('.txn-minimap-loaded')?.style.width === appended.loadedPct && (hollow.container.querySelector('.txn-minimap')?.getAttribute('aria-valuetext') ?? '').includes(appended.valueTextSuffix)
+  check('preview-hollow-tail-shrinks-on-append', shrunk)
+  const trackedAfterAppend = hollow.container.querySelector('.txn-minimap')?.getAttribute('aria-valuenow') === '25' && active === 25
+  await hollow.act(() => { hollow.container.querySelector('.txn-minimap').dispatchEvent(new window.KeyboardEvent('keydown', { key: 'End', bubbles: true, cancelable: true })) })
+  const keyEnd = hollow.container.querySelector('.txn-minimap')?.getAttribute('aria-valuenow') === '49' && active === 49
+  check('preview-minimap-active-position-tracks-after-append', trackedAfterAppend && keyEnd)
+  await hollow.rerender(React.createElement(ControlledPreview, { dir: fullDir, segs: [{ ...fortyEightRef, turns: fortyEightTurns }, { ...nextRef, turns: nextTurns }] }))
+  const removed = !hollow.container.querySelector('.txn-minimap-tail') && !hollow.container.querySelector('.txn-minimap-loaded') && !(hollow.container.querySelector('.txn-minimap')?.getAttribute('aria-valuetext') ?? '').includes('source loaded') && hollow.container.querySelector('.txn-minimap-cursor')?.style.left === '100%'
+  check('preview-hollow-tail-removed-on-completion', removed)
+  await hollow.unmount()
+  const invalidDropped = invalidDirectories.every((bad) => previewSourceBytes(bad) === null)
+  const badMounted = await mount(React.createElement(Viewer, { viewModel: vm, capabilities: {}, directory: { complete: false, segments: [fortyEightRef], ...invalidDirectories[2] }, segments: [{ ...fortyEightRef, turns: fortyEightTurns }], continuation: { state: 'more', onLoadMore() {} } }))
+  await badMounted.act(() => { const stream = badMounted.container.querySelector('.txn-stream'); stream.scrollTop = 300; stream.dispatchEvent(new window.Event('scroll')) })
+  check('preview-hollow-tail-invalid-bytes-fail-closed', invalidDropped && !badMounted.container.querySelector('.txn-minimap-tail') && !badMounted.container.querySelector('.txn-minimap-loaded'))
+  await badMounted.unmount()
+  const noBytesMounted = await mount(React.createElement(Viewer, { viewModel: vm, capabilities: {}, directory: { complete: false, segments: [fortyEightRef] }, segments: [{ ...fortyEightRef, turns: fortyEightTurns }], continuation: { state: 'more', onLoadMore() {} } }))
+  await noBytesMounted.act(() => { const stream = noBytesMounted.container.querySelector('.txn-stream'); stream.scrollTop = 300; stream.dispatchEvent(new window.Event('scroll')) })
+  check('preview-hollow-tail-preserves-no-bytes-behavior', previewSourceBytes({ complete: false, segments: [fortyEightRef] }) === null && !noBytesMounted.container.querySelector('.txn-minimap-tail') && noBytesMounted.container.querySelectorAll('.txn-minimap-seg').length === 48)
+  await noBytesMounted.unmount()
 })
 for (const { name } of fixture.assertions) report.check(observed.has(name), `${name}: named assertion executed`)
 report.finish('manual continuation, open directory, and tail')

@@ -4085,6 +4085,24 @@ a.helper-thread-open:hover, a.helper-thread-open:focus-visible { text-decoration
 .txn-minimap-user { height: calc(var(--sp-1) + var(--stroke-emphasis)); background: var(--teal); }
 .txn-minimap-agent { height: var(--sp-1); align-self: center; background: var(--amber); }
 .txn-minimap-tool { height: var(--stroke-emphasis); align-self: center; background: var(--ink-4); }
+.txn-minimap-loaded {
+  display: flex;
+  gap: var(--stroke-hairline);
+  height: 100%;
+  min-width: 0;
+  flex: none;
+}
+.txn-minimap-tail {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  box-sizing: border-box;
+  border: var(--bd-strong);
+  border-color: var(--rule-strong);
+  background: transparent;
+  border-radius: 0;
+  cursor: default;
+}
 .txn-minimap-cursor {
   position: absolute;
   top: calc((var(--target-min) - var(--sp-3)) / 2);

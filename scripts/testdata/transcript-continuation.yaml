@@ -61,3 +61,21 @@ assertions:
   - name: every-tab-stays-with-incomplete-tail
   - name: complete-tail-keeps-final-response
   - name: no-continuation-prop-is-unchanged
+  - name: preview-hollow-tail-partial-progress
+  - name: preview-hollow-tail-shrinks-on-append
+  - name: preview-hollow-tail-removed-on-completion
+  - name: preview-hollow-tail-seek-boundary-and-never-hollow
+  - name: preview-minimap-active-position-tracks-after-append
+  - name: preview-hollow-tail-invalid-bytes-fail-closed
+  - name: preview-hollow-tail-preserves-no-bytes-behavior
+hollowTail:
+  partial: { sourceBytesLoaded: 512, sourceBytesTotal: 1024, loadedPct: '50%', valueTextSuffix: '50% of source loaded' }
+  appended: { sourceBytesLoaded: 768, sourceBytesTotal: 1024, loadedPct: '75%', valueTextSuffix: '75% of source loaded' }
+  complete: { sourceBytesLoaded: 1024, sourceBytesTotal: 1024 }
+  invalidDirectories:
+    - { name: half-loaded-only, sourceBytesLoaded: 512 }
+    - { name: half-total-only, sourceBytesTotal: 1024 }
+    - { name: loaded-exceeds-total, sourceBytesLoaded: 1025, sourceBytesTotal: 1024 }
+    - { name: negative-loaded, sourceBytesLoaded: -1, sourceBytesTotal: 1024 }
+    - { name: non-integer-loaded, sourceBytesLoaded: 12.5, sourceBytesTotal: 1024 }
+    - { name: null-loaded, sourceBytesLoaded: null, sourceBytesTotal: 1024 }

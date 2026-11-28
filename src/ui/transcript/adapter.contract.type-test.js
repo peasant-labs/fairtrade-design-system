@@ -26,6 +26,7 @@
 import {
   adaptTranscript,
   prefilterTurns,
+  previewSourceBytes,
   computeTasks,
   computeTurnLabels,
   buildTaskWaterfall,
@@ -162,6 +163,19 @@ void vm3
 /** @type {TranscriptViewModel} */
 const projected = adaptTranscript(wire, annotations, precomputed, { visibleTurnIndices: [1] })
 void projected
+
+/** @type {TranscriptWireInput} */
+const wireWithNumbers = {
+  ...wire,
+  turns: [
+    { index: 17, role: 'assistant', content: 'reply', timestamp: '2026-06-24T00:00:00Z', depth: 0, displayNumber: '9a' },
+    { index: 18, role: 'user', content: 'next', timestamp: '2026-06-24T00:01:00Z', depth: 0, displayNumber: '10' },
+  ],
+}
+const numberedVm = adaptTranscript(wireWithNumbers)
+void numberedVm.turns[0].label
+const byteProgress = previewSourceBytes({ sourceBytesLoaded: 512, sourceBytesTotal: 1024 })
+void byteProgress?.loaded
 
 /* ── (4) back-compat analytics signatures (re-exported by the browser migration) ── */
 /** @type {TaskGroup[]} */

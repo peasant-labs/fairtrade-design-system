@@ -74,8 +74,8 @@ mutations:
     expectedDiagnostic: "classic keeps the scrubber when a subtitle is supplied: subtitle must be present"
   - name: the ledger keeps the classic task boundary
     file: src/ui/transcript/TranscriptViewer.jsx
-    find: "{!ledger && t.role === 'user' && task && <TaskBoundary task={task} />}"
-    replace: "{t.role === 'user' && task && <TaskBoundary task={task} />}"
+    find: "{!ledger && t.role === 'user' && task && <TaskBoundary task={task} turn={t} />}"
+    replace: "{t.role === 'user' && task && <TaskBoundary task={task} turn={t} />}"
     expectedDiagnostic: "ledger swaps the scrubber for the title and minimap: task-boundary must be absent"
   - name: the rail ignores the presentation
     file: src/ui/transcript/OutlineRail.jsx
@@ -89,7 +89,7 @@ mutations:
     expectedDiagnostic: "the minimap is one slider over the visible turns: the control must carry role=slider"
   - name: the minimap does not jump
     file: src/ui/transcript/Minimap.jsx
-    find: "const next = turns[last > 0 ? Math.round(fraction * last) : 0]"
+    find: "const next = turns[last > 0 ? Math.round(loadedFraction * last) : 0]"
     replace: "const next = turns[0]"
     expectedDiagnostic: "a pointer press selects the turn under the cursor: expected the press at the middle of the track to select turn 2"
   - name: the minimap ignores the visible turn set
