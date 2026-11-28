@@ -556,6 +556,9 @@ for (const [entry, mod] of Object.entries({ ui, graph })) {
     failures.push(`${entry}: VillageObservations package render/type check failed: ${error.message}`)
   }
 }
+// Ownership split: this smoke test owns the closed runtime /ui export name set
+// (exact membership of Object.keys(ui)), while src/ui/ui-exports.contract.type-test.js
+// owns the exported types. Adding a runtime export means updating expectedExports here.
 const expectedExportSet = new Set(expectedExports)
 for (const name of expectedExports) {
   if (!(name in ui)) failures.push(`${name}: missing from dist/lib/ui.js`)
