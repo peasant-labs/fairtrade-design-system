@@ -136,6 +136,7 @@ export {
   usePositionedTranscript,
 } from './positioned-read.js'
 export { historySectionId, parseHistorySectionId } from './history-section-id.js'
+export { TranscriptScrollCause, isTranscriptScrollCause } from './scroll-restore.js'
 export { default as TranscriptScorecard } from './Scorecard.jsx'
 export { default as TranscriptLabelPopover } from './LabelPopover.jsx'
 export {
@@ -196,6 +197,10 @@ export { default as useTranscriptInitialPosition } from './useTranscriptInitialP
    `export {}`); listed here so consumers import the contract from the sub-barrel
    and so it lands in the published `.d.ts`. ───────────────────────────────────── */
 /** @typedef {import('./state-capabilities.js').TranscriptViewerProps} TranscriptViewerProps */
+/** @typedef {import('./scroll-restore.js').TranscriptScrollCauseValue} TranscriptScrollCauseValue */
+/** @typedef {import('./scroll-restore.js').TranscriptScrollEvent} TranscriptScrollEvent */
+/** @typedef {import('./scroll-restore.js').TranscriptScrollListener} TranscriptScrollListener */
+/** @typedef {import('./scroll-restore.js').TranscriptScrollHandle} TranscriptScrollHandle */
 /** @typedef {import('./state-capabilities.js').TranscriptInitialPosition} TranscriptInitialPosition */
 /** @typedef {import('./state-capabilities.js').BreadcrumbItem} BreadcrumbItem */
 /** @typedef {import('./state-capabilities.js').ViewerCapabilities} ViewerCapabilities */

@@ -221,6 +221,7 @@ export const Presentation = Object.freeze({ Classic: 'classic', Ledger: 'ledger'
  * @property {import('./segments.js').SegmentWindowVM | null} [window] a jump descriptor: where the window is and which covering segments to load. It carries no turn content. If a void covering load fails, the host reports the error and clears this prop to null; clearing restores held turns and offers the window request again
  * @property {(segmentIndex: number) => void | Promise<unknown>} [onLoadSegment] load one segment; the boundary, the scrubber and a window all request through this one path. Return a promise that settles on success or failure to disable the boundary while pending; rejection re-enables it. A void return leaves the boundary enabled so the host can retry. The host owns error reporting
  * @property {(anchorTurn: number, span?: number) => void | Promise<unknown>} [onLoadWindow] resolve a jump's window descriptor from a turn identity
+ * @property {import('react').Ref<import('./scroll-restore.js').TranscriptScrollHandle>} [ref] imperative scroll-restore handle for reading, checking, restoring, and observing main-row scroll offsets by served position without querying viewer DOM
  */
 
 /**

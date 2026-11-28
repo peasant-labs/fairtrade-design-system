@@ -16,8 +16,12 @@
 /** @typedef {import('./index.js').PositionedReadFailureKindValue} PositionedReadFailureKindValue */
 /** @typedef {import('./index.js').PositionedReadStatusValue} PositionedReadStatusValue */
 /** @typedef {import('./index.js').PositionedReadDataValue} PositionedReadDataValue */
+/** @typedef {import('./index.js').TranscriptScrollHandle} TranscriptScrollHandle */
+/** @typedef {import('./index.js').TranscriptScrollCauseValue} TranscriptScrollCauseValue */
+/** @typedef {import('./index.js').TranscriptScrollEvent} TranscriptScrollEvent */
+/** @typedef {import('./index.js').TranscriptScrollListener} TranscriptScrollListener */
 
-import { historySectionId, parseHistorySectionId } from './index.js'
+import { TranscriptScrollCause, historySectionId, isTranscriptScrollCause, parseHistorySectionId } from './index.js'
 
 /** @type {string} */
 const sectionId = historySectionId(0)
@@ -71,7 +75,29 @@ function host(read) {
   controls.closeSection(0)
   /** @type {boolean | undefined} */ const snapped = controls.landing?.snapped
   /** @type {import('./index.js').TranscriptViewModel | undefined} */ const vm = viewerProps.viewModel
-  return { again, snapped, vm, props }
+  /** @type {import('react').RefObject<TranscriptScrollHandle | null>} */
+  const viewerRef = { current: null }
+  /** @type {import('./index.js').TranscriptViewerProps} */
+  const propsWithRef = { ...props, ref: viewerRef }
+  /** @type {TranscriptScrollCauseValue} */
+  const readerInputCause = TranscriptScrollCause.ReaderInput
+  /** @type {boolean} */
+  const causeCheck = isTranscriptScrollCause(readerInputCause)
+  // @ts-expect-error scroll cause is a closed set, never an arbitrary DOM event name
+  /** @type {TranscriptScrollCauseValue} */ const invalidCause = 'wheel'
+  if (viewerRef.current) {
+    /** @type {number | undefined} */ const offset = viewerRef.current.getRowOffset(0)
+    /** @type {boolean} */ const inView = viewerRef.current.isRowInView(0)
+    /** @type {boolean} */ const restored = viewerRef.current.restoreRowOffset(0, offset ?? 0)
+    /** @type {() => void} */ const unsubscribe = viewerRef.current.subscribeScroll((event) => {
+      /** @type {TranscriptScrollCauseValue} */ const cause = event.cause
+      void cause
+    })
+    void inView
+    void restored
+    unsubscribe()
+  }
+  return { again, snapped, vm, props: propsWithRef, causeCheck, invalidCause }
 }
 
 export { partial, nearest, loose, failure, timeout, ready, dataValue, unknownDataValue, options, host, sectionId, badSectionId, parsedSection }

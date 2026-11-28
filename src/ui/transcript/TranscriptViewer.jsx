@@ -1,6 +1,6 @@
 import { formatCount, formatInteger } from '../format.js'
 import { headingTag } from '../heading.js'
-import { Fragment, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useId, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
   ChevronRight, ChevronDown, ChevronUp, Clock, Coins, ShieldCheck, FileText,
   Search, Pencil, ListTree, LayoutList, SlidersHorizontal, Share2, Users, User, Wrench,
@@ -70,6 +70,7 @@ import { toolStateKey } from './tool-state-key.js'
 import { renderedSearchRanges, searchExpression } from './search-highlights.js'
 import SearchHighlights from './SearchHighlights.jsx'
 import { recordedTurnIndex } from './recorded-turn.js'
+import { attachStreamScrollObserver, createTranscriptScrollHandle } from './scroll-restore.js'
 
 /** @type {AnimationPlayState} */
 const runningAnimation = 'running'
@@ -353,6 +354,7 @@ export default function TranscriptViewer({
   window: windowProp,
   onLoadSegment,
   onLoadWindow,
+  ref,
   continuation: continuationProp,
   positionedRead,
 }) {
@@ -820,6 +822,26 @@ export default function TranscriptViewer({
     if (el) turnRefs.current[id] = el
     else delete turnRefs.current[id]
   }, [])
+
+  const scrollListenersRef = useRef(new Set())
+  useEffect(() => {
+    const stream = scrollRef.current
+    if (!stream) return undefined
+    return attachStreamScrollObserver(stream, (event) => {
+      for (const listener of [...scrollListenersRef.current]) listener(event)
+    })
+  }, [tab, viewMode])
+
+  useImperativeHandle(ref, () => createTranscriptScrollHandle({
+    getStream: () => scrollRef.current,
+    getRow: (position) => turnRefs.current[position],
+    subscribe: (listener) => {
+      scrollListenersRef.current.add(listener)
+      return () => {
+        scrollListenersRef.current.delete(listener)
+      }
+    },
+  }), [])
 
   const toggleTool = (id) => setOpenTools(previous => ({ ...previous, [id]: !previous[id] }))
   const registerActionRef = useCallback((turn, where, el) => {

@@ -113,6 +113,27 @@ The combinations and the controls each one must show or omit are fixtured in
 `scripts/testdata/transcript-viewer-chrome.yaml`; `pnpm test:transcript-viewer-chrome` mounts
 the real viewer for every case. No wire field is involved.
 
+## scroll-restore handle
+
+`TranscriptViewer` accepts a React `ref` (`TranscriptScrollHandle`) so hosts can save and restore
+a reading position by served main-row position without querying Fairtrade's private DOM classes or
+attributes:
+
+- `getRowOffset(position)` — returns the main row's top offset relative to the stream's top in
+  pixels, or `undefined` when the stream or row is not rendered.
+- `isRowInView(position)` — returns whether the main row intersects the stream's visible viewport,
+  or `false` when the stream or row is not rendered.
+- `restoreRowOffset(position, savedOffset)` — shifts `stream.scrollTop` by
+  `offsetNow - savedOffset` so the main row returns to `savedOffset`, returning `true` when
+  applied and `false` when the row is not rendered or `savedOffset` is not finite.
+- `subscribeScroll(listener)` — subscribes to stream scroll events with `{ cause }` classified by
+  the closed `TranscriptScrollCause` set (`TranscriptScrollCause.ReaderInput` for `wheel`,
+  `touchstart`, and `keydown`; `TranscriptScrollCause.Other` for `scroll`), returning an
+  unsubscribe function.
+
+Rows inside earlier-history sections are never matched by any method, and missing or unrendered
+positions return `undefined` or `false` without throwing.
+
 ## integrity
 
 The viewer takes a served integrity flag and draws it; it never decides one.
