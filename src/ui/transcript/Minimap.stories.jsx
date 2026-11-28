@@ -20,21 +20,21 @@ const turns = [
   { index: 6, role: 'system', label: '3', toolCalls: [] },
 ]
 
-function Bar({ active, theme, onJump }) {
+function Bar({ active, theme, onJump, sourceBytes = null }) {
   return (
     <div
       data-theme={theme}
       style={{ display: 'flex', alignItems: 'center', width: 480, padding: '6px 12px', background: 'var(--surface-2)', border: 'var(--bd)' }}
     >
-      <TranscriptMinimap turns={turns} activeTurn={active} onJump={onJump} />
+      <TranscriptMinimap turns={turns} activeTurn={active} sourceBytes={sourceBytes} onJump={onJump} />
     </div>
   )
 }
 
 /* the story drives a controlled active turn, so the keyboard and pointer paths are observable. */
-function Controlled({ theme, start = 2 }) {
+function Controlled({ theme, start = 2, sourceBytes = null }) {
   const [active, setActive] = useState(turns[start].index)
-  return <Bar active={active} theme={theme} onJump={setActive} />
+  return <Bar active={active} theme={theme} sourceBytes={sourceBytes} onJump={setActive} />
 }
 
 const meta = {
@@ -111,3 +111,50 @@ async function play({ canvasElement }) {
 export const Default = { render: () => <Controlled />, play }
 
 export const LightTheme = { render: () => <Controlled theme="light" />, play }
+
+async function hollowPlay({ canvasElement }) {
+  const canvas = within(canvasElement)
+  const slider = canvas.getByRole('slider', { name: 'transcript timeline' })
+  expect(slider).toHaveAttribute('aria-valuetext', `turn ${turns[2].label} of ${turns.length}, 50% of source loaded`)
+  const track = slider.querySelector('.txn-minimap-track')
+  const loaded = slider.querySelector('.txn-minimap-loaded')
+  const tail = slider.querySelector('.txn-minimap-tail')
+  expect(loaded).not.toBeNull()
+  expect(tail).not.toBeNull()
+  const trackWidth = track.getBoundingClientRect().width
+  const loadedWidth = loaded.getBoundingClientRect().width
+  expect(Math.abs(loadedWidth - trackWidth * 0.5)).toBeLessThanOrEqual(2)
+  // the hollow tail is an unfilled square outline styled by --bd-strong in both themes.
+  const tailStyle = getComputedStyle(tail)
+  const probe = canvasElement.ownerDocument.createElement('span')
+  probe.style.borderColor = 'var(--rule-strong)'
+  slider.parentElement.appendChild(probe)
+  const ruleStrong = getComputedStyle(probe).borderTopColor
+  probe.remove()
+  expect(tailStyle.borderTopStyle).toBe('solid')
+  expect(tailStyle.borderTopColor).toBe(ruleStrong)
+  expect(tailStyle.backgroundColor).toBe('rgba(0, 0, 0, 0)')
+  expect(tailStyle.borderTopLeftRadius).toBe('0px')
+  // seeking at the loaded boundary (50%) lands on the last loaded turn; seeking into the hollow
+  // tail (85%) clamps to the last loaded turn and never moves the cursor into the hollow area.
+  const rect = slider.getBoundingClientRect()
+  await fireEvent.pointerDown(slider, { clientX: rect.left + rect.width * 0.5 })
+  expect(slider).toHaveAttribute('aria-valuenow', String(turns.length - 1))
+  expect(slider.querySelector('.txn-minimap-cursor').style.left).toBe('50%')
+  await fireEvent.pointerDown(slider, { clientX: rect.left + rect.width * 0.85 })
+  expect(slider).toHaveAttribute('aria-valuenow', String(turns.length - 1))
+  expect(slider.querySelector('.txn-minimap-cursor').style.left).toBe('50%')
+  await fireEvent.keyDown(slider, { key: 'Home' })
+  expect(slider).toHaveAttribute('aria-valuenow', '0')
+  expect(slider.querySelector('.txn-minimap-cursor').style.left).toBe('0%')
+}
+
+export const HollowTail = {
+  render: () => <Controlled sourceBytes={{ loaded: 512, total: 1024 }} />,
+  play: hollowPlay,
+}
+
+export const HollowTailLight = {
+  render: () => <Controlled theme="light" sourceBytes={{ loaded: 512, total: 1024 }} />,
+  play: hollowPlay,
+}

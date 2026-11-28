@@ -154,7 +154,70 @@ const finishedPlay = async ({ canvasElement }) => {
 }
 export const PreviewEnd = { decorators: [previewFrame], args: { ...previewArgs, directory: finishedDirectory, continuation: { state: 'end', notice: 'this session has grown since the preview opened.' } }, play: finishedPlay }
 export const PreviewCut = { decorators: [previewFrame], args: { ...previewArgs, directory: finishedDirectory, continuation: { state: 'cut', notice: 'the preview reached its limit.' } }, play: finishedPlay }
-export const PreviewFailed = { args: { ...previewArgs, continuation: { state: 'failed', notice: <button type="button">read again</button> } } }
+export const PreviewFailed = { decorators: [previewFrame], args: { ...previewArgs, continuation: { state: 'failed', notice: <button type="button">read again</button> } }, play: async ({ canvasElement }) => pinPreview(canvasElement) }
+
+const hollowTailArgs = {
+  ...previewArgs,
+  directory: { ...previewArgs.directory, sourceBytesLoaded: 512, sourceBytesTotal: 1024 },
+  continuation: { state: 'more', onLoadMore: fn() },
+}
+const hollowTailPlay = async ({ canvasElement }) => {
+  await pinPreview(canvasElement)
+  const slider = within(canvasElement).getByRole('slider', { name: 'transcript timeline' })
+  expect(slider.querySelector('.txn-minimap-loaded')).not.toBeNull()
+  expect(slider.querySelector('.txn-minimap-tail')).not.toBeNull()
+  expect(slider.getAttribute('aria-valuetext')).toContain('50% of source loaded')
+  const rect = slider.getBoundingClientRect()
+  await fireEvent.pointerDown(slider, { clientX: rect.left + rect.width * 0.85 })
+  expect(slider.querySelector('.txn-minimap-cursor').style.left).toBe('50%')
+}
+export const PreviewHollowTail = { decorators: [previewFrame], args: hollowTailArgs, play: hollowTailPlay }
+export const PreviewHollowTailLight = { decorators: [previewFrame], args: { ...hollowTailArgs, theme: 'light' }, play: hollowTailPlay }
+
+const midSessionReadTool = {
+  id: 't9a',
+  name: 'Read',
+  toolKind: 'read',
+  filePath: 'src/canvas/TurnRow.tsx',
+  arguments: '{"file_path":"src/canvas/TurnRow.tsx"}',
+  result: '"export function TurnRow() {}"',
+}
+const midSessionNumberedPayload = {
+  id: 'sess_mid_numbered',
+  harness: 'claude-code',
+  startTime: '2026-11-12T09:00:00Z',
+  endTime: '2026-11-12T09:05:00Z',
+  durationMins: 5,
+  totalTokens: 900,
+  tokensIn: 600,
+  tokensOut: 300,
+  turnCount: 3,
+  toolCallCount: 1,
+  turns: [
+    { index: 17, role: 'assistant', depth: 0, entryType: 'text', displayNumber: '9a', content: 'Continuing the previous task from segment zero.', timestamp: '2026-11-12T09:00:00Z', toolCalls: [midSessionReadTool] },
+    { index: 18, role: 'user', depth: 0, entryType: 'text', displayNumber: '10', content: 'Now run the next check and keep wire numbers.', timestamp: '2026-11-12T09:02:00Z' },
+    { index: 19, role: 'assistant', depth: 0, entryType: 'text', displayNumber: '10a', content: 'Running the verification with wire numbers intact.', timestamp: '2026-11-12T09:04:00Z' },
+  ],
+  title: 'Mid-session wire display numbers',
+}
+const midSessionNumberedArgs = {
+  viewModel: adaptTranscript(midSessionNumberedPayload),
+  capabilities: readOnlyCaps,
+  presentation: 'ledger',
+  subtitle: 'a mid-session segment carrying wire display numbers.',
+}
+const midSessionNumberedPlay = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  await expect(canvas.getAllByText('#9a').length).toBeGreaterThan(0)
+  await expect(canvas.getAllByText('#10').length).toBeGreaterThan(0)
+  await expect(canvas.getByText('#10a')).toBeVisible()
+  await expect(canvasElement.querySelector('#turn-17 .txn-turn-heading')).toHaveTextContent('assistant turn 9a')
+  await expect(canvasElement.querySelector('#turn-18 .txn-turn-heading')).toHaveTextContent('user turn 10')
+  const railCards = [...canvasElement.querySelectorAll('.txn-rail-left .txn-rail-turn-top b')].map((el) => el.textContent)
+  await expect(railCards).toEqual(['#9a', '#10'])
+}
+export const MidSessionNumbered = { decorators: [previewFrame], args: midSessionNumberedArgs, play: midSessionNumberedPlay }
+export const MidSessionNumberedLight = { decorators: [previewFrame], args: { ...midSessionNumberedArgs, theme: 'light' }, play: midSessionNumberedPlay }
 
 /* Unmanaged: only the two required props. Proves the state defaults (trace tab, dark theme). */
 export const Default = {

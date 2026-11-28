@@ -30,16 +30,27 @@ function segmentKind(turn) {
 /* the keyboard step for each handled key; Home/End are handled beside this map. */
 const KEY_STEP = { ArrowLeft: -1, ArrowRight: 1, PageUp: -10, PageDown: 10 }
 
+/** Fail-closed validation of optional preview source-byte progress. */
+function validSourceBytes(sourceBytes) {
+  if (sourceBytes == null || typeof sourceBytes !== 'object') return null
+  const { loaded, total } = sourceBytes
+  if (!Number.isSafeInteger(loaded) || !Number.isSafeInteger(total)) return null
+  if (loaded < 0 || total < 0 || loaded > total) return null
+  return { loaded, total }
+}
+
 /**
  * @param {object} props
  * @param {TurnVM[]} [props.turns]        the turns the reader can currently see, in turn order
  * @param {number} [props.activeTurn]     the active TURN INDEX (TurnVM.index)
+ * @param {import('./segments.js').PreviewSourceBytes | null} [props.sourceBytes]  optional preview byte progress; when loaded < total, draws the remaining share as a hollow tail
  * @param {(turnIndex: number) => void} [props.onJump]
  * @param {string} [props.label]          accessible name for the slider
  */
 export default function TranscriptMinimap({
   turns = [],
   activeTurn,
+  sourceBytes = null,
   onJump = () => {},
   label = 'transcript timeline',
 }) {
@@ -48,16 +59,31 @@ export default function TranscriptMinimap({
   const last = turns.length - 1
   const index = Math.max(0, turns.findIndex((turn) => turn.index === activeTurn))
   const turn = turns[index]
-  const cursorPct = last > 0 ? (index / last) * 100 : 0
+  const validBytes = validSourceBytes(sourceBytes)
+  const hasTail = validBytes != null && validBytes.total > 0 && validBytes.loaded < validBytes.total
+  const loadedShare = hasTail ? validBytes.loaded / validBytes.total : 1
+  const loadedPct = loadedShare * 100
+  const loadedPercent = hasTail
+    ? (validBytes.loaded === 0 ? 0 : Math.min(99, Math.max(1, Math.round(loadedShare * 100))))
+    : 100
+  const cursorPct = (last > 0 ? (index / last) * loadedShare : 0) * 100
+  const valueText = hasTail
+    ? (turns.length === 0
+      ? `${loadedPercent}% of source loaded`
+      : `turn ${turn?.label ?? index + 1} of ${turns.length}, ${loadedPercent}% of source loaded`)
+    : ('turn ' + (turn?.label ?? index + 1) + ' of ' + turns.length)
 
-  /* map a pointer x on the control to the nearest visible turn and report it. */
+  /* map a pointer x on the control to the nearest visible turn inside the loaded share, never targeting the hollow tail. */
   function seek(clientX) {
     const control = controlRef.current
-    if (!control) return
+    if (!control || turns.length === 0) return
     const rect = control.getBoundingClientRect()
     if (!rect.width) return
     const fraction = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
-    const next = turns[last > 0 ? Math.round(fraction * last) : 0]
+    const loadedFraction = hasTail
+      ? (loadedShare > 0 ? Math.min(1, fraction / loadedShare) : 0)
+      : fraction
+    const next = turns[last > 0 ? Math.round(loadedFraction * last) : 0]
     if (next) onJump(next.index)
   }
 
@@ -101,7 +127,7 @@ export default function TranscriptMinimap({
       aria-valuemin={0}
       aria-valuemax={Math.max(0, last)}
       aria-valuenow={index}
-      aria-valuetext={'turn ' + (turn?.label ?? index + 1) + ' of ' + turns.length}
+      aria-valuetext={valueText}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
@@ -109,9 +135,22 @@ export default function TranscriptMinimap({
       onKeyDown={onKeyDown}
     >
       <span className="txn-minimap-track" aria-hidden="true">
-        {turns.map((t) => (
-          <span key={t.identity ?? t.index} className={'txn-minimap-seg txn-minimap-' + segmentKind(t)} />
-        ))}
+        {hasTail ? (
+          <>
+            {turns.length > 0 && (
+              <span className="txn-minimap-loaded" style={{ width: loadedPct + '%' }}>
+                {turns.map((t) => (
+                  <span key={t.identity ?? t.index} className={'txn-minimap-seg txn-minimap-' + segmentKind(t)} />
+                ))}
+              </span>
+            )}
+            <span className="txn-minimap-tail" />
+          </>
+        ) : (
+          turns.map((t) => (
+            <span key={t.identity ?? t.index} className={'txn-minimap-seg txn-minimap-' + segmentKind(t)} />
+          ))
+        )}
       </span>
       <span className="txn-minimap-cursor" aria-hidden="true" style={{ left: cursorPct + '%' }} />
     </div>

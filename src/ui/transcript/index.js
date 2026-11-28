@@ -119,6 +119,7 @@ export {
   loadedToolGroupCounts,
   mountedCardBound,
   normaliseSegments,
+  previewSourceBytes,
   regionBoundaries,
   scrubberTicks,
   turnsFromSegments,
@@ -212,6 +213,7 @@ export { default as useTranscriptInitialPosition } from './useTranscriptInitialP
 /* ── cooked view-model types (JSDoc re-exports; erased at build) ──────────────── */
 /** @typedef {import('./view-model.js').TranscriptViewModel} TranscriptViewModel */
 /** @typedef {import('./segments.js').SegmentDirectoryVM} SegmentDirectoryVM */
+/** @typedef {import('./segments.js').PreviewSourceBytes} PreviewSourceBytes */
 /** @typedef {import('./segments.js').SegmentRefVM} SegmentRefVM */
 /** @typedef {import('./segments.js').SegmentVM} SegmentVM */
 /** @typedef {import('./segments.js').SegmentWindowVM} SegmentWindowVM */

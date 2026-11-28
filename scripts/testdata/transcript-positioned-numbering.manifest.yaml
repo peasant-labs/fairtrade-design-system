@@ -14,6 +14,11 @@ requiredCaseNames:
   - number-search-and-filter-unaffected
   - number-history-section-prints-own-numbering
   - segment-mode-refuses-analytics
+  - wire-mid-session-keeps-display-number
+  - wire-absent-display-number-computes
+  - wire-partial-or-malformed-display-number-refused
+  - wire-two-segments-either-order-keep-labels
+  - wire-numbered-mounted-surfaces-agree
   - number-fixture-replay-js
 # The cases the runner may skip, exactly: a case marked pending in the fixture and not named
 # here, or named here and not pending, fails the gate.

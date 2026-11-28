@@ -29,6 +29,7 @@ import {
   loadedToolGroupCounts,
   mountedCardBound,
   normaliseSegments,
+  previewSourceBytes,
   regionBoundaries,
   scrubberTicks,
   turnsFromSegments,
@@ -246,7 +247,8 @@ function PhaseDivider({ phase, heading: Heading = 'h3' }) {
   )
 }
 
-function TaskBoundary({ task }) {
+function TaskBoundary({ task, turn }) {
+  const label = turn?.numberAbsent ? null : (turn?.label || task.index)
   const meta = [
     formatDurationMs(task.durationMs) || null,
     task.tools != null ? `${task.tools} tools` : null,
@@ -256,7 +258,7 @@ function TaskBoundary({ task }) {
     .join(', ')
   return (
     <div className="txn-taskboundary">
-      <span className="txn-tb-chip">user turn {task.index}</span>
+      <span className="txn-tb-chip">{label != null ? `user turn ${label}` : 'user turn'}</span>
       {meta && <span className="txn-tb-meta tnum">{meta}</span>}
     </div>
   )
@@ -394,6 +396,7 @@ export default function TranscriptViewer({
     [segmentMode, heldWindow, loadedSegments, coverage],
   )
   const previewSegments = segmentMode && continuationProp != null
+  const previewBytes = useMemo(() => (previewSegments ? previewSourceBytes(directory) : null), [previewSegments, directory])
   const incompleteTail = segmentMode && directory?.complete === false
   const allSegmentTurns = useMemo(() => {
     if (!segmentMode) return null
@@ -427,7 +430,11 @@ export default function TranscriptViewer({
   const caps = capabilities ?? {}
   /* the ledger presentation is a CHROME switch only: same view state, same capabilities,
      same callbacks; the root class scopes the ledger CSS block. */
+  /* classic keeps segment ticks across every segment/preview read so its sticky bar retains the
+     provider/model + scrubber layout; ledger switches to the minimap for previews and keeps segment
+     ticks only for windowed segment reads that do not hold a continuous prefix. */
   const ledger = presentation === Presentation.Ledger
+  const useSegmentTicks = segmentMode && (!ledger || !previewSegments)
 
   /* ── controllable view state (each works unmanaged via its default) ─────────── */
   const [theme] = useControllable(themeProp, onThemeChange, 'dark')
@@ -2108,7 +2115,7 @@ export default function TranscriptViewer({
               <Collapsible open={sticky && viewMode === 'list'} className="txn-sticky-disclosure">
                 <div className="txn-sticky">
                   {ledger ? (
-                    segmentMode && !previewSegments ? (
+                    useSegmentTicks ? (
                       /* A windowed read does not hold the whole transcript. */
                       <Scrubber
                         ticks={scrubTicks}
@@ -2122,6 +2129,7 @@ export default function TranscriptViewer({
                       <TranscriptMinimap
                         turns={navigableTurns}
                         activeTurn={activeTurn}
+                        sourceBytes={previewBytes}
                         onJump={(idx) => jumpTo(idx, { switchTab: false })}
                       />
                     )
@@ -2131,9 +2139,9 @@ export default function TranscriptViewer({
                       {activeModel && <span className="txn-sticky-model mono">{activeModel}</span>}
                       <Scrubber
                         turns={turns}
-                        ticks={segmentMode ? scrubTicks : undefined}
+                        ticks={useSegmentTicks ? scrubTicks : undefined}
                         active={activeTurn}
-                        activeTick={segmentMode ? activeSegmentTick : 0}
+                        activeTick={useSegmentTicks ? activeSegmentTick : 0}
                         onSeek={seekScrub}
                         onSeekTick={seekScrubTick}
                         draggingRef={draggingRef}
@@ -2342,7 +2350,7 @@ export default function TranscriptViewer({
                                 {/* in ledger the rail card carries the task identity and duration and
                                     the turn head carries the per-turn identity, so the classic
                                     boundary would repeat both before the first line of prose. */}
-                                {!ledger && t.role === 'user' && task && <TaskBoundary task={task} />}
+                                {!ledger && t.role === 'user' && task && <TaskBoundary task={task} turn={t} />}
                                 {group ? (
                                   <TranscriptSystemGroup
                                     group={group}
@@ -2536,11 +2544,13 @@ export default function TranscriptViewer({
               {annotations.map((a) => {
                 const meta = ANNOTATION_META[a.kind] ?? { label: a.kind, icon: AlertTriangle, chip: '', tip: a.kind }
                 const Icon = meta.icon
-                // the annotated turn's role is derived from the VM (not carried on the annotation).
-                const annoRole = turns.find((t) => t.index === a.turn)?.role
+                // the annotated turn's role and label are derived from the VM (not carried on the annotation).
+                const annoTurn = turns.find((t) => t.index === a.turn)
+                const annoRole = annoTurn?.role
+                const annoLabel = annoTurn && !annoTurn.numberAbsent && annoTurn.label ? annoTurn.label : a.turn
                 return (
                   <Tooltip key={a.id} content={meta.tip}><button type="button" className="txn-anno-row" onClick={() => jumpTo(a.turn)}>
-                    <span className="txn-anno-turn tnum">turn {a.turn}{annoRole ? ', ' + annoRole : ''}</span>
+                    <span className="txn-anno-turn tnum">turn {annoLabel}{annoRole ? ', ' + annoRole : ''}</span>
                     <span className={'chip txn-pill ' + meta.chip}><Icon size={14} aria-hidden="true" /> {meta.label}</span>
                     <span className="txn-anno-label">{a.label}</span>
                     {a.preview && <span className="txn-anno-preview mono">{a.preview}</span>}

@@ -6,6 +6,10 @@ requiredCases:
   - failed-shows-host-control
 requiredMutationNames:
   - preview uses segment ticks
+  - remove hollow tail element
+  - mis-size loaded minimap share
+  - seek ignores hollow tail boundary
+  - drop loaded share from minimap value text
   - restore scrubber caption
   - observer requests more
   - drop open-directory state
@@ -48,12 +52,39 @@ requiredAssertions:
   - every-tab-stays-with-incomplete-tail
   - complete-tail-keeps-final-response
   - no-continuation-prop-is-unchanged
+  - preview-hollow-tail-partial-progress
+  - preview-hollow-tail-shrinks-on-append
+  - preview-hollow-tail-removed-on-completion
+  - preview-hollow-tail-seek-boundary-and-never-hollow
+  - preview-minimap-active-position-tracks-after-append
+  - preview-hollow-tail-invalid-bytes-fail-closed
+  - preview-hollow-tail-preserves-no-bytes-behavior
 mutations:
   - name: preview uses segment ticks
     file: src/ui/transcript/TranscriptViewer.jsx
-    find: "segmentMode && !previewSegments ? ("
-    replace: "segmentMode ? ("
+    find: "const useSegmentTicks = segmentMode && (!ledger || !previewSegments)"
+    replace: "const useSegmentTicks = segmentMode"
     expectedDiagnostic: preview-timeline-is-the-minimap-over-loaded-turns
+  - name: remove hollow tail element
+    file: src/ui/transcript/Minimap.jsx
+    find: '<span className="txn-minimap-tail" />'
+    replace: ''
+    expectedDiagnostic: preview-hollow-tail-partial-progress
+  - name: mis-size loaded minimap share
+    file: src/ui/transcript/Minimap.jsx
+    find: "style={{ width: loadedPct + '%' }}"
+    replace: "style={{ width: '100%' }}"
+    expectedDiagnostic: preview-hollow-tail-partial-progress
+  - name: seek ignores hollow tail boundary
+    file: src/ui/transcript/Minimap.jsx
+    find: "    const loadedFraction = hasTail\n      ? (loadedShare > 0 ? Math.min(1, fraction / loadedShare) : 0)\n      : fraction"
+    replace: "    const loadedFraction = fraction"
+    expectedDiagnostic: preview-hollow-tail-seek-boundary-and-never-hollow
+  - name: drop loaded share from minimap value text
+    file: src/ui/transcript/Minimap.jsx
+    find: "`turn ${turn?.label ?? index + 1} of ${turns.length}, ${loadedPercent}% of source loaded`"
+    replace: "`turn ${turn?.label ?? index + 1} of ${turns.length}`"
+    expectedDiagnostic: preview-hollow-tail-partial-progress
   - name: restore scrubber caption
     file: src/ui/transcript/Scrubber.jsx
     find: '      <span className="txn-scrub-bracket"'

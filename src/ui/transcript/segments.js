@@ -78,6 +78,15 @@ export const SEGMENT_OVERSCAN_TURNS = 0
  * @property {SegmentRefVM[]} [segments]
  * @property {number} [directoryPage]
  * @property {number} [directoryPerPage]
+ * @property {number} [sourceBytesLoaded]  preview directories: source bytes loaded so far (present together with sourceBytesTotal)
+ * @property {number} [sourceBytesTotal]   preview directories: total source bytes of the capture (present together with sourceBytesLoaded)
+ */
+
+/**
+ * Validated source-byte progress from a preview directory.
+ * @typedef {object} PreviewSourceBytes
+ * @property {number} loaded
+ * @property {number} total
  */
 
 /**
@@ -587,4 +596,22 @@ export function isWordlessAssistant(turn) {
   // An image is content of its own. A turn that carries one is not a continuation of
   // model actions from an unloaded segment, even when its text is empty.
   return !!turn && turn.role === 'assistant' && !hasImageParts(turn) && String(turn.displayContent ?? turn.content ?? '').trim() === ''
+}
+
+/**
+ * Structurally parse optional `sourceBytesLoaded` / `sourceBytesTotal` from a preview
+ * directory with fail-closed checks: both fields must be safe non-negative integers with
+ * `loaded <= total`. Absent or invalid/half-present pairs return `null` so normal minimap
+ * behavior is preserved without inventing progress or a hollow tail.
+ * @param {SegmentDirectoryVM | null | undefined} directory
+ * @returns {PreviewSourceBytes | null}
+ */
+export function previewSourceBytes(directory) {
+  if (!directory || typeof directory !== 'object') return null
+  const loaded = directory.sourceBytesLoaded
+  const total = directory.sourceBytesTotal
+  if (loaded === undefined && total === undefined) return null
+  if (!Number.isSafeInteger(loaded) || !Number.isSafeInteger(total)) return null
+  if (loaded < 0 || total < 0 || loaded > total) return null
+  return { loaded, total }
 }

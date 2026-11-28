@@ -30,6 +30,7 @@ function shorten(text, n) {
  * @typedef {object} Task
  * @property {string} id - stable key; passed back to onJump (e.g. the prompt turn id).
  * @property {number} [index] - the displayed task number (#1). Falls back to row order + 1.
+ * @property {string} [label] - optional wire/display label (e.g. "9a", "10"); takes precedence over `index`.
  * @property {string} prompt - the user prompt that opened the task (USER CONTENT — case preserved).
  * @property {number} durationMs - how long the task took, in ms (drives the bar + the label).
  * @property {number} [tools] - tool calls in the task (shown as "n tools" when no `turns`).
@@ -126,7 +127,7 @@ export default function StepsWaterfall({
             <StepRow
               key={task.id}
               task={task}
-              n={task.index ?? i + 1}
+              n={task.label ?? task.index ?? i + 1}
               maxMs={maxMs}
               longest={task.id === maxId && maxMs > 0}
               onJump={onJump}

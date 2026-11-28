@@ -14,7 +14,9 @@
        `gitContext` shape — into the optional cooked
        `session.git`, so NO component ever references a git wire field;
      • cooks turns (labels, thinking, accents, per-turn annotations), diffs,
-       files, tasks, highlights, and the filter index;
+       files, tasks, highlights, and the filter index; the host passes wire
+       turns unchanged, and when every turn supplies `displayNumber` the adapter
+       shows those wire numbers as given instead of computing labels;
      • embeds the shared single-session analytics (phases / scorecard bands /
        pattern annotations / task groups) — accepting a precomputed block or
        computing it on demand (analytics.js).
@@ -913,10 +915,44 @@ function buildFilterIndex(turnVMs, annotationsByTurn) {
 
 /* ── The adapter ─────────────────────────────────────────────────────────────── */
 
+/** Wire displayNumber pattern from the schema contract: positive task number with optional lowercase suffix. */
+const DISPLAY_NUMBER_PATTERN = /^[1-9][0-9]*[a-z]*$/
+
+/**
+ * Read optional `TranscriptTurn.displayNumber` structurally with fail-closed parsing.
+ * When any turn carries `displayNumber`, every turn in the partition/segment must carry
+ * a valid value matching `DISPLAY_NUMBER_PATTERN`; partial or malformed values throw a
+ * TypeError so the adapter never mixes wire numbers with computed labels.
+ * @param {readonly TurnDetail[]} turns
+ * @returns {Map<TurnDetail, string> | null}
+ */
+function parseWireDisplayNumbers(turns) {
+  if (turns.length === 0) return null
+  /** @type {Map<TurnDetail, string>} */
+  const numbers = new Map()
+  for (let i = 0; i < turns.length; i += 1) {
+    const turn = /** @type {TurnDetail & { displayNumber?: unknown }} */ (turns[i])
+    if (!present(turn, 'displayNumber') || turn.displayNumber === undefined) continue
+    if (typeof turn.displayNumber !== 'string' || !DISPLAY_NUMBER_PATTERN.test(turn.displayNumber)) {
+      throw new TypeError(`Fairtrade adaptTranscript refused displayNumber at turn position ${i}: expected a positive task number with an optional lowercase suffix.`)
+    }
+    numbers.set(turns[i], turn.displayNumber)
+  }
+  if (numbers.size === 0) return null
+  if (numbers.size !== turns.length) {
+    throw new TypeError(`Fairtrade adaptTranscript refused partial displayNumber: only ${numbers.size} of ${turns.length} turns carry displayNumber; supply it on every turn or omit it from all.`)
+  }
+  return numbers
+}
+
 /**
  * Project the canonical wire payload (folded turns) into the cooked
  * `TranscriptViewModel` every dumb transcript component renders. The SOLE
  * wire-parse + legacy-git normalisation site.
+ *
+ * The host passes wire turns unchanged. When every turn carries a wire
+ * `displayNumber`, Fairtrade prints those values as given and never computes
+ * labels locally.
  *
  * @param {TranscriptWireInput} payload          canonical wire plus legacy git compatibility
  * @param {AnnotationSummary[]} [annotations]     separately-fetched entry annotations
@@ -937,6 +973,10 @@ export function adaptTranscript(payload, annotations, analytics, options) {
     throw new TypeError('Fairtrade adaptTranscript refused payloadMode: select local, published or segment; use published only after validating the envelope with parseTranscriptContentText, and segment only for a body parsed by zPositionedSegment.')
   }
   const hasEvidence = hasNormalizedEvidence(payload)
+  const originalTurns = Array.isArray(payload.turns) ? payload.turns : []
+  const rawDisplayNumbers = hasEvidence && payloadMode === 'local'
+    ? parseWireDisplayNumbers(originalTurns)
+    : null
   // A future string state is preserved, while canonical validation still checks
   // every other field and every cross-partition evidence invariant.
   const originalHistory = payload.earlierHistory
@@ -955,6 +995,17 @@ export function adaptTranscript(payload, annotations, analytics, options) {
       payload = {
         ...parseSessionDetailPayloadValue(validationPayload),
         ...(payload.gitContext === undefined ? {} : { gitContext: payload.gitContext }),
+      }
+      // parseSessionDetailPayloadValue strips segment-turn fields like displayNumber on zTurnDetail;
+      // restore the already-validated wire displayNumber onto each parsed turn.
+      if (rawDisplayNumbers && Array.isArray(payload.turns)) {
+        payload = {
+          ...payload,
+          turns: payload.turns.map((turn, index) => ({
+            ...turn,
+            displayNumber: rawDisplayNumbers.get(originalTurns[index]),
+          })),
+        }
       }
     } catch (cause) {
       throw Object.assign(new TypeError(`Fairtrade adaptTranscript refused the durable payload during main/earlier evidence validation: ${cause instanceof Error ? cause.message : 'canonical validation failed'}. No transcript was cooked. Correct the producer using the canonical schema and retry.`), { cause })
@@ -1154,6 +1205,7 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
     indexCounts.set(turn.index, (indexCounts.get(turn.index) ?? 0) + 1)
     for (const call of turn.toolCalls ?? []) if (call.id) idCounts.set(call.id, (idCounts.get(call.id) ?? 0) + 1)
   }
+  const wireDisplayNumbers = servedRows ? null : parseWireDisplayNumbers(completeTurns)
   const stickyModels = resolveStickyModels(completeTurns, payload.model)
   /* a main turn's place in payload.turns, taken before any filter or copy and carried across
      withKnownTime's copy, so a served position still finds a turn whose time was dropped */
@@ -1167,13 +1219,15 @@ function cookPartition(payload, completeTurns, nativeMetadata, partition, annota
       const copy = withKnownTime(turn)
       const position = sourcePositions.get(turn)
       if (copy !== turn && position !== undefined) sourcePositions.set(copy, position)
+      const wireNumber = wireDisplayNumbers?.get(turn)
+      if (copy !== turn && wireNumber !== undefined) wireDisplayNumbers?.set(copy, wireNumber)
       const row = servedRows?.get(turn)
       if (copy !== turn && row) servedRows?.set(copy, row)
       return copy
     })
   const visibleTurnIndices = visibleIndices === undefined ? null : new Set(visibleIndices)
   const turns = visibleTurnIndices === null ? filteredTurns : filteredTurns.filter((turn) => visibleTurnIndices.has(turn.index))
-  const labels = servedRows ? turns.map((turn) => servedRows.get(turn)?.displayNumber) : computeTurnLabels(turns)
+  const labels = servedRows ? turns.map((turn) => servedRows.get(turn)?.displayNumber) : wireDisplayNumbers ? turns.map((turn) => wireDisplayNumbers.get(turn)) : computeTurnLabels(turns)
   const provider = payload.harness
 
   // Genuine analytics — accepted precomputed, else derived once and reused below.

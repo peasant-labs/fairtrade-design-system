@@ -28,6 +28,17 @@ wholeDocument:
     - {index: 1, role: assistant, content: first reply}
     - {index: 2, role: user, content: second request}
   labels: ['1', 1a, '2']
+wireSegment:
+  harness: claude-code
+  previousSegment:
+    - {index: 15, role: assistant, depth: 0, entryType: text, displayNumber: '9', content: Reply nine before the split., timestamp: '2026-11-12T08:59:00Z'}
+  midSession:
+    - {index: 17, role: assistant, depth: 0, entryType: text, sourceEntryRef: 'entry-17', displayNumber: 9a, content: Reply continuing prompt nine., timestamp: '2026-11-12T09:00:00Z', toolCalls: [{id: 'tc-9a', name: 'Bash', toolKind: 'execute', arguments: '{"command":"pnpm test"}', result: '"fail"', isError: true, exitCode: 1}]}
+    - {index: 18, role: user, depth: 0, entryType: text, sourceEntryRef: 'entry-18', displayNumber: '10', content: Run the tenth prompt in this segment., timestamp: '2026-11-12T09:01:00Z'}
+    - {index: 19, role: assistant, depth: 0, entryType: text, sourceEntryRef: 'entry-19', displayNumber: 10a, content: Reply to the tenth prompt., timestamp: '2026-11-12T09:02:00Z'}
+  expectedLabels: [9a, '10', 10a]
+  expectedFallbackLabels: ['1', '2', 2a]
+  invalidDisplayNumbers: ['0', 1A, '', ' 1', 123, null]
 # A value outside the served pattern ^[1-9][0-9]*[a-z]*$ is refused by the parser, and the
 # reader discards the whole response.
 malformedNumber: 7A
@@ -40,11 +51,15 @@ cases:
   - name: number-whole-document-render-computes
   - name: number-accessible-name-includes-served-value
   - name: number-copy-link-unaffected
-  # A saved label keys on the recorded index, like the copy link, never on the served position.
   - name: number-saved-label-keys-recorded-index
   - name: number-search-and-filter-unaffected
   - name: number-history-section-prints-own-numbering
   - name: segment-mode-refuses-analytics
+  - name: wire-mid-session-keeps-display-number
+  - name: wire-absent-display-number-computes
+  - name: wire-partial-or-malformed-display-number-refused
+  - name: wire-two-segments-either-order-keep-labels
+  - name: wire-numbered-mounted-surfaces-agree
   - name: number-fixture-replay-js
     pending: true
     note: needs @peasant-labs/schema/fixtures/transcript-numbering, the numbering corpus export the next Schema release adds; enabled by the Fairtrade re-pin to that release
